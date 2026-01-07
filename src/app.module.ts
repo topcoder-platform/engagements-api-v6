@@ -5,11 +5,13 @@ import { AuthMiddleware } from "./auth/auth.middleware";
 import { HealthModule } from "./health/health.module";
 import { EngagementsModule } from "./engagements/engagements.module";
 import { ApplicationsModule } from "./applications/applications.module";
+import { IntegrationsModule } from "./integrations/integrations.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DbModule,
+    IntegrationsModule,
     EngagementsModule,
     ApplicationsModule,
     HealthModule,

@@ -14,8 +14,15 @@ export class ScopesGuard implements CanActivate {
     if (!requiredScopes) {
       return true; // No scopes are required, access is granted.
     }
-    const { user } = context.switchToHttp().getRequest();
+    const { authUser } = context.switchToHttp().getRequest();
+    const scopes: string[] = authUser?.scopes ?? [];
+    if (!scopes.length) {
+      return false;
+    }
+    const normalizedScopes = scopes.map((scope) => scope?.toLowerCase());
     // Check if the user's scopes array contains any of the required scopes.
-    return requiredScopes.some((scope) => user.scopes?.includes(scope));
+    return requiredScopes.some((scope) =>
+      normalizedScopes.includes(scope?.toLowerCase()),
+    );
   }
 }

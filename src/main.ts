@@ -1,7 +1,8 @@
 import { ValidationPipe } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
+import { HttpAdapterHost, NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
+import { PrismaClientExceptionFilter } from "./common/filters/prisma-client-exception.filter";
 import { DbService } from "./db/db.service";
 
 async function bootstrap() {
@@ -14,6 +15,8 @@ async function bootstrap() {
   const port = Number(process.env.PORT || 3000);
 
   // Apply the Prisma exception filter globally
+  const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
   app.setGlobalPrefix("v6/engagements");
 
   // Get PrismaService instance to handle graceful shutdown
@@ -24,11 +27,33 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle("Topcoder Engagements API")
     .setDescription(
-      "API for managing temporary contract work engagements",
+      "API for managing temporary contract work engagements. " +
+        "Supports JWT authentication for users and M2M tokens for " +
+        "service-to-service communication. All endpoints require " +
+        "authentication with appropriate scopes.",
     )
     .setVersion("6.0")
-    .setBasePath("v6/engagements")
-    .addBearerAuth()
+    .addServer("http://localhost:3000/v6/engagements", "Local")
+    .addServer("https://api.topcoder-dev.com/v6/engagements", "Dev")
+    .addServer("https://api.topcoder.com/v6/engagements", "Prod")
+    .addBearerAuth(
+      {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description:
+          "JWT token for user authentication or M2M token for service access",
+      },
+      "bearer",
+    )
+    .addTag(
+      "Engagements",
+      "Endpoints for managing engagement opportunities",
+    )
+    .addTag(
+      "Applications",
+      "Endpoints for managing engagement applications",
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("/v6/engagements/api-docs", app, document);

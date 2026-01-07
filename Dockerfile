@@ -9,7 +9,7 @@ RUN npm install -g pnpm
 # Copy dependency-defining files
 COPY package.json pnpm-lock.yaml ./
 # Install dependencies
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile
 
 # ---- Build Stage ----
 FROM base AS build
@@ -19,6 +19,12 @@ COPY . .
 # Build the application
 RUN pnpm build
 
+# ---- Production Dependencies Stage ----
+FROM base AS prod-deps
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+
 # ---- Production Stage ----
 FROM base AS production
 ENV NODE_ENV production
@@ -27,7 +33,7 @@ COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/sql ./sql
 COPY --from=build /usr/src/app/data ./data
 # Copy production dependencies from the deps stage
-COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY --from=prod-deps /usr/src/app/node_modules ./node_modules
 
 # Expose the application port
 EXPOSE 3000
