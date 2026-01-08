@@ -121,6 +121,22 @@ export class CreateEngagementDto {
   @IsEnum(EngagementStatus)
   status?: EngagementStatus;
 
+  @ApiPropertyOptional({
+    description: "Assigned member ID",
+    example: "123456",
+  })
+  @IsOptional()
+  @IsString()
+  assignedMemberId?: string;
+
+  @ApiPropertyOptional({
+    description: "Assigned member handle",
+    example: "jane_doe",
+  })
+  @IsOptional()
+  @IsString()
+  assignedMemberHandle?: string;
+
   @ApiHideProperty()
   @HasDuration()
   durationValidation?: boolean;

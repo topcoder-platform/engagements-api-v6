@@ -81,6 +81,13 @@ export class AuthMiddleware implements NestMiddleware {
   }
 
   use(req: any, res: Response, next: NextFunction) {
+    const requestPath = req?.originalUrl ?? req?.path ?? "";
+    if (requestPath.startsWith("/feedback/anonymous")) {
+      return next();
+    }
+
+    // When no authorization header is present, allow the request through.
+    // This enables public endpoints like /feedback/anonymous to work without auth.
     const authorizationHeader = resolveAuthorizationHeader(req.headers ?? {});
 
     if (authorizationHeader) {

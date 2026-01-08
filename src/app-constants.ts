@@ -4,6 +4,8 @@ export const Scopes = {
   ManageEngagements: "manage:engagements",
   ReadApplications: "read:applications",
   WriteApplications: "write:applications",
+  ReadFeedback: "read:feedback",
+  WriteFeedback: "write:feedback",
 };
 
 export const UserRoles = {

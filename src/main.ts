@@ -54,6 +54,10 @@ async function bootstrap() {
       "Applications",
       "Endpoints for managing engagement applications",
     )
+    .addTag(
+      "Feedback",
+      "Endpoints for managing engagement feedback, including anonymous customer feedback",
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("/v6/engagements/api-docs", app, document);

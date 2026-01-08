@@ -41,6 +41,7 @@ model Engagement {
   assignedMemberHandle String?
 
   applications        EngagementApplication[]
+  feedbacks           EngagementFeedback[]
 
   @@index([projectId])
   @@index([status])
@@ -72,4 +73,23 @@ model EngagementApplication {
   @@index([userId])
   @@index([engagementId])
   @@index([status])
+}
+
+model EngagementFeedback {
+  id                    String    @id @default(uuid())
+  engagementId          String
+  feedbackText          String
+  rating                Int?
+  givenByMemberId       String?
+  givenByHandle         String?
+  givenByEmail          String?
+  secretToken           String?   @unique
+  secretTokenExpiresAt  DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  engagement            Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@index([engagementId])
+  @@index([givenByMemberId])
 }

@@ -104,4 +104,16 @@ export class EngagementResponseDto {
     example: "123456",
   })
   updatedBy?: string;
+
+  @ApiPropertyOptional({
+    description: "Assigned member ID",
+    example: "123456",
+  })
+  assignedMemberId?: string;
+
+  @ApiPropertyOptional({
+    description: "Assigned member handle",
+    example: "jane_doe",
+  })
+  assignedMemberHandle?: string;
 }

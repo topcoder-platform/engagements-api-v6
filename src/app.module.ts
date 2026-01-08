@@ -6,6 +6,7 @@ import { HealthModule } from "./health/health.module";
 import { EngagementsModule } from "./engagements/engagements.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { IntegrationsModule } from "./integrations/integrations.module";
+import { FeedbackModule } from "./feedback/feedback.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { IntegrationsModule } from "./integrations/integrations.module";
     IntegrationsModule,
     EngagementsModule,
     ApplicationsModule,
+    FeedbackModule,
     HealthModule,
   ],
 })

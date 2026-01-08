@@ -12,4 +12,10 @@ export const ERROR_MESSAGES = {
   EngagementNotOpen: "This engagement is no longer accepting applications",
   UnauthorizedApplicationAccess:
     "You do not have permission to view this application",
+  EngagementNotAssigned:
+    "Cannot add feedback to an engagement that is not assigned to a member",
+  FeedbackTokenExpired:
+    "The feedback link has expired. Please request a new link.",
+  FeedbackTokenInvalid:
+    "Invalid feedback link. Please check the URL or request a new link.",
 };
