@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum EngagementStatus {
@@ -38,6 +37,8 @@ model Engagement {
   createdBy           String
   updatedAt           DateTime                @updatedAt
   updatedBy           String?
+  assignedMemberId    String?
+  assignedMemberHandle String?
 
   applications        EngagementApplication[]
 
@@ -45,6 +46,7 @@ model Engagement {
   @@index([status])
   @@index([applicationDeadline])
   @@index([status, applicationDeadline])
+  @@index([assignedMemberId])
 }
 
 model EngagementApplication {
