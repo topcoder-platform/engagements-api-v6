@@ -26,7 +26,7 @@ export const transformArray = ({ value }: TransformFnParams) => {
 };
 
 export function HasDuration(validationOptions?: ValidationOptions) {
-  return (object: Record<string, unknown>, propertyName: string) => {
+  return (object: Object, propertyName: string) => {
     registerDecorator({
       name: "hasDuration",
       target: object.constructor,
@@ -45,7 +45,7 @@ export function HasDuration(validationOptions?: ValidationOptions) {
 }
 
 export function HasDurationIfProvided(validationOptions?: ValidationOptions) {
-  return (object: Record<string, unknown>, propertyName: string) => {
+  return (object: Object, propertyName: string) => {
     registerDecorator({
       name: "hasDurationIfProvided",
       target: object.constructor,

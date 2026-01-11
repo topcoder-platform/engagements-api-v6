@@ -20,6 +20,8 @@ export class DbService
   }
 
   enableShutdownHooks(app: INestApplication) {
-    this.$on("beforeExit", () => app.close());
+    process.on("beforeExit", () => {
+      app.close().catch(console.error);
+    });
   }
 }
