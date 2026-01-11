@@ -158,17 +158,13 @@ export class MemberService {
     fields?: string,
     token?: string,
   ): Promise<MemberRecord[]> {
-    const baseUrl = this.configService.get<string>(
-      "MEMBER_API_V6_URL",
-      "http://localhost:3001/v6",
-    );
+    const baseUrl = this.getMemberApiBaseUrl();
     const authToken = token ?? (await this.getM2MToken());
-    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
     const encodedUserId = encodeURIComponent(userId);
     const query = fields
       ? `userIds=${encodedUserId}&fields=${encodeURIComponent(fields)}`
       : `userIds=${encodedUserId}`;
-    const url = `${normalizedBaseUrl}/members?${query}`;
+    const url = `${baseUrl}?${query}`;
 
     try {
       const response = await firstValueFrom(
@@ -200,12 +196,8 @@ export class MemberService {
     handle: string,
     token: string,
   ): Promise<unknown> {
-    const baseUrl = this.configService.get<string>(
-      "MEMBER_API_V6_URL",
-      "http://localhost:3001/v6",
-    );
-    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
-    const url = `${normalizedBaseUrl}/members/${encodeURIComponent(handle)}/traits`;
+    const baseUrl = this.getMemberApiBaseUrl();
+    const url = `${baseUrl}/${encodeURIComponent(handle)}/traits`;
 
     try {
       const response = await firstValueFrom(
@@ -247,5 +239,14 @@ export class MemberService {
     }
 
     return (await this.m2m.getMachineToken(clientId, clientSecret)) as string;
+  }
+
+  private getMemberApiBaseUrl(): string {
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
+    );
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    return `${normalizedBaseUrl}/v6/members`;
   }
 }

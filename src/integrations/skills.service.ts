@@ -37,16 +37,17 @@ export class SkillsService {
       return { valid: [], invalid: [] };
     }
 
-    const baseUrl = this.configService.get<string>(
-      "STANDARDIZED_SKILLS_API_URL",
-      "http://localhost:3000",
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
     );
     const token = await this.getM2MToken();
-    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    const skillsBaseUrl = `${normalizedBaseUrl}/v5/standardized-skills`;
 
     const results = await Promise.all(
       skillIds.map(async (skillId) => {
-        const url = `${normalizedBaseUrl}/skills/${skillId}`;
+        const url = `${skillsBaseUrl}/skills/${skillId}`;
 
         try {
           const response = await firstValueFrom(

@@ -30,12 +30,13 @@ export class ProjectService {
   }
 
   async validateProjectExists(projectId: string): Promise<boolean> {
-    const baseUrl = this.configService.get<string>(
-      "TC_PROJECT_SERVICE_URL",
-      "http://localhost:8001/v5",
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
     );
     const token = await this.getM2MToken();
-    const url = `${baseUrl.replace(/\/$/, "")}/projects/${projectId}`;
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    const url = `${normalizedBaseUrl}/v5/projects/${projectId}`;
 
     try {
       const response = await firstValueFrom(
