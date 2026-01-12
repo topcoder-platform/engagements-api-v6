@@ -15,11 +15,11 @@ export class ProjectService {
     private readonly configService: ConfigService,
   ) {
     const authUrl = this.configService.get<string>(
-      "M2M_AUTH_URL",
+      "AUTH0_URL",
       "https://topcoder-dev.auth0.com/oauth/token",
     );
     const audience = this.configService.get<string>(
-      "M2M_AUDIENCE",
+      "AUTH0_AUDIENCE",
       "https://api.topcoder-dev.com",
     );
 

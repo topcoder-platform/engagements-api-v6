@@ -37,6 +37,23 @@ pnpm prisma:migrate
 pnpm start:dev
 ```
 
+## Configuration
+
+Set the following environment variables (see `.env.example` for defaults):
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | Port the API listens on. |
+| `DATABASE_URL` | PostgreSQL connection string used by Prisma. |
+| `AUTH_SECRET` | Shared secret for JWT verification in local/dev scenarios. |
+| `VALID_ISSUERS` | JSON array of allowed JWT issuers. |
+| `TOPCODER_API_URL_BASE` | Base URL for Topcoder API services. |
+| `PLATFORM_UI_BASE_URL` | Platform UI base URL used to generate anonymous feedback links. |
+| `AUTH0_URL` | Auth0 token endpoint for M2M client credentials. |
+| `M2M_CLIENT_ID` | Auth0 M2M client ID. |
+| `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |
+| `AUTH0_AUDIENCE` | Auth0 audience for M2M tokens. |
+
 ## Authentication
 
 This API uses JWT authentication for user requests and supports M2M tokens for service-to-service access. Provide a Bearer token with the required scopes for protected endpoints.
