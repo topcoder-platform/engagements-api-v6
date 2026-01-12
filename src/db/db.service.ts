@@ -15,7 +15,11 @@ export class DbService
 {
   constructor(config: ConfigService) {
     const databaseUrl = config.get<string>("DATABASE_URL", "");
-    const adapter = new PrismaPg({ connectionString: databaseUrl });
+    const schema = DbService.getSchemaFromUrl(databaseUrl);
+    const adapter = new PrismaPg(
+      { connectionString: databaseUrl },
+      schema ? { schema } : undefined,
+    );
     super({ adapter });
   }
 
@@ -31,5 +35,17 @@ export class DbService
     process.on("beforeExit", () => {
       app.close().catch(console.error);
     });
+  }
+
+  private static getSchemaFromUrl(url: string): string | undefined {
+    if (!url) {
+      return undefined;
+    }
+
+    try {
+      return new URL(url).searchParams.get("schema") ?? undefined;
+    } catch {
+      return undefined;
+    }
   }
 }
