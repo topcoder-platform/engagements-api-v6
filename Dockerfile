@@ -10,6 +10,9 @@ RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 # Install dependencies
 RUN pnpm install --frozen-lockfile
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN DATABASE_URL="postgresql://user:pass@localhost:5432/db?schema=public" pnpm prisma:generate
 
 # ---- Build Stage ----
 FROM base AS build
@@ -20,10 +23,8 @@ COPY . .
 RUN pnpm build
 
 # ---- Production Dependencies Stage ----
-FROM base AS prod-deps
-RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+FROM deps AS prod-deps
+RUN pnpm prune --prod
 
 # ---- Production Stage ----
 FROM base AS production

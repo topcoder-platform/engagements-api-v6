@@ -81,23 +81,14 @@ export class EngagementsController {
   }
 
   @Get()
-  @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadEngagements)
-  @ApiBearerAuth()
   @ApiOperation({
     summary: "List engagements",
     description:
-      "Returns a paginated list of engagements. Requires read:engagements scope.",
+      "Returns a paginated list of engagements. Authentication is optional.",
   })
   @ApiResponse({
     status: 200,
     description: "Paginated engagements retrieved.",
-  })
-  @ApiUnauthorizedResponse({
-    description: "Missing or invalid authentication token.",
-  })
-  @ApiForbiddenResponse({
-    description: "Insufficient permissions. Requires read:engagements scope.",
   })
   async findAll(
     @Query() query: EngagementQueryDto,
