@@ -19,6 +19,18 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum Role {
+  DESIGNER
+  SOFTWARE_DEVELOPER
+  DATA_SCIENTIST
+  DATA_ENGINEER
+}
+
+enum Workload {
+  FULL_TIME
+  FRACTIONAL
+}
+
 model Engagement {
   id                  String                  @id @default(uuid())
   projectId           String
@@ -33,6 +45,9 @@ model Engagement {
   requiredSkills      String[]
   applicationDeadline DateTime
   status              EngagementStatus        @default(OPEN)
+  role                Role?
+  workload            Workload?
+  compensationRange   String?
   createdAt           DateTime                @default(now())
   createdBy           String
   updatedAt           DateTime                @updatedAt
@@ -48,6 +63,8 @@ model Engagement {
   @@index([applicationDeadline])
   @@index([status, applicationDeadline])
   @@index([assignedMemberId])
+  @@index([role])
+  @@index([workload])
 }
 
 model EngagementApplication {

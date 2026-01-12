@@ -15,7 +15,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
-import { EngagementStatus } from "@prisma/client";
+import { EngagementStatus, Role, Workload } from "@prisma/client";
 import { HasDuration } from "../../common/validation.util";
 
 export class CreateEngagementDto {
@@ -103,6 +103,33 @@ export class CreateEngagementDto {
   @IsArray()
   @IsString({ each: true })
   requiredSkills: string[];
+
+  @ApiPropertyOptional({
+    description: "Role for the engagement",
+    enum: Role,
+    example: Role.SOFTWARE_DEVELOPER,
+  })
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
+
+  @ApiPropertyOptional({
+    description: "Workload for the engagement",
+    enum: Workload,
+    example: Workload.FULL_TIME,
+  })
+  @IsOptional()
+  @IsEnum(Workload)
+  workload?: Workload;
+
+  @ApiPropertyOptional({
+    description: "Compensation range",
+    example: "$600-$700 USD",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  compensationRange?: string;
 
   @ApiProperty({
     description: "Application deadline",

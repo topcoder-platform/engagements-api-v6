@@ -214,6 +214,15 @@ export class EngagementsService {
     if (payload.status !== undefined) {
       data.status = payload.status;
     }
+    if (payload.role !== undefined) {
+      data.role = payload.role;
+    }
+    if (payload.workload !== undefined) {
+      data.workload = payload.workload;
+    }
+    if (payload.compensationRange !== undefined) {
+      data.compensationRange = payload.compensationRange;
+    }
 
     return this.db.engagement.update({
       where: { id },

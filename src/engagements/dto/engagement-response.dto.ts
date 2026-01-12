@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { EngagementStatus } from "@prisma/client";
+import { EngagementStatus, Role, Workload } from "@prisma/client";
 
 export class EngagementResponseDto {
   @ApiProperty({
@@ -116,4 +116,24 @@ export class EngagementResponseDto {
     example: "jane_doe",
   })
   assignedMemberHandle?: string;
+
+  @ApiPropertyOptional({
+    description: "Role for the engagement",
+    enum: Role,
+    example: Role.SOFTWARE_DEVELOPER,
+  })
+  role?: Role;
+
+  @ApiPropertyOptional({
+    description: "Workload for the engagement",
+    enum: Workload,
+    example: Workload.FULL_TIME,
+  })
+  workload?: Workload;
+
+  @ApiPropertyOptional({
+    description: "Compensation range",
+    example: "$600-$700 USD",
+  })
+  compensationRange?: string;
 }
