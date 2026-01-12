@@ -18,6 +18,7 @@ import {
   UpdateEngagementDto,
 } from "./dto";
 import { ERROR_MESSAGES } from "../common/constants";
+import { normalizeUserId } from "../common/user.util";
 
 @Injectable()
 export class EngagementsService {
@@ -33,9 +34,11 @@ export class EngagementsService {
     createDto: CreateEngagementDto,
     userId: string,
   ): Promise<Engagement> {
+    const normalizedUserId = normalizeUserId(userId) ?? userId;
+
     this.logger.debug("Creating engagement", {
       projectId: createDto.projectId,
-      userId,
+      userId: normalizedUserId,
     });
 
     await this.assertProjectExists(createDto.projectId);
@@ -54,7 +57,7 @@ export class EngagementsService {
         durationStartDate: this.normalizeDate(payload.durationStartDate),
         durationEndDate: this.normalizeDate(payload.durationEndDate),
         applicationDeadline,
-        createdBy: userId,
+        createdBy: normalizedUserId,
       },
     });
   }
@@ -152,7 +155,11 @@ export class EngagementsService {
     updateDto: UpdateEngagementDto,
     userId: string,
   ): Promise<Engagement> {
-    this.logger.debug("Updating engagement", { id, userId });
+    const normalizedUserId = normalizeUserId(userId) ?? userId;
+    this.logger.debug("Updating engagement", {
+      id,
+      userId: normalizedUserId,
+    });
     await this.findOne(id);
 
     if (updateDto.projectId) {
@@ -166,7 +173,7 @@ export class EngagementsService {
     const { durationValidation: _durationValidation, ...payload } = updateDto;
 
     const data: Prisma.EngagementUpdateInput = {
-      updatedBy: userId,
+      updatedBy: normalizedUserId,
     };
 
     if (payload.projectId !== undefined) {

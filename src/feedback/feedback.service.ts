@@ -7,6 +7,7 @@ import {
 import { EngagementFeedback, Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { ERROR_MESSAGES } from "../common/constants";
+import { normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
 import { EngagementsService } from "../engagements/engagements.service";
 import {
@@ -32,6 +33,7 @@ export class FeedbackService {
     userId: string,
     handle: string,
   ): Promise<EngagementFeedback> {
+    const normalizedUserId = normalizeUserId(userId) ?? userId;
     await this.engagementsService.findOne(engagementId);
 
     const engagement = await this.db.engagement.findUnique({
@@ -45,7 +47,13 @@ export class FeedbackService {
       );
     }
 
-    return this.create(engagementId, createDto, userId, handle, undefined);
+    return this.create(
+      engagementId,
+      createDto,
+      normalizedUserId,
+      handle,
+      undefined,
+    );
   }
 
   async generateFeedbackLink(
@@ -161,9 +169,10 @@ export class FeedbackService {
     handle?: string,
     email?: string,
   ): Promise<EngagementFeedback> {
+    const normalizedMemberId = normalizeUserId(memberId) ?? memberId;
     this.logger.debug("Creating feedback", {
       engagementId,
-      memberId,
+      memberId: normalizedMemberId,
       handle,
       email,
     });
@@ -174,7 +183,7 @@ export class FeedbackService {
         engagementId,
         feedbackText: createDto.feedbackText,
         rating: createDto.rating,
-        givenByMemberId: memberId,
+        givenByMemberId: normalizedMemberId,
         givenByHandle: handle,
         givenByEmail: email,
       },

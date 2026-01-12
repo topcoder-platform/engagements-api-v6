@@ -24,6 +24,7 @@ import {
 import { PaginatedResponse } from "../engagements/dto";
 import { ERROR_MESSAGES } from "../common/constants";
 import { UserRoles } from "../app-constants";
+import { normalizeUserId } from "../common/user.util";
 
 type MemberAddress = {
   streetAddr1?: string | null;
@@ -52,7 +53,11 @@ export class ApplicationsService {
     createDto: CreateApplicationDto,
     userId: string,
   ): Promise<EngagementApplication> {
-    this.logger.debug("Creating application", { engagementId, userId });
+    const normalizedUserId = normalizeUserId(userId) ?? userId;
+    this.logger.debug("Creating application", {
+      engagementId,
+      userId: normalizedUserId,
+    });
 
     const engagement = await this.engagementsService.findOne(engagementId);
 
@@ -67,7 +72,7 @@ export class ApplicationsService {
       where: {
         engagementId_userId: {
           engagementId,
-          userId,
+          userId: normalizedUserId,
         },
       },
     });
@@ -76,12 +81,16 @@ export class ApplicationsService {
       throw new ConflictException(ERROR_MESSAGES.DuplicateApplication);
     }
 
-    const member = await this.memberService.getMemberByUserId(userId);
+    const member = await this.memberService.getMemberByUserId(
+      normalizedUserId,
+    );
     if (!member) {
       throw new NotFoundException(ERROR_MESSAGES.MemberNotFound);
     }
 
-    const memberAddress = await this.memberService.getMemberAddress(userId);
+    const memberAddress = await this.memberService.getMemberAddress(
+      normalizedUserId,
+    );
     const formattedAddress = this.formatAddress(memberAddress);
     const name = [member.firstName, member.lastName]
       .filter(Boolean)
@@ -91,7 +100,7 @@ export class ApplicationsService {
     return this.db.engagementApplication.create({
       data: {
         engagementId,
-        userId,
+        userId: normalizedUserId,
         email: member.email ?? "",
         name,
         address: formattedAddress,
@@ -111,6 +120,7 @@ export class ApplicationsService {
     const where: Prisma.EngagementApplicationWhereInput = {};
     const isAdmin = this.isAdmin(authUser);
     const isProjectManager = this.isProjectManager(authUser);
+    const authUserId = normalizeUserId(authUser?.userId);
 
     if (query.engagementId) {
       where.engagementId = query.engagementId;
@@ -132,9 +142,9 @@ export class ApplicationsService {
     }
 
     if (isProjectManager && !isAdmin) {
-      where.engagement = { createdBy: authUser?.userId };
+      where.engagement = { createdBy: authUserId };
     } else if (!this.isAdminOrPm(authUser)) {
-      where.userId = authUser?.userId;
+      where.userId = authUserId;
     }
 
     const page = query.page;
@@ -193,7 +203,8 @@ export class ApplicationsService {
       return application;
     }
 
-    this.assertUserOwnsApplication(application, authUser?.userId);
+    const authUserId = normalizeUserId(authUser?.userId);
+    this.assertUserOwnsApplication(application, authUserId);
     return application;
   }
 
@@ -222,20 +233,20 @@ export class ApplicationsService {
     authUser: Record<string, any>,
   ): Promise<EngagementApplication> {
     await this.findOne(id, authUser);
-    const userId = authUser?.userId as string;
+    const authUserId = normalizeUserId(authUser?.userId);
 
     return this.db.engagementApplication.update({
       where: { id },
       data: {
         status,
-        updatedBy: userId,
+        updatedBy: authUserId,
       },
     });
   }
 
   private assertUserOwnsApplication(
     application: EngagementApplication,
-    userId: string,
+    userId?: string,
   ) {
     if (application.userId !== userId) {
       throw new ForbiddenException(
@@ -291,9 +302,10 @@ export class ApplicationsService {
       return;
     }
 
+    const authUserId = normalizeUserId(authUser?.userId);
     if (
       this.isProjectManager(authUser) &&
-      engagement.createdBy !== authUser.userId
+      engagement.createdBy !== authUserId
     ) {
       throw new ForbiddenException(
         ERROR_MESSAGES.UnauthorizedApplicationAccess,
