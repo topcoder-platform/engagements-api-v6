@@ -38,4 +38,4 @@ COPY --from=prod-deps /usr/src/app/node_modules ./node_modules
 EXPOSE 3000
 
 # The command to run the application
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
