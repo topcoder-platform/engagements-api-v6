@@ -130,8 +130,13 @@ export class ApplicationsService {
       where.userId = query.userId;
     }
 
-    if (query.status) {
-      where.status = query.status;
+    if (query.status?.length) {
+      const statuses = Array.isArray(query.status)
+        ? query.status
+        : [query.status];
+      if (statuses.length) {
+        where.status = { in: statuses };
+      }
     }
 
     if (query.engagementId && isProjectManager && !isAdmin) {
