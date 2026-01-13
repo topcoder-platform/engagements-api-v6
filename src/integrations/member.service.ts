@@ -162,8 +162,8 @@ export class MemberService {
     const authToken = token ?? (await this.getM2MToken());
     const encodedUserId = encodeURIComponent(userId);
     const query = fields
-      ? `userIds=${encodedUserId}&fields=${encodeURIComponent(fields)}`
-      : `userIds=${encodedUserId}`;
+      ? `userId=${encodedUserId}&fields=${encodeURIComponent(fields)}`
+      : `userId=${encodedUserId}`;
     const url = `${baseUrl}?${query}`;
 
     try {
