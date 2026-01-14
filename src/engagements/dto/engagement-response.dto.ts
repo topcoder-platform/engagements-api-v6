@@ -136,4 +136,10 @@ export class EngagementResponseDto {
     example: "$600-$700 USD",
   })
   compensationRange?: string;
+
+  @ApiPropertyOptional({
+    description: "Number of applications for the engagement",
+    example: 12,
+  })
+  applicationsCount?: number;
 }

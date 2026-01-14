@@ -70,6 +70,15 @@ export class EngagementQueryDto extends PaginationDto {
   countries?: string[];
 
   @ApiPropertyOptional({
+    description: "Filter by time zones",
+    example: ["America/Chicago"],
+  })
+  @IsOptional()
+  @IsArray()
+  @Transform(transformArray)
+  timeZones?: string[];
+
+  @ApiPropertyOptional({
     description: "Sort field",
     enum: EngagementSortBy,
     default: EngagementSortBy.CreatedAt,

@@ -72,6 +72,7 @@ export class EngagementsService {
     });
 
     const where: Prisma.EngagementWhereInput = {};
+    const andFilters: Prisma.EngagementWhereInput[] = [];
 
     if (query.projectId) {
       where.projectId = query.projectId;
@@ -82,28 +83,44 @@ export class EngagementsService {
     }
 
     if (query.search) {
-      where.OR = [
-        {
-          title: {
-            contains: query.search,
-            mode: "insensitive",
+      andFilters.push({
+        OR: [
+          {
+            title: {
+              contains: query.search,
+              mode: "insensitive",
+            },
           },
-        },
-        {
-          description: {
-            contains: query.search,
-            mode: "insensitive",
+          {
+            description: {
+              contains: query.search,
+              mode: "insensitive",
+            },
           },
-        },
-      ];
+        ],
+      });
     }
 
     if (query.requiredSkills?.length) {
-      where.requiredSkills = { hasSome: query.requiredSkills };
+      andFilters.push({ requiredSkills: { hasSome: query.requiredSkills } });
     }
 
+    const locationFilters: Prisma.EngagementWhereInput[] = [];
     if (query.countries?.length) {
-      where.countries = { hasSome: query.countries };
+      locationFilters.push({ countries: { hasSome: query.countries } });
+    }
+    if (query.timeZones?.length) {
+      locationFilters.push({ timeZones: { hasSome: query.timeZones } });
+    }
+    if (locationFilters.length === 1) {
+      andFilters.push(locationFilters[0]);
+    }
+    if (locationFilters.length > 1) {
+      andFilters.push({ OR: locationFilters });
+    }
+
+    if (andFilters.length) {
+      where.AND = andFilters;
     }
 
     const page = query.page;
@@ -124,14 +141,25 @@ export class EngagementsService {
         skip,
         take: perPage,
         orderBy,
+        include: {
+          _count: {
+            select: {
+              applications: true,
+            },
+          },
+        },
       }),
       this.db.engagement.count({ where }),
     ]);
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
+    const engagements = data.map(({ _count, ...engagement }) => ({
+      ...engagement,
+      applicationsCount: _count.applications,
+    }));
 
     return {
-      data,
+      data: engagements,
       meta: {
         page,
         perPage,
