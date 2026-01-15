@@ -12,6 +12,7 @@ import {
   EngagementStatus,
   Prisma,
 } from "@prisma/client";
+import { nanoid } from "nanoid";
 import { DbService } from "../db/db.service";
 import { MemberService } from "../integrations/member.service";
 import { EventBusService } from "../integrations/event-bus.service";
@@ -276,49 +277,74 @@ export class ApplicationsService {
         throw new NotFoundException("Engagement not found.");
       }
 
-      const assignedMembers = engagement.assignedMembers ?? [];
-      const assignedMemberHandles = engagement.assignedMemberHandles ?? [];
+      const engagementId = engagement.id;
+      const memberId = application.userId;
 
-      if (assignedMembers.includes(application.userId)) {
+      const existingAssignment =
+        await tx.engagementAssignment.findUnique({
+          where: {
+            engagementId_memberId: {
+              engagementId,
+              memberId,
+            },
+          },
+        });
+
+      if (existingAssignment) {
         this.logger.debug(
-          `Member ${application.userId} already assigned to engagement ${engagement.id}`,
+          `Member ${memberId} already assigned to engagement ${engagementId}`,
         );
         return { assigned: false, engagement };
       }
 
+      const assignmentCount = await tx.engagementAssignment.count({
+        where: { engagementId },
+      });
+
       if (
         engagement.requiredMemberCount !== undefined &&
         engagement.requiredMemberCount !== null &&
-        assignedMembers.length >= engagement.requiredMemberCount
+        assignmentCount >= engagement.requiredMemberCount
       ) {
         throw new BadRequestException(
           "Maximum number of members already assigned to this engagement",
         );
       }
 
-      const updatedAssignedMembers = [
-        ...assignedMembers,
-        application.userId,
-      ];
-      const updatedAssignedMemberHandles = [
-        ...assignedMemberHandles,
-        ...(memberHandle ? [memberHandle] : []),
-      ];
+      const resolvedMemberHandle =
+        memberHandle?.trim() || memberId;
 
-      const updateData: Prisma.EngagementUpdateInput = {
-        assignedMembers: { set: updatedAssignedMembers },
-        assignedMemberHandles: { set: updatedAssignedMemberHandles },
-        updatedBy: authUserId,
-      };
+      await tx.engagementAssignment.create({
+        data: {
+          id: nanoid(),
+          engagementId,
+          memberId,
+          memberHandle: resolvedMemberHandle,
+        },
+      });
 
-      if (assignedMembers.length === 0) {
-        updateData.status = EngagementStatus.ACTIVE;
+      const updatedCount = await tx.engagementAssignment.count({
+        where: { engagementId },
+      });
+
+      if (updatedCount === 1) {
+        await tx.engagement.update({
+          where: { id: engagement.id },
+          data: {
+            status: EngagementStatus.ACTIVE,
+            updatedBy: authUserId,
+          },
+        });
       }
 
-      const updatedEngagement = await tx.engagement.update({
+      const updatedEngagement = await tx.engagement.findUnique({
         where: { id: engagement.id },
-        data: updateData,
+        include: { assignments: true },
       });
+
+      if (!updatedEngagement) {
+        throw new NotFoundException("Engagement not found.");
+      }
 
       return { assigned: true, engagement: updatedEngagement };
     });

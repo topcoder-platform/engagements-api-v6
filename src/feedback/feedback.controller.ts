@@ -74,14 +74,14 @@ export class FeedbackController {
     return this.feedbackService.findOne(id);
   }
 
-  @Post("engagements/:engagementId/feedback/generate-link")
+  @Post("engagements/:engagementId/assignments/:assignmentId/feedback/generate-link")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.WriteFeedback)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Generate anonymous feedback link",
     description:
-      "Generates a secret token and feedback URL for collecting anonymous customer feedback.",
+      "Generates a secret token and feedback URL for collecting anonymous customer feedback per assignment.",
   })
   @ApiResponse({
     status: 201,
@@ -104,6 +104,7 @@ export class FeedbackController {
   })
   async generateFeedbackLink(
     @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
     @Body() generateDto: GenerateFeedbackLinkDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<GenerateFeedbackLinkResponseDto> {
@@ -112,6 +113,7 @@ export class FeedbackController {
     const { secretToken, expiresAt, customerEmail } =
       await this.feedbackService.generateFeedbackLink(
         engagementId,
+        assignmentId,
         generateDto.customerEmail,
         generateDto.expirationDays,
       );
@@ -129,14 +131,14 @@ export class FeedbackController {
     };
   }
 
-  @Post("engagements/:engagementId/feedback")
+  @Post("engagements/:engagementId/assignments/:assignmentId/feedback")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.WriteFeedback)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Create feedback for an engagement",
+    summary: "Create feedback for an assignment",
     description:
-      "Creates feedback for an engagement. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Creates feedback for an assignment. Requires admin, PM, or Task Manager role for user tokens, " +
       "or write:feedback scope for M2M clients.",
   })
   @ApiResponse({
@@ -159,6 +161,7 @@ export class FeedbackController {
   })
   async create(
     @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
     @Body() createDto: CreateFeedbackDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementFeedback> {
@@ -167,6 +170,7 @@ export class FeedbackController {
     const handle = req.authUser?.handle as string;
     return this.feedbackService.createAuthenticated(
       engagementId,
+      assignmentId,
       createDto,
       userId,
       handle,
@@ -199,13 +203,13 @@ export class FeedbackController {
     );
   }
 
-  @Get("engagements/:engagementId/feedback")
+  @Get("engagements/:engagementId/assignments/:assignmentId/feedback")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.ReadFeedback)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "List feedback for an engagement",
-    description: "Lists all feedback entries for a specific engagement.",
+    summary: "List feedback for an assignment",
+    description: "Lists all feedback entries for a specific assignment.",
   })
   @ApiResponse({
     status: 200,
@@ -220,12 +224,14 @@ export class FeedbackController {
     description:
       "Insufficient permissions. Requires admin/PM/Task Manager role for user tokens or read:feedback scope for M2M clients.",
   })
-  async findByEngagement(
+  async findByAssignment(
     @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementFeedback[]> {
     this.assertAdminOrPm(req.authUser);
-    return this.feedbackService.findByEngagement(engagementId);
+    void engagementId;
+    return this.feedbackService.findByAssignment(assignmentId);
   }
 
   private assertAdminOrPm(authUser?: Record<string, any>) {

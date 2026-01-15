@@ -14,6 +14,9 @@ export const ERROR_MESSAGES = {
     "You do not have permission to view this application",
   EngagementNotAssigned:
     "Cannot add feedback to an engagement that is not assigned to a member",
+  AssignmentNotFound: "Engagement assignment not found",
+  AssignmentEngagementMismatch:
+    "Assignment does not belong to the specified engagement",
   FeedbackTokenExpired:
     "The feedback link has expired. Please request a new link.",
   FeedbackTokenInvalid:

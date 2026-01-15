@@ -9,7 +9,6 @@ import { nanoid } from "nanoid";
 import { ERROR_MESSAGES } from "../common/constants";
 import { normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
-import { EngagementsService } from "../engagements/engagements.service";
 import {
   CreateFeedbackDto,
   FEEDBACK_SORT_FIELDS,
@@ -24,35 +23,41 @@ export class FeedbackService {
 
   constructor(
     private readonly db: DbService,
-    private readonly engagementsService: EngagementsService,
   ) {}
+
+  private async validateAssignment(
+    engagementId: string,
+    assignmentId: string,
+  ) {
+    const assignment = await this.db.engagementAssignment.findUnique({
+      where: { id: assignmentId },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+    }
+
+    if (assignment.engagementId !== engagementId) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.AssignmentEngagementMismatch,
+      );
+    }
+
+    return assignment;
+  }
 
   async createAuthenticated(
     engagementId: string,
+    assignmentId: string,
     createDto: CreateFeedbackDto,
     userId: string,
     handle: string,
   ): Promise<EngagementFeedback> {
     const normalizedUserId = normalizeUserId(userId) ?? userId;
-    await this.engagementsService.findOne(engagementId);
-
-    const engagement = await this.db.engagement.findUnique({
-      where: { id: engagementId },
-      select: { assignedMembers: true, assignedMemberHandles: true },
-    });
-
-    if (
-      !engagement ||
-      (!engagement.assignedMembers.length &&
-        !engagement.assignedMemberHandles.length)
-    ) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.EngagementNotAssigned,
-      );
-    }
+    await this.validateAssignment(engagementId, assignmentId);
 
     return this.create(
-      engagementId,
+      assignmentId,
       createDto,
       normalizedUserId,
       handle,
@@ -62,6 +67,7 @@ export class FeedbackService {
 
   async generateFeedbackLink(
     engagementId: string,
+    assignmentId: string,
     customerEmail: string,
     expirationDays = 30,
   ): Promise<{
@@ -69,22 +75,7 @@ export class FeedbackService {
     expiresAt: Date;
     customerEmail: string;
   }> {
-    await this.engagementsService.findOne(engagementId);
-
-    const engagement = await this.db.engagement.findUnique({
-      where: { id: engagementId },
-      select: { assignedMembers: true, assignedMemberHandles: true },
-    });
-
-    if (
-      !engagement ||
-      (!engagement.assignedMembers.length &&
-        !engagement.assignedMemberHandles.length)
-    ) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.EngagementNotAssigned,
-      );
-    }
+    await this.validateAssignment(engagementId, assignmentId);
 
     const expiresAt = new Date(
       Date.now() + expirationDays * 24 * 60 * 60 * 1000,
@@ -98,7 +89,7 @@ export class FeedbackService {
         await this.db.engagementFeedback.create({
           data: {
             id: nanoid(),
-            engagementId,
+            engagementAssignmentId: assignmentId,
             feedbackText: "",
             rating: null,
             givenByEmail: customerEmail,
@@ -114,7 +105,7 @@ export class FeedbackService {
           if (error.code === "P2002" && target.includes("secretToken")) {
             this.logger.warn(
               "Secret token collision detected while generating feedback link",
-              { attempt, engagementId },
+              { attempt, engagementId, assignmentId },
             );
             continue;
           }
@@ -131,7 +122,6 @@ export class FeedbackService {
   async validateSecretToken(secretToken: string): Promise<EngagementFeedback> {
     const feedback = await this.db.engagementFeedback.findUnique({
       where: { secretToken },
-      include: { engagement: true },
     });
 
     if (!feedback) {
@@ -156,7 +146,7 @@ export class FeedbackService {
 
     this.logger.log("Submitting anonymous feedback", {
       feedbackId: feedback.id,
-      engagementId: feedback.engagementId,
+      engagementAssignmentId: feedback.engagementAssignmentId,
       givenByEmail: feedback.givenByEmail,
     });
 
@@ -166,12 +156,11 @@ export class FeedbackService {
         feedbackText: createDto.feedbackText,
         rating: createDto.rating,
       },
-      include: { engagement: true },
     });
   }
 
   async create(
-    engagementId: string,
+    assignmentId: string,
     createDto: CreateFeedbackDto,
     memberId?: string,
     handle?: string,
@@ -179,7 +168,7 @@ export class FeedbackService {
   ): Promise<EngagementFeedback> {
     const normalizedMemberId = normalizeUserId(memberId) ?? memberId;
     this.logger.debug("Creating feedback", {
-      engagementId,
+      engagementAssignmentId: assignmentId,
       memberId: normalizedMemberId,
       handle,
       email,
@@ -188,7 +177,7 @@ export class FeedbackService {
     return this.db.engagementFeedback.create({
       data: {
         id: nanoid(),
-        engagementId,
+        engagementAssignmentId: assignmentId,
         feedbackText: createDto.feedbackText,
         rating: createDto.rating,
         givenByMemberId: normalizedMemberId,
@@ -202,14 +191,14 @@ export class FeedbackService {
     query: FeedbackQueryDto,
   ): Promise<PaginatedResponse<EngagementFeedback>> {
     this.logger.debug("Listing feedback", {
-      engagementId: query.engagementId,
+      engagementAssignmentId: query.engagementAssignmentId,
       givenByMemberId: query.givenByMemberId,
     });
 
     const where: Prisma.EngagementFeedbackWhereInput = {};
 
-    if (query.engagementId) {
-      where.engagementId = query.engagementId;
+    if (query.engagementAssignmentId) {
+      where.engagementAssignmentId = query.engagementAssignmentId;
     }
 
     if (query.givenByMemberId) {
@@ -251,12 +240,12 @@ export class FeedbackService {
     };
   }
 
-  async findByEngagement(
-    engagementId: string,
+  async findByAssignment(
+    assignmentId: string,
   ): Promise<EngagementFeedback[]> {
-    this.logger.debug("Listing feedback for engagement", { engagementId });
+    this.logger.debug("Listing feedback for assignment", { assignmentId });
     return this.db.engagementFeedback.findMany({
-      where: { engagementId },
+      where: { engagementAssignmentId: assignmentId },
     });
   }
 
