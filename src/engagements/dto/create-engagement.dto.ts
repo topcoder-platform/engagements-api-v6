@@ -6,6 +6,7 @@ import {
 import { Type } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -149,7 +150,26 @@ export class CreateEngagementDto {
   status?: EngagementStatus;
 
   @ApiPropertyOptional({
-    description: "Assigned member ID",
+    description: "Whether the engagement is private",
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isPrivate?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Number of members required for this engagement",
+    example: 3,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  requiredMemberCount?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "Assigned member ID. For private engagements only. Creates an assignment record linking the member to this engagement.",
     example: "123456",
   })
   @IsOptional()
@@ -157,7 +177,8 @@ export class CreateEngagementDto {
   assignedMemberId?: string;
 
   @ApiPropertyOptional({
-    description: "Assigned member handle",
+    description:
+      "Assigned member handle. For private engagements only. Creates an assignment record linking the member to this engagement.",
     example: "jane_doe",
   })
   @IsOptional()

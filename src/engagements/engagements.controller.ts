@@ -53,7 +53,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Create a new engagement",
     description:
-      "Creates a new engagement opportunity. Requires admin or PM role for user tokens, " +
+      "Creates a new engagement opportunity. Requires admin, PM, or Task Manager role for user tokens, " +
       "or write:engagements/manage:engagements scope for M2M clients.",
   })
   @ApiResponse({
@@ -69,7 +69,7 @@ export class EngagementsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM role or write:engagements/manage:engagements scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager role or write:engagements/manage:engagements scope.",
   })
   async create(
     @Body() createDto: CreateEngagementDto,
@@ -121,6 +121,33 @@ export class EngagementsController {
     return this.engagementsService.findAllActive();
   }
 
+  @Get("my-assignments")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List assigned engagements",
+    description:
+      "Returns engagements assigned to the authenticated user. Requires read:engagements scope.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Assigned engagements retrieved.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description: "Insufficient permissions. Requires read:engagements scope.",
+  })
+  async findMyAssignments(
+    @Query() query: EngagementQueryDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<PaginatedResponse<Engagement>> {
+    const userId = req.authUser?.userId as string;
+    return this.engagementsService.findMyAssignments(userId, query);
+  }
+
   @Get(":id")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.ReadEngagements)
@@ -153,7 +180,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Update engagement",
     description:
-      "Updates an existing engagement. Requires admin or PM role for user tokens, " +
+      "Updates an existing engagement. Requires admin, PM, or Task Manager role for user tokens, " +
       "or write:engagements/manage:engagements scope for M2M clients.",
   })
   @ApiResponse({
@@ -169,7 +196,7 @@ export class EngagementsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM role or write:engagements/manage:engagements scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager role or write:engagements/manage:engagements scope.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   async update(
@@ -189,7 +216,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Delete engagement",
     description:
-      "Deletes an engagement. Requires admin or PM role for user tokens, " +
+      "Deletes an engagement. Requires admin, PM, or Task Manager role for user tokens, " +
       "or manage:engagements scope for M2M clients.",
   })
   @ApiResponse({ status: 204, description: "Engagement deleted." })
@@ -198,7 +225,7 @@ export class EngagementsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM role or manage:engagements scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager role or manage:engagements scope.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   @HttpCode(HttpStatus.NO_CONTENT)

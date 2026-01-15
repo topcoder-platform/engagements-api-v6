@@ -11,4 +11,5 @@ export const Scopes = {
 export const UserRoles = {
   Admin: "Administrator",
   ProjectManager: "Topcoder Project Manager",
+  TaskManager: "Topcoder Task Manager",
 };

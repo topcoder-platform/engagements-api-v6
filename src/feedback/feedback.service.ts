@@ -38,10 +38,14 @@ export class FeedbackService {
 
     const engagement = await this.db.engagement.findUnique({
       where: { id: engagementId },
-      select: { assignedMemberId: true },
+      select: { assignedMembers: true, assignedMemberHandles: true },
     });
 
-    if (!engagement?.assignedMemberId) {
+    if (
+      !engagement ||
+      (!engagement.assignedMembers.length &&
+        !engagement.assignedMemberHandles.length)
+    ) {
       throw new BadRequestException(
         ERROR_MESSAGES.EngagementNotAssigned,
       );
@@ -69,10 +73,14 @@ export class FeedbackService {
 
     const engagement = await this.db.engagement.findUnique({
       where: { id: engagementId },
-      select: { assignedMemberId: true },
+      select: { assignedMembers: true, assignedMemberHandles: true },
     });
 
-    if (!engagement?.assignedMemberId) {
+    if (
+      !engagement ||
+      (!engagement.assignedMembers.length &&
+        !engagement.assignedMemberHandles.length)
+    ) {
       throw new BadRequestException(
         ERROR_MESSAGES.EngagementNotAssigned,
       );

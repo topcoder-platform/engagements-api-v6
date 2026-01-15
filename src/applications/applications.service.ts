@@ -14,6 +14,8 @@ import {
 } from "@prisma/client";
 import { DbService } from "../db/db.service";
 import { MemberService } from "../integrations/member.service";
+import { EventBusService } from "../integrations/event-bus.service";
+import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
 import { EngagementsService } from "../engagements/engagements.service";
 import {
   ApplicationQueryDto,
@@ -46,6 +48,7 @@ export class ApplicationsService {
     private readonly db: DbService,
     private readonly memberService: MemberService,
     private readonly engagementsService: EngagementsService,
+    private readonly eventBusService: EventBusService,
   ) {}
 
   async create(
@@ -237,8 +240,15 @@ export class ApplicationsService {
     status: ApplicationStatus,
     authUser: Record<string, any>,
   ): Promise<EngagementApplication> {
-    await this.findOne(id, authUser);
+    const application = await this.findOne(id, authUser);
     const authUserId = normalizeUserId(authUser?.userId);
+
+    if (status === ApplicationStatus.ACCEPTED) {
+      await this.handleMemberAssignment(
+        application,
+        authUserId as string,
+      );
+    }
 
     return this.db.engagementApplication.update({
       where: { id },
@@ -247,6 +257,105 @@ export class ApplicationsService {
         updatedBy: authUserId,
       },
     });
+  }
+
+  private async handleMemberAssignment(
+    application: ApplicationWithEngagement,
+    authUserId: string,
+  ): Promise<void> {
+    const memberHandle =
+      await this.memberService.getMemberHandleByUserId(
+        application.userId,
+      );
+    const assignmentResult = await this.db.$transaction(async (tx) => {
+      const engagement = await tx.engagement.findUnique({
+        where: { id: application.engagementId },
+      });
+
+      if (!engagement) {
+        throw new NotFoundException("Engagement not found.");
+      }
+
+      const assignedMembers = engagement.assignedMembers ?? [];
+      const assignedMemberHandles = engagement.assignedMemberHandles ?? [];
+
+      if (assignedMembers.includes(application.userId)) {
+        this.logger.debug(
+          `Member ${application.userId} already assigned to engagement ${engagement.id}`,
+        );
+        return { assigned: false, engagement };
+      }
+
+      if (
+        engagement.requiredMemberCount !== undefined &&
+        engagement.requiredMemberCount !== null &&
+        assignedMembers.length >= engagement.requiredMemberCount
+      ) {
+        throw new BadRequestException(
+          "Maximum number of members already assigned to this engagement",
+        );
+      }
+
+      const updatedAssignedMembers = [
+        ...assignedMembers,
+        application.userId,
+      ];
+      const updatedAssignedMemberHandles = [
+        ...assignedMemberHandles,
+        ...(memberHandle ? [memberHandle] : []),
+      ];
+
+      const updateData: Prisma.EngagementUpdateInput = {
+        assignedMembers: { set: updatedAssignedMembers },
+        assignedMemberHandles: { set: updatedAssignedMemberHandles },
+        updatedBy: authUserId,
+      };
+
+      if (assignedMembers.length === 0) {
+        updateData.status = EngagementStatus.ACTIVE;
+      }
+
+      const updatedEngagement = await tx.engagement.update({
+        where: { id: engagement.id },
+        data: updateData,
+      });
+
+      return { assigned: true, engagement: updatedEngagement };
+    });
+
+    if (!assignmentResult.assigned) {
+      return;
+    }
+
+    const { engagement } = assignmentResult;
+
+    this.logger.log(
+      `Assigned member ${application.userId} to engagement ${engagement.id}`,
+    );
+
+    const payload: EngagementMemberAssignedPayload = {
+      engagementId: engagement.id,
+      memberId: application.userId,
+      memberHandle: memberHandle ?? null,
+      skills: engagement.requiredSkills,
+      assignedAt: new Date().toISOString(),
+    };
+
+    try {
+      await this.eventBusService.postEvent(
+        "engagement.member.assigned",
+        payload,
+      );
+      this.logger.log(
+        `Emitted engagement.member.assigned event for engagement ${engagement.id}`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "unknown error";
+      this.logger.error(
+        `Failed to emit engagement.member.assigned event for engagement ${engagement.id}: ${message}`,
+      );
+    }
   }
 
   private assertUserOwnsApplication(
@@ -295,7 +404,8 @@ export class ApplicationsService {
     const roles: string[] = authUser.roles ?? [];
     return roles.some(
       (role) =>
-        role?.toLowerCase() === UserRoles.ProjectManager.toLowerCase(),
+        role?.toLowerCase() === UserRoles.ProjectManager.toLowerCase() ||
+        role?.toLowerCase() === UserRoles.TaskManager.toLowerCase(),
     );
   }
 

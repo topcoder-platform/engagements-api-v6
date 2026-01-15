@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { EngagementStatus, Role, Workload } from "@prisma/client";
+import { AssignmentResponseDto } from "./assignment-response.dto";
 
 export class EngagementResponseDto {
   @ApiProperty({
@@ -116,6 +117,47 @@ export class EngagementResponseDto {
     example: "jane_doe",
   })
   assignedMemberHandle?: string;
+
+  @ApiPropertyOptional({
+    description: "Assignment records for this engagement (canonical collection)",
+    type: AssignmentResponseDto,
+    isArray: true,
+    example: [
+      {
+        id: "9a9a5f4d-2a3b-4e9c-9f1c-2b3c4d5e6f7a",
+        engagementId: "4c4dd8a7-2f5a-4f6d-8f7b-1d2c3b4a5e6f",
+        memberId: "123456",
+        memberHandle: "jane_doe",
+        createdAt: "2025-01-01T12:00:00.000Z",
+        updatedAt: "2025-01-10T12:00:00.000Z",
+      },
+    ],
+  })
+  assignments?: AssignmentResponseDto[];
+
+  @ApiProperty({
+    description: "Whether the engagement is private",
+    example: false,
+  })
+  isPrivate: boolean;
+
+  @ApiPropertyOptional({
+    description: "Number of members required",
+    example: 3,
+  })
+  requiredMemberCount?: number;
+
+  @ApiPropertyOptional({
+    description: "Deprecated: array of assigned member IDs (use assignments)",
+    example: ["123456", "789012"],
+  })
+  assignedMembers?: string[];
+
+  @ApiPropertyOptional({
+    description: "Deprecated: array of assigned member handles (use assignments)",
+    example: ["john_doe", "jane_smith"],
+  })
+  assignedMemberHandles?: string[];
 
   @ApiPropertyOptional({
     description: "Role for the engagement",

@@ -72,6 +72,52 @@ export class MemberService {
     };
   }
 
+  async getMemberHandleByUserId(userId: string): Promise<string | null> {
+    const members = await this.fetchMembers(userId, "handle");
+    const member = members[0];
+    if (!member?.handle) {
+      return null;
+    }
+
+    return member.handle;
+  }
+
+  async getMemberUserIdByHandle(handle: string): Promise<string | null> {
+    const token = await this.getM2MToken();
+    const baseUrl = this.getMemberApiBaseUrl();
+    const url = `${baseUrl}/${encodeURIComponent(handle)}?fields=userId`;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
+      const userId = response.data?.userId;
+      if (userId === undefined || userId === null) {
+        return null;
+      }
+
+      return String(userId);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return null;
+        }
+
+        this.logger.error("Member lookup failed.", {
+          status: error.response?.status,
+          data: error.response?.data,
+          handle,
+        });
+        throw error;
+      }
+
+      this.logger.error("Member lookup failed.", error);
+      throw error;
+    }
+  }
+
   async getMemberAddress(userId: string): Promise<MemberAddress | null> {
     const token = await this.getM2MToken();
     const members = await this.fetchMembers(
@@ -225,7 +271,7 @@ export class MemberService {
     }
   }
 
-  private async getM2MToken(): Promise<string> {
+  async getM2MToken(): Promise<string> {
     const clientId = this.configService.get<string>("M2M_CLIENT_ID");
     const clientSecret = this.configService.get<string>(
       "M2M_CLIENT_SECRET",
