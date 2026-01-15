@@ -314,7 +314,7 @@ export class ApplicationsService {
       const resolvedMemberHandle =
         memberHandle?.trim() || memberId;
 
-      await tx.engagementAssignment.create({
+      const assignment = await tx.engagementAssignment.create({
         data: {
           id: nanoid(),
           engagementId,
@@ -346,14 +346,18 @@ export class ApplicationsService {
         throw new NotFoundException("Engagement not found.");
       }
 
-      return { assigned: true, engagement: updatedEngagement };
+      return {
+        assigned: true,
+        engagement: updatedEngagement,
+        assignmentId: assignment.id,
+      };
     });
 
     if (!assignmentResult.assigned) {
       return;
     }
 
-    const { engagement } = assignmentResult;
+    const { engagement, assignmentId } = assignmentResult;
 
     this.logger.log(
       `Assigned member ${application.userId} to engagement ${engagement.id}`,
@@ -361,6 +365,7 @@ export class ApplicationsService {
 
     const payload: EngagementMemberAssignedPayload = {
       engagementId: engagement.id,
+      assignmentId,
       memberId: application.userId,
       memberHandle: memberHandle ?? null,
       skills: engagement.requiredSkills,

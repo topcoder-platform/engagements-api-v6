@@ -1,5 +1,6 @@
 export interface EngagementMemberAssignedPayload {
   engagementId: string;
+  assignmentId?: string;
   memberId: string;
   memberHandle: string | null;
   skills: string[];
