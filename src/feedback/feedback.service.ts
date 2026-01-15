@@ -241,9 +241,14 @@ export class FeedbackService {
   }
 
   async findByAssignment(
+    engagementId: string,
     assignmentId: string,
   ): Promise<EngagementFeedback[]> {
-    this.logger.debug("Listing feedback for assignment", { assignmentId });
+    await this.validateAssignment(engagementId, assignmentId);
+    this.logger.debug("Listing feedback for assignment", {
+      engagementId,
+      assignmentId,
+    });
     return this.db.engagementFeedback.findMany({
       where: { engagementAssignmentId: assignmentId },
     });

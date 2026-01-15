@@ -230,8 +230,10 @@ export class FeedbackController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementFeedback[]> {
     this.assertAdminOrPm(req.authUser);
-    void engagementId;
-    return this.feedbackService.findByAssignment(assignmentId);
+    return this.feedbackService.findByAssignment(
+      engagementId,
+      assignmentId,
+    );
   }
 
   private assertAdminOrPm(authUser?: Record<string, any>) {
