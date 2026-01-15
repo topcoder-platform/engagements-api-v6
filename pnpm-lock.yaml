@@ -77,6 +77,9 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      tc-bus-api-wrapper:
+        specifier: github:topcoder-platform/tc-bus-api-wrapper
+        version: '@topcoder-platform/topcoder-bus-api-wrapper@https://codeload.github.com/topcoder-platform/tc-bus-api-wrapper/tar.gz/297a9c0adcdb97661257e7825bee9c3f5578b833'
       tc-core-library-js:
         specifier: github:topcoder-platform/tc-core-library-js#master
         version: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/1075136355e1e1c4779f2138a30f3ffbd718bfa4
@@ -411,6 +414,26 @@ packages:
   '@eslint/plugin-kit@0.4.1':
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@hapi/address@5.1.1':
+    resolution: {integrity: sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA==}
+    engines: {node: '>=14.0.0'}
+
+  '@hapi/formula@3.0.2':
+    resolution: {integrity: sha512-hY5YPNXzw1He7s0iqkRQi+uMGh383CGdyyIGYtB+W5N3KHPXoqychklvHhKCC9M3Xtv0OCs/IHw+r4dcHtBYWw==}
+
+  '@hapi/hoek@11.0.7':
+    resolution: {integrity: sha512-HV5undWkKzcB4RZUusqOpcgxOaq6VOAH7zhhIr2g3G8NF/MlFO75SjOr2NfuSx0Mh40+1FqCkagKLJRykUWoFQ==}
+
+  '@hapi/pinpoint@2.0.1':
+    resolution: {integrity: sha512-EKQmr16tM8s16vTT3cA5L0kZZcTMU5DUOZTuvpnY738m+jyP3JIUj+Mm1xc1rsLkGBQ/gVnfKYPwOmPg1tUR4Q==}
+
+  '@hapi/tlds@1.1.4':
+    resolution: {integrity: sha512-Fq+20dxsxLaUn5jSSWrdtSRcIUba2JquuorF9UW1wIJS5cSUwxIsO2GIhaWynPRflvxSzFN+gxKte2HEW1OuoA==}
+    engines: {node: '>=14.0.0'}
+
+  '@hapi/topo@6.0.2':
+    resolution: {integrity: sha512-KR3rD5inZbGMrHmgPxsJ9dbi6zEK+C3ZwUwTa+eMwWLz7oijWUTWD2pMSNNYJAU6Qq+65NkxXjqHr/7LM2Xkqg==}
 
   '@hono/node-server@1.19.6':
     resolution: {integrity: sha512-Shz/KjlIeAhfiuE93NDKVdZ7HdBVLQAfdbaXEaoAVO3ic9ibRSLGIQGkcBbFyuLr+7/1D5ZCINM8B+6IvXeMtw==}
@@ -910,6 +933,10 @@ packages:
 
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
+
+  '@topcoder-platform/topcoder-bus-api-wrapper@https://codeload.github.com/topcoder-platform/tc-bus-api-wrapper/tar.gz/297a9c0adcdb97661257e7825bee9c3f5578b833':
+    resolution: {tarball: https://codeload.github.com/topcoder-platform/tc-bus-api-wrapper/tar.gz/297a9c0adcdb97661257e7825bee9c3f5578b833}
+    version: 1.2.0
 
   '@tsconfig/node10@1.0.12':
     resolution: {integrity: sha512-UCYBaeFvM11aU2y3YPZ//O5Rhj+xKyzy7mvcIoAjASbigy8mHMryP5cK7dgjlz2hWxh1g5pLw084E0a/wlUSFQ==}
@@ -2378,6 +2405,10 @@ packages:
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
+
+  joi@18.0.2:
+    resolution: {integrity: sha512-RuCOQMIt78LWnktPoeBL0GErkNaJPTBGcYuyaBvUOQSpcpcLfWrHPPihYdOGbV5pam9VTWbeoF7TsGiHugcjGA==}
+    engines: {node: '>= 20'}
 
   jose@4.15.9:
     resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
@@ -3900,6 +3931,22 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
+  '@hapi/address@5.1.1':
+    dependencies:
+      '@hapi/hoek': 11.0.7
+
+  '@hapi/formula@3.0.2': {}
+
+  '@hapi/hoek@11.0.7': {}
+
+  '@hapi/pinpoint@2.0.1': {}
+
+  '@hapi/tlds@1.1.4': {}
+
+  '@hapi/topo@6.0.2':
+    dependencies:
+      '@hapi/hoek': 11.0.7
+
   '@hono/node-server@1.19.6(hono@4.10.6)':
     dependencies:
       hono: 4.10.6
@@ -4527,6 +4574,16 @@ snapshots:
       - supports-color
 
   '@tokenizer/token@0.3.0': {}
+
+  '@topcoder-platform/topcoder-bus-api-wrapper@https://codeload.github.com/topcoder-platform/tc-bus-api-wrapper/tar.gz/297a9c0adcdb97661257e7825bee9c3f5578b833':
+    dependencies:
+      joi: 18.0.2
+      lodash: 4.17.21
+      superagent: 10.3.0
+      tc-core-library-js: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/1075136355e1e1c4779f2138a30f3ffbd718bfa4
+    transitivePeerDependencies:
+      - debug
+      - supports-color
 
   '@tsconfig/node10@1.0.12': {}
 
@@ -6349,6 +6406,16 @@ snapshots:
       - ts-node
 
   jiti@2.6.1: {}
+
+  joi@18.0.2:
+    dependencies:
+      '@hapi/address': 5.1.1
+      '@hapi/formula': 3.0.2
+      '@hapi/hoek': 11.0.7
+      '@hapi/pinpoint': 2.0.1
+      '@hapi/tlds': 1.1.4
+      '@hapi/topo': 6.0.2
+      '@standard-schema/spec': 1.1.0
 
   jose@4.15.9: {}
 
