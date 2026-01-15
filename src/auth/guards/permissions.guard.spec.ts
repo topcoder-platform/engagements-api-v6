@@ -138,16 +138,23 @@ describe("PermissionsGuard", () => {
       expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
-    it("allows access when no scopes are required (public endpoint)", () => {
+    it("throws UnauthorizedException when no scopes are required but authUser is missing", () => {
       setRequiredScopes(undefined);
       const context = makeContext();
 
-      expect(guard.canActivate(context)).toBe(true);
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
     });
 
-    it("allows access when required scopes array is empty", () => {
+    it("throws UnauthorizedException when required scopes array is empty but authUser is missing", () => {
       setRequiredScopes([]);
       const context = makeContext();
+
+      expect(() => guard.canActivate(context)).toThrow(UnauthorizedException);
+    });
+
+    it("allows access when authenticated and no scopes are required", () => {
+      setRequiredScopes([]);
+      const context = makeContext({ isMachine: false, userId: "123" });
 
       expect(guard.canActivate(context)).toBe(true);
     });

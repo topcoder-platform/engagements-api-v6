@@ -1,5 +1,5 @@
-import { ValidationPipe } from "@nestjs/common";
-import { HttpAdapterHost, NestFactory } from "@nestjs/core";
+import { ClassSerializerInterceptor, ValidationPipe } from "@nestjs/common";
+import { HttpAdapterHost, NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { PrismaClientExceptionFilter } from "./common/filters/prisma-client-exception.filter";
@@ -11,6 +11,9 @@ async function bootstrap() {
   app.enableCors();
 
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector)),
+  );
   //const config = app.get(ConfigService);
   const port = Number(process.env.PORT || 3000);
 

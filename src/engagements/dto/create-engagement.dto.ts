@@ -5,6 +5,7 @@ import {
 } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -17,7 +18,7 @@ import {
   Min,
 } from "class-validator";
 import { EngagementStatus, Role, Workload } from "@prisma/client";
-import { HasDuration } from "../../common/validation.util";
+import { HasDuration, IsNotWhitespace } from "../../common/validation.util";
 
 export class CreateEngagementDto {
   @ApiProperty({
@@ -29,20 +30,23 @@ export class CreateEngagementDto {
   projectId: string;
 
   @ApiProperty({
-    description: "Engagement title",
+    description: "Engagement title. Cannot be empty or contain only whitespace.",
     example: "Senior Frontend Engineer",
   })
   @IsString()
   @IsNotEmpty()
+  @IsNotWhitespace()
   @MaxLength(255)
   title: string;
 
   @ApiProperty({
-    description: "Engagement description",
+    description:
+      "Engagement description. Cannot be empty or contain only whitespace.",
     example: "Build a new hiring portal for enterprise clients.",
   })
   @IsString()
   @IsNotEmpty()
+  @IsNotWhitespace()
   description: string;
 
   @ApiPropertyOptional({
@@ -82,26 +86,29 @@ export class CreateEngagementDto {
   durationMonths?: number;
 
   @ApiProperty({
-    description: "Accepted time zones",
+    description: "Accepted time zones. Must contain at least one timezone.",
     example: ["UTC", "America/New_York"],
   })
   @IsArray()
+  @ArrayMinSize(1)
   @IsString({ each: true })
   timeZones: string[];
 
   @ApiProperty({
-    description: "Accepted countries",
+    description: "Accepted countries. Must contain at least one country.",
     example: ["US", "CA"],
   })
   @IsArray()
+  @ArrayMinSize(1)
   @IsString({ each: true })
   countries: string[];
 
   @ApiProperty({
-    description: "Required skill IDs",
+    description: "Required skill IDs. Must contain at least one skill ID.",
     example: ["c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
   })
   @IsArray()
+  @ArrayMinSize(1)
   @IsString({ each: true })
   requiredSkills: string[];
 
@@ -169,7 +176,7 @@ export class CreateEngagementDto {
 
   @ApiPropertyOptional({
     description:
-      "Assigned member ID. For private engagements only. Creates an assignment record linking the member to this engagement.",
+      "Assigned member ID. For private engagements only. Creates an assignment record for this engagement. Add additional members with subsequent update requests.",
     example: "123456",
   })
   @IsOptional()
@@ -178,7 +185,7 @@ export class CreateEngagementDto {
 
   @ApiPropertyOptional({
     description:
-      "Assigned member handle. For private engagements only. Creates an assignment record linking the member to this engagement.",
+      "Assigned member handle. For private engagements only. Creates an assignment record for this engagement. Add additional members with subsequent update requests.",
     example: "jane_doe",
   })
   @IsOptional()

@@ -27,7 +27,7 @@ import {
 import { PaginatedResponse } from "../engagements/dto";
 import { ERROR_MESSAGES } from "../common/constants";
 import { UserRoles } from "../app-constants";
-import { normalizeUserId } from "../common/user.util";
+import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 
 type MemberAddress = {
   streetAddr1?: string | null;
@@ -55,9 +55,20 @@ export class ApplicationsService {
   async create(
     engagementId: string,
     createDto: CreateApplicationDto,
-    userId: string,
+    authUser: Record<string, any>,
   ): Promise<EngagementApplication> {
-    const normalizedUserId = normalizeUserId(userId) ?? userId;
+    if (authUser?.isMachine) {
+      throw new ForbiddenException(
+        "M2M tokens cannot create applications.",
+      );
+    }
+
+    const normalizedUserId = normalizeUserId(authUser?.userId);
+    if (!normalizedUserId) {
+      throw new ForbiddenException(
+        "User ID is required to create applications.",
+      );
+    }
     this.logger.debug("Creating application", {
       engagementId,
       userId: normalizedUserId,
@@ -242,13 +253,10 @@ export class ApplicationsService {
     authUser: Record<string, any>,
   ): Promise<EngagementApplication> {
     const application = await this.findOne(id, authUser);
-    const authUserId = normalizeUserId(authUser?.userId);
+    const authUserId = getUserIdentifier(authUser);
 
     if (status === ApplicationStatus.ACCEPTED) {
-      await this.handleMemberAssignment(
-        application,
-        authUserId as string,
-      );
+      await this.handleMemberAssignment(application, authUser);
     }
 
     return this.db.engagementApplication.update({
@@ -262,8 +270,9 @@ export class ApplicationsService {
 
   private async handleMemberAssignment(
     application: ApplicationWithEngagement,
-    authUserId: string,
+    authUser: Record<string, any>,
   ): Promise<void> {
+    const authUserId = getUserIdentifier(authUser);
     const memberHandle =
       await this.memberService.getMemberHandleByUserId(
         application.userId,

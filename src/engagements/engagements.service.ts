@@ -4,7 +4,14 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { Engagement, EngagementStatus, Prisma } from "@prisma/client";
+import {
+  Engagement,
+  EngagementAssignment,
+  EngagementStatus,
+  Role,
+  Prisma,
+  Workload,
+} from "@prisma/client";
 import { nanoid } from "nanoid";
 import { DbService } from "../db/db.service";
 import { MemberService } from "../integrations/member.service";
@@ -19,7 +26,7 @@ import {
   UpdateEngagementDto,
 } from "./dto";
 import { ERROR_MESSAGES } from "../common/constants";
-import { normalizeUserId } from "../common/user.util";
+import { getUserIdentifier } from "../common/user.util";
 
 @Injectable()
 export class EngagementsService {
@@ -34,13 +41,13 @@ export class EngagementsService {
 
   async create(
     createDto: CreateEngagementDto,
-    userId: string,
+    authUser: Record<string, any>,
   ): Promise<Engagement> {
-    const normalizedUserId = normalizeUserId(userId) ?? userId;
+    const userIdentifier = getUserIdentifier(authUser);
 
     this.logger.debug("Creating engagement", {
       projectId: createDto.projectId,
-      userId: normalizedUserId,
+      userId: userIdentifier,
     });
 
     await this.assertProjectExists(createDto.projectId);
@@ -80,7 +87,7 @@ export class EngagementsService {
           durationStartDate: this.normalizeDate(payload.durationStartDate),
           durationEndDate: this.normalizeDate(payload.durationEndDate),
           applicationDeadline,
-          createdBy: normalizedUserId,
+          createdBy: userIdentifier,
         },
       });
 
@@ -103,6 +110,15 @@ export class EngagementsService {
             "Private engagements must have at least one assigned member",
           );
         }
+
+        if (
+          payload.requiredMemberCount !== undefined &&
+          assignmentCount > payload.requiredMemberCount
+        ) {
+          throw new BadRequestException(
+            "Assigned member count exceeds required member count.",
+          );
+        }
       }
 
       const engagementWithAssignments = await tx.engagement.findUnique({
@@ -114,7 +130,7 @@ export class EngagementsService {
         throw new NotFoundException("Engagement not found.");
       }
 
-      return engagementWithAssignments;
+      return this.applyAssignmentFields(engagementWithAssignments);
     });
   }
 
@@ -210,10 +226,12 @@ export class EngagementsService {
     ]);
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
-    const engagements = data.map(({ _count, ...engagement }) => ({
-      ...engagement,
-      applicationsCount: _count.applications,
-    }));
+    const engagements = data.map(({ _count, ...engagement }) =>
+      this.applyAssignmentFields({
+        ...engagement,
+        applicationsCount: _count.applications,
+      }),
+    );
 
     return {
       data: engagements,
@@ -227,19 +245,19 @@ export class EngagementsService {
   }
 
   async findMyAssignments(
-    userId: string,
+    authUser: Record<string, any>,
     query: EngagementQueryDto,
   ): Promise<PaginatedResponse<Engagement>> {
-    const normalizedUserId = normalizeUserId(userId) ?? userId;
+    const userIdentifier = getUserIdentifier(authUser);
     this.logger.debug("Listing assigned engagements", {
-      userId: normalizedUserId,
+      userId: userIdentifier,
       projectId: query.projectId,
       status: query.status,
       search: query.search,
     });
 
     const where: Prisma.EngagementWhereInput = {
-      assignments: { some: { memberId: normalizedUserId } },
+      assignments: { some: { memberId: userIdentifier } },
     };
     const andFilters: Prisma.EngagementWhereInput[] = [];
 
@@ -323,10 +341,12 @@ export class EngagementsService {
     ]);
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
-    const engagements = data.map(({ _count, ...engagement }) => ({
-      ...engagement,
-      applicationsCount: _count.applications,
-    }));
+    const engagements = data.map(({ _count, ...engagement }) =>
+      this.applyAssignmentFields({
+        ...engagement,
+        applicationsCount: _count.applications,
+      }),
+    );
 
     return {
       data: engagements,
@@ -348,18 +368,33 @@ export class EngagementsService {
       throw new NotFoundException("Engagement not found.");
     }
 
-    return engagement;
+    this.logger.debug("Raw engagement", engagement);
+
+    const engagementWithAssignments =
+      this.applyAssignmentFields(engagement);
+
+    return {
+      ...engagementWithAssignments,
+      role: engagementWithAssignments.role
+        ? (engagementWithAssignments.role.toString() as Role)
+        : null,
+      workload: engagementWithAssignments.workload
+        ? (engagementWithAssignments.workload.toString() as Workload)
+        : null,
+      compensationRange:
+        engagementWithAssignments.compensationRange ?? null,
+    };
   }
 
   async update(
     id: string,
     updateDto: UpdateEngagementDto,
-    userId: string,
+    authUser: Record<string, any>,
   ): Promise<Engagement> {
-    const normalizedUserId = normalizeUserId(userId) ?? userId;
+    const userIdentifier = getUserIdentifier(authUser);
     this.logger.debug("Updating engagement", {
       id,
-      userId: normalizedUserId,
+      userId: userIdentifier,
     });
     const existingEngagement = await this.findOne(id);
 
@@ -373,22 +408,48 @@ export class EngagementsService {
 
     const { durationValidation: _durationValidation, ...payload } = updateDto;
 
+    const assignedMemberId = payload.assignedMemberId?.trim();
+    if (payload.assignedMemberId !== undefined && !assignedMemberId) {
+      throw new BadRequestException("Assigned member ID cannot be blank.");
+    }
+
+    const assignedMemberHandle = payload.assignedMemberHandle?.trim();
+    if (payload.assignedMemberHandle !== undefined && !assignedMemberHandle) {
+      throw new BadRequestException("Assigned member handle cannot be blank.");
+    }
+
+    const existingAssignments =
+      (
+        existingEngagement as Engagement & {
+          assignments?: EngagementAssignment[];
+        }
+      ).assignments ?? [];
+    const existingAssignmentCount = existingAssignments.length;
+    const requiredMemberCount =
+      payload.requiredMemberCount ??
+      existingEngagement.requiredMemberCount ??
+      undefined;
+
+    if (
+      payload.requiredMemberCount !== undefined &&
+      existingAssignmentCount > payload.requiredMemberCount
+    ) {
+      throw new BadRequestException(
+        "Assigned member count exceeds required member count.",
+      );
+    }
+
     const willBePrivate =
       payload.isPrivate === true ||
       (payload.isPrivate === undefined && existingEngagement.isPrivate === true);
-    const assignedMemberId = payload.assignedMemberId?.trim();
-    const assignedMemberHandle = payload.assignedMemberHandle?.trim();
 
     if (willBePrivate) {
-      const assignmentCount = await this.db.engagementAssignment.count({
-        where: { engagementId: existingEngagement.id },
-      });
       const hasAssignedMember =
         Boolean(assignedMemberId) ||
         Boolean(assignedMemberHandle) ||
         (payload.assignedMemberId === undefined &&
           payload.assignedMemberHandle === undefined &&
-          assignmentCount > 0);
+          existingAssignmentCount > 0);
 
       if (!hasAssignedMember) {
         throw new BadRequestException(
@@ -403,13 +464,13 @@ export class EngagementsService {
         payload.assignedMemberHandle !== undefined);
     const assignmentDetails = shouldUpsertAssignment
       ? await this.resolveAssignmentDetails(
-          payload.assignedMemberId,
-          payload.assignedMemberHandle,
+          assignedMemberId,
+          assignedMemberHandle,
         )
       : null;
 
     const data: Prisma.EngagementUpdateInput = {
-      updatedBy: normalizedUserId,
+      updatedBy: userIdentifier,
     };
 
     if (payload.projectId !== undefined) {
@@ -466,8 +527,30 @@ export class EngagementsService {
       data.requiredMemberCount = payload.requiredMemberCount;
     }
 
-    return this.db.$transaction(async (tx) => {
+    const updatedEngagement = await this.db.$transaction(async (tx) => {
       if (shouldUpsertAssignment && assignmentDetails) {
+        if (requiredMemberCount !== undefined) {
+          const existingAssignment = await tx.engagementAssignment.findUnique({
+            where: {
+              engagementId_memberId: {
+                engagementId: id,
+                memberId: assignmentDetails.memberId,
+              },
+            },
+          });
+
+          if (!existingAssignment) {
+            const assignmentCount = await tx.engagementAssignment.count({
+              where: { engagementId: id },
+            });
+            if (assignmentCount >= requiredMemberCount) {
+              throw new BadRequestException(
+                "Assigned member count exceeds required member count.",
+              );
+            }
+          }
+        }
+
         await tx.engagementAssignment.upsert({
           where: {
             engagementId_memberId: {
@@ -493,6 +576,8 @@ export class EngagementsService {
         include: { assignments: true },
       });
     });
+
+    return this.applyAssignmentFields(updatedEngagement);
   }
 
   async remove(id: string): Promise<void> {
@@ -501,9 +586,52 @@ export class EngagementsService {
     await this.db.engagement.delete({ where: { id } });
   }
 
+  async removeAssignment(
+    engagementId: string,
+    assignmentId: string,
+  ): Promise<void> {
+    this.logger.debug("Removing engagement assignment", {
+      engagementId,
+      assignmentId,
+    });
+
+    await this.db.$transaction(async (tx) => {
+      const engagement = await tx.engagement.findUnique({
+        where: { id: engagementId },
+        include: { assignments: true },
+      });
+
+      if (!engagement) {
+        throw new NotFoundException("Engagement not found.");
+      }
+
+      const assignment = await tx.engagementAssignment.findUnique({
+        where: { id: assignmentId },
+      });
+
+      if (!assignment) {
+        throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+      }
+
+      if (assignment.engagementId !== engagementId) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.AssignmentEngagementMismatch,
+        );
+      }
+
+      if (engagement.isPrivate && engagement.assignments.length <= 1) {
+        throw new BadRequestException(
+          "Private engagements must have at least one assigned member",
+        );
+      }
+
+      await tx.engagementAssignment.delete({ where: { id: assignmentId } });
+    });
+  }
+
   async findAllActive(): Promise<Engagement[]> {
     this.logger.debug("Listing active engagements");
-    return this.db.engagement.findMany({
+    const engagements = await this.db.engagement.findMany({
       where: {
         isPrivate: false,
         status: EngagementStatus.OPEN,
@@ -512,6 +640,10 @@ export class EngagementsService {
       orderBy: { createdAt: "desc" },
       include: { assignments: true },
     });
+
+    return engagements.map((engagement) =>
+      this.applyAssignmentFields(engagement),
+    );
   }
 
   private async resolveAssignmentDetails(
@@ -521,6 +653,14 @@ export class EngagementsService {
     const memberId = assignedMemberId?.trim();
     const memberHandle = assignedMemberHandle?.trim();
 
+    if (assignedMemberId !== undefined && !memberId) {
+      throw new BadRequestException("Assigned member ID cannot be blank.");
+    }
+
+    if (assignedMemberHandle !== undefined && !memberHandle) {
+      throw new BadRequestException("Assigned member handle cannot be blank.");
+    }
+
     if (!memberId && !memberHandle) {
       return null;
     }
@@ -528,11 +668,29 @@ export class EngagementsService {
     let resolvedMemberId = memberId ?? null;
     let resolvedMemberHandle = memberHandle ?? null;
 
+    if (resolvedMemberId && resolvedMemberHandle) {
+      const handleFromId =
+        await this.memberService.getMemberHandleByUserId(resolvedMemberId);
+      if (!handleFromId) {
+        throw new BadRequestException("Assigned member ID not found.");
+      }
+      if (handleFromId.toLowerCase() !== resolvedMemberHandle.toLowerCase()) {
+        throw new BadRequestException(
+          "Assigned member ID and handle do not match.",
+        );
+      }
+
+      return {
+        memberId: resolvedMemberId,
+        memberHandle: handleFromId,
+      };
+    }
+
     if (resolvedMemberId && !resolvedMemberHandle) {
       resolvedMemberHandle =
         await this.memberService.getMemberHandleByUserId(resolvedMemberId);
       if (!resolvedMemberHandle) {
-        throw new BadRequestException("Assigned member handle not found.");
+        throw new BadRequestException("Assigned member ID not found.");
       }
     }
 
@@ -540,13 +698,49 @@ export class EngagementsService {
       resolvedMemberId =
         await this.memberService.getMemberUserIdByHandle(resolvedMemberHandle);
       if (!resolvedMemberId) {
-        throw new BadRequestException("Assigned member ID not found.");
+        throw new BadRequestException("Assigned member handle not found.");
       }
     }
 
     return {
       memberId: resolvedMemberId as string,
       memberHandle: resolvedMemberHandle as string,
+    };
+  }
+
+  private applyAssignmentFields<T extends Engagement & {
+    assignments?: EngagementAssignment[];
+  }>(
+    engagement: T,
+  ): T & {
+    assignedMemberId?: string;
+    assignedMemberHandle?: string;
+    assignedMembers?: string[];
+    assignedMemberHandles?: string[];
+  } {
+    if (!engagement.assignments?.length) {
+      return engagement;
+    }
+
+    const sortedAssignments = [...engagement.assignments].sort((a, b) => {
+      const timeA = a.createdAt.getTime();
+      const timeB = b.createdAt.getTime();
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      return a.id.localeCompare(b.id);
+    });
+
+    return {
+      ...engagement,
+      assignedMemberId: sortedAssignments[0]?.memberId,
+      assignedMemberHandle: sortedAssignments[0]?.memberHandle,
+      assignedMembers: sortedAssignments.map(
+        (assignment) => assignment.memberId,
+      ),
+      assignedMemberHandles: sortedAssignments.map(
+        (assignment) => assignment.memberHandle,
+      ),
     };
   }
 

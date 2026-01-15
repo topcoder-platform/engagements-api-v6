@@ -13,6 +13,7 @@ import {
   CreateFeedbackDto,
   FEEDBACK_SORT_FIELDS,
   FeedbackQueryDto,
+  FeedbackResponseDto,
   FeedbackSortBy,
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
@@ -24,6 +25,49 @@ export class FeedbackService {
   constructor(
     private readonly db: DbService,
   ) {}
+
+  private transformToResponseDto(
+    feedback: EngagementFeedback,
+  ): FeedbackResponseDto {
+    return {
+      id: feedback.id,
+      engagementAssignmentId: feedback.engagementAssignmentId,
+      feedbackText: feedback.feedbackText,
+      rating: feedback.rating ?? null,
+      givenByMemberId: feedback.givenByMemberId ?? null,
+      givenByHandle: feedback.givenByHandle ?? null,
+      givenByEmail: feedback.givenByEmail ?? null,
+      createdAt: feedback.createdAt,
+      updatedAt: feedback.updatedAt,
+    };
+  }
+
+  private async createFeedbackRecord(
+    assignmentId: string,
+    createDto: CreateFeedbackDto,
+    memberId?: string,
+    handle?: string,
+    email?: string,
+  ): Promise<EngagementFeedback> {
+    this.logger.debug("Creating feedback", {
+      engagementAssignmentId: assignmentId,
+      memberId,
+      handle,
+      email,
+    });
+
+    return this.db.engagementFeedback.create({
+      data: {
+        id: nanoid(),
+        engagementAssignmentId: assignmentId,
+        feedbackText: createDto.feedbackText,
+        rating: createDto.rating,
+        givenByMemberId: memberId,
+        givenByHandle: handle,
+        givenByEmail: email,
+      },
+    });
+  }
 
   private async validateAssignment(
     engagementId: string,
@@ -52,17 +96,19 @@ export class FeedbackService {
     createDto: CreateFeedbackDto,
     userId: string,
     handle: string,
-  ): Promise<EngagementFeedback> {
+  ): Promise<FeedbackResponseDto> {
     const normalizedUserId = normalizeUserId(userId) ?? userId;
     await this.validateAssignment(engagementId, assignmentId);
 
-    return this.create(
+    const result = await this.createFeedbackRecord(
       assignmentId,
       createDto,
       normalizedUserId,
       handle,
       undefined,
     );
+
+    return this.transformToResponseDto(result);
   }
 
   async generateFeedbackLink(
@@ -141,7 +187,7 @@ export class FeedbackService {
   async submitAnonymousFeedback(
     secretToken: string,
     createDto: CreateFeedbackDto,
-  ): Promise<EngagementFeedback> {
+  ): Promise<FeedbackResponseDto> {
     const feedback = await this.validateSecretToken(secretToken);
 
     this.logger.log("Submitting anonymous feedback", {
@@ -150,13 +196,15 @@ export class FeedbackService {
       givenByEmail: feedback.givenByEmail,
     });
 
-    return this.db.engagementFeedback.update({
+    const result = await this.db.engagementFeedback.update({
       where: { id: feedback.id },
       data: {
         feedbackText: createDto.feedbackText,
         rating: createDto.rating,
       },
     });
+
+    return this.transformToResponseDto(result);
   }
 
   async create(
@@ -165,31 +213,22 @@ export class FeedbackService {
     memberId?: string,
     handle?: string,
     email?: string,
-  ): Promise<EngagementFeedback> {
+  ): Promise<FeedbackResponseDto> {
     const normalizedMemberId = normalizeUserId(memberId) ?? memberId;
-    this.logger.debug("Creating feedback", {
-      engagementAssignmentId: assignmentId,
-      memberId: normalizedMemberId,
+    const result = await this.createFeedbackRecord(
+      assignmentId,
+      createDto,
+      normalizedMemberId,
       handle,
       email,
-    });
+    );
 
-    return this.db.engagementFeedback.create({
-      data: {
-        id: nanoid(),
-        engagementAssignmentId: assignmentId,
-        feedbackText: createDto.feedbackText,
-        rating: createDto.rating,
-        givenByMemberId: normalizedMemberId,
-        givenByHandle: handle,
-        givenByEmail: email,
-      },
-    });
+    return this.transformToResponseDto(result);
   }
 
   async findAll(
     query: FeedbackQueryDto,
-  ): Promise<PaginatedResponse<EngagementFeedback>> {
+  ): Promise<PaginatedResponse<FeedbackResponseDto>> {
     this.logger.debug("Listing feedback", {
       engagementAssignmentId: query.engagementAssignmentId,
       givenByMemberId: query.givenByMemberId,
@@ -230,7 +269,9 @@ export class FeedbackService {
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
 
     return {
-      data,
+      data: data.map((feedback) =>
+        this.transformToResponseDto(feedback),
+      ),
       meta: {
         page,
         perPage,
@@ -243,18 +284,20 @@ export class FeedbackService {
   async findByAssignment(
     engagementId: string,
     assignmentId: string,
-  ): Promise<EngagementFeedback[]> {
+  ): Promise<FeedbackResponseDto[]> {
     await this.validateAssignment(engagementId, assignmentId);
     this.logger.debug("Listing feedback for assignment", {
       engagementId,
       assignmentId,
     });
-    return this.db.engagementFeedback.findMany({
+    const feedback = await this.db.engagementFeedback.findMany({
       where: { engagementAssignmentId: assignmentId },
     });
+
+    return feedback.map((entry) => this.transformToResponseDto(entry));
   }
 
-  async findOne(id: string): Promise<EngagementFeedback> {
+  async findOne(id: string): Promise<FeedbackResponseDto> {
     const feedback = await this.db.engagementFeedback.findUnique({
       where: { id },
     });
@@ -263,6 +306,6 @@ export class FeedbackService {
       throw new NotFoundException("Feedback not found.");
     }
 
-    return feedback;
+    return this.transformToResponseDto(feedback);
   }
 }

@@ -23,14 +23,14 @@ export class PermissionsGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    if (!requiredScopes?.length) {
-      return true;
-    }
-
     const { authUser } = context.switchToHttp().getRequest();
 
     if (!authUser) {
       throw new UnauthorizedException("You are not authenticated.");
+    }
+
+    if (!requiredScopes?.length) {
+      return true;
     }
 
     if (authUser.isMachine) {

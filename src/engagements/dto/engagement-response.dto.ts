@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { EngagementStatus, Role, Workload } from "@prisma/client";
+import { Transform } from "class-transformer";
 import { AssignmentResponseDto } from "./assignment-response.dto";
 
 export class EngagementResponseDto {
@@ -107,14 +108,16 @@ export class EngagementResponseDto {
   updatedBy?: string;
 
   @ApiPropertyOptional({
-    description: "Assigned member ID",
+    description: "Deprecated: first assigned member ID (use assignments).",
     example: "123456",
+    deprecated: true,
   })
   assignedMemberId?: string;
 
   @ApiPropertyOptional({
-    description: "Assigned member handle",
+    description: "Deprecated: first assigned member handle (use assignments).",
     example: "jane_doe",
+    deprecated: true,
   })
   assignedMemberHandle?: string;
 
@@ -148,14 +151,18 @@ export class EngagementResponseDto {
   requiredMemberCount?: number;
 
   @ApiPropertyOptional({
-    description: "Deprecated: array of assigned member IDs (use assignments)",
+    description:
+      "Deprecated: array of assigned member IDs derived from assignments (use assignments).",
     example: ["123456", "789012"],
+    deprecated: true,
   })
   assignedMembers?: string[];
 
   @ApiPropertyOptional({
-    description: "Deprecated: array of assigned member handles (use assignments)",
+    description:
+      "Deprecated: array of assigned member handles derived from assignments (use assignments).",
     example: ["john_doe", "jane_smith"],
+    deprecated: true,
   })
   assignedMemberHandles?: string[];
 
@@ -164,6 +171,7 @@ export class EngagementResponseDto {
     enum: Role,
     example: Role.SOFTWARE_DEVELOPER,
   })
+  @Transform(({ value }) => value?.toString())
   role?: Role;
 
   @ApiPropertyOptional({
@@ -171,6 +179,7 @@ export class EngagementResponseDto {
     enum: Workload,
     example: Workload.FULL_TIME,
   })
+  @Transform(({ value }) => value?.toString())
   workload?: Workload;
 
   @ApiPropertyOptional({

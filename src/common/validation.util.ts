@@ -25,6 +25,32 @@ export const transformArray = ({ value }: TransformFnParams) => {
   return value;
 };
 
+export const trimTransformer = ({
+  value,
+}: {
+  value: unknown;
+}): string | undefined =>
+  typeof value === "string" ? value.trim() : undefined;
+
+export function IsNotWhitespace(validationOptions?: ValidationOptions) {
+  return (object: Object, propertyName: string) => {
+    registerDecorator({
+      name: "isNotWhitespace",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: unknown) {
+          return typeof value === "string" && value.trim().length > 0;
+        },
+        defaultMessage() {
+          return "Field cannot be empty or contain only whitespace";
+        },
+      },
+    });
+  };
+}
+
 export function HasDuration(validationOptions?: ValidationOptions) {
   return (object: Object, propertyName: string) => {
     registerDecorator({

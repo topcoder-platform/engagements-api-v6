@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiBadRequestResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -28,7 +29,7 @@ import {
   ApplicationQueryDto,
   ApplicationResponseDto,
   CreateApplicationDto,
-  UpdateApplicationDto,
+  UpdateApplicationStatusDto,
 } from "./dto";
 import { ApplicationsService } from "./applications.service";
 import { ApplicationStatus, EngagementApplication } from "@prisma/client";
@@ -45,14 +46,13 @@ export class ApplicationsController {
     private readonly applicationsService: ApplicationsService,
   ) {}
 
-  @Post("engagements/:engagementId/applications")
+  @Post(":engagementId/applications")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.WriteApplications)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Create an application",
     description:
-      "Creates a new application for an engagement. Requires write:applications scope.",
+      "Creates a new application for an engagement. Any authenticated user can apply.",
   })
   @ApiResponse({
     status: 201,
@@ -67,18 +67,17 @@ export class ApplicationsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires write:applications scope.",
+      "Insufficient permissions. Authentication required.",
   })
   async create(
     @Param("engagementId") engagementId: string,
     @Body() createDto: CreateApplicationDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementApplication> {
-    const userId = req.authUser?.userId as string;
     return this.applicationsService.create(
       engagementId,
       createDto,
-      userId,
+      req.authUser ?? {},
     );
   }
 
@@ -138,7 +137,7 @@ export class ApplicationsController {
     return this.applicationsService.findOne(id, req.authUser ?? {});
   }
 
-  @Get("engagements/:engagementId/applications")
+  @Get(":engagementId/applications")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.ReadApplications)
   @ApiBearerAuth()
@@ -179,8 +178,13 @@ export class ApplicationsController {
   @ApiOperation({
     summary: "Update application status",
     description:
-      "Updates the status for an application. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Updates the status for an application. Status is required in the request body. Requires admin, PM, or Task Manager role for user tokens, " +
       "or write:applications scope for M2M clients.",
+  })
+  @ApiBody({
+    type: UpdateApplicationStatusDto,
+    description: "Status update payload",
+    required: true,
   })
   @ApiResponse({
     status: 200,
@@ -200,7 +204,7 @@ export class ApplicationsController {
   @ApiNotFoundResponse({ description: "Application not found." })
   async updateStatus(
     @Param("id") id: string,
-    @Body() updateDto: UpdateApplicationDto,
+    @Body() updateDto: UpdateApplicationStatusDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementApplication> {
     this.assertAdminOrPm(req.authUser);

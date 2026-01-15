@@ -13,7 +13,7 @@ export class UpdateEngagementDto extends PartialType(
 ) {
   @ApiPropertyOptional({
     description:
-      "Assigned member ID. For private engagements only. Creates an assignment record linking the member to this engagement.",
+      "Assigned member ID. For private engagements only. Upserts an assignment record (creates if new, updates if existing). Add multiple members with repeated requests.",
     example: "123456",
   })
   @IsOptional()
@@ -22,7 +22,7 @@ export class UpdateEngagementDto extends PartialType(
 
   @ApiPropertyOptional({
     description:
-      "Assigned member handle. For private engagements only. Creates an assignment record linking the member to this engagement.",
+      "Assigned member handle. For private engagements only. Upserts an assignment record (creates if new, updates if existing). Add multiple members with repeated requests.",
     example: "jane_doe",
   })
   @IsOptional()

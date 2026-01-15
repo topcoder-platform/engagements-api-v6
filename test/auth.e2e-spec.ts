@@ -1,15 +1,23 @@
 import { INestApplication, UnauthorizedException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import request from "supertest";
+import * as request from "supertest";
 import { AppModule } from "../src/app.module";
 import { EngagementsService } from "../src/engagements/engagements.service";
 import { ApplicationsService } from "../src/applications/applications.service";
 import { UserRoles } from "../src/app-constants";
 
+jest.mock("nanoid", () => ({
+  nanoid: () => "test-id",
+}));
+
 const tokenFixtures: Record<string, Record<string, any>> = {
   "m2m-read": {
     isMachine: true,
     scopes: ["read:engagements", "read:applications"],
+  },
+  "m2m-write": {
+    isMachine: true,
+    scopes: ["write:engagements"],
   },
   "m2m-invalid": {
     isMachine: true,
@@ -26,6 +34,10 @@ const tokenFixtures: Record<string, Record<string, any>> = {
     roles: ["Member"],
     scopes: ["read:engagements", "read:applications"],
   },
+  "bare-user": {
+    isMachine: false,
+    userId: "999999",
+  },
 };
 
 const validEngagementPayload = {
@@ -37,6 +49,10 @@ const validEngagementPayload = {
   requiredSkills: ["c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
   applicationDeadline: "2025-02-15T00:00:00.000Z",
   durationWeeks: 4,
+};
+
+const validApplicationPayload = {
+  coverLetter: "I am excited to apply for this engagement.",
 };
 
 describe("Authentication & Authorization (e2e)", () => {
@@ -72,7 +88,9 @@ describe("Authentication & Authorization (e2e)", () => {
         totalPages: 1,
       },
     });
+    engagementsServiceMock.findAllActive.mockResolvedValue([mockEngagement]);
     engagementsServiceMock.create.mockResolvedValue(mockEngagement);
+    applicationsServiceMock.create.mockResolvedValue(mockApplication);
 
     applicationsServiceMock.findAll.mockResolvedValue({
       data: [mockApplication],
@@ -118,18 +136,59 @@ describe("Authentication & Authorization (e2e)", () => {
   describe("M2M Token Authentication", () => {
     it("allows M2M token with valid scopes to access protected endpoints", async () => {
       const response = await request(app.getHttpServer())
-        .get("/engagements")
+        .get("/engagements/active")
         .set("Authorization", "Bearer m2m-read")
         .expect(200);
 
-      expect(response.body).toHaveProperty("data");
+      expect(Array.isArray(response.body)).toBe(true);
     });
 
     it("denies M2M token with invalid scopes", async () => {
       await request(app.getHttpServer())
-        .get("/engagements")
+        .get("/engagements/active")
         .set("Authorization", "Bearer m2m-invalid")
         .expect(403);
+    });
+
+    it("creates engagement with M2M token and sets createdBy to system", async () => {
+      engagementsServiceMock.create.mockClear();
+      engagementsServiceMock.create.mockResolvedValueOnce({
+        id: "eng-1",
+        createdBy: "system",
+      });
+
+      const response = await request(app.getHttpServer())
+        .post("/engagements")
+        .set("Authorization", "Bearer m2m-write")
+        .send(validEngagementPayload)
+        .expect(201);
+
+      expect(response.body.createdBy).toBe("system");
+      expect(engagementsServiceMock.create).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ isMachine: true }),
+      );
+    });
+
+    it("updates engagement with M2M token and sets updatedBy to system", async () => {
+      engagementsServiceMock.update.mockClear();
+      engagementsServiceMock.update.mockResolvedValueOnce({
+        id: "eng-1",
+        updatedBy: "system",
+      });
+
+      const response = await request(app.getHttpServer())
+        .put("/engagements/eng-1")
+        .set("Authorization", "Bearer m2m-write")
+        .send({ title: "Updated engagement" })
+        .expect(200);
+
+      expect(response.body.updatedBy).toBe("system");
+      expect(engagementsServiceMock.update).toHaveBeenCalledWith(
+        "eng-1",
+        expect.any(Object),
+        expect.objectContaining({ isMachine: true }),
+      );
     });
   });
 
@@ -144,7 +203,7 @@ describe("Authentication & Authorization (e2e)", () => {
 
     it("allows member user to access read endpoints only", async () => {
       await request(app.getHttpServer())
-        .get("/engagements")
+        .get("/engagements/active")
         .set("Authorization", "Bearer member-user")
         .expect(200);
 
@@ -159,15 +218,40 @@ describe("Authentication & Authorization (e2e)", () => {
   describe("Role-Based Access", () => {
     it("returns 401 when token is missing", async () => {
       await request(app.getHttpServer())
-        .get("/engagements")
+        .get("/engagements/active")
         .expect(401);
     });
 
     it("returns 401 when token is malformed", async () => {
       await request(app.getHttpServer())
-        .get("/engagements")
+        .get("/engagements/active")
         .set("Authorization", "Bearer malformed")
         .expect(401);
+    });
+  });
+
+  describe("Application Create Authentication", () => {
+    it("returns 401 when token is missing", async () => {
+      await request(app.getHttpServer())
+        .post("/engagements/eng-1/applications")
+        .send(validApplicationPayload)
+        .expect(401);
+    });
+
+    it("returns 401 when token is malformed", async () => {
+      await request(app.getHttpServer())
+        .post("/engagements/eng-1/applications")
+        .set("Authorization", "Bearer malformed")
+        .send(validApplicationPayload)
+        .expect(401);
+    });
+
+    it("allows any authenticated user to create an application", async () => {
+      await request(app.getHttpServer())
+        .post("/engagements/eng-1/applications")
+        .set("Authorization", "Bearer bare-user")
+        .send(validApplicationPayload)
+        .expect(201);
     });
   });
 

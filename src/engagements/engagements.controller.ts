@@ -76,8 +76,10 @@ export class EngagementsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<Engagement> {
     this.assertAdminOrPm(req.authUser);
-    const userId = req.authUser?.userId as string;
-    return this.engagementsService.create(createDto, userId);
+    return this.engagementsService.create(
+      createDto,
+      req.authUser ?? {},
+    );
   }
 
   @Get()
@@ -144,8 +146,10 @@ export class EngagementsController {
     @Query() query: EngagementQueryDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<Engagement>> {
-    const userId = req.authUser?.userId as string;
-    return this.engagementsService.findMyAssignments(userId, query);
+    return this.engagementsService.findMyAssignments(
+      req.authUser ?? {},
+      query,
+    );
   }
 
   @Get(":id")
@@ -205,8 +209,43 @@ export class EngagementsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<Engagement> {
     this.assertAdminOrPm(req.authUser);
-    const userId = req.authUser?.userId as string;
-    return this.engagementsService.update(id, updateDto, userId);
+    return this.engagementsService.update(
+      id,
+      updateDto,
+      req.authUser ?? {},
+    );
+  }
+
+  @Delete(":id/assignments/:assignmentId")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements, AppScopes.ManageEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Remove engagement assignment",
+    description:
+      "Removes an assignment from an engagement. Requires admin, PM, or Task Manager role for user tokens, " +
+      "or write:engagements/manage:engagements scope for M2M clients.",
+  })
+  @ApiResponse({ status: 204, description: "Engagement assignment removed." })
+  @ApiBadRequestResponse({
+    description: "Invalid request payload.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Insufficient permissions. Requires admin/PM/Task Manager role or write:engagements/manage:engagements scope.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement assignment not found." })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeAssignment(
+    @Param("id") id: string,
+    @Param("assignmentId") assignmentId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<void> {
+    this.assertAdminOrPm(req.authUser);
+    await this.engagementsService.removeAssignment(id, assignmentId);
   }
 
   @Delete(":id")

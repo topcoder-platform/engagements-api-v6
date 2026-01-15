@@ -20,7 +20,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
-import { EngagementFeedback } from "@prisma/client";
 import { Request } from "express";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { Scopes as ScopesDecorator } from "../auth/decorators/scopes.decorator";
@@ -56,7 +55,7 @@ export class FeedbackController {
   })
   async findAll(
     @Query() query: FeedbackQueryDto,
-  ): Promise<PaginatedResponse<EngagementFeedback>> {
+  ): Promise<PaginatedResponse<FeedbackResponseDto>> {
     return this.feedbackService.findAll(query);
   }
 
@@ -70,11 +69,11 @@ export class FeedbackController {
     description: "Feedback retrieved.",
     type: FeedbackResponseDto,
   })
-  async findOne(@Param("id") id: string): Promise<EngagementFeedback> {
+  async findOne(@Param("id") id: string): Promise<FeedbackResponseDto> {
     return this.feedbackService.findOne(id);
   }
 
-  @Post("engagements/:engagementId/assignments/:assignmentId/feedback/generate-link")
+  @Post(":engagementId/assignments/:assignmentId/feedback/generate-link")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.WriteFeedback)
   @ApiBearerAuth()
@@ -125,13 +124,12 @@ export class FeedbackController {
 
     return {
       feedbackUrl,
-      secretToken,
       expiresAt,
       customerEmail,
     };
   }
 
-  @Post("engagements/:engagementId/assignments/:assignmentId/feedback")
+  @Post(":engagementId/assignments/:assignmentId/feedback")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.WriteFeedback)
   @ApiBearerAuth()
@@ -164,7 +162,7 @@ export class FeedbackController {
     @Param("assignmentId") assignmentId: string,
     @Body() createDto: CreateFeedbackDto,
     @Req() req: Request & { authUser?: Record<string, any> },
-  ): Promise<EngagementFeedback> {
+  ): Promise<FeedbackResponseDto> {
     this.assertAdminOrPm(req.authUser);
     const userId = req.authUser?.userId as string;
     const handle = req.authUser?.handle as string;
@@ -196,14 +194,14 @@ export class FeedbackController {
   })
   async submitAnonymousFeedback(
     @Body() anonymousDto: AnonymousFeedbackDto,
-  ): Promise<EngagementFeedback> {
+  ): Promise<FeedbackResponseDto> {
     return this.feedbackService.submitAnonymousFeedback(
       anonymousDto.secretToken,
       anonymousDto,
     );
   }
 
-  @Get("engagements/:engagementId/assignments/:assignmentId/feedback")
+  @Get(":engagementId/assignments/:assignmentId/feedback")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.ReadFeedback)
   @ApiBearerAuth()
@@ -228,7 +226,7 @@ export class FeedbackController {
     @Param("engagementId") engagementId: string,
     @Param("assignmentId") assignmentId: string,
     @Req() req: Request & { authUser?: Record<string, any> },
-  ): Promise<EngagementFeedback[]> {
+  ): Promise<FeedbackResponseDto[]> {
     this.assertAdminOrPm(req.authUser);
     return this.feedbackService.findByAssignment(
       engagementId,

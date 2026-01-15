@@ -8,6 +8,7 @@ import {
   Max,
   Min,
 } from "class-validator";
+import { IsNotWhitespace } from "../../common/validation.util";
 
 export class CreateFeedbackDto {
   @ApiProperty({
@@ -16,6 +17,7 @@ export class CreateFeedbackDto {
   })
   @IsString()
   @IsNotEmpty()
+  @IsNotWhitespace()
   feedbackText: string;
 
   @ApiPropertyOptional({
