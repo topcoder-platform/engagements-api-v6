@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsIn,
   IsOptional,
@@ -77,6 +78,33 @@ export class EngagementQueryDto extends PaginationDto {
   @IsArray()
   @Transform(transformArray)
   timeZones?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      "Include private engagements (requires admin, PM, or Task Manager role)",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === "") {
+      return undefined;
+    }
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "string") {
+      const normalized = value.toLowerCase();
+      if (normalized === "true") {
+        return true;
+      }
+      if (normalized === "false") {
+        return false;
+      }
+    }
+    return value;
+  })
+  includePrivate?: boolean;
 
   @ApiPropertyOptional({
     description: "Sort field",

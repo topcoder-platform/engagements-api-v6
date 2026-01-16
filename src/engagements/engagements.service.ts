@@ -61,20 +61,50 @@ export class EngagementsService {
       durationValidation: _durationValidation,
       assignedMemberId: _assignedMemberId,
       assignedMemberHandle: _assignedMemberHandle,
+      assignedMemberIds: _assignedMemberIds,
+      assignedMemberHandles: _assignedMemberHandles,
       ...payload
     } = createDto;
 
-    const assignmentDetails = createDto.isPrivate
-      ? await this.resolveAssignmentDetails(
-          createDto.assignedMemberId,
-          createDto.assignedMemberHandle,
-        )
-      : null;
+    let assignmentDetailsList: Array<{
+      memberId: string;
+      memberHandle: string;
+    }> = [];
 
     if (createDto.isPrivate) {
-      if (!assignmentDetails) {
+      if (
+        createDto.assignedMemberIds?.length ||
+        createDto.assignedMemberHandles?.length
+      ) {
+        assignmentDetailsList = await this.resolveMultipleAssignmentDetails(
+          createDto.assignedMemberIds,
+          createDto.assignedMemberHandles,
+        );
+      } else if (
+        createDto.assignedMemberId ||
+        createDto.assignedMemberHandle
+      ) {
+        const singleAssignment = await this.resolveAssignmentDetails(
+          createDto.assignedMemberId,
+          createDto.assignedMemberHandle,
+        );
+        if (singleAssignment) {
+          assignmentDetailsList = [singleAssignment];
+        }
+      }
+
+      if (assignmentDetailsList.length === 0) {
         throw new BadRequestException(
           "Private engagements must have at least one assigned member",
+        );
+      }
+
+      if (
+        payload.requiredMemberCount !== undefined &&
+        assignmentDetailsList.length > payload.requiredMemberCount
+      ) {
+        throw new BadRequestException(
+          `Cannot assign ${assignmentDetailsList.length} members when requiredMemberCount is ${payload.requiredMemberCount}.`,
         );
       }
     }
@@ -91,15 +121,19 @@ export class EngagementsService {
         },
       });
 
-      if (createDto.isPrivate && assignmentDetails) {
-        await tx.engagementAssignment.create({
-          data: {
-            id: nanoid(),
-            engagementId: engagement.id,
-            memberId: assignmentDetails.memberId,
-            memberHandle: assignmentDetails.memberHandle,
-          },
-        });
+      if (createDto.isPrivate && assignmentDetailsList.length > 0) {
+        await Promise.all(
+          assignmentDetailsList.map((details) =>
+            tx.engagementAssignment.create({
+              data: {
+                id: nanoid(),
+                engagementId: engagement.id,
+                memberId: details.memberId,
+                memberHandle: details.memberHandle,
+              },
+            }),
+          ),
+        );
 
         const assignmentCount = await tx.engagementAssignment.count({
           where: { engagementId: engagement.id },
@@ -143,7 +177,9 @@ export class EngagementsService {
       search: query.search,
     });
 
-    const where: Prisma.EngagementWhereInput = { isPrivate: false };
+    const where: Prisma.EngagementWhereInput = query.includePrivate
+      ? {}
+      : { isPrivate: false };
     const andFilters: Prisma.EngagementWhereInput[] = [];
 
     if (query.projectId) {
@@ -706,6 +742,82 @@ export class EngagementsService {
       memberId: resolvedMemberId as string,
       memberHandle: resolvedMemberHandle as string,
     };
+  }
+
+  private async resolveMultipleAssignmentDetails(
+    assignedMemberIds?: string[],
+    assignedMemberHandles?: string[],
+  ): Promise<Array<{ memberId: string; memberHandle: string }>> {
+    const results: Array<{ memberId: string; memberHandle: string }> = [];
+
+    const memberIds = assignedMemberIds
+      ? assignedMemberIds.map((id) => {
+          const trimmed = id?.trim();
+          if (!trimmed) {
+            throw new BadRequestException(
+              "Assigned member IDs must not contain empty values.",
+            );
+          }
+          return trimmed;
+        })
+      : [];
+    const memberHandles = assignedMemberHandles
+      ? assignedMemberHandles.map((handle) => {
+          const trimmed = handle?.trim();
+          if (!trimmed) {
+            throw new BadRequestException(
+              "Assigned member handles must not contain empty values.",
+            );
+          }
+          return trimmed;
+        })
+      : [];
+
+    if (
+      memberIds.length > 0 &&
+      memberHandles.length > 0 &&
+      memberIds.length !== memberHandles.length
+    ) {
+      throw new BadRequestException(
+        "Assigned member IDs and handles arrays must have the same length if both are provided.",
+      );
+    }
+
+    const memberIdSet = new Set<string>();
+    for (const memberId of memberIds) {
+      if (memberIdSet.has(memberId)) {
+        throw new BadRequestException("Assigned member IDs must be unique.");
+      }
+      memberIdSet.add(memberId);
+    }
+
+    const memberHandleSet = new Set<string>();
+    for (const memberHandle of memberHandles) {
+      const normalizedHandle = memberHandle.toLowerCase();
+      if (memberHandleSet.has(normalizedHandle)) {
+        throw new BadRequestException(
+          "Assigned member handles must be unique.",
+        );
+      }
+      memberHandleSet.add(normalizedHandle);
+    }
+
+    const maxLength = Math.max(memberIds.length, memberHandles.length);
+
+    for (let i = 0; i < maxLength; i += 1) {
+      const memberId = memberIds[i] ?? undefined;
+      const memberHandle = memberHandles[i] ?? undefined;
+
+      const details = await this.resolveAssignmentDetails(
+        memberId,
+        memberHandle,
+      );
+      if (details) {
+        results.push(details);
+      }
+    }
+
+    return results;
   }
 
   private applyAssignmentFields<T extends Engagement & {

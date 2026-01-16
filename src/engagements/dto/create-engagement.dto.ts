@@ -176,7 +176,7 @@ export class CreateEngagementDto {
 
   @ApiPropertyOptional({
     description:
-      "Assigned member ID. For private engagements only. Creates an assignment record for this engagement. Add additional members with subsequent update requests.",
+      "Assigned member ID. For private engagements only. Use assignedMemberIds for multiple members. If both singular and array fields are provided, array fields take precedence.",
     example: "123456",
   })
   @IsOptional()
@@ -185,12 +185,32 @@ export class CreateEngagementDto {
 
   @ApiPropertyOptional({
     description:
-      "Assigned member handle. For private engagements only. Creates an assignment record for this engagement. Add additional members with subsequent update requests.",
+      "Assigned member handle. For private engagements only. Use assignedMemberHandles for multiple members. If both singular and array fields are provided, array fields take precedence.",
     example: "jane_doe",
   })
   @IsOptional()
   @IsString()
   assignedMemberHandle?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Array of assigned member IDs. For private engagements only. Creates assignment records for all provided members.",
+    example: ["123456", "789012"],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  assignedMemberIds?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      "Array of assigned member handles. For private engagements only. Creates assignment records for all provided members.",
+    example: ["jane_doe", "john_smith"],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  assignedMemberHandles?: string[];
 
   @ApiHideProperty()
   @HasDuration()

@@ -94,7 +94,11 @@ export class EngagementsController {
   })
   async findAll(
     @Query() query: EngagementQueryDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<Engagement>> {
+    if (query.includePrivate) {
+      this.assertAdminOrPm(req.authUser);
+    }
     return this.engagementsService.findAll(query);
   }
 
