@@ -50,7 +50,8 @@ export class CreateEngagementDto {
   description: string;
 
   @ApiPropertyOptional({
-    description: "Duration start date",
+    description:
+      "Duration start date. Required with durationEndDate when durationWeeks/durationMonths are not provided.",
     example: "2025-01-01T00:00:00.000Z",
   })
   @IsOptional()
@@ -58,7 +59,8 @@ export class CreateEngagementDto {
   durationStartDate?: string;
 
   @ApiPropertyOptional({
-    description: "Duration end date",
+    description:
+      "Duration end date. Required with durationStartDate when durationWeeks/durationMonths are not provided.",
     example: "2025-03-01T00:00:00.000Z",
   })
   @IsOptional()
@@ -66,7 +68,8 @@ export class CreateEngagementDto {
   durationEndDate?: string;
 
   @ApiPropertyOptional({
-    description: "Duration in weeks",
+    description:
+      "Duration in weeks. Required if durationMonths and durationStartDate/durationEndDate are not provided.",
     example: 8,
   })
   @IsOptional()
@@ -76,7 +79,8 @@ export class CreateEngagementDto {
   durationWeeks?: number;
 
   @ApiPropertyOptional({
-    description: "Duration in months",
+    description:
+      "Duration in months. Required if durationWeeks and durationStartDate/durationEndDate are not provided.",
     example: 2,
   })
   @IsOptional()

@@ -64,12 +64,22 @@ export class EngagementsController {
     description:
       "Create engagement payload. Provide durationWeeks, durationMonths, or durationStartDate + durationEndDate.",
     schema: {
-      allOf: [
-        { $ref: getSchemaPath(CreateEngagementDto) },
+      anyOf: [
         {
-          anyOf: [
+          allOf: [
+            { $ref: getSchemaPath(CreateEngagementDto) },
             { required: ["durationWeeks"] },
+          ],
+        },
+        {
+          allOf: [
+            { $ref: getSchemaPath(CreateEngagementDto) },
             { required: ["durationMonths"] },
+          ],
+        },
+        {
+          allOf: [
+            { $ref: getSchemaPath(CreateEngagementDto) },
             { required: ["durationStartDate", "durationEndDate"] },
           ],
         },
