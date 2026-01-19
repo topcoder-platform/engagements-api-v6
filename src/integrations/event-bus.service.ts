@@ -1,39 +1,77 @@
 import {
-  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Logger,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { HttpService } from "@nestjs/axios";
-import { firstValueFrom } from "rxjs";
-import { MemberService } from "./member.service";
+import * as busApi from "tc-bus-api-wrapper";
 import { EventBusMessage } from "./types/event-bus.types";
+
+type BusApiClient = {
+  postEvent: <T>(message: EventBusMessage<T>) => Promise<void>;
+};
 
 @Injectable()
 export class EventBusService {
   private readonly logger = new Logger(EventBusService.name);
+  private busApiClient?: BusApiClient;
 
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
-    private readonly memberService: MemberService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
-  private getBusApiUrl(): string {
-    return (
-      this.configService.get<string>("BUS_API_URL") ||
+  private getBusApiClient(): BusApiClient {
+    if (this.busApiClient) {
+      return this.busApiClient;
+    }
+
+    const busApiUrl =
       this.configService.get<string>("BUSAPI_URL") ||
-      "http://localhost:4000/eventBus"
-    );
-  }
+      this.configService.get<string>("BUS_API_URL") ||
+      "http://localhost:4000/eventBus";
+    const tokenCacheTimeRaw =
+      this.configService.get<string>("TOKEN_CACHE_TIME");
+    const tokenCacheTime = Number(tokenCacheTimeRaw);
 
-  private async getM2MToken(): Promise<string> {
-    return this.memberService.getM2MToken();
+    try {
+      this.busApiClient = busApi({
+        AUTH0_URL: this.configService.get<string>("AUTH0_URL"),
+        AUTH0_AUDIENCE: this.configService.get<string>(
+          "AUTH0_AUDIENCE",
+        ),
+        TOKEN_CACHE_TIME: Number.isFinite(tokenCacheTime)
+          ? tokenCacheTime
+          : undefined,
+        AUTH0_CLIENT_ID:
+          this.configService.get<string>("AUTH0_CLIENT_ID"),
+        AUTH0_CLIENT_SECRET: this.configService.get<string>(
+          "AUTH0_CLIENT_SECRET",
+        ),
+        BUSAPI_URL: busApiUrl,
+        KAFKA_ERROR_TOPIC:
+          this.configService.get<string>("KAFKA_ERROR_TOPIC") ||
+          "common.error.reporting",
+        AUTH0_PROXY_SERVER_URL: this.configService.get<string>(
+          "AUTH0_PROXY_SERVER_URL",
+        ),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "unknown error";
+      this.logger.error(
+        `Event bus client initialization failed: ${message}`,
+      );
+      throw error;
+    }
+
+    if (!this.busApiClient) {
+      throw new InternalServerErrorException(
+        "Event bus client initialization failed.",
+      );
+    }
+
+    return this.busApiClient;
   }
 
   async postEvent<T>(topic: string, payload: T): Promise<void> {
-    const token = await this.getM2MToken();
     const message: EventBusMessage<T> = {
       topic,
       originator: "engagements-api-v6",
@@ -41,22 +79,9 @@ export class EventBusService {
       "mime-type": "application/json",
       payload,
     };
-    const url = this.getBusApiUrl();
 
     try {
-      const response = await firstValueFrom(
-        this.httpService.post(url, message, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      );
-      const status = response.status as HttpStatus;
-      if (
-        status !== HttpStatus.OK &&
-        status !== HttpStatus.NO_CONTENT &&
-        status !== HttpStatus.ACCEPTED
-      ) {
-        throw new Error(`Event bus status code: ${response.status}`);
-      }
+      await this.getBusApiClient().postEvent(message);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "unknown error";

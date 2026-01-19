@@ -1,10 +1,9 @@
 export interface EngagementMemberAssignedPayload {
   engagementId: string;
   assignmentId?: string;
-  memberId: string;
-  memberHandle: string | null;
-  skills: string[];
-  assignedAt: string;
+  memberId: number;
+  memberHandle: string;
+  skills: Array<{ id: string }>;
 }
 
 export interface EventBusMessage<T> {

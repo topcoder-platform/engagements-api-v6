@@ -281,6 +281,8 @@ export class ApplicationsService {
       await this.memberService.getMemberHandleByUserId(
         application.userId,
       );
+    const resolvedMemberHandle =
+      memberHandle?.trim() || application.userId;
     const assignmentResult = await this.db.$transaction(async (tx) => {
       const engagement = await tx.engagement.findUnique({
         where: { id: application.engagementId },
@@ -323,9 +325,6 @@ export class ApplicationsService {
           "Maximum number of members already assigned to this engagement",
         );
       }
-
-      const resolvedMemberHandle =
-        memberHandle?.trim() || memberId;
 
       const assignment = await tx.engagementAssignment.create({
         data: {
@@ -379,10 +378,11 @@ export class ApplicationsService {
     const payload: EngagementMemberAssignedPayload = {
       engagementId: engagement.id,
       assignmentId,
-      memberId: application.userId,
-      memberHandle: memberHandle ?? null,
-      skills: engagement.requiredSkills,
-      assignedAt: new Date().toISOString(),
+      memberId: Number(application.userId),
+      memberHandle: resolvedMemberHandle,
+      skills: engagement.requiredSkills.map((skillId) => ({
+        id: skillId,
+      })),
     };
 
     try {
