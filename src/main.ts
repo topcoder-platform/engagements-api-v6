@@ -36,9 +36,9 @@ async function bootstrap() {
         "authentication with appropriate scopes.",
     )
     .setVersion("6.0")
-    .addServer("http://localhost:3000/v6/engagements", "Local")
-    .addServer("https://api.topcoder-dev.com/v6/engagements", "Dev")
-    .addServer("https://api.topcoder.com/v6/engagements", "Prod")
+    .addServer("http://localhost:3000", "Local")
+    .addServer("https://api.topcoder-dev.com", "Dev")
+    .addServer("https://api.topcoder.com", "Prod")
     .addBearerAuth(
       {
         type: "http",

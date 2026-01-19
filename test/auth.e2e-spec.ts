@@ -62,6 +62,7 @@ describe("Authentication & Authorization (e2e)", () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findAllActive: jest.fn(),
+    findMyAssignments: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
@@ -89,6 +90,16 @@ describe("Authentication & Authorization (e2e)", () => {
       },
     });
     engagementsServiceMock.findAllActive.mockResolvedValue([mockEngagement]);
+    engagementsServiceMock.findMyAssignments.mockResolvedValue({
+      data: [mockEngagement],
+      meta: {
+        page: 1,
+        perPage: 20,
+        totalCount: 1,
+        totalPages: 1,
+      },
+    });
+    engagementsServiceMock.findOne.mockResolvedValue(mockEngagement);
     engagementsServiceMock.create.mockResolvedValue(mockEngagement);
     applicationsServiceMock.create.mockResolvedValue(mockApplication);
 
@@ -136,16 +147,16 @@ describe("Authentication & Authorization (e2e)", () => {
   describe("M2M Token Authentication", () => {
     it("allows M2M token with valid scopes to access protected endpoints", async () => {
       const response = await request(app.getHttpServer())
-        .get("/engagements/active")
+        .get("/engagements/my-assignments")
         .set("Authorization", "Bearer m2m-read")
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
 
     it("denies M2M token with invalid scopes", async () => {
       await request(app.getHttpServer())
-        .get("/engagements/active")
+        .get("/engagements/my-assignments")
         .set("Authorization", "Bearer m2m-invalid")
         .expect(403);
     });
@@ -203,7 +214,7 @@ describe("Authentication & Authorization (e2e)", () => {
 
     it("allows member user to access read endpoints only", async () => {
       await request(app.getHttpServer())
-        .get("/engagements/active")
+        .get("/engagements/my-assignments")
         .set("Authorization", "Bearer member-user")
         .expect(200);
 
@@ -215,16 +226,48 @@ describe("Authentication & Authorization (e2e)", () => {
     });
   });
 
+  describe("Public Engagement Read Endpoints", () => {
+    it("allows anonymous access to active engagements", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/engagements/active")
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+
+    it("allows authenticated user without scopes to access active engagements", async () => {
+      const response = await request(app.getHttpServer())
+        .get("/engagements/active")
+        .set("Authorization", "Bearer bare-user")
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+
+    it("allows anonymous access to engagement by ID", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements/eng-1")
+        .expect(200);
+    });
+
+    it("allows authenticated user without scopes to access engagement by ID", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements/eng-1")
+        .set("Authorization", "Bearer bare-user")
+        .expect(200);
+    });
+  });
+
   describe("Role-Based Access", () => {
     it("returns 401 when token is missing", async () => {
       await request(app.getHttpServer())
-        .get("/engagements/active")
+        .get("/engagements/my-assignments")
         .expect(401);
     });
 
     it("returns 401 when token is malformed", async () => {
       await request(app.getHttpServer())
-        .get("/engagements/active")
+        .get("/engagements/my-assignments")
         .set("Authorization", "Bearer malformed")
         .expect(401);
     });

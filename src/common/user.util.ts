@@ -5,7 +5,18 @@ export const normalizeUserId = (
     return undefined;
   }
 
-  return typeof userId === "number" ? String(userId) : userId;
+  if (typeof userId === "number") {
+    if (Number.isNaN(userId)) {
+      return undefined;
+    }
+    return String(userId);
+  }
+
+  if (userId === "NaN") {
+    return undefined;
+  }
+
+  return userId;
 };
 
 export const getUserIdentifier = (

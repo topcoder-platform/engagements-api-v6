@@ -18,4 +18,10 @@ describe("getUserIdentifier", () => {
   it("returns system when userId is missing", () => {
     expect(getUserIdentifier({ isMachine: false })).toBe("system");
   });
+
+  it("returns system when userId is NaN", () => {
+    expect(
+      getUserIdentifier({ isMachine: false, userId: Number.NaN }),
+    ).toBe("system");
+  });
 });

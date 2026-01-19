@@ -50,6 +50,15 @@ export class EngagementsService {
       userId: userIdentifier,
     });
 
+    this.assertNonBlankField(createDto.title, "title");
+    this.assertNonBlankField(createDto.description, "description");
+    this.assertNonEmptyArrayField(createDto.timeZones, "timeZones");
+    this.assertNonEmptyArrayField(createDto.countries, "countries");
+    this.assertNonEmptyArrayField(
+      createDto.requiredSkills,
+      "requiredSkills",
+    );
+
     await this.assertProjectExists(createDto.projectId);
     await this.assertSkillsValid(createDto.requiredSkills);
 
@@ -432,6 +441,26 @@ export class EngagementsService {
       id,
       userId: userIdentifier,
     });
+
+    if (updateDto.title !== undefined) {
+      this.assertNonBlankField(updateDto.title, "title");
+    }
+    if (updateDto.description !== undefined) {
+      this.assertNonBlankField(updateDto.description, "description");
+    }
+    if (updateDto.timeZones !== undefined) {
+      this.assertNonEmptyArrayField(updateDto.timeZones, "timeZones");
+    }
+    if (updateDto.countries !== undefined) {
+      this.assertNonEmptyArrayField(updateDto.countries, "countries");
+    }
+    if (updateDto.requiredSkills !== undefined) {
+      this.assertNonEmptyArrayField(
+        updateDto.requiredSkills,
+        "requiredSkills",
+      );
+    }
+
     const existingEngagement = await this.findOne(id);
 
     if (updateDto.projectId) {
@@ -495,9 +524,8 @@ export class EngagementsService {
     }
 
     const shouldUpsertAssignment =
-      willBePrivate &&
-      (payload.assignedMemberId !== undefined ||
-        payload.assignedMemberHandle !== undefined);
+      payload.assignedMemberId !== undefined ||
+      payload.assignedMemberHandle !== undefined;
     const assignmentDetails = shouldUpsertAssignment
       ? await this.resolveAssignmentDetails(
           assignedMemberId,
@@ -854,6 +882,25 @@ export class EngagementsService {
         (assignment) => assignment.memberHandle,
       ),
     };
+  }
+
+  private assertNonBlankField(value: unknown, fieldName: string): void {
+    if (typeof value !== "string" || value.trim().length === 0) {
+      throw new BadRequestException(
+        `${fieldName} cannot be empty or contain only whitespace.`,
+      );
+    }
+  }
+
+  private assertNonEmptyArrayField(
+    value: unknown,
+    fieldName: string,
+  ): void {
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new BadRequestException(
+        `${fieldName} must contain at least one item.`,
+      );
+    }
   }
 
   private async assertProjectExists(projectId: string): Promise<void> {

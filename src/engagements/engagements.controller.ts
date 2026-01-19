@@ -16,12 +16,15 @@ import {
 import {
   ApiBearerAuth,
   ApiBadRequestResponse,
+  ApiBody,
+  ApiExtraModels,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
+  getSchemaPath,
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
@@ -38,6 +41,7 @@ import { EngagementsService } from "./engagements.service";
 import { Engagement } from "@prisma/client";
 
 @ApiTags("Engagements")
+@ApiExtraModels(CreateEngagementDto)
 @Controller("engagements")
 export class EngagementsController {
   private readonly privilegedRoles = new Set(
@@ -55,6 +59,23 @@ export class EngagementsController {
     description:
       "Creates a new engagement opportunity. Requires admin, PM, or Task Manager role for user tokens, " +
       "or write:engagements/manage:engagements scope for M2M clients.",
+  })
+  @ApiBody({
+    description:
+      "Create engagement payload. Provide durationWeeks, durationMonths, or durationStartDate + durationEndDate.",
+    schema: {
+      allOf: [
+        { $ref: getSchemaPath(CreateEngagementDto) },
+        {
+          anyOf: [
+            { required: ["durationWeeks"] },
+            { required: ["durationMonths"] },
+            { required: ["durationStartDate", "durationEndDate"] },
+          ],
+        },
+      ],
+    },
+    required: true,
   })
   @ApiResponse({
     status: 201,
@@ -103,25 +124,16 @@ export class EngagementsController {
   }
 
   @Get("active")
-  @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadEngagements)
-  @ApiBearerAuth()
   @ApiOperation({
     summary: "List active engagements",
     description:
-      "Returns active engagements only. Requires read:engagements scope.",
+      "Returns active engagements only. Authentication is optional.",
   })
   @ApiResponse({
     status: 200,
     description: "Active engagements retrieved.",
     type: EngagementResponseDto,
     isArray: true,
-  })
-  @ApiUnauthorizedResponse({
-    description: "Missing or invalid authentication token.",
-  })
-  @ApiForbiddenResponse({
-    description: "Insufficient permissions. Requires read:engagements scope.",
   })
   async findAllActive(): Promise<Engagement[]> {
     return this.engagementsService.findAllActive();
@@ -157,24 +169,15 @@ export class EngagementsController {
   }
 
   @Get(":id")
-  @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadEngagements)
-  @ApiBearerAuth()
   @ApiOperation({
     summary: "Get engagement by ID",
     description:
-      "Retrieves a single engagement by ID. Requires read:engagements scope.",
+      "Retrieves a single engagement by ID. Authentication is optional.",
   })
   @ApiResponse({
     status: 200,
     description: "Engagement retrieved.",
     type: EngagementResponseDto,
-  })
-  @ApiUnauthorizedResponse({
-    description: "Missing or invalid authentication token.",
-  })
-  @ApiForbiddenResponse({
-    description: "Insufficient permissions. Requires read:engagements scope.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   async findOne(@Param("id") id: string): Promise<Engagement> {
