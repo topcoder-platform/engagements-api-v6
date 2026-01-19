@@ -3,7 +3,7 @@ import {
   ApiProperty,
   ApiPropertyOptional,
 } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
@@ -176,10 +176,13 @@ export class CreateEngagementDto {
 
   @ApiPropertyOptional({
     description:
-      "Assigned member ID. For private engagements only. Use assignedMemberIds for multiple members. If both singular and array fields are provided, array fields take precedence.",
+      "Assigned member ID (string or number). For private engagements only. Use assignedMemberIds for multiple members. If both singular and array fields are provided, array fields take precedence.",
     example: "123456",
   })
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "number" ? value.toString() : value,
+  )
   @IsString()
   assignedMemberId?: string;
 
@@ -194,10 +197,17 @@ export class CreateEngagementDto {
 
   @ApiPropertyOptional({
     description:
-      "Array of assigned member IDs. For private engagements only. Creates assignment records for all provided members.",
+      "Array of assigned member IDs (string or number). For private engagements only. Creates assignment records for all provided members.",
     example: ["123456", "789012"],
   })
   @IsOptional()
+  @Transform(({ value }) =>
+    Array.isArray(value)
+      ? value.map((entry) =>
+          typeof entry === "number" ? entry.toString() : entry,
+        )
+      : value,
+  )
   @IsArray()
   @IsString({ each: true })
   assignedMemberIds?: string[];
