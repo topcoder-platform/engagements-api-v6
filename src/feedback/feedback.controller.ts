@@ -23,7 +23,7 @@ import {
 import { Request } from "express";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { Scopes as ScopesDecorator } from "../auth/decorators/scopes.decorator";
-import { Scopes as AppScopes, UserRoles } from "../app-constants";
+import { Scopes as AppScopes, PrivilegedUserRoles } from "../app-constants";
 import { PaginatedResponse } from "../engagements/dto";
 import {
   AnonymousFeedbackDto,
@@ -39,7 +39,7 @@ import { FeedbackService } from "./feedback.service";
 @Controller()
 export class FeedbackController {
   private readonly privilegedRoles = new Set(
-    Object.values(UserRoles).map((role) => role.toLowerCase()),
+    PrivilegedUserRoles.map((role) => role.toLowerCase()),
   );
 
   constructor(private readonly feedbackService: FeedbackService) {}

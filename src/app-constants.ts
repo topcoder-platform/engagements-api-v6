@@ -13,3 +13,23 @@ export const UserRoles = {
   ProjectManager: "Topcoder Project Manager",
   TaskManager: "Topcoder Task Manager",
 };
+
+export const ProjectManagerRoles = [
+  UserRoles.ProjectManager,
+  "Project Manager",
+];
+
+export const TaskManagerRoles = [
+  UserRoles.TaskManager,
+  "Task Manager",
+];
+
+export const ManagerRoles = [
+  ...ProjectManagerRoles,
+  ...TaskManagerRoles,
+];
+
+export const PrivilegedUserRoles = [
+  UserRoles.Admin,
+  ...ManagerRoles,
+];

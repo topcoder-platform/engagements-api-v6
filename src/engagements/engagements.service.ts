@@ -568,7 +568,7 @@ export class EngagementsService {
       data.requiredSkills = payload.requiredSkills;
     }
     if (payload.applicationDeadline !== undefined) {
-      data.applicationDeadline = this.ensureFutureDate(
+      data.applicationDeadline = this.normalizeDate(
         payload.applicationDeadline,
       );
     }

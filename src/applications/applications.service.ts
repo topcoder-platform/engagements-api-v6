@@ -26,7 +26,7 @@ import {
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
 import { ERROR_MESSAGES } from "../common/constants";
-import { UserRoles } from "../app-constants";
+import { ManagerRoles, UserRoles } from "../app-constants";
 import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 
 type MemberAddress = {
@@ -40,6 +40,10 @@ type ApplicationWithEngagement =
   Prisma.EngagementApplicationGetPayload<{
     include: { engagement: true };
   }>;
+
+const MANAGER_ROLE_SET = new Set(
+  ManagerRoles.map((role) => role.toLowerCase()),
+);
 
 @Injectable()
 export class ApplicationsService {
@@ -442,10 +446,8 @@ export class ApplicationsService {
     }
 
     const roles: string[] = authUser.roles ?? [];
-    return roles.some(
-      (role) =>
-        role?.toLowerCase() === UserRoles.ProjectManager.toLowerCase() ||
-        role?.toLowerCase() === UserRoles.TaskManager.toLowerCase(),
+    return roles.some((role) =>
+      MANAGER_ROLE_SET.has(role?.toLowerCase()),
     );
   }
 
