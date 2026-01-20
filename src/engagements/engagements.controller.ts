@@ -32,6 +32,9 @@ import { Scopes as ScopesDecorator } from "../auth/decorators/scopes.decorator";
 import { Scopes as AppScopes, PrivilegedUserRoles } from "../app-constants";
 import {
   CreateEngagementDto,
+  CreateEngagementDurationDatesDto,
+  CreateEngagementDurationMonthsDto,
+  CreateEngagementDurationWeeksDto,
   EngagementQueryDto,
   EngagementResponseDto,
   PaginatedResponse,
@@ -39,9 +42,15 @@ import {
 } from "./dto";
 import { EngagementsService } from "./engagements.service";
 import { Engagement } from "@prisma/client";
+import { getUserRoles } from "../common/user.util";
 
 @ApiTags("Engagements")
-@ApiExtraModels(CreateEngagementDto)
+@ApiExtraModels(
+  CreateEngagementDto,
+  CreateEngagementDurationWeeksDto,
+  CreateEngagementDurationMonthsDto,
+  CreateEngagementDurationDatesDto,
+)
 @Controller("engagements")
 export class EngagementsController {
   private readonly privilegedRoles = new Set(
@@ -66,22 +75,13 @@ export class EngagementsController {
     schema: {
       anyOf: [
         {
-          allOf: [
-            { $ref: getSchemaPath(CreateEngagementDto) },
-            { required: ["durationWeeks"] },
-          ],
+          $ref: getSchemaPath(CreateEngagementDurationWeeksDto),
         },
         {
-          allOf: [
-            { $ref: getSchemaPath(CreateEngagementDto) },
-            { required: ["durationMonths"] },
-          ],
+          $ref: getSchemaPath(CreateEngagementDurationMonthsDto),
         },
         {
-          allOf: [
-            { $ref: getSchemaPath(CreateEngagementDto) },
-            { required: ["durationStartDate", "durationEndDate"] },
-          ],
+          $ref: getSchemaPath(CreateEngagementDurationDatesDto),
         },
       ],
     },
@@ -299,7 +299,7 @@ export class EngagementsController {
       return;
     }
 
-    const roles: string[] = authUser?.roles ?? [];
+    const roles = getUserRoles(authUser);
     const isPrivileged = roles.some((role) =>
       this.privilegedRoles.has(role?.toLowerCase()),
     );

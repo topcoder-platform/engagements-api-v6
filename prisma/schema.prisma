@@ -103,7 +103,7 @@ model EngagementAssignment {
   updatedAt      DateTime           @updatedAt
 
   engagement     Engagement         @relation(fields: [engagementId], references: [id], onDelete: Cascade)
-  feedback       EngagementFeedback?
+  feedback       EngagementFeedback[]
 
   @@unique([engagementId, memberId])
   @@index([engagementId])
@@ -126,6 +126,5 @@ model EngagementFeedback {
   assignment             EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)
 
   @@index([engagementAssignmentId])
-  @@unique([engagementAssignmentId])
   @@index([givenByMemberId])
 }

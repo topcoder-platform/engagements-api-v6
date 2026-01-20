@@ -25,6 +25,7 @@ import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { Scopes as ScopesDecorator } from "../auth/decorators/scopes.decorator";
 import { Scopes as AppScopes, PrivilegedUserRoles } from "../app-constants";
 import { PaginatedResponse } from "../engagements/dto";
+import { getUserRoles } from "../common/user.util";
 import {
   AnonymousFeedbackDto,
   CreateFeedbackDto,
@@ -239,7 +240,7 @@ export class FeedbackController {
       return;
     }
 
-    const roles: string[] = authUser?.roles ?? [];
+    const roles = getUserRoles(authUser);
     const isPrivileged = roles.some((role) =>
       this.privilegedRoles.has(role?.toLowerCase()),
     );

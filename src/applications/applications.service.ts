@@ -26,8 +26,16 @@ import {
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
 import { ERROR_MESSAGES } from "../common/constants";
-import { ManagerRoles, UserRoles } from "../app-constants";
-import { getUserIdentifier, normalizeUserId } from "../common/user.util";
+import {
+  ProjectManagerRoles,
+  TaskManagerRoles,
+  UserRoles,
+} from "../app-constants";
+import {
+  getUserIdentifier,
+  getUserRoles,
+  normalizeUserId,
+} from "../common/user.util";
 
 type MemberAddress = {
   streetAddr1?: string | null;
@@ -41,8 +49,12 @@ type ApplicationWithEngagement =
     include: { engagement: true };
   }>;
 
-const MANAGER_ROLE_SET = new Set(
-  ManagerRoles.map((role) => role.toLowerCase()),
+const PROJECT_MANAGER_ROLE_SET = new Set(
+  ProjectManagerRoles.map((role) => role.toLowerCase()),
+);
+
+const TASK_MANAGER_ROLE_SET = new Set(
+  TaskManagerRoles.map((role) => role.toLowerCase()),
 );
 
 @Injectable()
@@ -436,7 +448,9 @@ export class ApplicationsService {
       return true;
     }
 
-    return this.isProjectManager(authUser);
+    return (
+      this.isProjectManager(authUser) || this.isTaskManager(authUser)
+    );
   }
 
   private isAdmin(authUser?: Record<string, any>): boolean {
@@ -448,7 +462,7 @@ export class ApplicationsService {
       return true;
     }
 
-    const roles: string[] = authUser.roles ?? [];
+    const roles = getUserRoles(authUser);
     return roles.some(
       (role) => role?.toLowerCase() === UserRoles.Admin.toLowerCase(),
     );
@@ -459,9 +473,20 @@ export class ApplicationsService {
       return false;
     }
 
-    const roles: string[] = authUser.roles ?? [];
+    const roles = getUserRoles(authUser);
     return roles.some((role) =>
-      MANAGER_ROLE_SET.has(role?.toLowerCase()),
+      PROJECT_MANAGER_ROLE_SET.has(role?.toLowerCase()),
+    );
+  }
+
+  private isTaskManager(authUser?: Record<string, any>): boolean {
+    if (!authUser) {
+      return false;
+    }
+
+    const roles = getUserRoles(authUser);
+    return roles.some((role) =>
+      TASK_MANAGER_ROLE_SET.has(role?.toLowerCase()),
     );
   }
 
@@ -469,7 +494,11 @@ export class ApplicationsService {
     engagement: ApplicationWithEngagement["engagement"],
     authUser?: Record<string, any>,
   ): void {
-    if (!authUser || this.isAdmin(authUser)) {
+    if (
+      !authUser ||
+      this.isAdmin(authUser) ||
+      this.isTaskManager(authUser)
+    ) {
       return;
     }
 

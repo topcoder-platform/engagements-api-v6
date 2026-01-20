@@ -2,6 +2,7 @@ import {
   ApiHideProperty,
   ApiProperty,
   ApiPropertyOptional,
+  OmitType,
 } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import {
@@ -229,4 +230,55 @@ export class CreateEngagementDto {
   @ApiHideProperty()
   @HasDuration()
   durationValidation?: boolean;
+}
+
+export class CreateEngagementDurationWeeksDto extends OmitType(
+  CreateEngagementDto,
+  ["durationWeeks"] as const,
+) {
+  @ApiProperty({
+    description:
+      "Duration in weeks. Required if durationMonths and durationStartDate/durationEndDate are not provided.",
+    example: 8,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  durationWeeks: number;
+}
+
+export class CreateEngagementDurationMonthsDto extends OmitType(
+  CreateEngagementDto,
+  ["durationMonths"] as const,
+) {
+  @ApiProperty({
+    description:
+      "Duration in months. Required if durationWeeks and durationStartDate/durationEndDate are not provided.",
+    example: 2,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  durationMonths: number;
+}
+
+export class CreateEngagementDurationDatesDto extends OmitType(
+  CreateEngagementDto,
+  ["durationStartDate", "durationEndDate"] as const,
+) {
+  @ApiProperty({
+    description:
+      "Duration start date. Required with durationEndDate when durationWeeks/durationMonths are not provided.",
+    example: "2025-01-01T00:00:00.000Z",
+  })
+  @IsDateString()
+  durationStartDate: string;
+
+  @ApiProperty({
+    description:
+      "Duration end date. Required with durationStartDate when durationWeeks/durationMonths are not provided.",
+    example: "2025-03-01T00:00:00.000Z",
+  })
+  @IsDateString()
+  durationEndDate: string;
 }

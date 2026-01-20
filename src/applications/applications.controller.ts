@@ -34,6 +34,7 @@ import {
 import { ApplicationsService } from "./applications.service";
 import { ApplicationStatus, EngagementApplication } from "@prisma/client";
 import { PaginatedResponse } from "../engagements/dto";
+import { getUserRoles } from "../common/user.util";
 
 @ApiTags("Applications")
 @Controller()
@@ -222,7 +223,7 @@ export class ApplicationsController {
       return;
     }
 
-    const roles: string[] = authUser?.roles ?? [];
+    const roles = getUserRoles(authUser);
     const isPrivileged = roles.some((role) =>
       this.privilegedRoles.has(role?.toLowerCase()),
     );

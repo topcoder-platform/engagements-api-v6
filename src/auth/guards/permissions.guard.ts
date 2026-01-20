@@ -8,6 +8,7 @@ import {
 import { Reflector } from "@nestjs/core";
 import { SCOPES_KEY } from "../decorators/scopes.decorator";
 import { PrivilegedUserRoles } from "../../app-constants";
+import { getUserRoles } from "../../common/user.util";
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -39,7 +40,7 @@ export class PermissionsGuard implements CanActivate {
         return true;
       }
     } else {
-      const roles: string[] = authUser.roles ?? [];
+      const roles = getUserRoles(authUser);
       if (this.isAdmin(roles)) {
         return true;
       }

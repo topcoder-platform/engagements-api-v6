@@ -1,4 +1,4 @@
-import { getUserIdentifier } from "./user.util";
+import { getUserIdentifier, getUserRoles } from "./user.util";
 
 describe("getUserIdentifier", () => {
   it("returns system for M2M tokens", () => {
@@ -23,5 +23,34 @@ describe("getUserIdentifier", () => {
     expect(
       getUserIdentifier({ isMachine: false, userId: Number.NaN }),
     ).toBe("system");
+  });
+});
+
+describe("getUserRoles", () => {
+  it("returns empty array when authUser is missing", () => {
+    expect(getUserRoles()).toEqual([]);
+  });
+
+  it("returns roles from roles array", () => {
+    expect(
+      getUserRoles({
+        roles: ["Administrator", "  Task Manager  ", 123],
+      }),
+    ).toEqual(["Administrator", "Task Manager"]);
+  });
+
+  it("returns roles from role string", () => {
+    expect(
+      getUserRoles({ role: "Administrator, Task Manager" }),
+    ).toEqual(["Administrator", "Task Manager"]);
+  });
+
+  it("merges roles from roles and role fields", () => {
+    expect(
+      getUserRoles({
+        roles: ["Administrator"],
+        role: "Task Manager",
+      }),
+    ).toEqual(["Administrator", "Task Manager"]);
   });
 });

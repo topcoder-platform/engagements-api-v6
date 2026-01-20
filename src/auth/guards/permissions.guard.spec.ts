@@ -98,6 +98,16 @@ describe("PermissionsGuard", () => {
       expect(guard.canActivate(context)).toBe(true);
     });
 
+    it("allows access when user has Task Manager role", () => {
+      setRequiredScopes(["write:engagements"]);
+      const context = makeContext({
+        isMachine: false,
+        role: UserRoles.TaskManager,
+      });
+
+      expect(guard.canActivate(context)).toBe(true);
+    });
+
     it("allows access when user has required scope", () => {
       setRequiredScopes(["read:engagements"]);
       const context = makeContext({
