@@ -21,4 +21,7 @@ export const ERROR_MESSAGES = {
     "The feedback link has expired. Please request a new link.",
   FeedbackTokenInvalid:
     "Invalid feedback link. Please check the URL or request a new link.",
+  MemberExperienceNotFound: "Member experience record not found",
+  UnauthorizedExperienceAccess:
+    "You do not have permission to access this experience record",
 };

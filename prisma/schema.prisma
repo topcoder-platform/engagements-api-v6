@@ -104,6 +104,7 @@ model EngagementAssignment {
 
   engagement     Engagement         @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   feedback       EngagementFeedback[]
+  memberExperiences  MemberExperience[]
 
   @@unique([engagementId, memberId])
   @@index([engagementId])
@@ -127,4 +128,16 @@ model EngagementFeedback {
 
   @@index([engagementAssignmentId])
   @@index([givenByMemberId])
+}
+
+model MemberExperience {
+  id                     String               @id @default(uuid())
+  engagementAssignmentId String
+  experienceText         String
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  assignment             EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)
+
+  @@index([engagementAssignmentId])
 }

@@ -7,6 +7,7 @@ import { EngagementsModule } from "./engagements/engagements.module";
 import { ApplicationsModule } from "./applications/applications.module";
 import { IntegrationsModule } from "./integrations/integrations.module";
 import { FeedbackModule } from "./feedback/feedback.module";
+import { MemberExperienceModule } from "./member-experience/member-experience.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { FeedbackModule } from "./feedback/feedback.module";
     EngagementsModule,
     ApplicationsModule,
     FeedbackModule,
+    MemberExperienceModule,
     HealthModule,
   ],
 })
