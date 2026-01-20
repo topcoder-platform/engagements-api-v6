@@ -60,7 +60,7 @@ This API uses JWT authentication for user requests and supports M2M tokens for s
 
 ## Security & Authorization
 
-The API supports both user JWTs and machine-to-machine (M2M) tokens. User tokens are evaluated for roles and scopes, while M2M tokens rely on scopes. Administrators, Topcoder Project Managers, and Topcoder Task Managers have elevated privileges for management operations.
+The API supports both user JWTs and machine-to-machine (M2M) tokens. User tokens are evaluated for roles and scopes, while M2M tokens rely on scopes. Administrators, Topcoder Project Managers, Topcoder Task Managers, and Topcoder Talent Managers have elevated privileges for management operations.
 
 | Scope | Description | Endpoints |
 | --- | --- | --- |
@@ -76,6 +76,6 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 
 ## Role-Based Access
 
-- Administrators, Topcoder Project Managers, and Topcoder Task Managers can bypass scope checks for most management operations.
+- Administrators, Topcoder Project Managers, Topcoder Task Managers, and Topcoder Talent Managers can bypass scope checks for most management operations.
 - Regular members can view engagements and manage their own applications.
-- Project Managers can view and update application statuses for engagements they created, while Task Managers can do so across engagements.
+- Project Managers can view and update application statuses for engagements they created, while Task Managers and Talent Managers can do so across engagements.

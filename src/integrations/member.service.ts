@@ -72,6 +72,43 @@ export class MemberService {
     };
   }
 
+  async getMemberEmailsByUserIds(
+    userIds: string[],
+  ): Promise<Map<string, string>> {
+    const normalizedUserIds = Array.from(
+      new Set(
+        userIds
+          .map((userId) => userId?.trim())
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
+    );
+
+    if (!normalizedUserIds.length) {
+      return new Map();
+    }
+
+    const members = await this.fetchMembersByUserIds(
+      normalizedUserIds,
+      "userId,email",
+    );
+    const emailByUserId = new Map<string, string>();
+
+    members.forEach((member) => {
+      if (member.userId === undefined || member.userId === null) {
+        return;
+      }
+
+      const email = member.email ?? "";
+      if (!email) {
+        return;
+      }
+
+      emailByUserId.set(String(member.userId), email);
+    });
+
+    return emailByUserId;
+  }
+
   async getMemberHandleByUserId(userId: string): Promise<string | null> {
     const members = await this.fetchMembers(userId, "handle");
     const member = members[0];
@@ -229,6 +266,63 @@ export class MemberService {
           status: error.response?.status,
           data: error.response?.data,
           userId,
+        });
+        throw error;
+      }
+
+      this.logger.error("Member lookup failed.", error);
+      throw error;
+    }
+  }
+
+  private async fetchMembersByUserIds(
+    userIds: string[],
+    fields?: string,
+    token?: string,
+  ): Promise<MemberRecord[]> {
+    const normalizedUserIds = Array.from(
+      new Set(
+        userIds
+          .map((userId) => userId?.trim())
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
+    );
+
+    if (!normalizedUserIds.length) {
+      return [];
+    }
+
+    if (normalizedUserIds.length === 1) {
+      return this.fetchMembers(normalizedUserIds[0], fields, token);
+    }
+
+    const baseUrl = this.getMemberApiBaseUrl();
+    const authToken = token ?? (await this.getM2MToken());
+    const query = normalizedUserIds
+      .map((userId) => `userIds=${encodeURIComponent(userId)}`)
+      .join("&");
+    const fieldsQuery = fields
+      ? `&fields=${encodeURIComponent(fields)}`
+      : "";
+    const url = `${baseUrl}?${query}${fieldsQuery}&perPage=${normalizedUserIds.length}`;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }),
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return [];
+        }
+
+        this.logger.error("Member lookup failed.", {
+          status: error.response?.status,
+          data: error.response?.data,
+          userIds: normalizedUserIds,
         });
         throw error;
       }

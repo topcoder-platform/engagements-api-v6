@@ -14,9 +14,11 @@ import {
 } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { DbService } from "../db/db.service";
+import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
 import { ProjectService } from "../integrations/project.service";
 import { SkillsService } from "../integrations/skills.service";
+import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
 import {
   CreateEngagementDto,
   ENGAGEMENT_SORT_FIELDS,
@@ -28,6 +30,8 @@ import {
 import { ERROR_MESSAGES } from "../common/constants";
 import { getUserIdentifier } from "../common/user.util";
 
+const USER_ID_PATTERN = /^\d+$/;
+
 @Injectable()
 export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
@@ -37,6 +41,7 @@ export class EngagementsService {
     private readonly projectService: ProjectService,
     private readonly skillsService: SkillsService,
     private readonly memberService: MemberService,
+    private readonly eventBusService: EventBusService,
   ) {}
 
   async create(
@@ -118,62 +123,124 @@ export class EngagementsService {
       }
     }
 
-    return this.db.$transaction(async (tx) => {
-      const engagement = await tx.engagement.create({
-        data: {
-          id: nanoid(),
-          ...payload,
-          durationStartDate: this.normalizeDate(payload.durationStartDate),
-          durationEndDate: this.normalizeDate(payload.durationEndDate),
-          applicationDeadline,
-          createdBy: userIdentifier,
-        },
-      });
-
-      if (createDto.isPrivate && assignmentDetailsList.length > 0) {
-        await Promise.all(
-          assignmentDetailsList.map((details) =>
-            tx.engagementAssignment.create({
-              data: {
-                id: nanoid(),
-                engagementId: engagement.id,
-                memberId: details.memberId,
-                memberHandle: details.memberHandle,
-              },
-            }),
-          ),
-        );
-
-        const assignmentCount = await tx.engagementAssignment.count({
-          where: { engagementId: engagement.id },
+    const engagementWithAssignments = await this.db.$transaction(
+      async (tx) => {
+        const engagement = await tx.engagement.create({
+          data: {
+            id: nanoid(),
+            ...payload,
+            durationStartDate: this.normalizeDate(payload.durationStartDate),
+            durationEndDate: this.normalizeDate(payload.durationEndDate),
+            applicationDeadline,
+            createdBy: userIdentifier,
+          },
         });
 
-        if (!assignmentCount) {
-          throw new BadRequestException(
-            "Private engagements must have at least one assigned member",
+        if (createDto.isPrivate && assignmentDetailsList.length > 0) {
+          await Promise.all(
+            assignmentDetailsList.map((details) =>
+              tx.engagementAssignment.create({
+                data: {
+                  id: nanoid(),
+                  engagementId: engagement.id,
+                  memberId: details.memberId,
+                  memberHandle: details.memberHandle,
+                },
+              }),
+            ),
           );
+
+          const assignmentCount = await tx.engagementAssignment.count({
+            where: { engagementId: engagement.id },
+          });
+
+          if (!assignmentCount) {
+            throw new BadRequestException(
+              "Private engagements must have at least one assigned member",
+            );
+          }
+
+          if (
+            payload.requiredMemberCount !== undefined &&
+            assignmentCount > payload.requiredMemberCount
+          ) {
+            throw new BadRequestException(
+              "Assigned member count exceeds required member count.",
+            );
+          }
         }
 
-        if (
-          payload.requiredMemberCount !== undefined &&
-          assignmentCount > payload.requiredMemberCount
-        ) {
-          throw new BadRequestException(
-            "Assigned member count exceeds required member count.",
-          );
+        const createdEngagementWithAssignments =
+          await tx.engagement.findUnique({
+            where: { id: engagement.id },
+            include: { assignments: true },
+          });
+
+        if (!createdEngagementWithAssignments) {
+          throw new NotFoundException("Engagement not found.");
         }
+
+        return createdEngagementWithAssignments;
+      },
+    );
+
+    await this.emitMemberAssignedEvents(engagementWithAssignments);
+
+    const engagementWithFields =
+      this.applyAssignmentFields(engagementWithAssignments);
+    const [hydrated] =
+      await this.hydrateCreatorEmails([engagementWithFields]);
+    return hydrated ?? {
+      ...engagementWithFields,
+      createdByEmail: null,
+    };
+  }
+
+  private async emitMemberAssignedEvents(
+    engagement: Engagement & { assignments?: EngagementAssignment[] },
+  ): Promise<void> {
+    if (!engagement.isPrivate || !engagement.assignments?.length) {
+      return;
+    }
+
+    const skills = engagement.requiredSkills.map((skillId) => ({
+      id: skillId,
+    }));
+    const assignments = engagement.assignments;
+
+    const results = await Promise.allSettled(
+      assignments.map((assignment) => {
+        const payload: EngagementMemberAssignedPayload = {
+          engagementId: engagement.id,
+          assignmentId: assignment.id,
+          memberId: Number(assignment.memberId),
+          memberHandle: assignment.memberHandle,
+          skills,
+        };
+
+        return this.eventBusService.postEvent(
+          "engagement.member.assigned",
+          payload,
+        );
+      }),
+    );
+
+    results.forEach((result, index) => {
+      const assignment = assignments[index];
+      if (result.status === "fulfilled") {
+        this.logger.log(
+          `Emitted engagement.member.assigned event for engagement ${engagement.id} (assignment ${assignment.id})`,
+        );
+        return;
       }
 
-      const engagementWithAssignments = await tx.engagement.findUnique({
-        where: { id: engagement.id },
-        include: { assignments: true },
-      });
-
-      if (!engagementWithAssignments) {
-        throw new NotFoundException("Engagement not found.");
-      }
-
-      return this.applyAssignmentFields(engagementWithAssignments);
+      const message =
+        result.reason instanceof Error
+          ? result.reason.message
+          : "unknown error";
+      this.logger.error(
+        `Failed to emit engagement.member.assigned event for engagement ${engagement.id} (assignment ${assignment.id}): ${message}`,
+      );
     });
   }
 
@@ -277,9 +344,11 @@ export class EngagementsService {
         applicationsCount: _count.applications,
       }),
     );
+    const hydratedEngagements =
+      await this.hydrateCreatorEmails(engagements);
 
     return {
-      data: engagements,
+      data: hydratedEngagements,
       meta: {
         page,
         perPage,
@@ -392,9 +461,11 @@ export class EngagementsService {
         applicationsCount: _count.applications,
       }),
     );
+    const hydratedEngagements =
+      await this.hydrateCreatorEmails(engagements);
 
     return {
-      data: engagements,
+      data: hydratedEngagements,
       meta: {
         page,
         perPage,
@@ -404,7 +475,10 @@ export class EngagementsService {
     };
   }
 
-  async findOne(id: string): Promise<Engagement> {
+  async findOne(
+    id: string,
+    options: { includeCreatorEmail?: boolean } = {},
+  ): Promise<Engagement> {
     const engagement = await this.db.engagement.findUnique({
       where: { id },
       include: { assignments: true },
@@ -418,7 +492,7 @@ export class EngagementsService {
     const engagementWithAssignments =
       this.applyAssignmentFields(engagement);
 
-    return {
+    const normalizedEngagement = {
       ...engagementWithAssignments,
       role: engagementWithAssignments.role
         ? (engagementWithAssignments.role.toString() as Role)
@@ -428,6 +502,17 @@ export class EngagementsService {
         : null,
       compensationRange:
         engagementWithAssignments.compensationRange ?? null,
+    };
+
+    if (!options.includeCreatorEmail) {
+      return normalizedEngagement;
+    }
+
+    const [hydrated] =
+      await this.hydrateCreatorEmails([normalizedEngagement]);
+    return hydrated ?? {
+      ...normalizedEngagement,
+      createdByEmail: null,
     };
   }
 
@@ -694,7 +779,14 @@ export class EngagementsService {
       });
     });
 
-    return this.applyAssignmentFields(updatedEngagement);
+    const engagementWithFields =
+      this.applyAssignmentFields(updatedEngagement);
+    const [hydrated] =
+      await this.hydrateCreatorEmails([engagementWithFields]);
+    return hydrated ?? {
+      ...engagementWithFields,
+      createdByEmail: null,
+    };
   }
 
   async remove(id: string): Promise<void> {
@@ -758,9 +850,11 @@ export class EngagementsService {
       include: { assignments: true },
     });
 
-    return engagements.map((engagement) =>
+    const engagementsWithFields = engagements.map((engagement) =>
       this.applyAssignmentFields(engagement),
     );
+
+    return this.hydrateCreatorEmails(engagementsWithFields);
   }
 
   private async resolveAssignmentDetails(
@@ -935,6 +1029,69 @@ export class EngagementsService {
         (assignment) => assignment.memberHandle,
       ),
     };
+  }
+
+  private normalizeCreatorUserId(value?: string | null): string | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    const normalized = value.trim();
+    if (!normalized || !USER_ID_PATTERN.test(normalized)) {
+      return undefined;
+    }
+
+    return normalized;
+  }
+
+  private async hydrateCreatorEmails<T extends Engagement>(
+    engagements: T[],
+  ): Promise<Array<T & { createdByEmail: string | null }>> {
+    if (!engagements.length) {
+      return engagements as Array<T & { createdByEmail: string | null }>;
+    }
+
+    const userIds = Array.from(
+      new Set(
+        engagements
+          .map((engagement) =>
+            this.normalizeCreatorUserId(engagement.createdBy),
+          )
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    let emailByUserId = new Map<string, string>();
+    if (userIds.length) {
+      try {
+        emailByUserId =
+          await this.memberService.getMemberEmailsByUserIds(userIds);
+      } catch (error) {
+        this.logger.warn(
+          "Failed to hydrate engagement creator emails.",
+          {
+            error: error instanceof Error ? error.message : error,
+          },
+        );
+      }
+    }
+
+    return engagements.map((engagement) => {
+      const existingEmail = (
+        engagement as { createdByEmail?: string | null }
+      ).createdByEmail;
+      if (typeof existingEmail === "string" && existingEmail.trim()) {
+        return { ...engagement, createdByEmail: existingEmail };
+      }
+
+      const normalizedCreatedBy =
+        this.normalizeCreatorUserId(engagement.createdBy);
+      const createdByEmail = normalizedCreatedBy
+        ? emailByUserId.get(normalizedCreatedBy) ?? null
+        : null;
+
+      return { ...engagement, createdByEmail };
+    });
   }
 
   private assertNonBlankField(value: unknown, fieldName: string): void {

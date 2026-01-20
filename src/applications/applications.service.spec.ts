@@ -169,6 +169,69 @@ describe("ApplicationsService", () => {
     expect(txEngagementUpdate).not.toHaveBeenCalled();
   });
 
+  it("emits engagement.member.assigned when accepting an application", async () => {
+    const application = {
+      id: "app-1",
+      engagementId: "eng-1",
+      userId: "123",
+      status: ApplicationStatus.SUBMITTED,
+    };
+    const engagement = {
+      id: "eng-1",
+      requiredMemberCount: 3,
+      requiredSkills: ["skill-1"],
+    };
+    const updatedEngagement = {
+      ...engagement,
+      assignments: [],
+    };
+    const tx = {
+      engagement: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValueOnce(engagement)
+          .mockResolvedValueOnce(updatedEngagement),
+        update: jest.fn(),
+      },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        count: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockResolvedValue({ id: "assign-1" }),
+      },
+    };
+
+    jest
+      .spyOn(service, "findOne")
+      .mockResolvedValue(application as any);
+    memberService.getMemberHandleByUserId.mockResolvedValue(
+      "member-handle",
+    );
+    db.$transaction.mockImplementation(async (callback) =>
+      callback(tx),
+    );
+    db.engagementApplication.update.mockResolvedValue({
+      ...application,
+      status: ApplicationStatus.ACCEPTED,
+    });
+
+    await service.updateStatus(
+      "app-1",
+      ApplicationStatus.ACCEPTED,
+      { userId: "manager-1" },
+    );
+
+    expect(eventBusService.postEvent).toHaveBeenCalledWith(
+      "engagement.member.assigned",
+      {
+        engagementId: "eng-1",
+        assignmentId: "assign-1",
+        memberId: 123,
+        memberHandle: "member-handle",
+        skills: [{ id: "skill-1" }],
+      },
+    );
+  });
+
   it("removes assignment when accepted application is moved to submitted", async () => {
     const application = {
       id: "app-1",

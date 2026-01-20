@@ -28,6 +28,7 @@ import { PaginatedResponse } from "../engagements/dto";
 import { ERROR_MESSAGES } from "../common/constants";
 import {
   ProjectManagerRoles,
+  TalentManagerRoles,
   TaskManagerRoles,
   UserRoles,
 } from "../app-constants";
@@ -54,7 +55,9 @@ const PROJECT_MANAGER_ROLE_SET = new Set(
 );
 
 const TASK_MANAGER_ROLE_SET = new Set(
-  TaskManagerRoles.map((role) => role.toLowerCase()),
+  [...TaskManagerRoles, ...TalentManagerRoles].map((role) =>
+    role.toLowerCase(),
+  ),
 );
 
 @Injectable()
@@ -274,9 +277,9 @@ export class ApplicationsService {
     const wasAccepted =
       application.status === ApplicationStatus.ACCEPTED;
 
-    if (status === ApplicationStatus.ACCEPTED) {
+    if (status === ApplicationStatus.ACCEPTED && !wasAccepted) {
       await this.handleMemberAssignment(application, authUser);
-    } else if (wasAccepted) {
+    } else if (wasAccepted && status !== ApplicationStatus.ACCEPTED) {
       await this.handleMemberUnassignment(application);
     }
 
@@ -325,7 +328,12 @@ export class ApplicationsService {
         this.logger.debug(
           `Member ${memberId} already assigned to engagement ${engagementId}`,
         );
-        return { assigned: false, engagement };
+        return {
+          assigned: false,
+          engagement,
+          assignmentId: existingAssignment.id,
+          memberHandle: existingAssignment.memberHandle,
+        };
       }
 
       const assignmentCount = await tx.engagementAssignment.count({
@@ -364,24 +372,30 @@ export class ApplicationsService {
         assigned: true,
         engagement: updatedEngagement,
         assignmentId: assignment.id,
+        memberHandle: resolvedMemberHandle,
       };
     });
 
-    if (!assignmentResult.assigned) {
+    if (!assignmentResult.assignmentId) {
       return;
     }
 
-    const { engagement, assignmentId } = assignmentResult;
+    const { engagement, assignmentId, assigned } = assignmentResult;
+    const payloadMemberHandle =
+      assignmentResult.memberHandle?.trim() ||
+      resolvedMemberHandle;
 
     this.logger.log(
-      `Assigned member ${application.userId} to engagement ${engagement.id}`,
+      assigned
+        ? `Assigned member ${application.userId} to engagement ${engagement.id}`
+        : `Member ${application.userId} already assigned to engagement ${engagement.id}; emitting assignment event`,
     );
 
     const payload: EngagementMemberAssignedPayload = {
       engagementId: engagement.id,
       assignmentId,
       memberId: Number(application.userId),
-      memberHandle: resolvedMemberHandle,
+      memberHandle: payloadMemberHandle,
       skills: engagement.requiredSkills.map((skillId) => ({
         id: skillId,
       })),

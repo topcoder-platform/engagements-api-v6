@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Post,
@@ -20,7 +21,6 @@ import {
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
-import { Scopes as ScopesDecorator } from "../auth/decorators/scopes.decorator";
 import { Scopes as AppScopes } from "../app-constants";
 import {
   CreateMemberExperienceDto,
@@ -38,12 +38,11 @@ export class MemberExperienceController {
 
   @Post(":engagementId/assignments/:assignmentId/experiences")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.WriteMemberExperience)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Create member experience",
     description:
-      "Creates a member experience entry for an assignment. Only assigned members can create experiences.",
+      "Creates a member experience entry for an assignment. Only assigned members can create experiences; M2M clients require write:member-experience scope.",
   })
   @ApiResponse({
     status: 201,
@@ -58,7 +57,7 @@ export class MemberExperienceController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires write:member-experience scope.",
+      "Insufficient permissions. Requires write:member-experience scope for M2M clients.",
   })
   @ApiNotFoundResponse({
     description: "Engagement assignment not found.",
@@ -69,6 +68,10 @@ export class MemberExperienceController {
     @Body() createDto: CreateMemberExperienceDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto> {
+    this.assertMachineScope(
+      req.authUser,
+      AppScopes.WriteMemberExperience,
+    );
     return this.memberExperienceService.create(
       engagementId,
       assignmentId,
@@ -79,12 +82,11 @@ export class MemberExperienceController {
 
   @Put(":engagementId/assignments/:assignmentId/experiences/:experienceId")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.WriteMemberExperience)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Update member experience",
     description:
-      "Updates a member experience entry. Only the assigned member can update their own experiences.",
+      "Updates a member experience entry. Only the assigned member can update their own experiences; M2M clients require write:member-experience scope.",
   })
   @ApiResponse({
     status: 200,
@@ -99,7 +101,7 @@ export class MemberExperienceController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires write:member-experience scope.",
+      "Insufficient permissions. Requires write:member-experience scope for M2M clients.",
   })
   @ApiNotFoundResponse({
     description: "Member experience record not found.",
@@ -111,6 +113,10 @@ export class MemberExperienceController {
     @Body() updateDto: UpdateMemberExperienceDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto> {
+    this.assertMachineScope(
+      req.authUser,
+      AppScopes.WriteMemberExperience,
+    );
     return this.memberExperienceService.update(
       engagementId,
       assignmentId,
@@ -122,12 +128,11 @@ export class MemberExperienceController {
 
   @Get(":engagementId/assignments/:assignmentId/experiences")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadMemberExperience)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "List member experiences",
     description:
-      "Lists all member experiences for an assignment. Access is limited to the assigned member or privileged users.",
+      "Lists all member experiences for an assignment. Access is limited to the assigned member or privileged users; M2M clients require read:member-experience scope.",
   })
   @ApiResponse({
     status: 200,
@@ -140,7 +145,7 @@ export class MemberExperienceController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires read:member-experience scope.",
+      "Insufficient permissions. Requires read:member-experience scope for M2M clients.",
   })
   @ApiNotFoundResponse({
     description: "Engagement assignment not found.",
@@ -150,6 +155,10 @@ export class MemberExperienceController {
     @Param("assignmentId") assignmentId: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto[]> {
+    this.assertMachineScope(
+      req.authUser,
+      AppScopes.ReadMemberExperience,
+    );
     return this.memberExperienceService.findByAssignment(
       engagementId,
       assignmentId,
@@ -159,12 +168,11 @@ export class MemberExperienceController {
 
   @Get("experiences/:experienceId")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadMemberExperience)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Get member experience",
     description:
-      "Retrieves a member experience by ID. Access is limited to the assigned member or privileged users.",
+      "Retrieves a member experience by ID. Access is limited to the assigned member or privileged users; M2M clients require read:member-experience scope.",
   })
   @ApiResponse({
     status: 200,
@@ -176,7 +184,7 @@ export class MemberExperienceController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires read:member-experience scope.",
+      "Insufficient permissions. Requires read:member-experience scope for M2M clients.",
   })
   @ApiNotFoundResponse({
     description: "Member experience record not found.",
@@ -185,9 +193,31 @@ export class MemberExperienceController {
     @Param("experienceId") experienceId: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto> {
+    this.assertMachineScope(
+      req.authUser,
+      AppScopes.ReadMemberExperience,
+    );
     return this.memberExperienceService.findOne(
       experienceId,
       req.authUser ?? {},
     );
+  }
+
+  private assertMachineScope(
+    authUser: Record<string, any> | undefined,
+    requiredScope: string,
+  ) {
+    if (!authUser?.isMachine) {
+      return;
+    }
+
+    const scopes: string[] = authUser.scopes ?? [];
+    const normalizedScopes = scopes.map((scope) => scope?.toLowerCase());
+
+    if (!normalizedScopes.includes(requiredScope.toLowerCase())) {
+      throw new ForbiddenException(
+        "You do not have the required permissions to access this resource.",
+      );
+    }
   }
 }

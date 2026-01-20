@@ -15,7 +15,9 @@ describe("EngagementsService", () => {
   let memberService: {
     getMemberHandleByUserId: jest.Mock;
     getMemberUserIdByHandle: jest.Mock;
+    getMemberEmailsByUserIds: jest.Mock;
   };
+  let eventBusService: { postEvent: jest.Mock };
 
   const createDto = {
     projectId: "project-1",
@@ -47,12 +49,17 @@ describe("EngagementsService", () => {
     memberService = {
       getMemberHandleByUserId: jest.fn(),
       getMemberUserIdByHandle: jest.fn(),
+      getMemberEmailsByUserIds: jest.fn().mockResolvedValue(new Map()),
+    };
+    eventBusService = {
+      postEvent: jest.fn().mockResolvedValue(undefined),
     };
     service = new EngagementsService(
       db as any,
       projectService as any,
       skillsService as any,
       memberService as any,
+      eventBusService as any,
     );
   });
 

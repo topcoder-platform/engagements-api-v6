@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { EngagementResponseDto } from "../../engagements/dto";
 
 export class FeedbackResponseDto {
   @ApiProperty({
@@ -55,10 +54,4 @@ export class FeedbackResponseDto {
     example: "2025-01-10T12:00:00.000Z",
   })
   updatedAt: Date;
-
-  @ApiPropertyOptional({
-    description: "Engagement details",
-    type: EngagementResponseDto,
-  })
-  engagement?: EngagementResponseDto;
 }

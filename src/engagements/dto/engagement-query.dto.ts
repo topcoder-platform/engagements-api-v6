@@ -81,7 +81,7 @@ export class EngagementQueryDto extends PaginationDto {
 
   @ApiPropertyOptional({
     description:
-      "Include private engagements (requires admin, PM, or Task Manager role)",
+      "Include private engagements (requires admin, PM, Task Manager, or Talent Manager role)",
     default: false,
   })
   @IsOptional()

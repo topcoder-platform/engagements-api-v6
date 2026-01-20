@@ -95,6 +95,12 @@ export class EngagementResponseDto {
   })
   createdBy: string;
 
+  @ApiPropertyOptional({
+    description: "Created by user email",
+    example: "jane_doe@example.com",
+  })
+  createdByEmail?: string | null;
+
   @ApiProperty({
     description: "Updated timestamp",
     example: "2025-01-10T12:00:00.000Z",

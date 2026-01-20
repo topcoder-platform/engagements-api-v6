@@ -97,7 +97,7 @@ export class FeedbackController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role or write:feedback scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:feedback scope.",
   })
   @ApiNotFoundResponse({
     description: "Engagement not found.",
@@ -137,7 +137,7 @@ export class FeedbackController {
   @ApiOperation({
     summary: "Create feedback for an assignment",
     description:
-      "Creates feedback for an assignment. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Creates feedback for an assignment. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
       "or write:feedback scope for M2M clients.",
   })
   @ApiResponse({
@@ -153,7 +153,7 @@ export class FeedbackController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role or write:feedback scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:feedback scope.",
   })
   @ApiNotFoundResponse({
     description: "Engagement not found.",
@@ -221,7 +221,7 @@ export class FeedbackController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role for user tokens or read:feedback scope for M2M clients.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role for user tokens or read:feedback scope for M2M clients.",
   })
   async findByAssignment(
     @Param("engagementId") engagementId: string,

@@ -147,7 +147,7 @@ export class ApplicationsController {
   @ApiOperation({
     summary: "List applications for an engagement",
     description:
-      "Lists all applications for a specific engagement. Requires admin, PM, or Task Manager role for user tokens " +
+      "Lists all applications for a specific engagement. Requires admin, PM, Task Manager, or Talent Manager role for user tokens " +
       "or read:applications scope for M2M clients.",
   })
   @ApiResponse({
@@ -161,7 +161,7 @@ export class ApplicationsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role for user tokens or read:applications scope for M2M clients.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role for user tokens or read:applications scope for M2M clients.",
   })
   async findByEngagement(
     @Param("engagementId") engagementId: string,
@@ -181,7 +181,7 @@ export class ApplicationsController {
   @ApiOperation({
     summary: "Update application status",
     description:
-      "Updates the status for an application. Status is required in the request body. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Updates the status for an application. Status is required in the request body. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
       "or write:applications scope for M2M clients.",
   })
   @ApiBody({
@@ -202,7 +202,7 @@ export class ApplicationsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role or write:applications scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:applications scope.",
   })
   @ApiNotFoundResponse({ description: "Application not found." })
   async updateStatus(

@@ -66,7 +66,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Create a new engagement",
     description:
-      "Creates a new engagement opportunity. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Creates a new engagement opportunity. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
       "or write:engagements/manage:engagements scope for M2M clients.",
   })
   @ApiBody({
@@ -100,7 +100,7 @@ export class EngagementsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role or write:engagements/manage:engagements scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:engagements/manage:engagements scope.",
   })
   async create(
     @Body() createDto: CreateEngagementDto,
@@ -192,7 +192,9 @@ export class EngagementsController {
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   async findOne(@Param("id") id: string): Promise<Engagement> {
-    return this.engagementsService.findOne(id);
+    return this.engagementsService.findOne(id, {
+      includeCreatorEmail: true,
+    });
   }
 
   @Put(":id")
@@ -202,7 +204,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Update engagement",
     description:
-      "Updates an existing engagement. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Updates an existing engagement. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
       "or write:engagements/manage:engagements scope for M2M clients.",
   })
   @ApiResponse({
@@ -218,7 +220,7 @@ export class EngagementsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role or write:engagements/manage:engagements scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:engagements/manage:engagements scope.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   async update(
@@ -241,7 +243,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Remove engagement assignment",
     description:
-      "Removes an assignment from an engagement. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Removes an assignment from an engagement. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
       "or write:engagements/manage:engagements scope for M2M clients.",
   })
   @ApiResponse({ status: 204, description: "Engagement assignment removed." })
@@ -253,7 +255,7 @@ export class EngagementsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role or write:engagements/manage:engagements scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:engagements/manage:engagements scope.",
   })
   @ApiNotFoundResponse({ description: "Engagement assignment not found." })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -273,7 +275,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Delete engagement",
     description:
-      "Deletes an engagement. Requires admin, PM, or Task Manager role for user tokens, " +
+      "Deletes an engagement. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
       "or manage:engagements scope for M2M clients.",
   })
   @ApiResponse({ status: 204, description: "Engagement deleted." })
@@ -282,7 +284,7 @@ export class EngagementsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager role or manage:engagements scope.",
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or manage:engagements scope.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   @HttpCode(HttpStatus.NO_CONTENT)
