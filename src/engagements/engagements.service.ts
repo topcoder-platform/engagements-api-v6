@@ -483,6 +483,16 @@ export class EngagementsService {
       throw new BadRequestException("Assigned member handle cannot be blank.");
     }
 
+    const hasAssignmentArrayPayload =
+      Array.isArray(payload.assignedMemberIds) ||
+      Array.isArray(payload.assignedMemberHandles);
+    const assignmentDetailsList = hasAssignmentArrayPayload
+      ? await this.resolveMultipleAssignmentDetails(
+          payload.assignedMemberIds,
+          payload.assignedMemberHandles,
+        )
+      : [];
+
     const existingAssignments =
       (
         existingEngagement as Engagement & {
@@ -512,9 +522,8 @@ export class EngagementsService {
       const hasAssignedMember =
         Boolean(assignedMemberId) ||
         Boolean(assignedMemberHandle) ||
-        (payload.assignedMemberId === undefined &&
-          payload.assignedMemberHandle === undefined &&
-          existingAssignmentCount > 0);
+        assignmentDetailsList.length > 0 ||
+        existingAssignmentCount > 0;
 
       if (!hasAssignedMember) {
         throw new BadRequestException(
@@ -524,8 +533,9 @@ export class EngagementsService {
     }
 
     const shouldUpsertAssignment =
-      payload.assignedMemberId !== undefined ||
-      payload.assignedMemberHandle !== undefined;
+      !hasAssignmentArrayPayload &&
+      (payload.assignedMemberId !== undefined ||
+        payload.assignedMemberHandle !== undefined);
     const assignmentDetails = shouldUpsertAssignment
       ? await this.resolveAssignmentDetails(
           assignedMemberId,
@@ -592,7 +602,50 @@ export class EngagementsService {
     }
 
     const updatedEngagement = await this.db.$transaction(async (tx) => {
-      if (shouldUpsertAssignment && assignmentDetails) {
+      if (assignmentDetailsList.length > 0) {
+        if (requiredMemberCount !== undefined) {
+          const assignmentsInTx = await tx.engagementAssignment.findMany({
+            where: { engagementId: id },
+          });
+          const existingIds = new Set(
+            assignmentsInTx.map((assignment) => assignment.memberId),
+          );
+          const newAssignmentIds = assignmentDetailsList
+            .map((details) => details.memberId)
+            .filter((memberId) => !existingIds.has(memberId));
+
+          if (
+            assignmentsInTx.length + newAssignmentIds.length >
+            requiredMemberCount
+          ) {
+            throw new BadRequestException(
+              "Assigned member count exceeds required member count.",
+            );
+          }
+        }
+
+        await Promise.all(
+          assignmentDetailsList.map((details) =>
+            tx.engagementAssignment.upsert({
+              where: {
+                engagementId_memberId: {
+                  engagementId: id,
+                  memberId: details.memberId,
+                },
+              },
+              create: {
+                id: nanoid(),
+                engagementId: id,
+                memberId: details.memberId,
+                memberHandle: details.memberHandle,
+              },
+              update: {
+                memberHandle: details.memberHandle,
+              },
+            }),
+          ),
+        );
+      } else if (shouldUpsertAssignment && assignmentDetails) {
         if (requiredMemberCount !== undefined) {
           const existingAssignment = await tx.engagementAssignment.findUnique({
             where: {

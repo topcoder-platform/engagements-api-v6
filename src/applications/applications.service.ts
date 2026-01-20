@@ -123,6 +123,7 @@ export class ApplicationsService {
         email: member.email ?? "",
         name,
         address: formattedAddress,
+        mobileNumber: createDto.mobileNumber,
         coverLetter: createDto.coverLetter,
         resumeUrl: createDto.resumeUrl,
         portfolioUrls: createDto.portfolioUrls ?? [],
@@ -258,9 +259,13 @@ export class ApplicationsService {
   ): Promise<EngagementApplication> {
     const application = await this.findOne(id, authUser);
     const authUserId = getUserIdentifier(authUser);
+    const wasAccepted =
+      application.status === ApplicationStatus.ACCEPTED;
 
     if (status === ApplicationStatus.ACCEPTED) {
       await this.handleMemberAssignment(application, authUser);
+    } else if (wasAccepted) {
+      await this.handleMemberUnassignment(application);
     }
 
     return this.db.engagementApplication.update({
@@ -276,7 +281,6 @@ export class ApplicationsService {
     application: ApplicationWithEngagement,
     authUser: Record<string, any>,
   ): Promise<void> {
-    const authUserId = getUserIdentifier(authUser);
     const memberHandle =
       await this.memberService.getMemberHandleByUserId(
         application.userId,
@@ -335,20 +339,6 @@ export class ApplicationsService {
         },
       });
 
-      const updatedCount = await tx.engagementAssignment.count({
-        where: { engagementId },
-      });
-
-      if (updatedCount === 1) {
-        await tx.engagement.update({
-          where: { id: engagement.id },
-          data: {
-            status: EngagementStatus.ACTIVE,
-            updatedBy: authUserId,
-          },
-        });
-      }
-
       const updatedEngagement = await tx.engagement.findUnique({
         where: { id: engagement.id },
         include: { assignments: true },
@@ -400,6 +390,30 @@ export class ApplicationsService {
         `Failed to emit engagement.member.assigned event for engagement ${engagement.id}: ${message}`,
       );
     }
+  }
+
+  private async handleMemberUnassignment(
+    application: ApplicationWithEngagement,
+  ): Promise<void> {
+    const assignment =
+      await this.db.engagementAssignment.findUnique({
+        where: {
+          engagementId_memberId: {
+            engagementId: application.engagementId,
+            memberId: application.userId,
+          },
+        },
+        select: { id: true },
+      });
+
+    if (!assignment?.id) {
+      return;
+    }
+
+    await this.engagementsService.removeAssignment(
+      application.engagementId,
+      assignment.id,
+    );
   }
 
   private assertUserOwnsApplication(

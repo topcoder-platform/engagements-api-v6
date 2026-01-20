@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   MaxLength,
   Min,
   ValidateIf,
@@ -67,4 +68,19 @@ export class CreateApplicationDto {
   @IsString()
   @MaxLength(500)
   availability?: string;
+
+  @ApiPropertyOptional({
+    description: "Mobile phone number",
+    example: "+1 (555) 123-4567",
+    maxLength: 20,
+  })
+  @IsOptional()
+  @Transform(trimTransformer)
+  @IsString()
+  @MaxLength(20)
+  @Matches(/^[\d\s\-\+\(\)]+$/, {
+    message:
+      "Mobile number must contain only digits, spaces, hyphens, plus signs, and parentheses",
+  })
+  mobileNumber?: string;
 }

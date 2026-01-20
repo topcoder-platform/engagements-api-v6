@@ -151,12 +151,11 @@ export class EngagementsController {
 
   @Get("my-assignments")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadEngagements)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "List assigned engagements",
     description:
-      "Returns engagements assigned to the authenticated user. Requires read:engagements scope.",
+      "Returns engagements assigned to the authenticated user. M2M clients require read:engagements scope.",
   })
   @ApiResponse({
     status: 200,
@@ -166,12 +165,14 @@ export class EngagementsController {
     description: "Missing or invalid authentication token.",
   })
   @ApiForbiddenResponse({
-    description: "Insufficient permissions. Requires read:engagements scope.",
+    description:
+      "Insufficient permissions. Requires read:engagements scope for M2M clients.",
   })
   async findMyAssignments(
     @Query() query: EngagementQueryDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<Engagement>> {
+    this.assertMachineScope(req.authUser, AppScopes.ReadEngagements);
     return this.engagementsService.findMyAssignments(
       req.authUser ?? {},
       query,
@@ -306,6 +307,24 @@ export class EngagementsController {
     if (!isPrivileged) {
       throw new ForbiddenException(
         "You do not have permission to perform this action.",
+      );
+    }
+  }
+
+  private assertMachineScope(
+    authUser: Record<string, any> | undefined,
+    requiredScope: string,
+  ) {
+    if (!authUser?.isMachine) {
+      return;
+    }
+
+    const scopes: string[] = authUser.scopes ?? [];
+    const normalizedScopes = scopes.map((scope) => scope?.toLowerCase());
+
+    if (!normalizedScopes.includes(requiredScope.toLowerCase())) {
+      throw new ForbiddenException(
+        "You do not have the required permissions to access this resource.",
       );
     }
   }

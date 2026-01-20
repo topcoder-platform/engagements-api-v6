@@ -83,12 +83,12 @@ export class ApplicationsController {
 
   @Get("applications")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadApplications)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "List applications",
     description:
-      "Returns a paginated list of applications visible to the caller. Requires read:applications scope.",
+      "Returns a paginated list of applications visible to the caller. User tokens are limited to their own " +
+      "applications; M2M clients require read:applications scope.",
   })
   @ApiResponse({
     status: 200,
@@ -99,23 +99,24 @@ export class ApplicationsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires read:applications scope.",
+      "Insufficient permissions. Requires read:applications scope for M2M clients.",
   })
   async findAll(
     @Query() query: ApplicationQueryDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<EngagementApplication>> {
+    this.assertMachineScope(req.authUser, AppScopes.ReadApplications);
     return this.applicationsService.findAll(query, req.authUser ?? {});
   }
 
   @Get("applications/:id")
   @UseGuards(PermissionsGuard)
-  @ScopesDecorator(AppScopes.ReadApplications)
   @ApiBearerAuth()
   @ApiOperation({
     summary: "Get application by ID",
     description:
-      "Retrieves an application by ID. Requires read:applications scope.",
+      "Retrieves an application by ID. Users can only access their own application; " +
+      "M2M clients require read:applications scope.",
   })
   @ApiResponse({
     status: 200,
@@ -127,13 +128,14 @@ export class ApplicationsController {
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires read:applications scope.",
+      "Insufficient permissions. Requires read:applications scope for M2M clients.",
   })
   @ApiNotFoundResponse({ description: "Application not found." })
   async findOne(
     @Param("id") id: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementApplication> {
+    this.assertMachineScope(req.authUser, AppScopes.ReadApplications);
     return this.applicationsService.findOne(id, req.authUser ?? {});
   }
 
@@ -228,6 +230,24 @@ export class ApplicationsController {
     if (!isPrivileged) {
       throw new ForbiddenException(
         "You do not have permission to perform this action.",
+      );
+    }
+  }
+
+  private assertMachineScope(
+    authUser: Record<string, any> | undefined,
+    requiredScope: string,
+  ) {
+    if (!authUser?.isMachine) {
+      return;
+    }
+
+    const scopes: string[] = authUser.scopes ?? [];
+    const normalizedScopes = scopes.map((scope) => scope?.toLowerCase());
+
+    if (!normalizedScopes.includes(requiredScope.toLowerCase())) {
+      throw new ForbiddenException(
+        "You do not have the required permissions to access this resource.",
       );
     }
   }

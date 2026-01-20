@@ -40,6 +40,12 @@ export class ApplicationResponseDto {
   address?: string | null;
 
   @ApiPropertyOptional({
+    description: "Mobile phone number",
+    example: "+1 (555) 123-4567",
+  })
+  mobileNumber?: string | null;
+
+  @ApiPropertyOptional({
     description: "Cover letter",
     example: "I am excited to apply for this engagement.",
   })

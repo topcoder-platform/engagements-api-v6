@@ -75,6 +75,7 @@ model EngagementApplication {
   email             String
   name              String
   address           String?
+  mobileNumber      String?
   coverLetter       String?
   resumeUrl         String?
   portfolioUrls     String[]

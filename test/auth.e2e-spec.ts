@@ -224,6 +224,13 @@ describe("Authentication & Authorization (e2e)", () => {
         .send(validEngagementPayload)
         .expect(403);
     });
+
+    it("allows authenticated user without scopes to access my assignments", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements/my-assignments")
+        .set("Authorization", "Bearer bare-user")
+        .expect(200);
+    });
   });
 
   describe("Public Engagement Read Endpoints", () => {
