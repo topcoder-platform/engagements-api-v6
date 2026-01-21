@@ -14,6 +14,7 @@ import { PaginationDto } from "./pagination.dto";
 
 export enum EngagementSortBy {
   CreatedAt = "createdAt",
+  UpdatedAt = "updatedAt",
   ApplicationDeadline = "applicationDeadline",
   Status = "status",
   Title = "title",
@@ -21,6 +22,7 @@ export enum EngagementSortBy {
 
 export const ENGAGEMENT_SORT_FIELDS: EngagementSortBy[] = [
   EngagementSortBy.CreatedAt,
+  EngagementSortBy.UpdatedAt,
   EngagementSortBy.ApplicationDeadline,
   EngagementSortBy.Status,
   EngagementSortBy.Title,
