@@ -41,9 +41,9 @@ export class EventBusService {
           ? tokenCacheTime
           : undefined,
         AUTH0_CLIENT_ID:
-          this.configService.get<string>("AUTH0_CLIENT_ID"),
+          this.configService.get<string>("M2M_CLIENT_ID"),
         AUTH0_CLIENT_SECRET: this.configService.get<string>(
-          "AUTH0_CLIENT_SECRET",
+          "M2M_CLIENT_SECRET",
         ),
         BUSAPI_URL: busApiUrl,
         KAFKA_ERROR_TOPIC:
