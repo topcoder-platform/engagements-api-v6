@@ -28,6 +28,7 @@ import { PaginatedResponse } from "../engagements/dto";
 import { getUserRoles } from "../common/user.util";
 import {
   AnonymousFeedbackDto,
+  AnonymousFeedbackResponseDto,
   CreateFeedbackDto,
   FeedbackQueryDto,
   FeedbackResponseDto,
@@ -200,6 +201,29 @@ export class FeedbackController {
       anonymousDto.secretToken,
       anonymousDto,
     );
+  }
+
+  @Get("feedback/anonymous/:secretToken")
+  @ApiOperation({
+    summary: "Get anonymous feedback details",
+    description:
+      "Public endpoint for customers to view anonymous feedback details using a secret token.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Anonymous feedback retrieved.",
+    type: AnonymousFeedbackResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid or expired feedback link.",
+  })
+  @ApiNotFoundResponse({
+    description: "Invalid feedback link.",
+  })
+  async getAnonymousFeedback(
+    @Param("secretToken") secretToken: string,
+  ): Promise<AnonymousFeedbackResponseDto> {
+    return this.feedbackService.getAnonymousFeedback(secretToken);
   }
 
   @Get(":engagementId/assignments/:assignmentId/feedback")

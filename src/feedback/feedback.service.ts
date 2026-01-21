@@ -15,6 +15,7 @@ import {
   FeedbackQueryDto,
   FeedbackResponseDto,
   FeedbackSortBy,
+  AnonymousFeedbackResponseDto,
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
 
@@ -205,6 +206,26 @@ export class FeedbackService {
     });
 
     return this.transformToResponseDto(result);
+  }
+
+  async getAnonymousFeedback(
+    secretToken: string,
+  ): Promise<AnonymousFeedbackResponseDto> {
+    const feedback = await this.validateSecretToken(secretToken);
+
+    const assignment = await this.db.engagementAssignment.findUnique({
+      where: { id: feedback.engagementAssignmentId },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+    }
+
+    return {
+      memberHandle: assignment.memberHandle,
+      feedbackText: feedback.feedbackText,
+      rating: feedback.rating ?? null,
+    };
   }
 
   async create(
