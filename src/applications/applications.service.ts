@@ -174,13 +174,6 @@ export class ApplicationsService {
       }
     }
 
-    if (query.engagementId && isProjectManager && !isAdmin) {
-      const engagement = await this.engagementsService.findOne(
-        query.engagementId,
-      );
-      this.assertPmEngagementAccess(engagement, authUser);
-    }
-
     if (isProjectManager && !isAdmin) {
       where.engagement = { createdBy: authUserId };
     } else if (!this.isAdminOrPm(authUser)) {
@@ -239,7 +232,6 @@ export class ApplicationsService {
     }
 
     if (this.isAdminOrPm(authUser)) {
-      this.assertPmEngagementAccess(application.engagement, authUser);
       return application;
     }
 
@@ -252,15 +244,13 @@ export class ApplicationsService {
     engagementId: string,
     authUser: Record<string, any>,
   ): Promise<EngagementApplication[]> {
-    const engagement = await this.engagementsService.findOne(engagementId);
+    await this.engagementsService.findOne(engagementId);
 
     if (!this.isAdminOrPm(authUser)) {
       throw new ForbiddenException(
         ERROR_MESSAGES.UnauthorizedApplicationAccess,
       );
     }
-
-    this.assertPmEngagementAccess(engagement, authUser);
 
     return this.db.engagementApplication.findMany({
       where: { engagementId },
@@ -502,29 +492,6 @@ export class ApplicationsService {
     return roles.some((role) =>
       TASK_MANAGER_ROLE_SET.has(role?.toLowerCase()),
     );
-  }
-
-  private assertPmEngagementAccess(
-    engagement: ApplicationWithEngagement["engagement"],
-    authUser?: Record<string, any>,
-  ): void {
-    if (
-      !authUser ||
-      this.isAdmin(authUser) ||
-      this.isTaskManager(authUser)
-    ) {
-      return;
-    }
-
-    const authUserId = normalizeUserId(authUser?.userId);
-    if (
-      this.isProjectManager(authUser) &&
-      engagement.createdBy !== authUserId
-    ) {
-      throw new ForbiddenException(
-        ERROR_MESSAGES.UnauthorizedApplicationAccess,
-      );
-    }
   }
 
   private formatAddress(address?: MemberAddress | null): string | null {

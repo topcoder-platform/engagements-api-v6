@@ -31,6 +31,7 @@ import { ERROR_MESSAGES } from "../common/constants";
 import { getUserIdentifier } from "../common/user.util";
 
 const USER_ID_PATTERN = /^\d+$/;
+const ANY_LOCATION = "Any";
 
 @Injectable()
 export class EngagementsService {
@@ -290,11 +291,18 @@ export class EngagementsService {
     }
 
     const locationFilters: Prisma.EngagementWhereInput[] = [];
+    const hasLocationFilter = Boolean(
+      query.countries?.length || query.timeZones?.length,
+    );
     if (query.countries?.length) {
       locationFilters.push({ countries: { hasSome: query.countries } });
     }
     if (query.timeZones?.length) {
       locationFilters.push({ timeZones: { hasSome: query.timeZones } });
+    }
+    if (hasLocationFilter) {
+      locationFilters.push({ countries: { has: ANY_LOCATION } });
+      locationFilters.push({ timeZones: { has: ANY_LOCATION } });
     }
     if (locationFilters.length === 1) {
       andFilters.push(locationFilters[0]);
@@ -407,11 +415,18 @@ export class EngagementsService {
     }
 
     const locationFilters: Prisma.EngagementWhereInput[] = [];
+    const hasLocationFilter = Boolean(
+      query.countries?.length || query.timeZones?.length,
+    );
     if (query.countries?.length) {
       locationFilters.push({ countries: { hasSome: query.countries } });
     }
     if (query.timeZones?.length) {
       locationFilters.push({ timeZones: { hasSome: query.timeZones } });
+    }
+    if (hasLocationFilter) {
+      locationFilters.push({ countries: { has: ANY_LOCATION } });
+      locationFilters.push({ timeZones: { has: ANY_LOCATION } });
     }
     if (locationFilters.length === 1) {
       andFilters.push(locationFilters[0]);
@@ -590,13 +605,17 @@ export class EngagementsService {
       existingEngagement.requiredMemberCount ??
       undefined;
 
-    if (
-      payload.requiredMemberCount !== undefined &&
-      existingAssignmentCount > payload.requiredMemberCount
-    ) {
-      throw new BadRequestException(
-        "Assigned member count exceeds required member count.",
-      );
+    if (payload.requiredMemberCount !== undefined) {
+      const assignmentCountForValidation =
+        assignmentDetailsList.length > 0
+          ? assignmentDetailsList.length
+          : existingAssignmentCount;
+
+      if (assignmentCountForValidation > payload.requiredMemberCount) {
+        throw new BadRequestException(
+          "Assigned member count exceeds required member count.",
+        );
+      }
     }
 
     const willBePrivate =
@@ -688,25 +707,13 @@ export class EngagementsService {
 
     const updatedEngagement = await this.db.$transaction(async (tx) => {
       if (assignmentDetailsList.length > 0) {
-        if (requiredMemberCount !== undefined) {
-          const assignmentsInTx = await tx.engagementAssignment.findMany({
-            where: { engagementId: id },
-          });
-          const existingIds = new Set(
-            assignmentsInTx.map((assignment) => assignment.memberId),
+        if (
+          requiredMemberCount !== undefined &&
+          assignmentDetailsList.length > requiredMemberCount
+        ) {
+          throw new BadRequestException(
+            "Assigned member count exceeds required member count.",
           );
-          const newAssignmentIds = assignmentDetailsList
-            .map((details) => details.memberId)
-            .filter((memberId) => !existingIds.has(memberId));
-
-          if (
-            assignmentsInTx.length + newAssignmentIds.length >
-            requiredMemberCount
-          ) {
-            throw new BadRequestException(
-              "Assigned member count exceeds required member count.",
-            );
-          }
         }
 
         await Promise.all(
@@ -730,6 +737,18 @@ export class EngagementsService {
             }),
           ),
         );
+
+        const desiredMemberIds = Array.from(
+          new Set(assignmentDetailsList.map((details) => details.memberId)),
+        );
+        await tx.engagementAssignment.deleteMany({
+          where: {
+            engagementId: id,
+            memberId: {
+              notIn: desiredMemberIds,
+            },
+          },
+        });
       } else if (shouldUpsertAssignment && assignmentDetails) {
         if (requiredMemberCount !== undefined) {
           const existingAssignment = await tx.engagementAssignment.findUnique({
