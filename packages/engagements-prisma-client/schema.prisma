@@ -3,8 +3,8 @@ generator client {
 }
 
 generator externalClient {
-  provider = "prisma-client-js"
-  output   = "../packages/engagements-prisma-client"
+  provider      = "prisma-client-js"
+  output        = "../packages/engagements-prisma-client"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
@@ -40,7 +40,7 @@ enum Workload {
 }
 
 model Engagement {
-  id                  String                  @id @default(uuid())
+  id                  String           @id @default(uuid())
   projectId           String
   title               String
   description         String
@@ -52,19 +52,19 @@ model Engagement {
   countries           String[]
   requiredSkills      String[]
   applicationDeadline DateTime
-  status              EngagementStatus        @default(OPEN)
-  isPrivate           Boolean                 @default(false)
+  status              EngagementStatus @default(OPEN)
+  isPrivate           Boolean          @default(false)
   requiredMemberCount Int?
   role                Role?
   workload            Workload?
   compensationRange   String?
-  createdAt           DateTime                @default(now())
+  createdAt           DateTime         @default(now())
   createdBy           String
-  updatedAt           DateTime                @updatedAt
+  updatedAt           DateTime         @updatedAt
   updatedBy           String?
 
-  applications        EngagementApplication[]
-  assignments         EngagementAssignment[]
+  applications EngagementApplication[]
+  assignments  EngagementAssignment[]
 
   @@index([projectId])
   @@index([status])
@@ -92,7 +92,7 @@ model EngagementApplication {
   updatedAt         DateTime          @updatedAt
   updatedBy         String?
 
-  engagement        Engagement        @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
 
   @@unique([engagementId, userId])
   @@index([userId])
@@ -101,16 +101,16 @@ model EngagementApplication {
 }
 
 model EngagementAssignment {
-  id             String             @id @default(uuid())
-  engagementId   String
-  memberId       String
-  memberHandle   String
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id           String   @id @default(uuid())
+  engagementId String
+  memberId     String
+  memberHandle String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  engagement     Engagement         @relation(fields: [engagementId], references: [id], onDelete: Cascade)
-  feedback       EngagementFeedback[]
-  memberExperiences  MemberExperience[]
+  engagement        Engagement           @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  feedback          EngagementFeedback[]
+  memberExperiences MemberExperience[]
 
   @@unique([engagementId, memberId])
   @@index([engagementId])
@@ -118,32 +118,32 @@ model EngagementAssignment {
 }
 
 model EngagementFeedback {
-  id                     String               @id @default(uuid())
+  id                     String    @id @default(uuid())
   engagementAssignmentId String
   feedbackText           String
   rating                 Int?
   givenByMemberId        String?
   givenByHandle          String?
   givenByEmail           String?
-  secretToken            String?              @unique
+  secretToken            String?   @unique
   secretTokenExpiresAt   DateTime?
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  assignment             EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)
+  assignment EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)
 
   @@index([engagementAssignmentId])
   @@index([givenByMemberId])
 }
 
 model MemberExperience {
-  id                     String               @id @default(uuid())
+  id                     String   @id @default(uuid())
   engagementAssignmentId String
   experienceText         String
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  assignment             EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)
+  assignment EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)
 
   @@index([engagementAssignmentId])
 }
