@@ -2,6 +2,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator externalClient {
+  provider = "prisma-client-js"
+  output   = "../packages/engagements-prisma-client"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
 datasource db {
   provider = "postgresql"
 }
