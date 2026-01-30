@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import {
   ApplicationStatus,
+  AssignmentStatus,
   EngagementApplication,
   EngagementStatus,
   Prisma,
@@ -16,6 +17,7 @@ import { nanoid } from "nanoid";
 import { DbService } from "../db/db.service";
 import { MemberService } from "../integrations/member.service";
 import { EventBusService } from "../integrations/event-bus.service";
+import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
 import { EngagementsService } from "../engagements/engagements.service";
 import {
@@ -69,6 +71,7 @@ export class ApplicationsService {
     private readonly memberService: MemberService,
     private readonly engagementsService: EngagementsService,
     private readonly eventBusService: EventBusService,
+    private readonly assignmentOfferEmailService: AssignmentOfferEmailService,
   ) {}
 
   async create(
@@ -257,6 +260,17 @@ export class ApplicationsService {
     });
   }
 
+  async approve(
+    id: string,
+    authUser: Record<string, any>,
+  ): Promise<EngagementApplication> {
+    return this.updateStatus(
+      id,
+      ApplicationStatus.ACCEPTED,
+      authUser,
+    );
+  }
+
   async updateStatus(
     id: string,
     status: ApplicationStatus,
@@ -290,8 +304,12 @@ export class ApplicationsService {
       await this.memberService.getMemberHandleByUserId(
         application.userId,
       );
-    const resolvedMemberHandle =
-      memberHandle?.trim() || application.userId;
+    const resolvedMemberHandle = memberHandle?.trim();
+    if (!resolvedMemberHandle) {
+      throw new BadRequestException(
+        `Member handle not found for userId ${application.userId}`,
+      );
+    }
     const assignmentResult = await this.db.$transaction(async (tx) => {
       const engagement = await tx.engagement.findUnique({
         where: { id: application.engagementId },
@@ -323,6 +341,13 @@ export class ApplicationsService {
           engagement,
           assignmentId: existingAssignment.id,
           memberHandle: existingAssignment.memberHandle,
+          assignment: {
+            id: existingAssignment.id,
+            engagementId: existingAssignment.engagementId,
+            startDate: existingAssignment.startDate,
+            endDate: existingAssignment.endDate,
+            agreementRate: existingAssignment.agreementRate,
+          },
         };
       }
 
@@ -346,6 +371,7 @@ export class ApplicationsService {
           engagementId,
           memberId,
           memberHandle: resolvedMemberHandle,
+          status: AssignmentStatus.SELECTED,
         },
       });
 
@@ -363,6 +389,13 @@ export class ApplicationsService {
         engagement: updatedEngagement,
         assignmentId: assignment.id,
         memberHandle: resolvedMemberHandle,
+        assignment: {
+          id: assignment.id,
+          engagementId: assignment.engagementId,
+          startDate: assignment.startDate,
+          endDate: assignment.endDate,
+          agreementRate: assignment.agreementRate,
+        },
       };
     });
 
@@ -404,6 +437,23 @@ export class ApplicationsService {
         error instanceof Error ? error.message : "unknown error";
       this.logger.error(
         `Failed to emit engagement.member.assigned event for engagement ${engagement.id}: ${message}`,
+      );
+    }
+
+    if (assigned) {
+      await this.assignmentOfferEmailService.sendAssignmentOfferEmail(
+        {
+          memberId: String(application.userId),
+          memberHandle: payloadMemberHandle,
+          assignmentId,
+          engagementId: engagement.id,
+          assignmentStartDate:
+            assignmentResult.assignment?.startDate ?? null,
+          assignmentEndDate:
+            assignmentResult.assignment?.endDate ?? null,
+          agreementRate:
+            assignmentResult.assignment?.agreementRate ?? null,
+        },
       );
     }
   }

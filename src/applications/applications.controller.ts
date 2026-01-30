@@ -218,6 +218,40 @@ export class ApplicationsController {
     );
   }
 
+  @Patch("applications/:id/approve")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteApplications)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Approve application",
+    description:
+      "Approves a submitted application and creates an engagement assignment. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
+      "or write:applications scope for M2M clients.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Application approved.",
+    type: ApplicationResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Unable to approve application.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:applications scope.",
+  })
+  @ApiNotFoundResponse({ description: "Application not found." })
+  async approve(
+    @Param("id") id: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementApplication> {
+    this.assertAdminOrPm(req.authUser);
+    return this.applicationsService.approve(id, req.authUser ?? {});
+  }
+
   private assertAdminOrPm(authUser?: Record<string, any>) {
     if (authUser?.isMachine) {
       return;

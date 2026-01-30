@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Param,
   Post,
   Put,
@@ -38,6 +39,7 @@ import {
   EngagementQueryDto,
   EngagementResponseDto,
   PaginatedResponse,
+  UpdateAssignmentStatusDto,
   UpdateEngagementDto,
 } from "./dto";
 import { EngagementsService } from "./engagements.service";
@@ -266,6 +268,46 @@ export class EngagementsController {
   ): Promise<void> {
     this.assertAdminOrPm(req.authUser);
     await this.engagementsService.removeAssignment(id, assignmentId);
+  }
+
+  @Patch(":id/assignments/:assignmentId/status")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements, AppScopes.ManageEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Update engagement assignment status",
+    description:
+      "Updates the status for an engagement assignment. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
+      "or write:engagements/manage:engagements scope for M2M clients.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Engagement assignment status updated.",
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid request payload.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:engagements/manage:engagements scope.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement assignment not found." })
+  async updateAssignmentStatus(
+    @Param("id") id: string,
+    @Param("assignmentId") assignmentId: string,
+    @Body() updateDto: UpdateAssignmentStatusDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ) {
+    this.assertAdminOrPm(req.authUser);
+    return this.engagementsService.updateAssignmentStatus(
+      id,
+      assignmentId,
+      updateDto.status,
+      updateDto.terminationReason,
+    );
   }
 
   @Delete(":id")

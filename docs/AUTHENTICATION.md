@@ -22,7 +22,7 @@ M2M tokens are issued via the Auth0 client credentials flow. These tokens do not
 | `write:engagements` | Create and update engagements | `POST /engagements`, `PUT /engagements/:id` |
 | `manage:engagements` | Full engagement management including deletion | `DELETE /engagements/:id` |
 | `read:applications` | View applications | `GET /applications`, `GET /applications/:id`, `GET /engagements/:id/applications` |
-| `write:applications` | Submit and update applications | `POST /engagements/:id/applications`, `PATCH /applications/:id/status` |
+| `write:applications` | Submit and update applications | `POST /engagements/:id/applications`, `PATCH /applications/:id/status`, `PATCH /applications/:id/approve` |
 
 ## Role-Based Access
 

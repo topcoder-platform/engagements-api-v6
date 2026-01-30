@@ -7,6 +7,7 @@ import {
 import {
   Engagement,
   EngagementAssignment,
+  AssignmentStatus,
   EngagementStatus,
   Role,
   Prisma,
@@ -18,6 +19,7 @@ import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
 import { ProjectService } from "../integrations/project.service";
 import { SkillsService } from "../integrations/skills.service";
+import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
 import {
   CreateEngagementDto,
@@ -43,6 +45,7 @@ export class EngagementsService {
     private readonly skillsService: SkillsService,
     private readonly memberService: MemberService,
     private readonly eventBusService: EventBusService,
+    private readonly assignmentOfferEmailService: AssignmentOfferEmailService,
   ) {}
 
   async create(
@@ -186,6 +189,9 @@ export class EngagementsService {
     );
 
     await this.emitMemberAssignedEvents(engagementWithAssignments);
+    await this.sendAssignmentOfferEmails(
+      engagementWithAssignments.assignments,
+    );
 
     const engagementWithFields =
       this.applyAssignmentFields(engagementWithAssignments);
@@ -243,6 +249,26 @@ export class EngagementsService {
         `Failed to emit engagement.member.assigned event for engagement ${engagement.id} (assignment ${assignment.id}): ${message}`,
       );
     });
+  }
+
+  private async sendAssignmentOfferEmails(
+    assignments?: EngagementAssignment[],
+  ): Promise<void> {
+    if (!assignments?.length) {
+      return;
+    }
+
+    await this.assignmentOfferEmailService.sendAssignmentOfferEmails(
+      assignments.map((assignment) => ({
+        memberId: String(assignment.memberId),
+        memberHandle: assignment.memberHandle,
+        assignmentId: assignment.id,
+        engagementId: assignment.engagementId,
+        assignmentStartDate: assignment.startDate ?? null,
+        assignmentEndDate: assignment.endDate ?? null,
+        agreementRate: assignment.agreementRate ?? null,
+      })),
+    );
   }
 
   async findAll(
@@ -798,6 +824,21 @@ export class EngagementsService {
       });
     });
 
+    const updatedAssignments =
+      (updatedEngagement as Engagement & {
+        assignments?: EngagementAssignment[];
+      }).assignments ?? [];
+    const existingMemberIds = new Set(
+      existingAssignments.map((assignment) =>
+        String(assignment.memberId),
+      ),
+    );
+    const newAssignments = updatedAssignments.filter(
+      (assignment) =>
+        !existingMemberIds.has(String(assignment.memberId)),
+    );
+    await this.sendAssignmentOfferEmails(newAssignments);
+
     const engagementWithFields =
       this.applyAssignmentFields(updatedEngagement);
     const [hydrated] =
@@ -854,6 +895,57 @@ export class EngagementsService {
       }
 
       await tx.engagementAssignment.delete({ where: { id: assignmentId } });
+    });
+  }
+
+  async updateAssignmentStatus(
+    engagementId: string,
+    assignmentId: string,
+    status: AssignmentStatus,
+    terminationReason?: string,
+  ): Promise<EngagementAssignment> {
+    this.logger.debug("Updating engagement assignment status", {
+      engagementId,
+      assignmentId,
+      status,
+    });
+
+    return this.db.$transaction(async (tx) => {
+      const engagement = await tx.engagement.findUnique({
+        where: { id: engagementId },
+        include: { assignments: true },
+      });
+
+      if (!engagement) {
+        throw new NotFoundException("Engagement not found.");
+      }
+
+      const assignment = await tx.engagementAssignment.findUnique({
+        where: { id: assignmentId },
+      });
+
+      if (!assignment) {
+        throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+      }
+
+      if (assignment.engagementId !== engagementId) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.AssignmentEngagementMismatch,
+        );
+      }
+
+      const normalizedReason =
+        typeof terminationReason === "string"
+          ? terminationReason.trim()
+          : terminationReason;
+      const data: Prisma.EngagementAssignmentUpdateInput = { status };
+      if (terminationReason !== undefined) {
+        data.terminationReason = normalizedReason || null;
+      }
+      return tx.engagementAssignment.update({
+        where: { id: assignmentId },
+        data,
+      });
     });
   }
 

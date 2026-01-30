@@ -21,6 +21,14 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum AssignmentStatus {
+  SELECTED
+  OFFER_REJECTED
+  ASSIGNED
+  COMPLETED
+  TERMINATED
+}
+
 enum Role {
   DESIGNER
   SOFTWARE_DEVELOPER
@@ -99,6 +107,12 @@ model EngagementAssignment {
   engagementId   String
   memberId       String
   memberHandle   String
+  status         AssignmentStatus   @default(SELECTED)
+  termsAccepted  Boolean            @default(false)
+  agreementRate  String?
+  terminationReason String?
+  startDate      DateTime?
+  endDate        DateTime?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 

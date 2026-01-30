@@ -5,11 +5,24 @@ import { ProjectService } from "./project.service";
 import { SkillsService } from "./skills.service";
 import { MemberService } from "./member.service";
 import { EventBusService } from "./event-bus.service";
+import { AssignmentOfferEmailService } from "./assignment-offer-email.service";
 
 @Global()
 @Module({
   imports: [HttpModule, ConfigModule],
-  providers: [ProjectService, SkillsService, MemberService, EventBusService],
-  exports: [ProjectService, SkillsService, MemberService, EventBusService],
+  providers: [
+    ProjectService,
+    SkillsService,
+    MemberService,
+    EventBusService,
+    AssignmentOfferEmailService,
+  ],
+  exports: [
+    ProjectService,
+    SkillsService,
+    MemberService,
+    EventBusService,
+    AssignmentOfferEmailService,
+  ],
 })
 export class IntegrationsModule {}

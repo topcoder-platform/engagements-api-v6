@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { AssignmentStatus } from "@prisma/client";
 
 export class AssignmentResponseDto {
   @ApiProperty({
@@ -24,6 +25,43 @@ export class AssignmentResponseDto {
     example: "jane_doe",
   })
   memberHandle: string;
+
+  @ApiProperty({
+    description: "Assignment status",
+    enum: AssignmentStatus,
+    example: AssignmentStatus.SELECTED,
+  })
+  status: AssignmentStatus;
+
+  @ApiProperty({
+    description: "Whether the assignment terms were accepted",
+    example: true,
+  })
+  termsAccepted: boolean;
+
+  @ApiProperty({
+    description: "Agreed upon rate for the assignment",
+    example: "80",
+  })
+  agreementRate?: string | null;
+
+  @ApiProperty({
+    description: "Assignment start date",
+    example: "2025-01-01T00:00:00.000Z",
+  })
+  startDate?: Date | null;
+
+  @ApiProperty({
+    description: "Assignment end date",
+    example: "2025-03-01T00:00:00.000Z",
+  })
+  endDate?: Date | null;
+
+  @ApiProperty({
+    description: "Reason for terminating the assignment",
+    example: "Client request to end engagement early.",
+  })
+  terminationReason?: string | null;
 
   @ApiProperty({
     description: "Created timestamp",

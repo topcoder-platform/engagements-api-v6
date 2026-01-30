@@ -31,6 +31,9 @@ describe("ApplicationsService", () => {
     removeAssignment: jest.Mock;
   };
   let eventBusService: { postEvent: jest.Mock };
+  let assignmentOfferEmailService: {
+    sendAssignmentOfferEmail: jest.Mock;
+  };
 
   const createDto = {
     coverLetter: "I am excited to apply for this engagement.",
@@ -66,11 +69,15 @@ describe("ApplicationsService", () => {
     eventBusService = {
       postEvent: jest.fn(),
     };
+    assignmentOfferEmailService = {
+      sendAssignmentOfferEmail: jest.fn().mockResolvedValue(undefined),
+    };
     service = new ApplicationsService(
       db as any,
       memberService as any,
       engagementsService as any,
       eventBusService as any,
+      assignmentOfferEmailService as any,
     );
   });
 
@@ -279,5 +286,27 @@ describe("ApplicationsService", () => {
         }),
       }),
     );
+  });
+
+  it("approves application by setting status to ACCEPTED", async () => {
+    const application = {
+      id: "app-1",
+      engagementId: "eng-1",
+      userId: "user-1",
+      status: ApplicationStatus.ACCEPTED,
+    };
+    const updateSpy = jest
+      .spyOn(service, "updateStatus")
+      .mockResolvedValue(application as any);
+
+    const authUser = { userId: "manager-1" };
+    const result = await service.approve("app-1", authUser);
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      "app-1",
+      ApplicationStatus.ACCEPTED,
+      authUser,
+    );
+    expect(result).toBe(application);
   });
 });

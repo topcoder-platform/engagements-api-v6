@@ -53,6 +53,7 @@ Set the following environment variables (see `.env.example` for defaults):
 | `M2M_CLIENT_ID` | Auth0 M2M client ID. |
 | `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |
 | `AUTH0_AUDIENCE` | Auth0 audience for M2M tokens. |
+| `SENDGRID_ASSIGNMENT_OFFER_TEMPLATE_ID` | SendGrid template ID for assignment offer emails. |
 
 ## Authentication
 
@@ -68,7 +69,7 @@ The API supports both user JWTs and machine-to-machine (M2M) tokens. User tokens
 | `write:engagements` | Create and update engagements | `POST /engagements`, `PUT /engagements/:id` |
 | `manage:engagements` | Full engagement management including deletion | `DELETE /engagements/:id` |
 | `read:applications` | View applications | `GET /applications`, `GET /applications/:id`, `GET /engagements/:id/applications` |
-| `write:applications` | Submit and update applications | `POST /engagements/:id/applications`, `PATCH /applications/:id/status` |
+| `write:applications` | Submit and update applications | `POST /engagements/:id/applications`, `PATCH /applications/:id/status`, `PATCH /applications/:id/approve` |
 
 ## M2M Token Configuration
 
