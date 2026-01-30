@@ -33,7 +33,7 @@ export const trimTransformer = ({
   typeof value === "string" ? value.trim() : undefined;
 
 export function IsNotWhitespace(validationOptions?: ValidationOptions) {
-  return (object: Object, propertyName: string) => {
+  return (object: object, propertyName: string) => {
     registerDecorator({
       name: "isNotWhitespace",
       target: object.constructor,
@@ -52,7 +52,7 @@ export function IsNotWhitespace(validationOptions?: ValidationOptions) {
 }
 
 export function HasDuration(validationOptions?: ValidationOptions) {
-  return (object: Object, propertyName: string) => {
+  return (object: object, propertyName: string) => {
     registerDecorator({
       name: "hasDuration",
       target: object.constructor,
@@ -71,7 +71,7 @@ export function HasDuration(validationOptions?: ValidationOptions) {
 }
 
 export function HasDurationIfProvided(validationOptions?: ValidationOptions) {
-  return (object: Object, propertyName: string) => {
+  return (object: object, propertyName: string) => {
     registerDecorator({
       name: "hasDurationIfProvided",
       target: object.constructor,

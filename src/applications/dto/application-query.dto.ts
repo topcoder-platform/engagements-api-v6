@@ -48,13 +48,9 @@ export class ApplicationQueryDto extends PaginationDto {
 
     const values = Array.isArray(value) ? value : [value];
     const normalized = values
-      .flatMap((item) =>
-        typeof item === "string" ? item.split(",") : item,
-      )
+      .flatMap((item) => (typeof item === "string" ? item.split(",") : item))
       .map((item) => (typeof item === "string" ? item.trim() : item))
-      .filter(
-        (item) => item !== "" && item !== undefined && item !== null,
-      );
+      .filter((item) => item !== "" && item !== undefined && item !== null);
 
     return normalized.length ? normalized : undefined;
   })

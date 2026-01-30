@@ -11,10 +11,7 @@ import {
   Min,
   ValidateIf,
 } from "class-validator";
-import {
-  IsNotWhitespace,
-  trimTransformer,
-} from "../../common/validation.util";
+import { IsNotWhitespace, trimTransformer } from "../../common/validation.util";
 
 export class CreateApplicationDto {
   @ApiProperty({
@@ -78,7 +75,7 @@ export class CreateApplicationDto {
   @Transform(trimTransformer)
   @IsString()
   @MaxLength(20)
-  @Matches(/^[\d\s\-\+\(\)]+$/, {
+  @Matches(/^[\d\s\-+()]+$/, {
     message:
       "Mobile number must contain only digits, spaces, hyphens, plus signs, and parentheses",
   })

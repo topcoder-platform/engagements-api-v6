@@ -34,17 +34,13 @@ export class EventBusService {
     try {
       this.busApiClient = busApi({
         AUTH0_URL: this.configService.get<string>("AUTH0_URL"),
-        AUTH0_AUDIENCE: this.configService.get<string>(
-          "AUTH0_AUDIENCE",
-        ),
+        AUTH0_AUDIENCE: this.configService.get<string>("AUTH0_AUDIENCE"),
         TOKEN_CACHE_TIME: Number.isFinite(tokenCacheTime)
           ? tokenCacheTime
           : undefined,
-        AUTH0_CLIENT_ID:
-          this.configService.get<string>("M2M_CLIENT_ID"),
-        AUTH0_CLIENT_SECRET: this.configService.get<string>(
-          "M2M_CLIENT_SECRET",
-        ),
+        AUTH0_CLIENT_ID: this.configService.get<string>("M2M_CLIENT_ID"),
+        AUTH0_CLIENT_SECRET:
+          this.configService.get<string>("M2M_CLIENT_SECRET"),
         BUSAPI_URL: busApiUrl,
         KAFKA_ERROR_TOPIC:
           this.configService.get<string>("KAFKA_ERROR_TOPIC") ||
@@ -54,11 +50,8 @@ export class EventBusService {
         ),
       });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "unknown error";
-      this.logger.error(
-        `Event bus client initialization failed: ${message}`,
-      );
+      const message = error instanceof Error ? error.message : "unknown error";
+      this.logger.error(`Event bus client initialization failed: ${message}`);
       throw error;
     }
 
@@ -83,8 +76,7 @@ export class EventBusService {
     try {
       await this.getBusApiClient().postEvent(message);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "unknown error";
+      const message = error instanceof Error ? error.message : "unknown error";
       this.logger.error(`Event bus failed with error: ${message}`);
       throw new InternalServerErrorException(
         "Sending message to event bus failed.",

@@ -63,10 +63,7 @@ export class EngagementsService {
     this.assertNonBlankField(createDto.description, "description");
     this.assertNonEmptyArrayField(createDto.timeZones, "timeZones");
     this.assertNonEmptyArrayField(createDto.countries, "countries");
-    this.assertNonEmptyArrayField(
-      createDto.requiredSkills,
-      "requiredSkills",
-    );
+    this.assertNonEmptyArrayField(createDto.requiredSkills, "requiredSkills");
 
     await this.assertProjectExists(createDto.projectId);
     await this.assertSkillsValid(createDto.requiredSkills);
@@ -76,35 +73,30 @@ export class EngagementsService {
     );
 
     const {
-      durationValidation: _durationValidation,
-      assignedMemberId: _assignedMemberId,
-      assignedMemberHandle: _assignedMemberHandle,
-      assignedMemberIds: _assignedMemberIds,
-      assignedMemberHandles: _assignedMemberHandles,
+      durationValidation,
+      assignedMemberId,
+      assignedMemberHandle,
+      assignedMemberIds,
+      assignedMemberHandles,
       ...payload
     } = createDto;
+    void durationValidation;
 
     let assignmentDetailsList: Array<{
       memberId: string;
       memberHandle: string;
     }> = [];
 
-    if (createDto.isPrivate) {
-      if (
-        createDto.assignedMemberIds?.length ||
-        createDto.assignedMemberHandles?.length
-      ) {
+    if (payload.isPrivate) {
+      if (assignedMemberIds?.length || assignedMemberHandles?.length) {
         assignmentDetailsList = await this.resolveMultipleAssignmentDetails(
-          createDto.assignedMemberIds,
-          createDto.assignedMemberHandles,
+          assignedMemberIds,
+          assignedMemberHandles,
         );
-      } else if (
-        createDto.assignedMemberId ||
-        createDto.assignedMemberHandle
-      ) {
+      } else if (assignedMemberId || assignedMemberHandle) {
         const singleAssignment = await this.resolveAssignmentDetails(
-          createDto.assignedMemberId,
-          createDto.assignedMemberHandle,
+          assignedMemberId,
+          assignedMemberHandle,
         );
         if (singleAssignment) {
           assignmentDetailsList = [singleAssignment];
@@ -127,80 +119,77 @@ export class EngagementsService {
       }
     }
 
-    const engagementWithAssignments = await this.db.$transaction(
-      async (tx) => {
-        const engagement = await tx.engagement.create({
-          data: {
-            id: nanoid(),
-            ...payload,
-            durationStartDate: this.normalizeDate(payload.durationStartDate),
-            durationEndDate: this.normalizeDate(payload.durationEndDate),
-            applicationDeadline,
-            createdBy: userIdentifier,
-          },
+    const engagementWithAssignments = await this.db.$transaction(async (tx) => {
+      const engagement = await tx.engagement.create({
+        data: {
+          id: nanoid(),
+          ...payload,
+          durationStartDate: this.normalizeDate(payload.durationStartDate),
+          durationEndDate: this.normalizeDate(payload.durationEndDate),
+          applicationDeadline,
+          createdBy: userIdentifier,
+        },
+      });
+
+      if (createDto.isPrivate && assignmentDetailsList.length > 0) {
+        await Promise.all(
+          assignmentDetailsList.map((details) =>
+            tx.engagementAssignment.create({
+              data: {
+                id: nanoid(),
+                engagementId: engagement.id,
+                memberId: details.memberId,
+                memberHandle: details.memberHandle,
+              },
+            }),
+          ),
+        );
+
+        const assignmentCount = await tx.engagementAssignment.count({
+          where: { engagementId: engagement.id },
         });
 
-        if (createDto.isPrivate && assignmentDetailsList.length > 0) {
-          await Promise.all(
-            assignmentDetailsList.map((details) =>
-              tx.engagementAssignment.create({
-                data: {
-                  id: nanoid(),
-                  engagementId: engagement.id,
-                  memberId: details.memberId,
-                  memberHandle: details.memberHandle,
-                },
-              }),
-            ),
+        if (!assignmentCount) {
+          throw new BadRequestException(
+            "Private engagements must have at least one assigned member",
           );
-
-          const assignmentCount = await tx.engagementAssignment.count({
-            where: { engagementId: engagement.id },
-          });
-
-          if (!assignmentCount) {
-            throw new BadRequestException(
-              "Private engagements must have at least one assigned member",
-            );
-          }
-
-          if (
-            payload.requiredMemberCount !== undefined &&
-            assignmentCount > payload.requiredMemberCount
-          ) {
-            throw new BadRequestException(
-              "Assigned member count exceeds required member count.",
-            );
-          }
         }
 
-        const createdEngagementWithAssignments =
-          await tx.engagement.findUnique({
-            where: { id: engagement.id },
-            include: { assignments: true },
-          });
-
-        if (!createdEngagementWithAssignments) {
-          throw new NotFoundException("Engagement not found.");
+        if (
+          payload.requiredMemberCount !== undefined &&
+          assignmentCount > payload.requiredMemberCount
+        ) {
+          throw new BadRequestException(
+            "Assigned member count exceeds required member count.",
+          );
         }
+      }
 
-        return createdEngagementWithAssignments;
-      },
-    );
+      const createdEngagementWithAssignments = await tx.engagement.findUnique({
+        where: { id: engagement.id },
+        include: { assignments: true },
+      });
+
+      if (!createdEngagementWithAssignments) {
+        throw new NotFoundException("Engagement not found.");
+      }
+
+      return createdEngagementWithAssignments;
+    });
 
     await this.emitMemberAssignedEvents(engagementWithAssignments);
-    await this.sendAssignmentOfferEmails(
-      engagementWithAssignments.assignments,
-    );
+    await this.sendAssignmentOfferEmails(engagementWithAssignments.assignments);
 
-    const engagementWithFields =
-      this.applyAssignmentFields(engagementWithAssignments);
-    const [hydrated] =
-      await this.hydrateCreatorEmails([engagementWithFields]);
-    return hydrated ?? {
-      ...engagementWithFields,
-      createdByEmail: null,
-    };
+    const engagementWithFields = this.applyAssignmentFields(
+      engagementWithAssignments,
+    );
+    const [hydrated] = await this.hydrateCreatorEmails([engagementWithFields]);
+    return (
+      hydrated ?? {
+        ...engagementWithFields,
+        createdByEmail: null,
+      }
+    );
   }
 
   private async emitMemberAssignedEvents(
@@ -378,8 +367,7 @@ export class EngagementsService {
         applicationsCount: _count.applications,
       }),
     );
-    const hydratedEngagements =
-      await this.hydrateCreatorEmails(engagements);
+    const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
 
     return {
       data: hydratedEngagements,
@@ -502,8 +490,7 @@ export class EngagementsService {
         applicationsCount: _count.applications,
       }),
     );
-    const hydratedEngagements =
-      await this.hydrateCreatorEmails(engagements);
+    const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
 
     return {
       data: hydratedEngagements,
@@ -530,8 +517,7 @@ export class EngagementsService {
 
     this.logger.debug("Raw engagement", engagement);
 
-    const engagementWithAssignments =
-      this.applyAssignmentFields(engagement);
+    const engagementWithAssignments = this.applyAssignmentFields(engagement);
 
     const normalizedEngagement = {
       ...engagementWithAssignments,
@@ -541,20 +527,20 @@ export class EngagementsService {
       workload: engagementWithAssignments.workload
         ? (engagementWithAssignments.workload.toString() as Workload)
         : null,
-      compensationRange:
-        engagementWithAssignments.compensationRange ?? null,
+      compensationRange: engagementWithAssignments.compensationRange ?? null,
     };
 
     if (!options.includeCreatorEmail) {
       return normalizedEngagement;
     }
 
-    const [hydrated] =
-      await this.hydrateCreatorEmails([normalizedEngagement]);
-    return hydrated ?? {
-      ...normalizedEngagement,
-      createdByEmail: null,
-    };
+    const [hydrated] = await this.hydrateCreatorEmails([normalizedEngagement]);
+    return (
+      hydrated ?? {
+        ...normalizedEngagement,
+        createdByEmail: null,
+      }
+    );
   }
 
   async update(
@@ -581,10 +567,7 @@ export class EngagementsService {
       this.assertNonEmptyArrayField(updateDto.countries, "countries");
     }
     if (updateDto.requiredSkills !== undefined) {
-      this.assertNonEmptyArrayField(
-        updateDto.requiredSkills,
-        "requiredSkills",
-      );
+      this.assertNonEmptyArrayField(updateDto.requiredSkills, "requiredSkills");
     }
 
     const existingEngagement = await this.findOne(id);
@@ -597,7 +580,8 @@ export class EngagementsService {
       await this.assertSkillsValid(updateDto.requiredSkills);
     }
 
-    const { durationValidation: _durationValidation, ...payload } = updateDto;
+    const { durationValidation, ...payload } = updateDto;
+    void durationValidation;
 
     const assignedMemberId = payload.assignedMemberId?.trim();
     if (payload.assignedMemberId !== undefined && !assignedMemberId) {
@@ -646,7 +630,8 @@ export class EngagementsService {
 
     const willBePrivate =
       payload.isPrivate === true ||
-      (payload.isPrivate === undefined && existingEngagement.isPrivate === true);
+      (payload.isPrivate === undefined &&
+        existingEngagement.isPrivate === true);
 
     if (willBePrivate) {
       const hasAssignedMember =
@@ -825,28 +810,27 @@ export class EngagementsService {
     });
 
     const updatedAssignments =
-      (updatedEngagement as Engagement & {
-        assignments?: EngagementAssignment[];
-      }).assignments ?? [];
+      (
+        updatedEngagement as Engagement & {
+          assignments?: EngagementAssignment[];
+        }
+      ).assignments ?? [];
     const existingMemberIds = new Set(
-      existingAssignments.map((assignment) =>
-        String(assignment.memberId),
-      ),
+      existingAssignments.map((assignment) => String(assignment.memberId)),
     );
     const newAssignments = updatedAssignments.filter(
-      (assignment) =>
-        !existingMemberIds.has(String(assignment.memberId)),
+      (assignment) => !existingMemberIds.has(String(assignment.memberId)),
     );
     await this.sendAssignmentOfferEmails(newAssignments);
 
-    const engagementWithFields =
-      this.applyAssignmentFields(updatedEngagement);
-    const [hydrated] =
-      await this.hydrateCreatorEmails([engagementWithFields]);
-    return hydrated ?? {
-      ...engagementWithFields,
-      createdByEmail: null,
-    };
+    const engagementWithFields = this.applyAssignmentFields(updatedEngagement);
+    const [hydrated] = await this.hydrateCreatorEmails([engagementWithFields]);
+    return (
+      hydrated ?? {
+        ...engagementWithFields,
+        createdByEmail: null,
+      }
+    );
   }
 
   async remove(id: string): Promise<void> {
@@ -1106,9 +1090,11 @@ export class EngagementsService {
     return results;
   }
 
-  private applyAssignmentFields<T extends Engagement & {
-    assignments?: EngagementAssignment[];
-  }>(
+  private applyAssignmentFields<
+    T extends Engagement & {
+      assignments?: EngagementAssignment[];
+    },
+  >(
     engagement: T,
   ): T & {
     assignedMemberId?: string;
@@ -1178,27 +1164,24 @@ export class EngagementsService {
         emailByUserId =
           await this.memberService.getMemberEmailsByUserIds(userIds);
       } catch (error) {
-        this.logger.warn(
-          "Failed to hydrate engagement creator emails.",
-          {
-            error: error instanceof Error ? error.message : error,
-          },
-        );
+        this.logger.warn("Failed to hydrate engagement creator emails.", {
+          error: error instanceof Error ? error.message : error,
+        });
       }
     }
 
     return engagements.map((engagement) => {
-      const existingEmail = (
-        engagement as { createdByEmail?: string | null }
-      ).createdByEmail;
+      const existingEmail = (engagement as { createdByEmail?: string | null })
+        .createdByEmail;
       if (typeof existingEmail === "string" && existingEmail.trim()) {
         return { ...engagement, createdByEmail: existingEmail };
       }
 
-      const normalizedCreatedBy =
-        this.normalizeCreatorUserId(engagement.createdBy);
+      const normalizedCreatedBy = this.normalizeCreatorUserId(
+        engagement.createdBy,
+      );
       const createdByEmail = normalizedCreatedBy
-        ? emailByUserId.get(normalizedCreatedBy) ?? null
+        ? (emailByUserId.get(normalizedCreatedBy) ?? null)
         : null;
 
       return { ...engagement, createdByEmail };
@@ -1213,10 +1196,7 @@ export class EngagementsService {
     }
   }
 
-  private assertNonEmptyArrayField(
-    value: unknown,
-    fieldName: string,
-  ): void {
+  private assertNonEmptyArrayField(value: unknown, fieldName: string): void {
     if (!Array.isArray(value) || value.length === 0) {
       throw new BadRequestException(
         `${fieldName} must contain at least one item.`,

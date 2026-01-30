@@ -94,9 +94,7 @@ export class MemberExperienceService {
       !this.isPrivilegedUser(authUser) &&
       assignment.memberId !== userIdentifier
     ) {
-      throw new ForbiddenException(
-        ERROR_MESSAGES.UnauthorizedExperienceAccess,
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.UnauthorizedExperienceAccess);
     }
 
     const experiences = await this.db.memberExperience.findMany({
@@ -127,9 +125,7 @@ export class MemberExperienceService {
       !this.isPrivilegedUser(authUser) &&
       experience.assignment.memberId !== userIdentifier
     ) {
-      throw new ForbiddenException(
-        ERROR_MESSAGES.UnauthorizedExperienceAccess,
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.UnauthorizedExperienceAccess);
     }
 
     return this.transformToResponseDto(experience);
@@ -175,9 +171,7 @@ export class MemberExperienceService {
     }
 
     const roles = getUserRoles(authUser);
-    return roles.some((role) =>
-      this.privilegedRoles.has(role?.toLowerCase()),
-    );
+    return roles.some((role) => this.privilegedRoles.has(role?.toLowerCase()));
   }
 
   private transformToResponseDto(

@@ -100,19 +100,15 @@ describe("ApplicationsService", () => {
       engagementId: "eng-1",
       userId: "user-1",
     };
-    jest
-      .spyOn(service, "findOne")
-      .mockResolvedValue(application as any);
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
     db.engagementApplication.update.mockResolvedValue({
       ...application,
       status: ApplicationStatus.REJECTED,
     });
 
-    await service.updateStatus(
-      "app-1",
-      ApplicationStatus.REJECTED,
-      { isMachine: true },
-    );
+    await service.updateStatus("app-1", ApplicationStatus.REJECTED, {
+      isMachine: true,
+    });
 
     expect(db.engagementApplication.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -153,25 +149,17 @@ describe("ApplicationsService", () => {
       },
     };
 
-    jest
-      .spyOn(service, "findOne")
-      .mockResolvedValue(application as any);
-    memberService.getMemberHandleByUserId.mockResolvedValue(
-      "member-handle",
-    );
-    db.$transaction.mockImplementation(async (callback) =>
-      callback(tx),
-    );
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
+    memberService.getMemberHandleByUserId.mockResolvedValue("member-handle");
+    db.$transaction.mockImplementation((callback) => callback(tx));
     db.engagementApplication.update.mockResolvedValue({
       ...application,
       status: ApplicationStatus.ACCEPTED,
     });
 
-    await service.updateStatus(
-      "app-1",
-      ApplicationStatus.ACCEPTED,
-      { userId: "manager-1" },
-    );
+    await service.updateStatus("app-1", ApplicationStatus.ACCEPTED, {
+      userId: "manager-1",
+    });
 
     expect(txEngagementUpdate).not.toHaveBeenCalled();
   });
@@ -207,25 +195,17 @@ describe("ApplicationsService", () => {
       },
     };
 
-    jest
-      .spyOn(service, "findOne")
-      .mockResolvedValue(application as any);
-    memberService.getMemberHandleByUserId.mockResolvedValue(
-      "member-handle",
-    );
-    db.$transaction.mockImplementation(async (callback) =>
-      callback(tx),
-    );
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
+    memberService.getMemberHandleByUserId.mockResolvedValue("member-handle");
+    db.$transaction.mockImplementation((callback) => callback(tx));
     db.engagementApplication.update.mockResolvedValue({
       ...application,
       status: ApplicationStatus.ACCEPTED,
     });
 
-    await service.updateStatus(
-      "app-1",
-      ApplicationStatus.ACCEPTED,
-      { userId: "manager-1" },
-    );
+    await service.updateStatus("app-1", ApplicationStatus.ACCEPTED, {
+      userId: "manager-1",
+    });
 
     expect(eventBusService.postEvent).toHaveBeenCalledWith(
       "engagement.member.assigned",
@@ -246,9 +226,7 @@ describe("ApplicationsService", () => {
       userId: "user-1",
       status: ApplicationStatus.ACCEPTED,
     };
-    jest
-      .spyOn(service, "findOne")
-      .mockResolvedValue(application as any);
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
     db.engagementAssignment.findUnique.mockResolvedValue({
       id: "assign-1",
     });
@@ -257,15 +235,11 @@ describe("ApplicationsService", () => {
       status: ApplicationStatus.SUBMITTED,
     });
 
-    await service.updateStatus(
-      "app-1",
-      ApplicationStatus.SUBMITTED,
-      { userId: "user-2" },
-    );
+    await service.updateStatus("app-1", ApplicationStatus.SUBMITTED, {
+      userId: "user-2",
+    });
 
-    expect(
-      db.engagementAssignment.findUnique,
-    ).toHaveBeenCalledWith({
+    expect(db.engagementAssignment.findUnique).toHaveBeenCalledWith({
       where: {
         engagementId_memberId: {
           engagementId: "eng-1",
@@ -306,6 +280,7 @@ describe("ApplicationsService", () => {
       "app-1",
       ApplicationStatus.ACCEPTED,
       authUser,
+      undefined,
     );
     expect(result).toBe(application);
   });

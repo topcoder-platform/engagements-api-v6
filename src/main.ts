@@ -11,9 +11,7 @@ async function bootstrap() {
   app.enableCors();
 
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
-  app.useGlobalInterceptors(
-    new ClassSerializerInterceptor(app.get(Reflector)),
-  );
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   //const config = app.get(ConfigService);
   const port = Number(process.env.PORT || 3000);
 
@@ -49,14 +47,8 @@ async function bootstrap() {
       },
       "bearer",
     )
-    .addTag(
-      "Engagements",
-      "Endpoints for managing engagement opportunities",
-    )
-    .addTag(
-      "Applications",
-      "Endpoints for managing engagement applications",
-    )
+    .addTag("Engagements", "Endpoints for managing engagement opportunities")
+    .addTag("Applications", "Endpoints for managing engagement applications")
     .addTag(
       "Feedback",
       "Endpoints for managing engagement feedback, including anonymous customer feedback",

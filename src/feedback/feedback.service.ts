@@ -23,9 +23,7 @@ import { PaginatedResponse } from "../engagements/dto";
 export class FeedbackService {
   private readonly logger = new Logger(FeedbackService.name);
 
-  constructor(
-    private readonly db: DbService,
-  ) {}
+  constructor(private readonly db: DbService) {}
 
   private transformToResponseDto(
     feedback: EngagementFeedback,
@@ -70,10 +68,7 @@ export class FeedbackService {
     });
   }
 
-  private async validateAssignment(
-    engagementId: string,
-    assignmentId: string,
-  ) {
+  private async validateAssignment(engagementId: string, assignmentId: string) {
     const assignment = await this.db.engagementAssignment.findUnique({
       where: { id: assignmentId },
     });
@@ -290,9 +285,7 @@ export class FeedbackService {
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
 
     return {
-      data: data.map((feedback) =>
-        this.transformToResponseDto(feedback),
-      ),
+      data: data.map((feedback) => this.transformToResponseDto(feedback)),
       meta: {
         page,
         perPage,

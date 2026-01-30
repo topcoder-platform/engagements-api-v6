@@ -56,10 +56,7 @@ export class MemberService {
     firstName: string | null;
     lastName: string | null;
   } | null> {
-    const members = await this.fetchMembers(
-      userId,
-      "email,firstName,lastName",
-    );
+    const members = await this.fetchMembers(userId, "email,firstName,lastName");
     const member = members[0];
     if (!member) {
       return null;
@@ -157,11 +154,7 @@ export class MemberService {
 
   async getMemberAddress(userId: string): Promise<MemberAddress | null> {
     const token = await this.getM2MToken();
-    const members = await this.fetchMembers(
-      userId,
-      "addresses,handle",
-      token,
-    );
+    const members = await this.fetchMembers(userId, "addresses,handle", token);
     const member = members[0];
     if (!member) {
       return null;
@@ -301,9 +294,7 @@ export class MemberService {
     const query = normalizedUserIds
       .map((userId) => `userIds=${encodeURIComponent(userId)}`)
       .join("&");
-    const fieldsQuery = fields
-      ? `&fields=${encodeURIComponent(fields)}`
-      : "";
+    const fieldsQuery = fields ? `&fields=${encodeURIComponent(fields)}` : "";
     const url = `${baseUrl}?${query}${fieldsQuery}&perPage=${normalizedUserIds.length}`;
 
     try {
@@ -367,9 +358,7 @@ export class MemberService {
 
   async getM2MToken(): Promise<string> {
     const clientId = this.configService.get<string>("M2M_CLIENT_ID");
-    const clientSecret = this.configService.get<string>(
-      "M2M_CLIENT_SECRET",
-    );
+    const clientSecret = this.configService.get<string>("M2M_CLIENT_SECRET");
 
     if (!clientId || !clientSecret) {
       this.logger.error(

@@ -24,6 +24,7 @@ import {
   ApplicationQueryDto,
   APPLICATION_SORT_FIELDS,
   ApplicationSortBy,
+  ApproveApplicationDto,
   CreateApplicationDto,
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
@@ -47,10 +48,9 @@ type MemberAddress = {
   zip?: string | null;
 };
 
-type ApplicationWithEngagement =
-  Prisma.EngagementApplicationGetPayload<{
-    include: { engagement: true };
-  }>;
+type ApplicationWithEngagement = Prisma.EngagementApplicationGetPayload<{
+  include: { engagement: true };
+}>;
 
 const PROJECT_MANAGER_ROLE_SET = new Set(
   ProjectManagerRoles.map((role) => role.toLowerCase()),
@@ -80,9 +80,7 @@ export class ApplicationsService {
     authUser: Record<string, any>,
   ): Promise<EngagementApplication> {
     if (authUser?.isMachine) {
-      throw new ForbiddenException(
-        "M2M tokens cannot create applications.",
-      );
+      throw new ForbiddenException("M2M tokens cannot create applications.");
     }
 
     const normalizedUserId = normalizeUserId(authUser?.userId);
@@ -118,16 +116,13 @@ export class ApplicationsService {
       throw new ConflictException(ERROR_MESSAGES.DuplicateApplication);
     }
 
-    const member = await this.memberService.getMemberByUserId(
-      normalizedUserId,
-    );
+    const member = await this.memberService.getMemberByUserId(normalizedUserId);
     if (!member) {
       throw new NotFoundException(ERROR_MESSAGES.MemberNotFound);
     }
 
-    const memberAddress = await this.memberService.getMemberAddress(
-      normalizedUserId,
-    );
+    const memberAddress =
+      await this.memberService.getMemberAddress(normalizedUserId);
     const formattedAddress = this.formatAddress(memberAddress);
     const name = [member.firstName, member.lastName]
       .filter(Boolean)
@@ -263,11 +258,13 @@ export class ApplicationsService {
   async approve(
     id: string,
     authUser: Record<string, any>,
+    assignmentDetails?: ApproveApplicationDto,
   ): Promise<EngagementApplication> {
     return this.updateStatus(
       id,
       ApplicationStatus.ACCEPTED,
       authUser,
+      assignmentDetails,
     );
   }
 
@@ -275,14 +272,18 @@ export class ApplicationsService {
     id: string,
     status: ApplicationStatus,
     authUser: Record<string, any>,
+    assignmentDetails?: ApproveApplicationDto,
   ): Promise<EngagementApplication> {
     const application = await this.findOne(id, authUser);
     const authUserId = getUserIdentifier(authUser);
-    const wasAccepted =
-      application.status === ApplicationStatus.ACCEPTED;
+    const wasAccepted = application.status === ApplicationStatus.ACCEPTED;
 
     if (status === ApplicationStatus.ACCEPTED && !wasAccepted) {
-      await this.handleMemberAssignment(application, authUser);
+      await this.handleMemberAssignment(
+        application,
+        authUser,
+        assignmentDetails,
+      );
     } else if (wasAccepted && status !== ApplicationStatus.ACCEPTED) {
       await this.handleMemberUnassignment(application);
     }
@@ -296,14 +297,55 @@ export class ApplicationsService {
     });
   }
 
+  private normalizeAssignmentDetails(details?: ApproveApplicationDto): {
+    startDate?: Date;
+    endDate?: Date;
+    agreementRate?: string;
+    hasAny: boolean;
+  } {
+    const parseDate = (value?: string) => {
+      if (value === undefined || value === null || value === "") {
+        return undefined;
+      }
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException("Invalid assignment date format.");
+      }
+      return parsed;
+    };
+
+    const startDate = parseDate(details?.startDate);
+    const endDate = parseDate(details?.endDate);
+    const agreementRate =
+      details?.agreementRate !== undefined ? details.agreementRate : undefined;
+
+    if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
+      throw new BadRequestException(
+        "Assignment end date must be after start date.",
+      );
+    }
+
+    return {
+      startDate,
+      endDate,
+      agreementRate,
+      hasAny:
+        startDate !== undefined ||
+        endDate !== undefined ||
+        agreementRate !== undefined,
+    };
+  }
+
   private async handleMemberAssignment(
     application: ApplicationWithEngagement,
     authUser: Record<string, any>,
+    assignmentDetails?: ApproveApplicationDto,
   ): Promise<void> {
-    const memberHandle =
-      await this.memberService.getMemberHandleByUserId(
-        application.userId,
-      );
+    const normalizedAssignment =
+      this.normalizeAssignmentDetails(assignmentDetails);
+    const memberHandle = await this.memberService.getMemberHandleByUserId(
+      application.userId,
+    );
     const resolvedMemberHandle = memberHandle?.trim();
     if (!resolvedMemberHandle) {
       throw new BadRequestException(
@@ -322,17 +364,33 @@ export class ApplicationsService {
       const engagementId = engagement.id;
       const memberId = application.userId;
 
-      const existingAssignment =
-        await tx.engagementAssignment.findUnique({
-          where: {
-            engagementId_memberId: {
-              engagementId,
-              memberId,
-            },
+      const existingAssignment = await tx.engagementAssignment.findUnique({
+        where: {
+          engagementId_memberId: {
+            engagementId,
+            memberId,
           },
-        });
+        },
+      });
 
       if (existingAssignment) {
+        let updatedAssignment = existingAssignment;
+        if (normalizedAssignment.hasAny) {
+          const updateData: Prisma.EngagementAssignmentUpdateInput = {};
+          if (normalizedAssignment.startDate !== undefined) {
+            updateData.startDate = normalizedAssignment.startDate;
+          }
+          if (normalizedAssignment.endDate !== undefined) {
+            updateData.endDate = normalizedAssignment.endDate;
+          }
+          if (normalizedAssignment.agreementRate !== undefined) {
+            updateData.agreementRate = normalizedAssignment.agreementRate;
+          }
+          updatedAssignment = await tx.engagementAssignment.update({
+            where: { id: existingAssignment.id },
+            data: updateData,
+          });
+        }
         this.logger.debug(
           `Member ${memberId} already assigned to engagement ${engagementId}`,
         );
@@ -342,11 +400,11 @@ export class ApplicationsService {
           assignmentId: existingAssignment.id,
           memberHandle: existingAssignment.memberHandle,
           assignment: {
-            id: existingAssignment.id,
-            engagementId: existingAssignment.engagementId,
-            startDate: existingAssignment.startDate,
-            endDate: existingAssignment.endDate,
-            agreementRate: existingAssignment.agreementRate,
+            id: updatedAssignment.id,
+            engagementId: updatedAssignment.engagementId,
+            startDate: updatedAssignment.startDate,
+            endDate: updatedAssignment.endDate,
+            agreementRate: updatedAssignment.agreementRate,
           },
         };
       }
@@ -372,6 +430,15 @@ export class ApplicationsService {
           memberId,
           memberHandle: resolvedMemberHandle,
           status: AssignmentStatus.SELECTED,
+          ...(normalizedAssignment.startDate !== undefined && {
+            startDate: normalizedAssignment.startDate,
+          }),
+          ...(normalizedAssignment.endDate !== undefined && {
+            endDate: normalizedAssignment.endDate,
+          }),
+          ...(normalizedAssignment.agreementRate !== undefined && {
+            agreementRate: normalizedAssignment.agreementRate,
+          }),
         },
       });
 
@@ -405,8 +472,7 @@ export class ApplicationsService {
 
     const { engagement, assignmentId, assigned } = assignmentResult;
     const payloadMemberHandle =
-      assignmentResult.memberHandle?.trim() ||
-      resolvedMemberHandle;
+      assignmentResult.memberHandle?.trim() || resolvedMemberHandle;
 
     this.logger.log(
       assigned
@@ -433,44 +499,37 @@ export class ApplicationsService {
         `Emitted engagement.member.assigned event for engagement ${engagement.id}`,
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "unknown error";
+      const message = error instanceof Error ? error.message : "unknown error";
       this.logger.error(
         `Failed to emit engagement.member.assigned event for engagement ${engagement.id}: ${message}`,
       );
     }
 
     if (assigned) {
-      await this.assignmentOfferEmailService.sendAssignmentOfferEmail(
-        {
-          memberId: String(application.userId),
-          memberHandle: payloadMemberHandle,
-          assignmentId,
-          engagementId: engagement.id,
-          assignmentStartDate:
-            assignmentResult.assignment?.startDate ?? null,
-          assignmentEndDate:
-            assignmentResult.assignment?.endDate ?? null,
-          agreementRate:
-            assignmentResult.assignment?.agreementRate ?? null,
-        },
-      );
+      await this.assignmentOfferEmailService.sendAssignmentOfferEmail({
+        memberId: String(application.userId),
+        memberHandle: payloadMemberHandle,
+        assignmentId,
+        engagementId: engagement.id,
+        assignmentStartDate: assignmentResult.assignment?.startDate ?? null,
+        assignmentEndDate: assignmentResult.assignment?.endDate ?? null,
+        agreementRate: assignmentResult.assignment?.agreementRate ?? null,
+      });
     }
   }
 
   private async handleMemberUnassignment(
     application: ApplicationWithEngagement,
   ): Promise<void> {
-    const assignment =
-      await this.db.engagementAssignment.findUnique({
-        where: {
-          engagementId_memberId: {
-            engagementId: application.engagementId,
-            memberId: application.userId,
-          },
+    const assignment = await this.db.engagementAssignment.findUnique({
+      where: {
+        engagementId_memberId: {
+          engagementId: application.engagementId,
+          memberId: application.userId,
         },
-        select: { id: true },
-      });
+      },
+      select: { id: true },
+    });
 
     if (!assignment?.id) {
       return;
@@ -502,9 +561,7 @@ export class ApplicationsService {
       return true;
     }
 
-    return (
-      this.isProjectManager(authUser) || this.isTaskManager(authUser)
-    );
+    return this.isProjectManager(authUser) || this.isTaskManager(authUser);
   }
 
   private isAdmin(authUser?: Record<string, any>): boolean {
@@ -539,9 +596,7 @@ export class ApplicationsService {
     }
 
     const roles = getUserRoles(authUser);
-    return roles.some((role) =>
-      TASK_MANAGER_ROLE_SET.has(role?.toLowerCase()),
-    );
+    return roles.some((role) => TASK_MANAGER_ROLE_SET.has(role?.toLowerCase()));
   }
 
   private formatAddress(address?: MemberAddress | null): string | null {

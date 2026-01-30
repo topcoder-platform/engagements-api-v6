@@ -19,9 +19,7 @@ export const normalizeUserId = (
   return userId;
 };
 
-export const getUserIdentifier = (
-  authUser?: Record<string, any>,
-): string => {
+export const getUserIdentifier = (authUser?: Record<string, any>): string => {
   if (authUser?.isMachine) {
     return "system";
   }

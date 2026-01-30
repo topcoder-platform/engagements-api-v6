@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -119,8 +118,7 @@ export class FeedbackController {
         generateDto.expirationDays,
       );
 
-    const baseUrl =
-      process.env.PLATFORM_UI_BASE_URL || "http://localhost:3001";
+    const baseUrl = process.env.PLATFORM_UI_BASE_URL || "http://localhost:3001";
     const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
     const feedbackUrl = `${normalizedBaseUrl}/feedback/anonymous/${secretToken}`;
 
@@ -253,10 +251,7 @@ export class FeedbackController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<FeedbackResponseDto[]> {
     this.assertAdminOrPm(req.authUser);
-    return this.feedbackService.findByAssignment(
-      engagementId,
-      assignmentId,
-    );
+    return this.feedbackService.findByAssignment(engagementId, assignmentId);
   }
 
   private assertAdminOrPm(authUser?: Record<string, any>) {

@@ -128,7 +128,8 @@ export class EngagementResponseDto {
   assignedMemberHandle?: string;
 
   @ApiPropertyOptional({
-    description: "Assignment records for this engagement (canonical collection)",
+    description:
+      "Assignment records for this engagement (canonical collection)",
     type: AssignmentResponseDto,
     isArray: true,
     example: [

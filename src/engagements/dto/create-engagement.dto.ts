@@ -31,7 +31,8 @@ export class CreateEngagementDto {
   projectId: string;
 
   @ApiProperty({
-    description: "Engagement title. Cannot be empty or contain only whitespace.",
+    description:
+      "Engagement title. Cannot be empty or contain only whitespace.",
     example: "Senior Frontend Engineer",
   })
   @IsString()

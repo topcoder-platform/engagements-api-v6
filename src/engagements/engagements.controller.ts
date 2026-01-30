@@ -109,10 +109,7 @@ export class EngagementsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<Engagement> {
     this.assertAdminOrPm(req.authUser);
-    return this.engagementsService.create(
-      createDto,
-      req.authUser ?? {},
-    );
+    return this.engagementsService.create(createDto, req.authUser ?? {});
   }
 
   @Get()
@@ -138,8 +135,7 @@ export class EngagementsController {
   @Get("active")
   @ApiOperation({
     summary: "List active engagements",
-    description:
-      "Returns active engagements only. Authentication is optional.",
+    description: "Returns active engagements only. Authentication is optional.",
   })
   @ApiResponse({
     status: 200,
@@ -175,10 +171,7 @@ export class EngagementsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<Engagement>> {
     this.assertMachineScope(req.authUser, AppScopes.ReadEngagements);
-    return this.engagementsService.findMyAssignments(
-      req.authUser ?? {},
-      query,
-    );
+    return this.engagementsService.findMyAssignments(req.authUser ?? {}, query);
   }
 
   @Get(":id")
@@ -231,11 +224,7 @@ export class EngagementsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<Engagement> {
     this.assertAdminOrPm(req.authUser);
-    return this.engagementsService.update(
-      id,
-      updateDto,
-      req.authUser ?? {},
-    );
+    return this.engagementsService.update(id, updateDto, req.authUser ?? {});
   }
 
   @Delete(":id/assignments/:assignmentId")

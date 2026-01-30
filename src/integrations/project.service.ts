@@ -65,9 +65,7 @@ export class ProjectService {
 
   private async getM2MToken(): Promise<string> {
     const clientId = this.configService.get<string>("M2M_CLIENT_ID");
-    const clientSecret = this.configService.get<string>(
-      "M2M_CLIENT_SECRET",
-    );
+    const clientSecret = this.configService.get<string>("M2M_CLIENT_SECRET");
 
     if (!clientId || !clientSecret) {
       this.logger.error(

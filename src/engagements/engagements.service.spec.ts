@@ -29,9 +29,7 @@ describe("EngagementsService", () => {
     timeZones: ["UTC"],
     countries: ["US"],
     requiredSkills: ["skill-1"],
-    applicationDeadline: new Date(
-      Date.now() + 60 * 60 * 1000,
-    ).toISOString(),
+    applicationDeadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   };
 
   beforeEach(() => {
@@ -87,9 +85,7 @@ describe("EngagementsService", () => {
       },
     };
 
-    db.$transaction.mockImplementation(async (callback: any) =>
-      callback(tx),
-    );
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
 
     await service.create(createDto as any, { isMachine: true });
 
@@ -107,9 +103,7 @@ describe("EngagementsService", () => {
       requiredMemberCount: undefined,
       assignments: [],
     };
-    jest
-      .spyOn(service, "findOne")
-      .mockResolvedValue(existingEngagement as any);
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
 
     const tx = {
       engagement: {
@@ -117,15 +111,11 @@ describe("EngagementsService", () => {
       },
     };
 
-    db.$transaction.mockImplementation(async (callback: any) =>
-      callback(tx),
-    );
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
 
-    await service.update(
-      "eng-1",
-      { title: "Updated" } as any,
-      { isMachine: true },
-    );
+    await service.update("eng-1", { title: "Updated" } as any, {
+      isMachine: true,
+    });
 
     expect(tx.engagement.update).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -22,15 +22,9 @@ export const ProjectManagerRoles = [
   "Project Manager",
 ];
 
-export const TaskManagerRoles = [
-  UserRoles.TaskManager,
-  "Task Manager",
-];
+export const TaskManagerRoles = [UserRoles.TaskManager, "Task Manager"];
 
-export const TalentManagerRoles = [
-  UserRoles.TalentManager,
-  "Talent Manager",
-];
+export const TalentManagerRoles = [UserRoles.TalentManager, "Talent Manager"];
 
 export const ManagerRoles = [
   ...ProjectManagerRoles,
@@ -38,7 +32,4 @@ export const ManagerRoles = [
   ...TalentManagerRoles,
 ];
 
-export const PrivilegedUserRoles = [
-  UserRoles.Admin,
-  ...ManagerRoles,
-];
+export const PrivilegedUserRoles = [UserRoles.Admin, ...ManagerRoles];

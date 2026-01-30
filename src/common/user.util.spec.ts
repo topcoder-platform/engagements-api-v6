@@ -6,9 +6,9 @@ describe("getUserIdentifier", () => {
   });
 
   it("returns normalized userId for user tokens", () => {
-    expect(
-      getUserIdentifier({ isMachine: false, userId: 123456 }),
-    ).toBe("123456");
+    expect(getUserIdentifier({ isMachine: false, userId: 123456 })).toBe(
+      "123456",
+    );
   });
 
   it("returns system when authUser is missing", () => {
@@ -20,9 +20,9 @@ describe("getUserIdentifier", () => {
   });
 
   it("returns system when userId is NaN", () => {
-    expect(
-      getUserIdentifier({ isMachine: false, userId: Number.NaN }),
-    ).toBe("system");
+    expect(getUserIdentifier({ isMachine: false, userId: Number.NaN })).toBe(
+      "system",
+    );
   });
 });
 
@@ -40,9 +40,10 @@ describe("getUserRoles", () => {
   });
 
   it("returns roles from role string", () => {
-    expect(
-      getUserRoles({ role: "Administrator, Task Manager" }),
-    ).toEqual(["Administrator", "Task Manager"]);
+    expect(getUserRoles({ role: "Administrator, Task Manager" })).toEqual([
+      "Administrator",
+      "Task Manager",
+    ]);
   });
 
   it("merges roles from roles and role fields", () => {

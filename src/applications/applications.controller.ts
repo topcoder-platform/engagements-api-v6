@@ -29,10 +29,11 @@ import {
   ApplicationQueryDto,
   ApplicationResponseDto,
   CreateApplicationDto,
+  ApproveApplicationDto,
   UpdateApplicationStatusDto,
 } from "./dto";
 import { ApplicationsService } from "./applications.service";
-import { ApplicationStatus, EngagementApplication } from "@prisma/client";
+import { EngagementApplication } from "@prisma/client";
 import { PaginatedResponse } from "../engagements/dto";
 import { getUserRoles } from "../common/user.util";
 
@@ -43,9 +44,7 @@ export class ApplicationsController {
     PrivilegedUserRoles.map((role) => role.toLowerCase()),
   );
 
-  constructor(
-    private readonly applicationsService: ApplicationsService,
-  ) {}
+  constructor(private readonly applicationsService: ApplicationsService) {}
 
   @Post(":engagementId/applications")
   @UseGuards(PermissionsGuard)
@@ -67,8 +66,7 @@ export class ApplicationsController {
     description: "Missing or invalid authentication token.",
   })
   @ApiForbiddenResponse({
-    description:
-      "Insufficient permissions. Authentication required.",
+    description: "Insufficient permissions. Authentication required.",
   })
   async create(
     @Param("engagementId") engagementId: string,
@@ -213,7 +211,7 @@ export class ApplicationsController {
     this.assertAdminOrPm(req.authUser);
     return this.applicationsService.updateStatus(
       id,
-      updateDto.status as ApplicationStatus,
+      updateDto.status,
       req.authUser ?? {},
     );
   }
@@ -233,6 +231,11 @@ export class ApplicationsController {
     description: "Application approved.",
     type: ApplicationResponseDto,
   })
+  @ApiBody({
+    type: ApproveApplicationDto,
+    description: "Assignment details for approval",
+    required: false,
+  })
   @ApiBadRequestResponse({
     description: "Unable to approve application.",
   })
@@ -246,10 +249,11 @@ export class ApplicationsController {
   @ApiNotFoundResponse({ description: "Application not found." })
   async approve(
     @Param("id") id: string,
+    @Body() approveDto: ApproveApplicationDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementApplication> {
     this.assertAdminOrPm(req.authUser);
-    return this.applicationsService.approve(id, req.authUser ?? {});
+    return this.applicationsService.approve(id, req.authUser ?? {}, approveDto);
   }
 
   private assertAdminOrPm(authUser?: Record<string, any>) {

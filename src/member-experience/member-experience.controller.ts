@@ -68,10 +68,7 @@ export class MemberExperienceController {
     @Body() createDto: CreateMemberExperienceDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto> {
-    this.assertMachineScope(
-      req.authUser,
-      AppScopes.WriteMemberExperience,
-    );
+    this.assertMachineScope(req.authUser, AppScopes.WriteMemberExperience);
     return this.memberExperienceService.create(
       engagementId,
       assignmentId,
@@ -113,10 +110,7 @@ export class MemberExperienceController {
     @Body() updateDto: UpdateMemberExperienceDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto> {
-    this.assertMachineScope(
-      req.authUser,
-      AppScopes.WriteMemberExperience,
-    );
+    this.assertMachineScope(req.authUser, AppScopes.WriteMemberExperience);
     return this.memberExperienceService.update(
       engagementId,
       assignmentId,
@@ -155,10 +149,7 @@ export class MemberExperienceController {
     @Param("assignmentId") assignmentId: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto[]> {
-    this.assertMachineScope(
-      req.authUser,
-      AppScopes.ReadMemberExperience,
-    );
+    this.assertMachineScope(req.authUser, AppScopes.ReadMemberExperience);
     return this.memberExperienceService.findByAssignment(
       engagementId,
       assignmentId,
@@ -193,10 +184,7 @@ export class MemberExperienceController {
     @Param("experienceId") experienceId: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<MemberExperienceResponseDto> {
-    this.assertMachineScope(
-      req.authUser,
-      AppScopes.ReadMemberExperience,
-    );
+    this.assertMachineScope(req.authUser, AppScopes.ReadMemberExperience);
     return this.memberExperienceService.findOne(
       experienceId,
       req.authUser ?? {},

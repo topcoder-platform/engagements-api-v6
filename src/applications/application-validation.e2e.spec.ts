@@ -17,8 +17,7 @@ const tokenFixtures: Record<string, Record<string, any>> = {
   },
 };
 
-const validationMessage =
-  "Field cannot be empty or contain only whitespace";
+const validationMessage = "Field cannot be empty or contain only whitespace";
 
 describe("Application Validation (e2e)", () => {
   let app: INestApplication;

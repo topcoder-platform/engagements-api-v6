@@ -39,23 +39,20 @@ export class AssignmentOfferEmailService {
 
     const memberId = String(recipient.memberId ?? "").trim();
     if (!memberId) {
-      this.logger.warn(
-        "Assignment offer email skipped: missing member ID.",
-      );
+      this.logger.warn("Assignment offer email skipped: missing member ID.");
       return;
     }
 
-    let memberDetails:
-      | { email: string | null; firstName: string | null; lastName: string | null }
-      | null = null;
+    let memberDetails: {
+      email: string | null;
+      firstName: string | null;
+      lastName: string | null;
+    } | null = null;
 
     try {
-      memberDetails = await this.memberService.getMemberByUserId(
-        memberId,
-      );
+      memberDetails = await this.memberService.getMemberByUserId(memberId);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "unknown error";
+      const message = error instanceof Error ? error.message : "unknown error";
       this.logger.error(
         `Failed to fetch member details for assignment offer email (memberId=${memberId}): ${message}`,
       );
@@ -74,9 +71,8 @@ export class AssignmentOfferEmailService {
     if (!handle) {
       try {
         handle =
-          (await this.memberService.getMemberHandleByUserId(
-            memberId,
-          )) ?? undefined;
+          (await this.memberService.getMemberHandleByUserId(memberId)) ??
+          undefined;
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "unknown error";
@@ -86,9 +82,7 @@ export class AssignmentOfferEmailService {
       }
     }
 
-    const normalizeDate = (
-      value?: Date | string | null,
-    ): string => {
+    const normalizeDate = (value?: Date | string | null): string => {
       if (!value) {
         return "";
       }
@@ -98,15 +92,10 @@ export class AssignmentOfferEmailService {
       return value.toString();
     };
 
-    const assignmentStartDate = normalizeDate(
-      recipient.assignmentStartDate,
-    );
-    const assignmentEndDate = normalizeDate(
-      recipient.assignmentEndDate,
-    );
+    const assignmentStartDate = normalizeDate(recipient.assignmentStartDate);
+    const assignmentEndDate = normalizeDate(recipient.assignmentEndDate);
     const agreementRate =
-      recipient.agreementRate !== undefined &&
-      recipient.agreementRate !== null
+      recipient.agreementRate !== undefined && recipient.agreementRate !== null
         ? recipient.agreementRate.toString()
         : "";
 
@@ -129,16 +118,12 @@ export class AssignmentOfferEmailService {
     };
 
     try {
-      await this.eventBusService.postEvent(
-        "external.action.email",
-        payload,
-      );
+      await this.eventBusService.postEvent("external.action.email", payload);
       this.logger.log(
         `Published 'external.action.email' (assignment offer) for member ${memberId} to ${email}.`,
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "unknown error";
+      const message = error instanceof Error ? error.message : "unknown error";
       this.logger.error(
         `Failed to publish assignment offer email for member ${memberId}: ${message}`,
       );
@@ -153,9 +138,7 @@ export class AssignmentOfferEmailService {
     }
 
     await Promise.all(
-      recipients.map((recipient) =>
-        this.sendAssignmentOfferEmail(recipient),
-      ),
+      recipients.map((recipient) => this.sendAssignmentOfferEmail(recipient)),
     );
   }
 }
