@@ -47,7 +47,7 @@ const validEngagementPayload = {
   timeZones: ["UTC"],
   countries: ["US"],
   requiredSkills: ["c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
-  applicationDeadline: "2025-02-15T00:00:00.000Z",
+  anticipatedStart: "IMMEDIATE",
   durationWeeks: 4,
 };
 

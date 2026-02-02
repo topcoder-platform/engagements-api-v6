@@ -10,12 +10,10 @@ generator externalClient {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum EngagementStatus {
   OPEN
-  PENDING_ASSIGNMENT
   ACTIVE
   CANCELLED
   CLOSED
@@ -26,6 +24,14 @@ enum ApplicationStatus {
   UNDER_REVIEW
   ACCEPTED
   REJECTED
+}
+
+enum AssignmentStatus {
+  SELECTED
+  OFFER_REJECTED
+  ASSIGNED
+  COMPLETED
+  TERMINATED
 }
 
 enum Role {
@@ -40,6 +46,12 @@ enum Workload {
   FRACTIONAL
 }
 
+enum AnticipatedStart {
+  IMMEDIATE
+  FEW_DAYS
+  FEW_WEEKS
+}
+
 model Engagement {
   id                  String           @id @default(uuid())
   projectId           String
@@ -52,7 +64,7 @@ model Engagement {
   timeZones           String[]
   countries           String[]
   requiredSkills      String[]
-  applicationDeadline DateTime
+  anticipatedStart    AnticipatedStart
   status              EngagementStatus @default(OPEN)
   isPrivate           Boolean          @default(false)
   requiredMemberCount Int?
@@ -69,8 +81,6 @@ model Engagement {
 
   @@index([projectId])
   @@index([status])
-  @@index([applicationDeadline])
-  @@index([status, applicationDeadline])
   @@index([role])
   @@index([workload])
 }
@@ -102,12 +112,18 @@ model EngagementApplication {
 }
 
 model EngagementAssignment {
-  id           String   @id @default(uuid())
-  engagementId String
-  memberId     String
-  memberHandle String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String           @id @default(uuid())
+  engagementId      String
+  memberId          String
+  memberHandle      String
+  status            AssignmentStatus @default(SELECTED)
+  termsAccepted     Boolean          @default(false)
+  agreementRate     String?
+  terminationReason String?
+  startDate         DateTime?
+  endDate           DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   engagement        Engagement           @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   feedback          EngagementFeedback[]

@@ -18,7 +18,12 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
-import { EngagementStatus, Role, Workload } from "@prisma/client";
+import {
+  AnticipatedStart,
+  EngagementStatus,
+  Role,
+  Workload,
+} from "@prisma/client";
 import { HasDuration, IsNotWhitespace } from "../../common/validation.util";
 
 export class CreateEngagementDto {
@@ -145,12 +150,13 @@ export class CreateEngagementDto {
   compensationRange?: string;
 
   @ApiProperty({
-    description: "Application deadline",
-    example: "2025-02-15T00:00:00.000Z",
+    description: "Anticipated start timeframe",
+    enum: AnticipatedStart,
+    example: AnticipatedStart.IMMEDIATE,
   })
-  @IsDateString()
+  @IsEnum(AnticipatedStart)
   @IsNotEmpty()
-  applicationDeadline: string;
+  anticipatedStart: AnticipatedStart;
 
   @ApiPropertyOptional({
     description: "Engagement status",

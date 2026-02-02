@@ -3,7 +3,7 @@
  * Client
 **/
 
-import * as runtime from './runtime/library.js';
+import * as runtime from './runtime/client.js';
 import $Types = runtime.Types // general types
 import $Public = runtime.Types.Public
 import $Utils = runtime.Types.Utils
@@ -45,7 +45,6 @@ export type MemberExperience = $Result.DefaultSelection<Prisma.$MemberExperience
 export namespace $Enums {
   export const EngagementStatus: {
   OPEN: 'OPEN',
-  PENDING_ASSIGNMENT: 'PENDING_ASSIGNMENT',
   ACTIVE: 'ACTIVE',
   CANCELLED: 'CANCELLED',
   CLOSED: 'CLOSED'
@@ -62,6 +61,17 @@ export const ApplicationStatus: {
 };
 
 export type ApplicationStatus = (typeof ApplicationStatus)[keyof typeof ApplicationStatus]
+
+
+export const AssignmentStatus: {
+  SELECTED: 'SELECTED',
+  OFFER_REJECTED: 'OFFER_REJECTED',
+  ASSIGNED: 'ASSIGNED',
+  COMPLETED: 'COMPLETED',
+  TERMINATED: 'TERMINATED'
+};
+
+export type AssignmentStatus = (typeof AssignmentStatus)[keyof typeof AssignmentStatus]
 
 
 export const Role: {
@@ -81,6 +91,15 @@ export const Workload: {
 
 export type Workload = (typeof Workload)[keyof typeof Workload]
 
+
+export const AnticipatedStart: {
+  IMMEDIATE: 'IMMEDIATE',
+  FEW_DAYS: 'FEW_DAYS',
+  FEW_WEEKS: 'FEW_WEEKS'
+};
+
+export type AnticipatedStart = (typeof AnticipatedStart)[keyof typeof AnticipatedStart]
+
 }
 
 export type EngagementStatus = $Enums.EngagementStatus
@@ -91,6 +110,10 @@ export type ApplicationStatus = $Enums.ApplicationStatus
 
 export const ApplicationStatus: typeof $Enums.ApplicationStatus
 
+export type AssignmentStatus = $Enums.AssignmentStatus
+
+export const AssignmentStatus: typeof $Enums.AssignmentStatus
+
 export type Role = $Enums.Role
 
 export const Role: typeof $Enums.Role
@@ -98,6 +121,10 @@ export const Role: typeof $Enums.Role
 export type Workload = $Enums.Workload
 
 export const Workload: typeof $Enums.Workload
+
+export type AnticipatedStart = $Enums.AnticipatedStart
+
+export const AnticipatedStart: typeof $Enums.AnticipatedStart
 
 /**
  * ##  Prisma Client ʲˢ
@@ -111,7 +138,7 @@ export const Workload: typeof $Enums.Workload
  * ```
  *
  *
- * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
+ * Read more in our [docs](https://pris.ly/d/client).
  */
 export class PrismaClient<
   ClientOptions extends Prisma.PrismaClientOptions = Prisma.PrismaClientOptions,
@@ -132,7 +159,7 @@ export class PrismaClient<
    * ```
    *
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
+   * Read more in our [docs](https://pris.ly/d/client).
    */
 
   constructor(optionsArg ?: Prisma.Subset<ClientOptions, Prisma.PrismaClientOptions>);
@@ -155,7 +182,7 @@ export class PrismaClient<
    * const result = await prisma.$executeRaw`UPDATE User SET cool = ${true} WHERE email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -167,7 +194,7 @@ export class PrismaClient<
    * const result = await prisma.$executeRawUnsafe('UPDATE User SET cool = $1 WHERE email = $2 ;', true, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -178,7 +205,7 @@ export class PrismaClient<
    * const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${1} OR email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $queryRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -190,7 +217,7 @@ export class PrismaClient<
    * const result = await prisma.$queryRawUnsafe('SELECT * FROM User WHERE id = $1 OR email = $2;', 1, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -211,7 +238,6 @@ export class PrismaClient<
   $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
 
   $transaction<R>(fn: (prisma: Omit<PrismaClient, runtime.ITXClientDenyList>) => $Utils.JsPromise<R>, options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<R>
-
 
   $extends: $Extensions.ExtendsHook<"extends", Prisma.TypeMapCb<ClientOptions>, ExtArgs, $Utils.Call<Prisma.TypeMapCb<ClientOptions>, {
     extArgs: ExtArgs
@@ -306,14 +332,6 @@ export namespace Prisma {
   export type DecimalJsLike = runtime.DecimalJsLike
 
   /**
-   * Metrics
-   */
-  export type Metrics = runtime.Metrics
-  export type Metric<T> = runtime.Metric<T>
-  export type MetricHistogram = runtime.MetricHistogram
-  export type MetricHistogramBucket = runtime.MetricHistogramBucket
-
-  /**
   * Extensions
   */
   export import Extension = $Extensions.UserArgs
@@ -324,11 +342,12 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 6.19.2
-   * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
+   * Prisma Client JS version: 7.2.0
+   * Query Engine version: 0c8ef2ce45c83248ab3df073180d5eda9e8be7a3
    */
   export type PrismaVersion = {
     client: string
+    engine: string
   }
 
   export const prismaVersion: PrismaVersion
@@ -717,9 +736,6 @@ export namespace Prisma {
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
 
 
-  export type Datasources = {
-    db?: Datasource
-  }
 
   interface TypeMapCb<ClientOptions = {}> extends $Utils.Fn<{extArgs: $Extensions.InternalArgs }, $Utils.Record<string, any>> {
     returns: Prisma.TypeMap<this['params']['extArgs'], ClientOptions extends { omit: infer OmitOptions } ? OmitOptions : {}>
@@ -1133,14 +1149,6 @@ export namespace Prisma {
   export type ErrorFormat = 'pretty' | 'colorless' | 'minimal'
   export interface PrismaClientOptions {
     /**
-     * Overwrites the datasource url from your schema.prisma file
-     */
-    datasources?: Datasources
-    /**
-     * Overwrites the datasource url from your schema.prisma file
-     */
-    datasourceUrl?: string
-    /**
      * @default "colorless"
      */
     errorFormat?: ErrorFormat
@@ -1166,7 +1174,7 @@ export namespace Prisma {
      *  { emit: 'stdout', level: 'error' }
      * 
      * ```
-     * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/logging#the-log-option).
+     * Read more in our [docs](https://pris.ly/d/logging).
      */
     log?: (LogLevel | LogDefinition)[]
     /**
@@ -1182,7 +1190,11 @@ export namespace Prisma {
     /**
      * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-planetscale`
      */
-    adapter?: runtime.SqlDriverAdapterFactory | null
+    adapter?: runtime.SqlDriverAdapterFactory
+    /**
+     * Prisma Accelerate URL allowing the client to connect through Accelerate instead of a direct database.
+     */
+    accelerateUrl?: string
     /**
      * Global configuration for omitting model fields by default.
      * 
@@ -1198,6 +1210,22 @@ export namespace Prisma {
      * ```
      */
     omit?: Prisma.GlobalOmitConfig
+    /**
+     * SQL commenter plugins that add metadata to SQL queries as comments.
+     * Comments follow the sqlcommenter format: https://google.github.io/sqlcommenter/
+     * 
+     * @example
+     * ```
+     * const prisma = new PrismaClient({
+     *   adapter,
+     *   comments: [
+     *     traceContext(),
+     *     queryInsights(),
+     *   ],
+     * })
+     * ```
+     */
+    comments?: runtime.SqlCommenterPlugin[]
   }
   export type GlobalOmitConfig = {
     engagement?: EngagementOmit
@@ -1397,7 +1425,7 @@ export namespace Prisma {
     durationEndDate: Date | null
     durationWeeks: number | null
     durationMonths: number | null
-    applicationDeadline: Date | null
+    anticipatedStart: $Enums.AnticipatedStart | null
     status: $Enums.EngagementStatus | null
     isPrivate: boolean | null
     requiredMemberCount: number | null
@@ -1419,7 +1447,7 @@ export namespace Prisma {
     durationEndDate: Date | null
     durationWeeks: number | null
     durationMonths: number | null
-    applicationDeadline: Date | null
+    anticipatedStart: $Enums.AnticipatedStart | null
     status: $Enums.EngagementStatus | null
     isPrivate: boolean | null
     requiredMemberCount: number | null
@@ -1444,7 +1472,7 @@ export namespace Prisma {
     timeZones: number
     countries: number
     requiredSkills: number
-    applicationDeadline: number
+    anticipatedStart: number
     status: number
     isPrivate: number
     requiredMemberCount: number
@@ -1480,7 +1508,7 @@ export namespace Prisma {
     durationEndDate?: true
     durationWeeks?: true
     durationMonths?: true
-    applicationDeadline?: true
+    anticipatedStart?: true
     status?: true
     isPrivate?: true
     requiredMemberCount?: true
@@ -1502,7 +1530,7 @@ export namespace Prisma {
     durationEndDate?: true
     durationWeeks?: true
     durationMonths?: true
-    applicationDeadline?: true
+    anticipatedStart?: true
     status?: true
     isPrivate?: true
     requiredMemberCount?: true
@@ -1527,7 +1555,7 @@ export namespace Prisma {
     timeZones?: true
     countries?: true
     requiredSkills?: true
-    applicationDeadline?: true
+    anticipatedStart?: true
     status?: true
     isPrivate?: true
     requiredMemberCount?: true
@@ -1639,7 +1667,7 @@ export namespace Prisma {
     timeZones: string[]
     countries: string[]
     requiredSkills: string[]
-    applicationDeadline: Date
+    anticipatedStart: $Enums.AnticipatedStart
     status: $Enums.EngagementStatus
     isPrivate: boolean
     requiredMemberCount: number | null
@@ -1683,7 +1711,7 @@ export namespace Prisma {
     timeZones?: boolean
     countries?: boolean
     requiredSkills?: boolean
-    applicationDeadline?: boolean
+    anticipatedStart?: boolean
     status?: boolean
     isPrivate?: boolean
     requiredMemberCount?: boolean
@@ -1711,7 +1739,7 @@ export namespace Prisma {
     timeZones?: boolean
     countries?: boolean
     requiredSkills?: boolean
-    applicationDeadline?: boolean
+    anticipatedStart?: boolean
     status?: boolean
     isPrivate?: boolean
     requiredMemberCount?: boolean
@@ -1736,7 +1764,7 @@ export namespace Prisma {
     timeZones?: boolean
     countries?: boolean
     requiredSkills?: boolean
-    applicationDeadline?: boolean
+    anticipatedStart?: boolean
     status?: boolean
     isPrivate?: boolean
     requiredMemberCount?: boolean
@@ -1761,7 +1789,7 @@ export namespace Prisma {
     timeZones?: boolean
     countries?: boolean
     requiredSkills?: boolean
-    applicationDeadline?: boolean
+    anticipatedStart?: boolean
     status?: boolean
     isPrivate?: boolean
     requiredMemberCount?: boolean
@@ -1774,7 +1802,7 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projectId" | "title" | "description" | "durationStartDate" | "durationEndDate" | "durationWeeks" | "durationMonths" | "timeZones" | "countries" | "requiredSkills" | "applicationDeadline" | "status" | "isPrivate" | "requiredMemberCount" | "role" | "workload" | "compensationRange" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagement"]>
+  export type EngagementOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projectId" | "title" | "description" | "durationStartDate" | "durationEndDate" | "durationWeeks" | "durationMonths" | "timeZones" | "countries" | "requiredSkills" | "anticipatedStart" | "status" | "isPrivate" | "requiredMemberCount" | "role" | "workload" | "compensationRange" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagement"]>
   export type EngagementInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     applications?: boolean | Engagement$applicationsArgs<ExtArgs>
     assignments?: boolean | Engagement$assignmentsArgs<ExtArgs>
@@ -1801,7 +1829,7 @@ export namespace Prisma {
       timeZones: string[]
       countries: string[]
       requiredSkills: string[]
-      applicationDeadline: Date
+      anticipatedStart: $Enums.AnticipatedStart
       status: $Enums.EngagementStatus
       isPrivate: boolean
       requiredMemberCount: number | null
@@ -2248,7 +2276,7 @@ export namespace Prisma {
     readonly timeZones: FieldRef<"Engagement", 'String[]'>
     readonly countries: FieldRef<"Engagement", 'String[]'>
     readonly requiredSkills: FieldRef<"Engagement", 'String[]'>
-    readonly applicationDeadline: FieldRef<"Engagement", 'DateTime'>
+    readonly anticipatedStart: FieldRef<"Engagement", 'AnticipatedStart'>
     readonly status: FieldRef<"Engagement", 'EngagementStatus'>
     readonly isPrivate: FieldRef<"Engagement", 'Boolean'>
     readonly requiredMemberCount: FieldRef<"Engagement", 'Int'>
@@ -3959,6 +3987,12 @@ export namespace Prisma {
     engagementId: string | null
     memberId: string | null
     memberHandle: string | null
+    status: $Enums.AssignmentStatus | null
+    termsAccepted: boolean | null
+    agreementRate: string | null
+    terminationReason: string | null
+    startDate: Date | null
+    endDate: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3968,6 +4002,12 @@ export namespace Prisma {
     engagementId: string | null
     memberId: string | null
     memberHandle: string | null
+    status: $Enums.AssignmentStatus | null
+    termsAccepted: boolean | null
+    agreementRate: string | null
+    terminationReason: string | null
+    startDate: Date | null
+    endDate: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3977,6 +4017,12 @@ export namespace Prisma {
     engagementId: number
     memberId: number
     memberHandle: number
+    status: number
+    termsAccepted: number
+    agreementRate: number
+    terminationReason: number
+    startDate: number
+    endDate: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -3988,6 +4034,12 @@ export namespace Prisma {
     engagementId?: true
     memberId?: true
     memberHandle?: true
+    status?: true
+    termsAccepted?: true
+    agreementRate?: true
+    terminationReason?: true
+    startDate?: true
+    endDate?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3997,6 +4049,12 @@ export namespace Prisma {
     engagementId?: true
     memberId?: true
     memberHandle?: true
+    status?: true
+    termsAccepted?: true
+    agreementRate?: true
+    terminationReason?: true
+    startDate?: true
+    endDate?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -4006,6 +4064,12 @@ export namespace Prisma {
     engagementId?: true
     memberId?: true
     memberHandle?: true
+    status?: true
+    termsAccepted?: true
+    agreementRate?: true
+    terminationReason?: true
+    startDate?: true
+    endDate?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -4088,6 +4152,12 @@ export namespace Prisma {
     engagementId: string
     memberId: string
     memberHandle: string
+    status: $Enums.AssignmentStatus
+    termsAccepted: boolean
+    agreementRate: string | null
+    terminationReason: string | null
+    startDate: Date | null
+    endDate: Date | null
     createdAt: Date
     updatedAt: Date
     _count: EngagementAssignmentCountAggregateOutputType | null
@@ -4114,6 +4184,12 @@ export namespace Prisma {
     engagementId?: boolean
     memberId?: boolean
     memberHandle?: boolean
+    status?: boolean
+    termsAccepted?: boolean
+    agreementRate?: boolean
+    terminationReason?: boolean
+    startDate?: boolean
+    endDate?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
@@ -4127,6 +4203,12 @@ export namespace Prisma {
     engagementId?: boolean
     memberId?: boolean
     memberHandle?: boolean
+    status?: boolean
+    termsAccepted?: boolean
+    agreementRate?: boolean
+    terminationReason?: boolean
+    startDate?: boolean
+    endDate?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
@@ -4137,6 +4219,12 @@ export namespace Prisma {
     engagementId?: boolean
     memberId?: boolean
     memberHandle?: boolean
+    status?: boolean
+    termsAccepted?: boolean
+    agreementRate?: boolean
+    terminationReason?: boolean
+    startDate?: boolean
+    endDate?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
@@ -4147,11 +4235,17 @@ export namespace Prisma {
     engagementId?: boolean
     memberId?: boolean
     memberHandle?: boolean
+    status?: boolean
+    termsAccepted?: boolean
+    agreementRate?: boolean
+    terminationReason?: boolean
+    startDate?: boolean
+    endDate?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
+  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "status" | "termsAccepted" | "agreementRate" | "terminationReason" | "startDate" | "endDate" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
   export type EngagementAssignmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
     feedback?: boolean | EngagementAssignment$feedbackArgs<ExtArgs>
@@ -4177,6 +4271,12 @@ export namespace Prisma {
       engagementId: string
       memberId: string
       memberHandle: string
+      status: $Enums.AssignmentStatus
+      termsAccepted: boolean
+      agreementRate: string | null
+      terminationReason: string | null
+      startDate: Date | null
+      endDate: Date | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["engagementAssignment"]>
@@ -4609,6 +4709,12 @@ export namespace Prisma {
     readonly engagementId: FieldRef<"EngagementAssignment", 'String'>
     readonly memberId: FieldRef<"EngagementAssignment", 'String'>
     readonly memberHandle: FieldRef<"EngagementAssignment", 'String'>
+    readonly status: FieldRef<"EngagementAssignment", 'AssignmentStatus'>
+    readonly termsAccepted: FieldRef<"EngagementAssignment", 'Boolean'>
+    readonly agreementRate: FieldRef<"EngagementAssignment", 'String'>
+    readonly terminationReason: FieldRef<"EngagementAssignment", 'String'>
+    readonly startDate: FieldRef<"EngagementAssignment", 'DateTime'>
+    readonly endDate: FieldRef<"EngagementAssignment", 'DateTime'>
     readonly createdAt: FieldRef<"EngagementAssignment", 'DateTime'>
     readonly updatedAt: FieldRef<"EngagementAssignment", 'DateTime'>
   }
@@ -7327,7 +7433,7 @@ export namespace Prisma {
     timeZones: 'timeZones',
     countries: 'countries',
     requiredSkills: 'requiredSkills',
-    applicationDeadline: 'applicationDeadline',
+    anticipatedStart: 'anticipatedStart',
     status: 'status',
     isPrivate: 'isPrivate',
     requiredMemberCount: 'requiredMemberCount',
@@ -7370,6 +7476,12 @@ export namespace Prisma {
     engagementId: 'engagementId',
     memberId: 'memberId',
     memberHandle: 'memberHandle',
+    status: 'status',
+    termsAccepted: 'termsAccepted',
+    agreementRate: 'agreementRate',
+    terminationReason: 'terminationReason',
+    startDate: 'startDate',
+    endDate: 'endDate',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -7477,6 +7589,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'AnticipatedStart'
+   */
+  export type EnumAnticipatedStartFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AnticipatedStart'>
+    
+
+
+  /**
+   * Reference to a field of type 'AnticipatedStart[]'
+   */
+  export type ListEnumAnticipatedStartFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AnticipatedStart[]'>
+    
+
+
+  /**
    * Reference to a field of type 'EngagementStatus'
    */
   export type EnumEngagementStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EngagementStatus'>
@@ -7540,6 +7666,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'AssignmentStatus'
+   */
+  export type EnumAssignmentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AssignmentStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'AssignmentStatus[]'
+   */
+  export type ListEnumAssignmentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AssignmentStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -7571,7 +7711,7 @@ export namespace Prisma {
     timeZones?: StringNullableListFilter<"Engagement">
     countries?: StringNullableListFilter<"Engagement">
     requiredSkills?: StringNullableListFilter<"Engagement">
-    applicationDeadline?: DateTimeFilter<"Engagement"> | Date | string
+    anticipatedStart?: EnumAnticipatedStartFilter<"Engagement"> | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFilter<"Engagement"> | $Enums.EngagementStatus
     isPrivate?: BoolFilter<"Engagement"> | boolean
     requiredMemberCount?: IntNullableFilter<"Engagement"> | number | null
@@ -7598,7 +7738,7 @@ export namespace Prisma {
     timeZones?: SortOrder
     countries?: SortOrder
     requiredSkills?: SortOrder
-    applicationDeadline?: SortOrder
+    anticipatedStart?: SortOrder
     status?: SortOrder
     isPrivate?: SortOrder
     requiredMemberCount?: SortOrderInput | SortOrder
@@ -7628,7 +7768,7 @@ export namespace Prisma {
     timeZones?: StringNullableListFilter<"Engagement">
     countries?: StringNullableListFilter<"Engagement">
     requiredSkills?: StringNullableListFilter<"Engagement">
-    applicationDeadline?: DateTimeFilter<"Engagement"> | Date | string
+    anticipatedStart?: EnumAnticipatedStartFilter<"Engagement"> | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFilter<"Engagement"> | $Enums.EngagementStatus
     isPrivate?: BoolFilter<"Engagement"> | boolean
     requiredMemberCount?: IntNullableFilter<"Engagement"> | number | null
@@ -7655,7 +7795,7 @@ export namespace Prisma {
     timeZones?: SortOrder
     countries?: SortOrder
     requiredSkills?: SortOrder
-    applicationDeadline?: SortOrder
+    anticipatedStart?: SortOrder
     status?: SortOrder
     isPrivate?: SortOrder
     requiredMemberCount?: SortOrderInput | SortOrder
@@ -7688,7 +7828,7 @@ export namespace Prisma {
     timeZones?: StringNullableListFilter<"Engagement">
     countries?: StringNullableListFilter<"Engagement">
     requiredSkills?: StringNullableListFilter<"Engagement">
-    applicationDeadline?: DateTimeWithAggregatesFilter<"Engagement"> | Date | string
+    anticipatedStart?: EnumAnticipatedStartWithAggregatesFilter<"Engagement"> | $Enums.AnticipatedStart
     status?: EnumEngagementStatusWithAggregatesFilter<"Engagement"> | $Enums.EngagementStatus
     isPrivate?: BoolWithAggregatesFilter<"Engagement"> | boolean
     requiredMemberCount?: IntNullableWithAggregatesFilter<"Engagement"> | number | null
@@ -7822,6 +7962,12 @@ export namespace Prisma {
     engagementId?: StringFilter<"EngagementAssignment"> | string
     memberId?: StringFilter<"EngagementAssignment"> | string
     memberHandle?: StringFilter<"EngagementAssignment"> | string
+    status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    termsAccepted?: BoolFilter<"EngagementAssignment"> | boolean
+    agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
+    terminationReason?: StringNullableFilter<"EngagementAssignment"> | string | null
+    startDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
+    endDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
     engagement?: XOR<EngagementScalarRelationFilter, EngagementWhereInput>
@@ -7834,6 +7980,12 @@ export namespace Prisma {
     engagementId?: SortOrder
     memberId?: SortOrder
     memberHandle?: SortOrder
+    status?: SortOrder
+    termsAccepted?: SortOrder
+    agreementRate?: SortOrderInput | SortOrder
+    terminationReason?: SortOrderInput | SortOrder
+    startDate?: SortOrderInput | SortOrder
+    endDate?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     engagement?: EngagementOrderByWithRelationInput
@@ -7850,6 +8002,12 @@ export namespace Prisma {
     engagementId?: StringFilter<"EngagementAssignment"> | string
     memberId?: StringFilter<"EngagementAssignment"> | string
     memberHandle?: StringFilter<"EngagementAssignment"> | string
+    status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    termsAccepted?: BoolFilter<"EngagementAssignment"> | boolean
+    agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
+    terminationReason?: StringNullableFilter<"EngagementAssignment"> | string | null
+    startDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
+    endDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
     engagement?: XOR<EngagementScalarRelationFilter, EngagementWhereInput>
@@ -7862,6 +8020,12 @@ export namespace Prisma {
     engagementId?: SortOrder
     memberId?: SortOrder
     memberHandle?: SortOrder
+    status?: SortOrder
+    termsAccepted?: SortOrder
+    agreementRate?: SortOrderInput | SortOrder
+    terminationReason?: SortOrderInput | SortOrder
+    startDate?: SortOrderInput | SortOrder
+    endDate?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: EngagementAssignmentCountOrderByAggregateInput
@@ -7877,6 +8041,12 @@ export namespace Prisma {
     engagementId?: StringWithAggregatesFilter<"EngagementAssignment"> | string
     memberId?: StringWithAggregatesFilter<"EngagementAssignment"> | string
     memberHandle?: StringWithAggregatesFilter<"EngagementAssignment"> | string
+    status?: EnumAssignmentStatusWithAggregatesFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    termsAccepted?: BoolWithAggregatesFilter<"EngagementAssignment"> | boolean
+    agreementRate?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
+    terminationReason?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
+    startDate?: DateTimeNullableWithAggregatesFilter<"EngagementAssignment"> | Date | string | null
+    endDate?: DateTimeNullableWithAggregatesFilter<"EngagementAssignment"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"EngagementAssignment"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"EngagementAssignment"> | Date | string
   }
@@ -8035,7 +8205,7 @@ export namespace Prisma {
     timeZones?: EngagementCreatetimeZonesInput | string[]
     countries?: EngagementCreatecountriesInput | string[]
     requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
-    applicationDeadline: Date | string
+    anticipatedStart: $Enums.AnticipatedStart
     status?: $Enums.EngagementStatus
     isPrivate?: boolean
     requiredMemberCount?: number | null
@@ -8062,7 +8232,7 @@ export namespace Prisma {
     timeZones?: EngagementCreatetimeZonesInput | string[]
     countries?: EngagementCreatecountriesInput | string[]
     requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
-    applicationDeadline: Date | string
+    anticipatedStart: $Enums.AnticipatedStart
     status?: $Enums.EngagementStatus
     isPrivate?: boolean
     requiredMemberCount?: number | null
@@ -8089,7 +8259,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -8116,7 +8286,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -8143,7 +8313,7 @@ export namespace Prisma {
     timeZones?: EngagementCreatetimeZonesInput | string[]
     countries?: EngagementCreatecountriesInput | string[]
     requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
-    applicationDeadline: Date | string
+    anticipatedStart: $Enums.AnticipatedStart
     status?: $Enums.EngagementStatus
     isPrivate?: boolean
     requiredMemberCount?: number | null
@@ -8168,7 +8338,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -8193,7 +8363,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -8342,6 +8512,12 @@ export namespace Prisma {
     id?: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     engagement: EngagementCreateNestedOneWithoutAssignmentsInput
@@ -8354,6 +8530,12 @@ export namespace Prisma {
     engagementId: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     feedback?: EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput
@@ -8364,6 +8546,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     engagement?: EngagementUpdateOneRequiredWithoutAssignmentsNestedInput
@@ -8376,6 +8564,12 @@ export namespace Prisma {
     engagementId?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput
@@ -8387,6 +8581,12 @@ export namespace Prisma {
     engagementId: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -8395,6 +8595,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8404,6 +8610,12 @@ export namespace Prisma {
     engagementId?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8605,15 +8817,11 @@ export namespace Prisma {
     isEmpty?: boolean
   }
 
-  export type DateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  export type EnumAnticipatedStartFilter<$PrismaModel = never> = {
+    equals?: $Enums.AnticipatedStart | EnumAnticipatedStartFieldRefInput<$PrismaModel>
+    in?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    not?: NestedEnumAnticipatedStartFilter<$PrismaModel> | $Enums.AnticipatedStart
   }
 
   export type EnumEngagementStatusFilter<$PrismaModel = never> = {
@@ -8657,6 +8865,17 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
   export type EngagementApplicationListRelationFilter = {
     every?: EngagementApplicationWhereInput
     some?: EngagementApplicationWhereInput
@@ -8694,7 +8913,7 @@ export namespace Prisma {
     timeZones?: SortOrder
     countries?: SortOrder
     requiredSkills?: SortOrder
-    applicationDeadline?: SortOrder
+    anticipatedStart?: SortOrder
     status?: SortOrder
     isPrivate?: SortOrder
     requiredMemberCount?: SortOrder
@@ -8722,7 +8941,7 @@ export namespace Prisma {
     durationEndDate?: SortOrder
     durationWeeks?: SortOrder
     durationMonths?: SortOrder
-    applicationDeadline?: SortOrder
+    anticipatedStart?: SortOrder
     status?: SortOrder
     isPrivate?: SortOrder
     requiredMemberCount?: SortOrder
@@ -8744,7 +8963,7 @@ export namespace Prisma {
     durationEndDate?: SortOrder
     durationWeeks?: SortOrder
     durationMonths?: SortOrder
-    applicationDeadline?: SortOrder
+    anticipatedStart?: SortOrder
     status?: SortOrder
     isPrivate?: SortOrder
     requiredMemberCount?: SortOrder
@@ -8811,18 +9030,14 @@ export namespace Prisma {
     _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
-  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+  export type EnumAnticipatedStartWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AnticipatedStart | EnumAnticipatedStartFieldRefInput<$PrismaModel>
+    in?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    not?: NestedEnumAnticipatedStartWithAggregatesFilter<$PrismaModel> | $Enums.AnticipatedStart
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
+    _min?: NestedEnumAnticipatedStartFilter<$PrismaModel>
+    _max?: NestedEnumAnticipatedStartFilter<$PrismaModel>
   }
 
   export type EnumEngagementStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -8879,6 +9094,20 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
     _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type EnumApplicationStatusFilter<$PrismaModel = never> = {
@@ -8971,6 +9200,13 @@ export namespace Prisma {
     _max?: NestedEnumApplicationStatusFilter<$PrismaModel>
   }
 
+  export type EnumAssignmentStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.AssignmentStatus | EnumAssignmentStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAssignmentStatusFilter<$PrismaModel> | $Enums.AssignmentStatus
+  }
+
   export type EngagementFeedbackListRelationFilter = {
     every?: EngagementFeedbackWhereInput
     some?: EngagementFeedbackWhereInput
@@ -9001,6 +9237,12 @@ export namespace Prisma {
     engagementId?: SortOrder
     memberId?: SortOrder
     memberHandle?: SortOrder
+    status?: SortOrder
+    termsAccepted?: SortOrder
+    agreementRate?: SortOrder
+    terminationReason?: SortOrder
+    startDate?: SortOrder
+    endDate?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -9010,6 +9252,12 @@ export namespace Prisma {
     engagementId?: SortOrder
     memberId?: SortOrder
     memberHandle?: SortOrder
+    status?: SortOrder
+    termsAccepted?: SortOrder
+    agreementRate?: SortOrder
+    terminationReason?: SortOrder
+    startDate?: SortOrder
+    endDate?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -9019,8 +9267,24 @@ export namespace Prisma {
     engagementId?: SortOrder
     memberId?: SortOrder
     memberHandle?: SortOrder
+    status?: SortOrder
+    termsAccepted?: SortOrder
+    agreementRate?: SortOrder
+    terminationReason?: SortOrder
+    startDate?: SortOrder
+    endDate?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type EnumAssignmentStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AssignmentStatus | EnumAssignmentStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAssignmentStatusWithAggregatesFilter<$PrismaModel> | $Enums.AssignmentStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAssignmentStatusFilter<$PrismaModel>
+    _max?: NestedEnumAssignmentStatusFilter<$PrismaModel>
   }
 
   export type EngagementAssignmentScalarRelationFilter = {
@@ -9173,8 +9437,8 @@ export namespace Prisma {
     push?: string | string[]
   }
 
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
+  export type EnumAnticipatedStartFieldUpdateOperationsInput = {
+    set?: $Enums.AnticipatedStart
   }
 
   export type EnumEngagementStatusFieldUpdateOperationsInput = {
@@ -9195,6 +9459,10 @@ export namespace Prisma {
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
+  }
+
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
   }
 
   export type EngagementApplicationUpdateManyWithoutEngagementNestedInput = {
@@ -9312,6 +9580,10 @@ export namespace Prisma {
     connectOrCreate?: MemberExperienceCreateOrConnectWithoutAssignmentInput | MemberExperienceCreateOrConnectWithoutAssignmentInput[]
     createMany?: MemberExperienceCreateManyAssignmentInputEnvelope
     connect?: MemberExperienceWhereUniqueInput | MemberExperienceWhereUniqueInput[]
+  }
+
+  export type EnumAssignmentStatusFieldUpdateOperationsInput = {
+    set?: $Enums.AssignmentStatus
   }
 
   export type EngagementUpdateOneRequiredWithoutAssignmentsNestedInput = {
@@ -9442,15 +9714,11 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedDateTimeFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  export type NestedEnumAnticipatedStartFilter<$PrismaModel = never> = {
+    equals?: $Enums.AnticipatedStart | EnumAnticipatedStartFieldRefInput<$PrismaModel>
+    in?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    not?: NestedEnumAnticipatedStartFilter<$PrismaModel> | $Enums.AnticipatedStart
   }
 
   export type NestedEnumEngagementStatusFilter<$PrismaModel = never> = {
@@ -9491,6 +9759,17 @@ export namespace Prisma {
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
   export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
@@ -9562,18 +9841,14 @@ export namespace Prisma {
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+  export type NestedEnumAnticipatedStartWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AnticipatedStart | EnumAnticipatedStartFieldRefInput<$PrismaModel>
+    in?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AnticipatedStart[] | ListEnumAnticipatedStartFieldRefInput<$PrismaModel>
+    not?: NestedEnumAnticipatedStartWithAggregatesFilter<$PrismaModel> | $Enums.AnticipatedStart
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
+    _min?: NestedEnumAnticipatedStartFilter<$PrismaModel>
+    _max?: NestedEnumAnticipatedStartFilter<$PrismaModel>
   }
 
   export type NestedEnumEngagementStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -9631,6 +9906,20 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
   export type NestedEnumApplicationStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.ApplicationStatus | EnumApplicationStatusFieldRefInput<$PrismaModel>
     in?: $Enums.ApplicationStatus[] | ListEnumApplicationStatusFieldRefInput<$PrismaModel>
@@ -9646,6 +9935,23 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumApplicationStatusFilter<$PrismaModel>
     _max?: NestedEnumApplicationStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumAssignmentStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.AssignmentStatus | EnumAssignmentStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAssignmentStatusFilter<$PrismaModel> | $Enums.AssignmentStatus
+  }
+
+  export type NestedEnumAssignmentStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AssignmentStatus | EnumAssignmentStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AssignmentStatus[] | ListEnumAssignmentStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAssignmentStatusWithAggregatesFilter<$PrismaModel> | $Enums.AssignmentStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAssignmentStatusFilter<$PrismaModel>
+    _max?: NestedEnumAssignmentStatusFilter<$PrismaModel>
   }
 
   export type EngagementApplicationCreateWithoutEngagementInput = {
@@ -9698,6 +10004,12 @@ export namespace Prisma {
     id?: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     feedback?: EngagementFeedbackCreateNestedManyWithoutAssignmentInput
@@ -9708,6 +10020,12 @@ export namespace Prisma {
     id?: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     feedback?: EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput
@@ -9786,6 +10104,12 @@ export namespace Prisma {
     engagementId?: StringFilter<"EngagementAssignment"> | string
     memberId?: StringFilter<"EngagementAssignment"> | string
     memberHandle?: StringFilter<"EngagementAssignment"> | string
+    status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    termsAccepted?: BoolFilter<"EngagementAssignment"> | boolean
+    agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
+    terminationReason?: StringNullableFilter<"EngagementAssignment"> | string | null
+    startDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
+    endDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
   }
@@ -9802,7 +10126,7 @@ export namespace Prisma {
     timeZones?: EngagementCreatetimeZonesInput | string[]
     countries?: EngagementCreatecountriesInput | string[]
     requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
-    applicationDeadline: Date | string
+    anticipatedStart: $Enums.AnticipatedStart
     status?: $Enums.EngagementStatus
     isPrivate?: boolean
     requiredMemberCount?: number | null
@@ -9828,7 +10152,7 @@ export namespace Prisma {
     timeZones?: EngagementCreatetimeZonesInput | string[]
     countries?: EngagementCreatecountriesInput | string[]
     requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
-    applicationDeadline: Date | string
+    anticipatedStart: $Enums.AnticipatedStart
     status?: $Enums.EngagementStatus
     isPrivate?: boolean
     requiredMemberCount?: number | null
@@ -9870,7 +10194,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -9896,7 +10220,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -9922,7 +10246,7 @@ export namespace Prisma {
     timeZones?: EngagementCreatetimeZonesInput | string[]
     countries?: EngagementCreatecountriesInput | string[]
     requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
-    applicationDeadline: Date | string
+    anticipatedStart: $Enums.AnticipatedStart
     status?: $Enums.EngagementStatus
     isPrivate?: boolean
     requiredMemberCount?: number | null
@@ -9948,7 +10272,7 @@ export namespace Prisma {
     timeZones?: EngagementCreatetimeZonesInput | string[]
     countries?: EngagementCreatecountriesInput | string[]
     requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
-    applicationDeadline: Date | string
+    anticipatedStart: $Enums.AnticipatedStart
     status?: $Enums.EngagementStatus
     isPrivate?: boolean
     requiredMemberCount?: number | null
@@ -10050,7 +10374,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -10076,7 +10400,7 @@ export namespace Prisma {
     timeZones?: EngagementUpdatetimeZonesInput | string[]
     countries?: EngagementUpdatecountriesInput | string[]
     requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
-    applicationDeadline?: DateTimeFieldUpdateOperationsInput | Date | string
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
     status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
     isPrivate?: BoolFieldUpdateOperationsInput | boolean
     requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
@@ -10154,6 +10478,12 @@ export namespace Prisma {
     id?: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     engagement: EngagementCreateNestedOneWithoutAssignmentsInput
@@ -10165,6 +10495,12 @@ export namespace Prisma {
     engagementId: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     memberExperiences?: MemberExperienceUncheckedCreateNestedManyWithoutAssignmentInput
@@ -10190,6 +10526,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     engagement?: EngagementUpdateOneRequiredWithoutAssignmentsNestedInput
@@ -10201,6 +10543,12 @@ export namespace Prisma {
     engagementId?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     memberExperiences?: MemberExperienceUncheckedUpdateManyWithoutAssignmentNestedInput
@@ -10210,6 +10558,12 @@ export namespace Prisma {
     id?: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     engagement: EngagementCreateNestedOneWithoutAssignmentsInput
@@ -10221,6 +10575,12 @@ export namespace Prisma {
     engagementId: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     feedback?: EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput
@@ -10246,6 +10606,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     engagement?: EngagementUpdateOneRequiredWithoutAssignmentsNestedInput
@@ -10257,6 +10623,12 @@ export namespace Prisma {
     engagementId?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput
@@ -10284,6 +10656,12 @@ export namespace Prisma {
     id?: string
     memberId: string
     memberHandle: string
+    status?: $Enums.AssignmentStatus
+    termsAccepted?: boolean
+    agreementRate?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -10346,6 +10724,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUpdateManyWithoutAssignmentNestedInput
@@ -10356,6 +10740,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput
@@ -10366,6 +10756,12 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    termsAccepted?: BoolFieldUpdateOperationsInput | boolean
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

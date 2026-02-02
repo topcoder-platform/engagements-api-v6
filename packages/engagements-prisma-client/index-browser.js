@@ -7,7 +7,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 const {
   Decimal,
-  objectEnumValues,
+  DbNull,
+  JsonNull,
+  AnyNull,
+  NullTypes,
   makeStrictEnum,
   Public,
   getRuntime,
@@ -21,12 +24,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.19.2
- * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
+ * Prisma Client JS version: 7.2.0
+ * Query Engine version: 0c8ef2ce45c83248ab3df073180d5eda9e8be7a3
  */
 Prisma.prismaVersion = {
-  client: "6.19.2",
-  engine: "c2990dca591cba766e3b7ef5d9e8a84796e47ab7"
+  client: "7.2.0",
+  engine: "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -98,15 +101,11 @@ In case this error is unexpected for you, please report it in https://pris.ly/pr
 /**
  * Shorthand utilities for JSON filtering
  */
-Prisma.DbNull = objectEnumValues.instances.DbNull
-Prisma.JsonNull = objectEnumValues.instances.JsonNull
-Prisma.AnyNull = objectEnumValues.instances.AnyNull
+Prisma.DbNull = DbNull
+Prisma.JsonNull = JsonNull
+Prisma.AnyNull = AnyNull
 
-Prisma.NullTypes = {
-  DbNull: objectEnumValues.classes.DbNull,
-  JsonNull: objectEnumValues.classes.JsonNull,
-  AnyNull: objectEnumValues.classes.AnyNull
-}
+Prisma.NullTypes = NullTypes
 
 
 
@@ -133,7 +132,7 @@ exports.Prisma.EngagementScalarFieldEnum = {
   timeZones: 'timeZones',
   countries: 'countries',
   requiredSkills: 'requiredSkills',
-  applicationDeadline: 'applicationDeadline',
+  anticipatedStart: 'anticipatedStart',
   status: 'status',
   isPrivate: 'isPrivate',
   requiredMemberCount: 'requiredMemberCount',
@@ -170,6 +169,12 @@ exports.Prisma.EngagementAssignmentScalarFieldEnum = {
   engagementId: 'engagementId',
   memberId: 'memberId',
   memberHandle: 'memberHandle',
+  status: 'status',
+  termsAccepted: 'termsAccepted',
+  agreementRate: 'agreementRate',
+  terminationReason: 'terminationReason',
+  startDate: 'startDate',
+  endDate: 'endDate',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -210,9 +215,14 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.AnticipatedStart = exports.$Enums.AnticipatedStart = {
+  IMMEDIATE: 'IMMEDIATE',
+  FEW_DAYS: 'FEW_DAYS',
+  FEW_WEEKS: 'FEW_WEEKS'
+};
+
 exports.EngagementStatus = exports.$Enums.EngagementStatus = {
   OPEN: 'OPEN',
-  PENDING_ASSIGNMENT: 'PENDING_ASSIGNMENT',
   ACTIVE: 'ACTIVE',
   CANCELLED: 'CANCELLED',
   CLOSED: 'CLOSED'
@@ -235,6 +245,14 @@ exports.ApplicationStatus = exports.$Enums.ApplicationStatus = {
   UNDER_REVIEW: 'UNDER_REVIEW',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'
+};
+
+exports.AssignmentStatus = exports.$Enums.AssignmentStatus = {
+  SELECTED: 'SELECTED',
+  OFFER_REJECTED: 'OFFER_REJECTED',
+  ASSIGNED: 'ASSIGNED',
+  COMPLETED: 'COMPLETED',
+  TERMINATED: 'TERMINATED'
 };
 
 exports.Prisma.ModelName = {

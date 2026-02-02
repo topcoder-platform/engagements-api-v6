@@ -29,7 +29,7 @@ describe("EngagementsService", () => {
     timeZones: ["UTC"],
     countries: ["US"],
     requiredSkills: ["skill-1"],
-    applicationDeadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    anticipatedStart: "IMMEDIATE",
   };
 
   beforeEach(() => {

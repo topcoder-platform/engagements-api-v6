@@ -19,7 +19,10 @@ const {
   skip,
   Decimal,
   Debug,
-  objectEnumValues,
+  DbNull,
+  JsonNull,
+  AnyNull,
+  NullTypes,
   makeStrictEnum,
   Extensions,
   warnOnce,
@@ -27,7 +30,7 @@ const {
   Public,
   getRuntime,
   createParam,
-} = require('./runtime/library.js')
+} = require('./runtime/client.js')
 
 
 const Prisma = {}
@@ -36,12 +39,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.19.2
- * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
+ * Prisma Client JS version: 7.2.0
+ * Query Engine version: 0c8ef2ce45c83248ab3df073180d5eda9e8be7a3
  */
 Prisma.prismaVersion = {
-  client: "6.19.2",
-  engine: "c2990dca591cba766e3b7ef5d9e8a84796e47ab7"
+  client: "7.2.0",
+  engine: "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3"
 }
 
 Prisma.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
@@ -69,15 +72,11 @@ Prisma.defineExtension = Extensions.defineExtension
 /**
  * Shorthand utilities for JSON filtering
  */
-Prisma.DbNull = objectEnumValues.instances.DbNull
-Prisma.JsonNull = objectEnumValues.instances.JsonNull
-Prisma.AnyNull = objectEnumValues.instances.AnyNull
+Prisma.DbNull = DbNull
+Prisma.JsonNull = JsonNull
+Prisma.AnyNull = AnyNull
 
-Prisma.NullTypes = {
-  DbNull: objectEnumValues.classes.DbNull,
-  JsonNull: objectEnumValues.classes.JsonNull,
-  AnyNull: objectEnumValues.classes.AnyNull
-}
+Prisma.NullTypes = NullTypes
 
 
 
@@ -106,7 +105,7 @@ exports.Prisma.EngagementScalarFieldEnum = {
   timeZones: 'timeZones',
   countries: 'countries',
   requiredSkills: 'requiredSkills',
-  applicationDeadline: 'applicationDeadline',
+  anticipatedStart: 'anticipatedStart',
   status: 'status',
   isPrivate: 'isPrivate',
   requiredMemberCount: 'requiredMemberCount',
@@ -143,6 +142,12 @@ exports.Prisma.EngagementAssignmentScalarFieldEnum = {
   engagementId: 'engagementId',
   memberId: 'memberId',
   memberHandle: 'memberHandle',
+  status: 'status',
+  termsAccepted: 'termsAccepted',
+  agreementRate: 'agreementRate',
+  terminationReason: 'terminationReason',
+  startDate: 'startDate',
+  endDate: 'endDate',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -185,7 +190,6 @@ exports.Prisma.NullsOrder = {
 };
 exports.EngagementStatus = exports.$Enums.EngagementStatus = {
   OPEN: 'OPEN',
-  PENDING_ASSIGNMENT: 'PENDING_ASSIGNMENT',
   ACTIVE: 'ACTIVE',
   CANCELLED: 'CANCELLED',
   CLOSED: 'CLOSED'
@@ -196,6 +200,14 @@ exports.ApplicationStatus = exports.$Enums.ApplicationStatus = {
   UNDER_REVIEW: 'UNDER_REVIEW',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'
+};
+
+exports.AssignmentStatus = exports.$Enums.AssignmentStatus = {
+  SELECTED: 'SELECTED',
+  OFFER_REJECTED: 'OFFER_REJECTED',
+  ASSIGNED: 'ASSIGNED',
+  COMPLETED: 'COMPLETED',
+  TERMINATED: 'TERMINATED'
 };
 
 exports.Role = exports.$Enums.Role = {
@@ -210,6 +222,12 @@ exports.Workload = exports.$Enums.Workload = {
   FRACTIONAL: 'FRACTIONAL'
 };
 
+exports.AnticipatedStart = exports.$Enums.AnticipatedStart = {
+  IMMEDIATE: 'IMMEDIATE',
+  FEW_DAYS: 'FEW_DAYS',
+  FEW_WEEKS: 'FEW_WEEKS'
+};
+
 exports.Prisma.ModelName = {
   Engagement: 'Engagement',
   EngagementApplication: 'EngagementApplication',
@@ -221,96 +239,26 @@ exports.Prisma.ModelName = {
  * Create the Client
  */
 const config = {
-  "generator": {
-    "name": "externalClient",
-    "provider": {
-      "fromEnvVar": null,
-      "value": "prisma-client-js"
-    },
-    "output": {
-      "value": "/home/vasea/work/topcoder/engagements-api-v6/packages/engagements-prisma-client",
-      "fromEnvVar": null
-    },
-    "config": {
-      "engineType": "library"
-    },
-    "binaryTargets": [
-      {
-        "fromEnvVar": null,
-        "value": "debian-openssl-3.0.x",
-        "native": true
-      },
-      {
-        "fromEnvVar": null,
-        "value": "debian-openssl-3.0.x"
-      }
-    ],
-    "previewFeatures": [],
-    "sourceFilePath": "/home/vasea/work/topcoder/engagements-api-v6/prisma/schema.prisma",
-    "isCustomOutput": true
-  },
-  "relativeEnvPaths": {
-    "rootEnvPath": "../../.env",
-    "schemaEnvPath": "../../.env"
-  },
-  "relativePath": "../../prisma",
-  "clientVersion": "6.19.2",
-  "engineVersion": "c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
-  "datasourceNames": [
-    "db"
-  ],
+  "previewFeatures": [],
+  "clientVersion": "7.2.0",
+  "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
   "activeProvider": "postgresql",
-  "postinstall": false,
-  "inlineDatasources": {
-    "db": {
-      "url": {
-        "fromEnvVar": "DATABASE_URL",
-        "value": null
+  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n}\n\ngenerator externalClient {\n  provider      = \"prisma-client-js\"\n  output        = \"../packages/engagements-prisma-client\"\n  binaryTargets = [\"native\", \"debian-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nenum EngagementStatus {\n  OPEN\n  ACTIVE\n  CANCELLED\n  CLOSED\n}\n\nenum ApplicationStatus {\n  SUBMITTED\n  UNDER_REVIEW\n  ACCEPTED\n  REJECTED\n}\n\nenum AssignmentStatus {\n  SELECTED\n  OFFER_REJECTED\n  ASSIGNED\n  COMPLETED\n  TERMINATED\n}\n\nenum Role {\n  DESIGNER\n  SOFTWARE_DEVELOPER\n  DATA_SCIENTIST\n  DATA_ENGINEER\n}\n\nenum Workload {\n  FULL_TIME\n  FRACTIONAL\n}\n\nenum AnticipatedStart {\n  IMMEDIATE\n  FEW_DAYS\n  FEW_WEEKS\n}\n\nmodel Engagement {\n  id                  String           @id @default(uuid())\n  projectId           String\n  title               String\n  description         String\n  durationStartDate   DateTime?\n  durationEndDate     DateTime?\n  durationWeeks       Int?\n  durationMonths      Int?\n  timeZones           String[]\n  countries           String[]\n  requiredSkills      String[]\n  anticipatedStart    AnticipatedStart\n  status              EngagementStatus @default(OPEN)\n  isPrivate           Boolean          @default(false)\n  requiredMemberCount Int?\n  role                Role?\n  workload            Workload?\n  compensationRange   String?\n  createdAt           DateTime         @default(now())\n  createdBy           String\n  updatedAt           DateTime         @updatedAt\n  updatedBy           String?\n\n  applications EngagementApplication[]\n  assignments  EngagementAssignment[]\n\n  @@index([projectId])\n  @@index([status])\n  @@index([role])\n  @@index([workload])\n}\n\nmodel EngagementApplication {\n  id                String            @id @default(uuid())\n  engagementId      String\n  userId            String\n  email             String\n  name              String\n  address           String?\n  mobileNumber      String?\n  coverLetter       String?\n  resumeUrl         String?\n  portfolioUrls     String[]\n  yearsOfExperience Int?\n  availability      String?\n  status            ApplicationStatus @default(SUBMITTED)\n  createdAt         DateTime          @default(now())\n  updatedAt         DateTime          @updatedAt\n  updatedBy         String?\n\n  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)\n\n  @@unique([engagementId, userId])\n  @@index([userId])\n  @@index([engagementId])\n  @@index([status])\n}\n\nmodel EngagementAssignment {\n  id                String           @id @default(uuid())\n  engagementId      String\n  memberId          String\n  memberHandle      String\n  status            AssignmentStatus @default(SELECTED)\n  termsAccepted     Boolean          @default(false)\n  agreementRate     String?\n  terminationReason String?\n  startDate         DateTime?\n  endDate           DateTime?\n  createdAt         DateTime         @default(now())\n  updatedAt         DateTime         @updatedAt\n\n  engagement        Engagement           @relation(fields: [engagementId], references: [id], onDelete: Cascade)\n  feedback          EngagementFeedback[]\n  memberExperiences MemberExperience[]\n\n  @@unique([engagementId, memberId])\n  @@index([engagementId])\n  @@index([memberId])\n}\n\nmodel EngagementFeedback {\n  id                     String    @id @default(uuid())\n  engagementAssignmentId String\n  feedbackText           String\n  rating                 Int?\n  givenByMemberId        String?\n  givenByHandle          String?\n  givenByEmail           String?\n  secretToken            String?   @unique\n  secretTokenExpiresAt   DateTime?\n  createdAt              DateTime  @default(now())\n  updatedAt              DateTime  @updatedAt\n\n  assignment EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)\n\n  @@index([engagementAssignmentId])\n  @@index([givenByMemberId])\n}\n\nmodel MemberExperience {\n  id                     String   @id @default(uuid())\n  engagementAssignmentId String\n  experienceText         String\n  createdAt              DateTime @default(now())\n  updatedAt              DateTime @updatedAt\n\n  assignment EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)\n\n  @@index([engagementAssignmentId])\n}\n"
+}
+
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Engagement\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"projectId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"durationStartDate\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"durationEndDate\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"durationWeeks\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"durationMonths\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"timeZones\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"countries\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"requiredSkills\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"anticipatedStart\",\"kind\":\"enum\",\"type\":\"AnticipatedStart\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"EngagementStatus\"},{\"name\":\"isPrivate\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"requiredMemberCount\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"role\",\"kind\":\"enum\",\"type\":\"Role\"},{\"name\":\"workload\",\"kind\":\"enum\",\"type\":\"Workload\"},{\"name\":\"compensationRange\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"applications\",\"kind\":\"object\",\"type\":\"EngagementApplication\",\"relationName\":\"EngagementToEngagementApplication\"},{\"name\":\"assignments\",\"kind\":\"object\",\"type\":\"EngagementAssignment\",\"relationName\":\"EngagementToEngagementAssignment\"}],\"dbName\":null},\"EngagementApplication\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"engagementId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"address\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"mobileNumber\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"coverLetter\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"resumeUrl\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"portfolioUrls\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"yearsOfExperience\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"availability\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"ApplicationStatus\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedBy\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"engagement\",\"kind\":\"object\",\"type\":\"Engagement\",\"relationName\":\"EngagementToEngagementApplication\"}],\"dbName\":null},\"EngagementAssignment\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"engagementId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"memberId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"memberHandle\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"AssignmentStatus\"},{\"name\":\"termsAccepted\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"agreementRate\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"terminationReason\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"startDate\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"endDate\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"engagement\",\"kind\":\"object\",\"type\":\"Engagement\",\"relationName\":\"EngagementToEngagementAssignment\"},{\"name\":\"feedback\",\"kind\":\"object\",\"type\":\"EngagementFeedback\",\"relationName\":\"EngagementAssignmentToEngagementFeedback\"},{\"name\":\"memberExperiences\",\"kind\":\"object\",\"type\":\"MemberExperience\",\"relationName\":\"EngagementAssignmentToMemberExperience\"}],\"dbName\":null},\"EngagementFeedback\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"engagementAssignmentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"feedbackText\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"rating\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"givenByMemberId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"givenByHandle\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"givenByEmail\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"secretToken\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"secretTokenExpiresAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"assignment\",\"kind\":\"object\",\"type\":\"EngagementAssignment\",\"relationName\":\"EngagementAssignmentToEngagementFeedback\"}],\"dbName\":null},\"MemberExperience\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"engagementAssignmentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"experienceText\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"assignment\",\"kind\":\"object\",\"type\":\"EngagementAssignment\",\"relationName\":\"EngagementAssignmentToMemberExperience\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
+config.compilerWasm = {
+      getRuntime: async () => require('./query_compiler_bg.js'),
+      getQueryCompilerWasmModule: async () => {
+        const { Buffer } = require('node:buffer')
+        const { wasm } = require('./query_compiler_bg.wasm-base64.js')
+        const queryCompilerWasmFileBytes = Buffer.from(wasm, 'base64')
+
+        return new WebAssembly.Module(queryCompilerWasmFileBytes)
       }
     }
-  },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n}\n\ngenerator externalClient {\n  provider      = \"prisma-client-js\"\n  output        = \"../packages/engagements-prisma-client\"\n  binaryTargets = [\"native\", \"debian-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nenum EngagementStatus {\n  OPEN\n  PENDING_ASSIGNMENT\n  ACTIVE\n  CANCELLED\n  CLOSED\n}\n\nenum ApplicationStatus {\n  SUBMITTED\n  UNDER_REVIEW\n  ACCEPTED\n  REJECTED\n}\n\nenum Role {\n  DESIGNER\n  SOFTWARE_DEVELOPER\n  DATA_SCIENTIST\n  DATA_ENGINEER\n}\n\nenum Workload {\n  FULL_TIME\n  FRACTIONAL\n}\n\nmodel Engagement {\n  id                  String           @id @default(uuid())\n  projectId           String\n  title               String\n  description         String\n  durationStartDate   DateTime?\n  durationEndDate     DateTime?\n  durationWeeks       Int?\n  durationMonths      Int?\n  timeZones           String[]\n  countries           String[]\n  requiredSkills      String[]\n  applicationDeadline DateTime\n  status              EngagementStatus @default(OPEN)\n  isPrivate           Boolean          @default(false)\n  requiredMemberCount Int?\n  role                Role?\n  workload            Workload?\n  compensationRange   String?\n  createdAt           DateTime         @default(now())\n  createdBy           String\n  updatedAt           DateTime         @updatedAt\n  updatedBy           String?\n\n  applications EngagementApplication[]\n  assignments  EngagementAssignment[]\n\n  @@index([projectId])\n  @@index([status])\n  @@index([applicationDeadline])\n  @@index([status, applicationDeadline])\n  @@index([role])\n  @@index([workload])\n}\n\nmodel EngagementApplication {\n  id                String            @id @default(uuid())\n  engagementId      String\n  userId            String\n  email             String\n  name              String\n  address           String?\n  mobileNumber      String?\n  coverLetter       String?\n  resumeUrl         String?\n  portfolioUrls     String[]\n  yearsOfExperience Int?\n  availability      String?\n  status            ApplicationStatus @default(SUBMITTED)\n  createdAt         DateTime          @default(now())\n  updatedAt         DateTime          @updatedAt\n  updatedBy         String?\n\n  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)\n\n  @@unique([engagementId, userId])\n  @@index([userId])\n  @@index([engagementId])\n  @@index([status])\n}\n\nmodel EngagementAssignment {\n  id           String   @id @default(uuid())\n  engagementId String\n  memberId     String\n  memberHandle String\n  createdAt    DateTime @default(now())\n  updatedAt    DateTime @updatedAt\n\n  engagement        Engagement           @relation(fields: [engagementId], references: [id], onDelete: Cascade)\n  feedback          EngagementFeedback[]\n  memberExperiences MemberExperience[]\n\n  @@unique([engagementId, memberId])\n  @@index([engagementId])\n  @@index([memberId])\n}\n\nmodel EngagementFeedback {\n  id                     String    @id @default(uuid())\n  engagementAssignmentId String\n  feedbackText           String\n  rating                 Int?\n  givenByMemberId        String?\n  givenByHandle          String?\n  givenByEmail           String?\n  secretToken            String?   @unique\n  secretTokenExpiresAt   DateTime?\n  createdAt              DateTime  @default(now())\n  updatedAt              DateTime  @updatedAt\n\n  assignment EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)\n\n  @@index([engagementAssignmentId])\n  @@index([givenByMemberId])\n}\n\nmodel MemberExperience {\n  id                     String   @id @default(uuid())\n  engagementAssignmentId String\n  experienceText         String\n  createdAt              DateTime @default(now())\n  updatedAt              DateTime @updatedAt\n\n  assignment EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)\n\n  @@index([engagementAssignmentId])\n}\n",
-  "inlineSchemaHash": "e68abcb01ea98c0c05438df2bab7f0291deae8c1a0d41593e48a6588c6f0872c",
-  "copyEngine": true
-}
-
-const fs = require('fs')
-
-config.dirname = __dirname
-if (!fs.existsSync(path.join(__dirname, 'schema.prisma'))) {
-  const alternativePaths = [
-    "packages/engagements-prisma-client",
-    "engagements-prisma-client",
-  ]
-  
-  const alternativePath = alternativePaths.find((altPath) => {
-    return fs.existsSync(path.join(process.cwd(), altPath, 'schema.prisma'))
-  }) ?? alternativePaths[0]
-
-  config.dirname = path.join(process.cwd(), alternativePath)
-  config.isBundled = true
-}
-
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Engagement\":{\"dbName\":null,\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"String\",\"nativeType\":null,\"default\":{\"name\":\"uuid\",\"args\":[4]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"projectId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"title\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"description\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"durationStartDate\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"durationEndDate\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"durationWeeks\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Int\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"durationMonths\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Int\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"timeZones\",\"kind\":\"scalar\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"countries\",\"kind\":\"scalar\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"requiredSkills\",\"kind\":\"scalar\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"applicationDeadline\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"status\",\"kind\":\"enum\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"EngagementStatus\",\"nativeType\":null,\"default\":\"OPEN\",\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"isPrivate\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"Boolean\",\"nativeType\":null,\"default\":false,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"requiredMemberCount\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Int\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"role\",\"kind\":\"enum\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Role\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"workload\",\"kind\":\"enum\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Workload\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"compensationRange\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdBy\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true},{\"name\":\"updatedBy\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"applications\",\"kind\":\"object\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"EngagementApplication\",\"nativeType\":null,\"relationName\":\"EngagementToEngagementApplication\",\"relationFromFields\":[],\"relationToFields\":[],\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"assignments\",\"kind\":\"object\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"EngagementAssignment\",\"nativeType\":null,\"relationName\":\"EngagementToEngagementAssignment\",\"relationFromFields\":[],\"relationToFields\":[],\"isGenerated\":false,\"isUpdatedAt\":false}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"EngagementApplication\":{\"dbName\":null,\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"String\",\"nativeType\":null,\"default\":{\"name\":\"uuid\",\"args\":[4]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"engagementId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":true,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"userId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"email\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"name\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"address\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"mobileNumber\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"coverLetter\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"resumeUrl\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"portfolioUrls\",\"kind\":\"scalar\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"yearsOfExperience\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Int\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"availability\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"status\",\"kind\":\"enum\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"ApplicationStatus\",\"nativeType\":null,\"default\":\"SUBMITTED\",\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true},{\"name\":\"updatedBy\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"engagement\",\"kind\":\"object\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Engagement\",\"nativeType\":null,\"relationName\":\"EngagementToEngagementApplication\",\"relationFromFields\":[\"engagementId\"],\"relationToFields\":[\"id\"],\"relationOnDelete\":\"Cascade\",\"isGenerated\":false,\"isUpdatedAt\":false}],\"primaryKey\":null,\"uniqueFields\":[[\"engagementId\",\"userId\"]],\"uniqueIndexes\":[{\"name\":null,\"fields\":[\"engagementId\",\"userId\"]}],\"isGenerated\":false},\"EngagementAssignment\":{\"dbName\":null,\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"String\",\"nativeType\":null,\"default\":{\"name\":\"uuid\",\"args\":[4]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"engagementId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":true,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"memberId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"memberHandle\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true},{\"name\":\"engagement\",\"kind\":\"object\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Engagement\",\"nativeType\":null,\"relationName\":\"EngagementToEngagementAssignment\",\"relationFromFields\":[\"engagementId\"],\"relationToFields\":[\"id\"],\"relationOnDelete\":\"Cascade\",\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"feedback\",\"kind\":\"object\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"EngagementFeedback\",\"nativeType\":null,\"relationName\":\"EngagementAssignmentToEngagementFeedback\",\"relationFromFields\":[],\"relationToFields\":[],\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"memberExperiences\",\"kind\":\"object\",\"isList\":true,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"MemberExperience\",\"nativeType\":null,\"relationName\":\"EngagementAssignmentToMemberExperience\",\"relationFromFields\":[],\"relationToFields\":[],\"isGenerated\":false,\"isUpdatedAt\":false}],\"primaryKey\":null,\"uniqueFields\":[[\"engagementId\",\"memberId\"]],\"uniqueIndexes\":[{\"name\":null,\"fields\":[\"engagementId\",\"memberId\"]}],\"isGenerated\":false},\"EngagementFeedback\":{\"dbName\":null,\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"String\",\"nativeType\":null,\"default\":{\"name\":\"uuid\",\"args\":[4]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"engagementAssignmentId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":true,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"feedbackText\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"rating\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"Int\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"givenByMemberId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"givenByHandle\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"givenByEmail\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"secretToken\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":true,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"secretTokenExpiresAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":false,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true},{\"name\":\"assignment\",\"kind\":\"object\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"EngagementAssignment\",\"nativeType\":null,\"relationName\":\"EngagementAssignmentToEngagementFeedback\",\"relationFromFields\":[\"engagementAssignmentId\"],\"relationToFields\":[\"id\"],\"relationOnDelete\":\"Cascade\",\"isGenerated\":false,\"isUpdatedAt\":false}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false},\"MemberExperience\":{\"dbName\":null,\"schema\":null,\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":true,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"String\",\"nativeType\":null,\"default\":{\"name\":\"uuid\",\"args\":[4]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"engagementAssignmentId\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":true,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"experienceText\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"String\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":true,\"type\":\"DateTime\",\"nativeType\":null,\"default\":{\"name\":\"now\",\"args\":[]},\"isGenerated\":false,\"isUpdatedAt\":false},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"DateTime\",\"nativeType\":null,\"isGenerated\":false,\"isUpdatedAt\":true},{\"name\":\"assignment\",\"kind\":\"object\",\"isList\":false,\"isRequired\":true,\"isUnique\":false,\"isId\":false,\"isReadOnly\":false,\"hasDefaultValue\":false,\"type\":\"EngagementAssignment\",\"nativeType\":null,\"relationName\":\"EngagementAssignmentToMemberExperience\",\"relationFromFields\":[\"engagementAssignmentId\"],\"relationToFields\":[\"id\"],\"relationOnDelete\":\"Cascade\",\"isGenerated\":false,\"isUpdatedAt\":false}],\"primaryKey\":null,\"uniqueFields\":[],\"uniqueIndexes\":[],\"isGenerated\":false}},\"enums\":{\"EngagementStatus\":{\"values\":[{\"name\":\"OPEN\",\"dbName\":null},{\"name\":\"PENDING_ASSIGNMENT\",\"dbName\":null},{\"name\":\"ACTIVE\",\"dbName\":null},{\"name\":\"CANCELLED\",\"dbName\":null},{\"name\":\"CLOSED\",\"dbName\":null}],\"dbName\":null},\"ApplicationStatus\":{\"values\":[{\"name\":\"SUBMITTED\",\"dbName\":null},{\"name\":\"UNDER_REVIEW\",\"dbName\":null},{\"name\":\"ACCEPTED\",\"dbName\":null},{\"name\":\"REJECTED\",\"dbName\":null}],\"dbName\":null},\"Role\":{\"values\":[{\"name\":\"DESIGNER\",\"dbName\":null},{\"name\":\"SOFTWARE_DEVELOPER\",\"dbName\":null},{\"name\":\"DATA_SCIENTIST\",\"dbName\":null},{\"name\":\"DATA_ENGINEER\",\"dbName\":null}],\"dbName\":null},\"Workload\":{\"values\":[{\"name\":\"FULL_TIME\",\"dbName\":null},{\"name\":\"FRACTIONAL\",\"dbName\":null}],\"dbName\":null}},\"types\":{}}")
-defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
-config.engineWasm = undefined
-config.compilerWasm = undefined
-
-
-const { warnEnvConflicts } = require('./runtime/library.js')
-
-warnEnvConflicts({
-    rootEnvPath: config.relativeEnvPaths.rootEnvPath && path.resolve(config.dirname, config.relativeEnvPaths.rootEnvPath),
-    schemaEnvPath: config.relativeEnvPaths.schemaEnvPath && path.resolve(config.dirname, config.relativeEnvPaths.schemaEnvPath)
-})
 
 const PrismaClient = getPrismaClient(config)
 exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
-
-// file annotations for bundling tools to include these files
-path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
-path.join(process.cwd(), "packages/engagements-prisma-client/libquery_engine-debian-openssl-3.0.x.so.node")
-// file annotations for bundling tools to include these files
-path.join(__dirname, "schema.prisma");
-path.join(process.cwd(), "packages/engagements-prisma-client/schema.prisma")

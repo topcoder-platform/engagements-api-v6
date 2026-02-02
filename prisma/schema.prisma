@@ -46,6 +46,12 @@ enum Workload {
   FRACTIONAL
 }
 
+enum AnticipatedStart {
+  IMMEDIATE
+  FEW_DAYS
+  FEW_WEEKS
+}
+
 model Engagement {
   id                  String                  @id @default(uuid())
   projectId           String
@@ -58,7 +64,7 @@ model Engagement {
   timeZones           String[]
   countries           String[]
   requiredSkills      String[]
-  applicationDeadline DateTime
+  anticipatedStart    AnticipatedStart
   status              EngagementStatus        @default(OPEN)
   isPrivate           Boolean                 @default(false)
   requiredMemberCount Int?
@@ -75,8 +81,6 @@ model Engagement {
 
   @@index([projectId])
   @@index([status])
-  @@index([applicationDeadline])
-  @@index([status, applicationDeadline])
   @@index([role])
   @@index([workload])
 }

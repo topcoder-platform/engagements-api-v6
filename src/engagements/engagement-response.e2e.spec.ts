@@ -1,6 +1,11 @@
 import { INestApplication, UnauthorizedException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { EngagementStatus, Role, Workload } from "@prisma/client";
+import {
+  AnticipatedStart,
+  EngagementStatus,
+  Role,
+  Workload,
+} from "@prisma/client";
 import * as request from "supertest";
 import { AppModule } from "../app.module";
 import { DbService } from "../db/db.service";
@@ -36,7 +41,7 @@ describe("Engagement Response (e2e)", () => {
       timeZones: ["UTC"],
       countries: ["US"],
       requiredSkills: ["skill-1"],
-      applicationDeadline: new Date("2025-02-15T00:00:00.000Z"),
+      anticipatedStart: AnticipatedStart.IMMEDIATE,
       status: EngagementStatus.OPEN,
       createdAt: new Date("2025-01-01T00:00:00.000Z"),
       updatedAt: new Date("2025-01-02T00:00:00.000Z"),

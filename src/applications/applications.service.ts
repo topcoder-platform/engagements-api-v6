@@ -96,10 +96,7 @@ export class ApplicationsService {
 
     const engagement = await this.engagementsService.findOne(engagementId);
 
-    if (
-      engagement.status !== EngagementStatus.OPEN ||
-      engagement.applicationDeadline <= new Date()
-    ) {
+    if (engagement.status !== EngagementStatus.OPEN) {
       throw new BadRequestException(ERROR_MESSAGES.EngagementNotOpen);
     }
 

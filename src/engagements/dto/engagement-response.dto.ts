@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { EngagementStatus, Role, Workload } from "@prisma/client";
+import {
+  AnticipatedStart,
+  EngagementStatus,
+  Role,
+  Workload,
+} from "@prisma/client";
 import { Transform } from "class-transformer";
 import { AssignmentResponseDto } from "./assignment-response.dto";
 
@@ -71,10 +76,11 @@ export class EngagementResponseDto {
   requiredSkills: string[];
 
   @ApiProperty({
-    description: "Application deadline",
-    example: "2025-02-15T00:00:00.000Z",
+    description: "Anticipated start timeframe",
+    enum: AnticipatedStart,
+    example: AnticipatedStart.IMMEDIATE,
   })
-  applicationDeadline: Date;
+  anticipatedStart: AnticipatedStart;
 
   @ApiProperty({
     description: "Engagement status",

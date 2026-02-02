@@ -68,10 +68,6 @@ export class EngagementsService {
     await this.assertProjectExists(createDto.projectId);
     await this.assertSkillsValid(createDto.requiredSkills);
 
-    const applicationDeadline = this.ensureFutureDate(
-      createDto.applicationDeadline,
-    );
-
     const {
       durationValidation,
       assignedMemberId,
@@ -126,7 +122,6 @@ export class EngagementsService {
           ...payload,
           durationStartDate: this.normalizeDate(payload.durationStartDate),
           durationEndDate: this.normalizeDate(payload.durationEndDate),
-          applicationDeadline,
           createdBy: userIdentifier,
         },
       });
@@ -692,10 +687,8 @@ export class EngagementsService {
     if (payload.requiredSkills !== undefined) {
       data.requiredSkills = payload.requiredSkills;
     }
-    if (payload.applicationDeadline !== undefined) {
-      data.applicationDeadline = this.normalizeDate(
-        payload.applicationDeadline,
-      );
+    if (payload.anticipatedStart !== undefined) {
+      data.anticipatedStart = payload.anticipatedStart;
     }
     if (payload.status !== undefined) {
       data.status = payload.status;
@@ -939,7 +932,6 @@ export class EngagementsService {
       where: {
         isPrivate: false,
         status: EngagementStatus.OPEN,
-        applicationDeadline: { gt: new Date() },
       },
       orderBy: { createdAt: "desc" },
       include: { assignments: true },
@@ -1218,16 +1210,6 @@ export class EngagementsService {
         `${ERROR_MESSAGES.InvalidSkills}: ${invalid.join(", ")}`,
       );
     }
-  }
-
-  private ensureFutureDate(dateValue: string | Date): Date {
-    const parsedDate = new Date(dateValue);
-
-    if (Number.isNaN(parsedDate.getTime()) || parsedDate <= new Date()) {
-      throw new BadRequestException(ERROR_MESSAGES.ApplicationDeadlineInPast);
-    }
-
-    return parsedDate;
   }
 
   private normalizeDate(dateValue?: string | Date): Date | undefined {
