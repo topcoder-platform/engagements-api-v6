@@ -149,6 +149,7 @@ exports.Prisma.EngagementApplicationScalarFieldEnum = {
   id: 'id',
   engagementId: 'engagementId',
   userId: 'userId',
+  handle: 'handle',
   email: 'email',
   name: 'name',
   address: 'address',
@@ -170,8 +171,8 @@ exports.Prisma.EngagementAssignmentScalarFieldEnum = {
   memberId: 'memberId',
   memberHandle: 'memberHandle',
   status: 'status',
-  termsAccepted: 'termsAccepted',
   agreementRate: 'agreementRate',
+  otherRemarks: 'otherRemarks',
   terminationReason: 'terminationReason',
   startDate: 'startDate',
   endDate: 'endDate',
@@ -243,7 +244,7 @@ exports.Workload = exports.$Enums.Workload = {
 exports.ApplicationStatus = exports.$Enums.ApplicationStatus = {
   SUBMITTED: 'SUBMITTED',
   UNDER_REVIEW: 'UNDER_REVIEW',
-  ACCEPTED: 'ACCEPTED',
+  SELECTED: 'SELECTED',
   REJECTED: 'REJECTED'
 };
 

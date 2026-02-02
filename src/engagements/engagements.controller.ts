@@ -296,6 +296,71 @@ export class EngagementsController {
       assignmentId,
       updateDto.status,
       updateDto.terminationReason,
+      updateDto.otherRemarks,
+    );
+  }
+
+  @Patch(":id/assignments/:assignmentId/accept-offer")
+  @UseGuards(PermissionsGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Accept assignment offer",
+    description:
+      "Accepts an assignment offer for the authenticated member. Only the assigned member may accept; admins and M2M tokens are not allowed.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Assignment offer accepted.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Only the assigned member can accept this offer. Admin and M2M tokens are not allowed.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement assignment not found." })
+  async acceptAssignmentOffer(
+    @Param("id") id: string,
+    @Param("assignmentId") assignmentId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ) {
+    return this.engagementsService.acceptAssignmentOffer(
+      id,
+      assignmentId,
+      req.authUser ?? {},
+    );
+  }
+
+  @Patch(":id/assignments/:assignmentId/reject-offer")
+  @UseGuards(PermissionsGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Reject assignment offer",
+    description:
+      "Rejects an assignment offer for the authenticated member. Only the assigned member may reject; admins and M2M tokens are not allowed.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Assignment offer rejected.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Only the assigned member can reject this offer. Admin and M2M tokens are not allowed.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement assignment not found." })
+  async rejectAssignmentOffer(
+    @Param("id") id: string,
+    @Param("assignmentId") assignmentId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ) {
+    return this.engagementsService.rejectAssignmentOffer(
+      id,
+      assignmentId,
+      req.authUser ?? {},
     );
   }
 

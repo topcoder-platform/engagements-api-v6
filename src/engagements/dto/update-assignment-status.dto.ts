@@ -20,4 +20,14 @@ export class UpdateAssignmentStatusDto {
   @IsString()
   @MaxLength(2000)
   terminationReason?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Other remarks detailing additional terms the member must agree to",
+    example: "Complete onboarding within the first week.",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  otherRemarks?: string;
 }

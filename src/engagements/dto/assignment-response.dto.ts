@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { AssignmentStatus } from "@prisma/client";
 
 export class AssignmentResponseDto {
@@ -34,16 +34,17 @@ export class AssignmentResponseDto {
   status: AssignmentStatus;
 
   @ApiProperty({
-    description: "Whether the assignment terms were accepted",
-    example: true,
-  })
-  termsAccepted: boolean;
-
-  @ApiProperty({
     description: "Agreed upon rate for the assignment",
     example: "80",
   })
   agreementRate?: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      "Other remarks detailing additional terms the member must agree to",
+    example: "Complete onboarding within the first week.",
+  })
+  otherRemarks?: string | null;
 
   @ApiProperty({
     description: "Assignment start date",

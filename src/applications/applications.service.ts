@@ -125,11 +125,15 @@ export class ApplicationsService {
       .filter(Boolean)
       .join(" ")
       .trim();
+    const handle =
+      typeof authUser?.handle === "string" ? authUser.handle.trim() : undefined;
+    const resolvedHandle = handle ? handle : undefined;
 
     return this.db.engagementApplication.create({
       data: {
         engagementId,
         userId: normalizedUserId,
+        ...(resolvedHandle && { handle: resolvedHandle }),
         email: member.email ?? "",
         name,
         address: formattedAddress,
@@ -259,7 +263,7 @@ export class ApplicationsService {
   ): Promise<EngagementApplication> {
     return this.updateStatus(
       id,
-      ApplicationStatus.ACCEPTED,
+      ApplicationStatus.SELECTED,
       authUser,
       assignmentDetails,
     );
@@ -273,15 +277,15 @@ export class ApplicationsService {
   ): Promise<EngagementApplication> {
     const application = await this.findOne(id, authUser);
     const authUserId = getUserIdentifier(authUser);
-    const wasAccepted = application.status === ApplicationStatus.ACCEPTED;
+    const wasSelected = application.status === ApplicationStatus.SELECTED;
 
-    if (status === ApplicationStatus.ACCEPTED && !wasAccepted) {
+    if (status === ApplicationStatus.SELECTED && !wasSelected) {
       await this.handleMemberAssignment(
         application,
         authUser,
         assignmentDetails,
       );
-    } else if (wasAccepted && status !== ApplicationStatus.ACCEPTED) {
+    } else if (wasSelected && status !== ApplicationStatus.SELECTED) {
       await this.handleMemberUnassignment(application);
     }
 
@@ -298,6 +302,7 @@ export class ApplicationsService {
     startDate?: Date;
     endDate?: Date;
     agreementRate?: string;
+    otherRemarks?: string | null;
     hasAny: boolean;
   } {
     const parseDate = (value?: string) => {
@@ -315,6 +320,8 @@ export class ApplicationsService {
     const endDate = parseDate(details?.endDate);
     const agreementRate =
       details?.agreementRate !== undefined ? details.agreementRate : undefined;
+    const otherRemarks =
+      details?.otherRemarks !== undefined ? details.otherRemarks : undefined;
 
     if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
       throw new BadRequestException(
@@ -326,10 +333,12 @@ export class ApplicationsService {
       startDate,
       endDate,
       agreementRate,
+      otherRemarks,
       hasAny:
         startDate !== undefined ||
         endDate !== undefined ||
-        agreementRate !== undefined,
+        agreementRate !== undefined ||
+        otherRemarks !== undefined,
     };
   }
 
@@ -383,6 +392,9 @@ export class ApplicationsService {
           if (normalizedAssignment.agreementRate !== undefined) {
             updateData.agreementRate = normalizedAssignment.agreementRate;
           }
+          if (normalizedAssignment.otherRemarks !== undefined) {
+            updateData.otherRemarks = normalizedAssignment.otherRemarks;
+          }
           updatedAssignment = await tx.engagementAssignment.update({
             where: { id: existingAssignment.id },
             data: updateData,
@@ -435,6 +447,9 @@ export class ApplicationsService {
           }),
           ...(normalizedAssignment.agreementRate !== undefined && {
             agreementRate: normalizedAssignment.agreementRate,
+          }),
+          ...(normalizedAssignment.otherRemarks !== undefined && {
+            otherRemarks: normalizedAssignment.otherRemarks,
           }),
         },
       });

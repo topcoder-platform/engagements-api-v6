@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsDateString, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class ApproveApplicationDto {
   @ApiPropertyOptional({
@@ -33,4 +33,21 @@ export class ApproveApplicationDto {
   })
   @IsString()
   agreementRate?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Other remarks detailing additional terms the member must agree to",
+    example: "Complete onboarding within the first week.",
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    const normalized = String(value).trim();
+    return normalized.length > 0 ? normalized : undefined;
+  })
+  @IsString()
+  @MaxLength(2000)
+  otherRemarks?: string;
 }

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -14,6 +15,7 @@ import {
   Workload,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
+import { PrivilegedUserRoles } from "../app-constants";
 import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
@@ -30,7 +32,7 @@ import {
   UpdateEngagementDto,
 } from "./dto";
 import { ERROR_MESSAGES } from "../common/constants";
-import { getUserIdentifier } from "../common/user.util";
+import { getUserIdentifier, getUserRoles } from "../common/user.util";
 
 const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
@@ -38,6 +40,9 @@ const ANY_LOCATION = "Any";
 @Injectable()
 export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
+  private readonly privilegedRoles = new Set(
+    PrivilegedUserRoles.map((role) => role.toLowerCase()),
+  );
 
   constructor(
     private readonly db: DbService,
@@ -880,6 +885,7 @@ export class EngagementsService {
     assignmentId: string,
     status: AssignmentStatus,
     terminationReason?: string,
+    otherRemarks?: string,
   ): Promise<EngagementAssignment> {
     this.logger.debug("Updating engagement assignment status", {
       engagementId,
@@ -915,15 +921,124 @@ export class EngagementsService {
         typeof terminationReason === "string"
           ? terminationReason.trim()
           : terminationReason;
+      const normalizedRemarks =
+        typeof otherRemarks === "string" ? otherRemarks.trim() : otherRemarks;
       const data: Prisma.EngagementAssignmentUpdateInput = { status };
       if (terminationReason !== undefined) {
         data.terminationReason = normalizedReason || null;
+      }
+      if (otherRemarks !== undefined) {
+        data.otherRemarks = normalizedRemarks || null;
       }
       return tx.engagementAssignment.update({
         where: { id: assignmentId },
         data,
       });
     });
+  }
+
+  async acceptAssignmentOffer(
+    engagementId: string,
+    assignmentId: string,
+    authUser: Record<string, any>,
+  ): Promise<EngagementAssignment> {
+    return this.respondToAssignmentOffer(
+      engagementId,
+      assignmentId,
+      authUser,
+      AssignmentStatus.ASSIGNED,
+    );
+  }
+
+  async rejectAssignmentOffer(
+    engagementId: string,
+    assignmentId: string,
+    authUser: Record<string, any>,
+  ): Promise<EngagementAssignment> {
+    return this.respondToAssignmentOffer(
+      engagementId,
+      assignmentId,
+      authUser,
+      AssignmentStatus.OFFER_REJECTED,
+    );
+  }
+
+  private async respondToAssignmentOffer(
+    engagementId: string,
+    assignmentId: string,
+    authUser: Record<string, any>,
+    nextStatus: AssignmentStatus,
+  ): Promise<EngagementAssignment> {
+    this.logger.debug("Responding to assignment offer", {
+      engagementId,
+      assignmentId,
+      nextStatus,
+    });
+
+    return this.db.$transaction(async (tx) => {
+      const engagement = await tx.engagement.findUnique({
+        where: { id: engagementId },
+      });
+
+      if (!engagement) {
+        throw new NotFoundException("Engagement not found.");
+      }
+
+      const assignment = await tx.engagementAssignment.findUnique({
+        where: { id: assignmentId },
+      });
+
+      if (!assignment) {
+        throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+      }
+
+      if (assignment.engagementId !== engagementId) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.AssignmentEngagementMismatch,
+        );
+      }
+
+      this.assertMemberCanRespondToOffer(assignment, authUser);
+
+      if (assignment.status !== AssignmentStatus.SELECTED) {
+        throw new BadRequestException(
+          "Only selected assignments can be accepted or rejected.",
+        );
+      }
+
+      return tx.engagementAssignment.update({
+        where: { id: assignmentId },
+        data: { status: nextStatus },
+      });
+    });
+  }
+
+  private assertMemberCanRespondToOffer(
+    assignment: EngagementAssignment,
+    authUser: Record<string, any>,
+  ) {
+    if (authUser?.isMachine) {
+      throw new ForbiddenException(
+        "Machine tokens cannot accept or reject assignment offers.",
+      );
+    }
+
+    const roles = getUserRoles(authUser);
+    const isPrivileged = roles.some((role) =>
+      this.privilegedRoles.has(role?.toLowerCase()),
+    );
+    if (isPrivileged) {
+      throw new ForbiddenException(
+        "Admins cannot accept or reject assignment offers.",
+      );
+    }
+
+    const userIdentifier = getUserIdentifier(authUser);
+    if (!userIdentifier || assignment.memberId !== userIdentifier) {
+      throw new ForbiddenException(
+        "You can only respond to your own assignment offer.",
+      );
+    }
   }
 
   async findAllActive(): Promise<Engagement[]> {

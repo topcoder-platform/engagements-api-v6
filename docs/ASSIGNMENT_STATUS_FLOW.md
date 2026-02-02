@@ -8,10 +8,9 @@ stateDiagram-v2
 
   [*] --> SELECTED
   SELECTED : Initial state
-  SELECTED : termsAccepted = false
 
-  SELECTED --> OFFER_REJECTED : Candidate rejects terms or rate
-  SELECTED --> ASSIGNED : termsAccepted = true\nagreementRate agreed\nTalent Manager activates
+  SELECTED --> OFFER_REJECTED : Candidate rejects offer or rate
+  SELECTED --> ASSIGNED : Offer accepted\nagreementRate agreed\nTalent Manager activates
 
   ASSIGNED : Engagement active
   ASSIGNED : Payments allowed

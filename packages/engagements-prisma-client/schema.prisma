@@ -22,7 +22,7 @@ enum EngagementStatus {
 enum ApplicationStatus {
   SUBMITTED
   UNDER_REVIEW
-  ACCEPTED
+  SELECTED
   REJECTED
 }
 
@@ -89,6 +89,7 @@ model EngagementApplication {
   id                String            @id @default(uuid())
   engagementId      String
   userId            String
+  handle            String?
   email             String
   name              String
   address           String?
@@ -117,8 +118,8 @@ model EngagementAssignment {
   memberId          String
   memberHandle      String
   status            AssignmentStatus @default(SELECTED)
-  termsAccepted     Boolean          @default(false)
   agreementRate     String?
+  otherRemarks      String?
   terminationReason String?
   startDate         DateTime?
   endDate           DateTime?

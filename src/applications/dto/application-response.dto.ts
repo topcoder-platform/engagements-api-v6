@@ -21,6 +21,12 @@ export class ApplicationResponseDto {
   })
   userId: string;
 
+  @ApiPropertyOptional({
+    description: "Applicant handle",
+    example: "jane_doe",
+  })
+  handle?: string | null;
+
   @ApiProperty({
     description: "Applicant email",
     example: "member@example.com",

@@ -154,10 +154,10 @@ describe("ApplicationsService", () => {
     db.$transaction.mockImplementation((callback) => callback(tx));
     db.engagementApplication.update.mockResolvedValue({
       ...application,
-      status: ApplicationStatus.ACCEPTED,
+      status: ApplicationStatus.SELECTED,
     });
 
-    await service.updateStatus("app-1", ApplicationStatus.ACCEPTED, {
+    await service.updateStatus("app-1", ApplicationStatus.SELECTED, {
       userId: "manager-1",
     });
 
@@ -200,10 +200,10 @@ describe("ApplicationsService", () => {
     db.$transaction.mockImplementation((callback) => callback(tx));
     db.engagementApplication.update.mockResolvedValue({
       ...application,
-      status: ApplicationStatus.ACCEPTED,
+      status: ApplicationStatus.SELECTED,
     });
 
-    await service.updateStatus("app-1", ApplicationStatus.ACCEPTED, {
+    await service.updateStatus("app-1", ApplicationStatus.SELECTED, {
       userId: "manager-1",
     });
 
@@ -219,12 +219,12 @@ describe("ApplicationsService", () => {
     );
   });
 
-  it("removes assignment when accepted application is moved to submitted", async () => {
+  it("removes assignment when selected application is moved to submitted", async () => {
     const application = {
       id: "app-1",
       engagementId: "eng-1",
       userId: "user-1",
-      status: ApplicationStatus.ACCEPTED,
+      status: ApplicationStatus.SELECTED,
     };
     jest.spyOn(service, "findOne").mockResolvedValue(application as any);
     db.engagementAssignment.findUnique.mockResolvedValue({
@@ -262,12 +262,12 @@ describe("ApplicationsService", () => {
     );
   });
 
-  it("approves application by setting status to ACCEPTED", async () => {
+  it("approves application by setting status to SELECTED", async () => {
     const application = {
       id: "app-1",
       engagementId: "eng-1",
       userId: "user-1",
-      status: ApplicationStatus.ACCEPTED,
+      status: ApplicationStatus.SELECTED,
     };
     const updateSpy = jest
       .spyOn(service, "updateStatus")
@@ -278,7 +278,7 @@ describe("ApplicationsService", () => {
 
     expect(updateSpy).toHaveBeenCalledWith(
       "app-1",
-      ApplicationStatus.ACCEPTED,
+      ApplicationStatus.SELECTED,
       authUser,
       undefined,
     );
