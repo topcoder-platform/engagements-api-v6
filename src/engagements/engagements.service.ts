@@ -22,6 +22,7 @@ import { MemberService } from "../integrations/member.service";
 import { ProjectService } from "../integrations/project.service";
 import { SkillsService } from "../integrations/skills.service";
 import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
+import { AssignmentOfferResponseEmailService } from "../integrations/assignment-offer-response-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
 import {
   CreateEngagementDto,
@@ -51,6 +52,7 @@ export class EngagementsService {
     private readonly memberService: MemberService,
     private readonly eventBusService: EventBusService,
     private readonly assignmentOfferEmailService: AssignmentOfferEmailService,
+    private readonly assignmentOfferResponseEmailService: AssignmentOfferResponseEmailService,
   ) {}
 
   async create(
@@ -981,7 +983,12 @@ export class EngagementsService {
       nextStatus,
     });
 
-    return this.db.$transaction(async (tx) => {
+    let projectId: string | null = null;
+    let assignmentMemberId: string | null = null;
+    let assignmentMemberHandle: string | null = null;
+    let engagementTitle: string | null = null;
+
+    const updatedAssignment = await this.db.$transaction(async (tx) => {
       const engagement = await tx.engagement.findUnique({
         where: { id: engagementId },
       });
@@ -1004,6 +1011,11 @@ export class EngagementsService {
         );
       }
 
+      projectId = engagement.projectId;
+      assignmentMemberId = assignment.memberId;
+      assignmentMemberHandle = assignment.memberHandle;
+      engagementTitle = engagement.title;
+
       this.assertMemberCanRespondToOffer(assignment, authUser);
 
       if (assignment.status !== AssignmentStatus.SELECTED) {
@@ -1017,6 +1029,29 @@ export class EngagementsService {
         data: { status: nextStatus },
       });
     });
+
+    if (projectId) {
+      try {
+        await this.assignmentOfferResponseEmailService.sendAssignmentOfferResponseEmails(
+          {
+            projectId,
+            assignmentMemberId,
+            assignmentMemberHandle,
+            accepted: nextStatus === AssignmentStatus.ASSIGNED,
+            engagementId,
+            engagementTitle,
+          },
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "unknown error";
+        this.logger.error(
+          `Failed to send assignment offer response emails for engagement ${engagementId}: ${message}`,
+        );
+      }
+    }
+
+    return updatedAssignment;
   }
 
   private assertMemberCanRespondToOffer(

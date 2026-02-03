@@ -54,6 +54,8 @@ Set the following environment variables (see `.env.example` for defaults):
 | `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |
 | `AUTH0_AUDIENCE` | Auth0 audience for M2M tokens. |
 | `SENDGRID_ASSIGNMENT_OFFER_TEMPLATE_ID` | SendGrid template ID for assignment offer emails. |
+| `SENDGRID_ASSIGNMENT_OFFER_ACCEPTED_TEMPLATE_ID` | SendGrid template ID for assignment offer accepted emails. |
+| `SENDGRID_ASSIGNMENT_OFFER_REJECTED_TEMPLATE_ID` | SendGrid template ID for assignment offer rejected emails. |
 
 ## Authentication
 

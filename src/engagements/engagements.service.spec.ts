@@ -21,6 +21,9 @@ describe("EngagementsService", () => {
   let assignmentOfferEmailService: {
     sendAssignmentOfferEmails: jest.Mock;
   };
+  let assignmentOfferResponseEmailService: {
+    sendAssignmentOfferResponseEmails: jest.Mock;
+  };
 
   const createDto = {
     projectId: "project-1",
@@ -58,6 +61,9 @@ describe("EngagementsService", () => {
     assignmentOfferEmailService = {
       sendAssignmentOfferEmails: jest.fn().mockResolvedValue(undefined),
     };
+    assignmentOfferResponseEmailService = {
+      sendAssignmentOfferResponseEmails: jest.fn().mockResolvedValue(undefined),
+    };
     service = new EngagementsService(
       db as any,
       projectService as any,
@@ -65,6 +71,7 @@ describe("EngagementsService", () => {
       memberService as any,
       eventBusService as any,
       assignmentOfferEmailService as any,
+      assignmentOfferResponseEmailService as any,
     );
   });
 
