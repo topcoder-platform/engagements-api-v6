@@ -178,7 +178,10 @@ export class EngagementsService {
     });
 
     await this.emitMemberAssignedEvents(engagementWithAssignments);
-    await this.sendAssignmentOfferEmails(engagementWithAssignments.assignments);
+    await this.sendAssignmentOfferEmails(
+      engagementWithAssignments,
+      engagementWithAssignments.assignments,
+    );
 
     const engagementWithFields = this.applyAssignmentFields(
       engagementWithAssignments,
@@ -241,6 +244,7 @@ export class EngagementsService {
   }
 
   private async sendAssignmentOfferEmails(
+    engagement: Engagement,
     assignments?: EngagementAssignment[],
   ): Promise<void> {
     if (!assignments?.length) {
@@ -253,9 +257,11 @@ export class EngagementsService {
         memberHandle: assignment.memberHandle,
         assignmentId: assignment.id,
         engagementId: assignment.engagementId,
+        engagementTitle: engagement.title,
         assignmentStartDate: assignment.startDate ?? null,
         assignmentEndDate: assignment.endDate ?? null,
         agreementRate: assignment.agreementRate ?? null,
+        otherRemarks: assignment.otherRemarks ?? null,
       })),
     );
   }
@@ -819,7 +825,7 @@ export class EngagementsService {
     const newAssignments = updatedAssignments.filter(
       (assignment) => !existingMemberIds.has(String(assignment.memberId)),
     );
-    await this.sendAssignmentOfferEmails(newAssignments);
+    await this.sendAssignmentOfferEmails(updatedEngagement, newAssignments);
 
     const engagementWithFields = this.applyAssignmentFields(updatedEngagement);
     const [hydrated] = await this.hydrateCreatorEmails([engagementWithFields]);

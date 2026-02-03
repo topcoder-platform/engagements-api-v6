@@ -414,6 +414,7 @@ export class ApplicationsService {
             startDate: updatedAssignment.startDate,
             endDate: updatedAssignment.endDate,
             agreementRate: updatedAssignment.agreementRate,
+            otherRemarks: updatedAssignment.otherRemarks,
           },
         };
       }
@@ -474,6 +475,7 @@ export class ApplicationsService {
           startDate: assignment.startDate,
           endDate: assignment.endDate,
           agreementRate: assignment.agreementRate,
+          otherRemarks: assignment.otherRemarks,
         },
       };
     });
@@ -523,9 +525,11 @@ export class ApplicationsService {
         memberHandle: payloadMemberHandle,
         assignmentId,
         engagementId: engagement.id,
+        engagementTitle: engagement.title,
         assignmentStartDate: assignmentResult.assignment?.startDate ?? null,
         assignmentEndDate: assignmentResult.assignment?.endDate ?? null,
         agreementRate: assignmentResult.assignment?.agreementRate ?? null,
+        otherRemarks: assignmentResult.assignment?.otherRemarks ?? null,
       });
     }
   }

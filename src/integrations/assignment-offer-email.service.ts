@@ -8,9 +8,11 @@ export type AssignmentOfferRecipient = {
   memberHandle?: string | null;
   assignmentId?: string | null;
   engagementId?: string | null;
+  engagementTitle?: string | null;
   assignmentStartDate?: Date | string | null;
   assignmentEndDate?: Date | string | null;
   agreementRate?: string | number | null;
+  otherRemarks?: string | null;
 };
 
 @Injectable()
@@ -98,6 +100,7 @@ export class AssignmentOfferEmailService {
       recipient.agreementRate !== undefined && recipient.agreementRate !== null
         ? recipient.agreementRate.toString()
         : "";
+    const engagementUrl = this.buildEngagementUrl();
 
     const payload = {
       data: {
@@ -107,10 +110,12 @@ export class AssignmentOfferEmailService {
         email,
         assignmentId: recipient.assignmentId ?? "",
         engagementId: recipient.engagementId ?? "",
+        engagementTitle: recipient.engagementTitle ?? "",
+        engagementUrl,
         assignmentStartDate,
         assignmentEndDate,
         agreementRate,
-        approvedRate: agreementRate,
+        otherRemarks: recipient.otherRemarks ?? "",
       },
       recipients: [email],
       sendgrid_template_id: templateId,
@@ -140,5 +145,29 @@ export class AssignmentOfferEmailService {
     await Promise.all(
       recipients.map((recipient) => this.sendAssignmentOfferEmail(recipient)),
     );
+  }
+
+  private buildEngagementUrl(): string {
+    const baseUrl =
+      this.configService.get<string>("TOPCODER_API_URL_BASE") ??
+      this.configService.get<string>("PLATFORM_UI_BASE_URL") ??
+      "https://api.topcoder-dev.com";
+    const normalizedBaseUrl = baseUrl.trim();
+    let hostname = "";
+
+    if (normalizedBaseUrl) {
+      try {
+        hostname = new URL(normalizedBaseUrl).hostname;
+      } catch {
+        hostname = normalizedBaseUrl.replace(/^https?:\/\//i, "").split("/")[0];
+      }
+    }
+
+    const baseHost = hostname
+      .replace(/^api\./, "")
+      .replace(/^platform\./, "")
+      .replace(/^engagements\./, "");
+    const resolvedHost = baseHost || "topcoder-dev.com";
+    return `https://engagements.${resolvedHost}/assignments`;
   }
 }
