@@ -84,18 +84,25 @@ export class AssignmentOfferEmailService {
       }
     }
 
-    const normalizeDate = (value?: Date | string | null): string => {
+    const formatDate = (value?: Date | string | null): string => {
       if (!value) {
         return "";
       }
-      if (value instanceof Date) {
-        return value.toISOString();
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return value.toString();
       }
-      return value.toString();
+      return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      })
+        .format(date)
+        .replace(/,/g, "");
     };
 
-    const assignmentStartDate = normalizeDate(recipient.assignmentStartDate);
-    const assignmentEndDate = normalizeDate(recipient.assignmentEndDate);
+    const assignmentStartDate = formatDate(recipient.assignmentStartDate);
+    const assignmentEndDate = formatDate(recipient.assignmentEndDate);
     const agreementRate =
       recipient.agreementRate !== undefined && recipient.agreementRate !== null
         ? recipient.agreementRate.toString()
