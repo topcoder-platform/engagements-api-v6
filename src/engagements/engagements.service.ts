@@ -32,7 +32,10 @@ import {
   PaginatedResponse,
   UpdateEngagementDto,
 } from "./dto";
-import { ERROR_MESSAGES } from "../common/constants";
+import {
+  ASSIGNMENT_COMPLETION_STATUSES,
+  ERROR_MESSAGES,
+} from "../common/constants";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
 
 const USER_ID_PATTERN = /^\d+$/;
@@ -148,7 +151,10 @@ export class EngagementsService {
         );
 
         const assignmentCount = await tx.engagementAssignment.count({
-          where: { engagementId: engagement.id },
+          where: {
+            engagementId: engagement.id,
+            status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+          },
         });
 
         if (!assignmentCount) {
@@ -617,7 +623,11 @@ export class EngagementsService {
           assignments?: EngagementAssignment[];
         }
       ).assignments ?? [];
-    const existingAssignmentCount = existingAssignments.length;
+    const totalAssignmentCount = existingAssignments.length;
+    const activeAssignmentCount = existingAssignments.filter(
+      (assignment) =>
+        !ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status),
+    ).length;
     const requiredMemberCount =
       payload.requiredMemberCount ??
       existingEngagement.requiredMemberCount ??
@@ -627,7 +637,7 @@ export class EngagementsService {
       const assignmentCountForValidation =
         assignmentDetailsList.length > 0
           ? assignmentDetailsList.length
-          : existingAssignmentCount;
+          : activeAssignmentCount;
 
       if (assignmentCountForValidation > payload.requiredMemberCount) {
         throw new BadRequestException(
@@ -646,7 +656,7 @@ export class EngagementsService {
         Boolean(assignedMemberId) ||
         Boolean(assignedMemberHandle) ||
         assignmentDetailsList.length > 0 ||
-        existingAssignmentCount > 0;
+        totalAssignmentCount > 0;
 
       if (!hasAssignedMember) {
         throw new BadRequestException(
@@ -779,7 +789,10 @@ export class EngagementsService {
 
           if (!existingAssignment) {
             const assignmentCount = await tx.engagementAssignment.count({
-              where: { engagementId: id },
+              where: {
+                engagementId: id,
+                status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+              },
             });
             if (assignmentCount >= requiredMemberCount) {
               throw new BadRequestException(

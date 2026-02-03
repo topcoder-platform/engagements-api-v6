@@ -1,5 +1,13 @@
+import { AssignmentStatus } from "@prisma/client";
+
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PER_PAGE = 20;
+
+export const ASSIGNMENT_COMPLETION_STATUSES: AssignmentStatus[] = [
+  AssignmentStatus.OFFER_REJECTED,
+  AssignmentStatus.COMPLETED,
+  AssignmentStatus.TERMINATED,
+];
 
 export const ERROR_MESSAGES = {
   MissingDuration:

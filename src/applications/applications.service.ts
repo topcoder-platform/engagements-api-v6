@@ -28,7 +28,10 @@ import {
   CreateApplicationDto,
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
-import { ERROR_MESSAGES } from "../common/constants";
+import {
+  ASSIGNMENT_COMPLETION_STATUSES,
+  ERROR_MESSAGES,
+} from "../common/constants";
 import {
   ProjectManagerRoles,
   TalentManagerRoles,
@@ -420,7 +423,10 @@ export class ApplicationsService {
       }
 
       const assignmentCount = await tx.engagementAssignment.count({
-        where: { engagementId },
+        where: {
+          engagementId,
+          status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+        },
       });
 
       if (
