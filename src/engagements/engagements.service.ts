@@ -27,6 +27,7 @@ import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus
 import {
   CreateEngagementDto,
   ENGAGEMENT_SORT_FIELDS,
+  AssignmentDetailsDto,
   EngagementQueryDto,
   EngagementSortBy,
   PaginatedResponse,
@@ -40,6 +41,15 @@ import { getUserIdentifier, getUserRoles } from "../common/user.util";
 
 const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
+
+type ResolvedAssignmentDetails = {
+  memberId: string;
+  memberHandle: string;
+  startDate?: Date;
+  endDate?: Date;
+  agreementRate?: string;
+  otherRemarks?: string;
+};
 
 @Injectable()
 export class EngagementsService {
@@ -84,28 +94,35 @@ export class EngagementsService {
       assignedMemberHandle,
       assignedMemberIds,
       assignedMemberHandles,
+      assignmentDetails,
       ...payload
     } = createDto;
     void durationValidation;
 
-    let assignmentDetailsList: Array<{
-      memberId: string;
-      memberHandle: string;
-    }> = [];
+    const assignmentDetailsPayload =
+      Array.isArray(assignmentDetails) && assignmentDetails.length
+        ? assignmentDetails
+        : undefined;
+    let assignmentDetailsList: ResolvedAssignmentDetails[] = [];
 
     if (payload.isPrivate) {
-      if (assignedMemberIds?.length || assignedMemberHandles?.length) {
-        assignmentDetailsList = await this.resolveMultipleAssignmentDetails(
+      if (assignmentDetailsPayload) {
+        assignmentDetailsList = await this.resolveAssignmentDetailsList(
+          assignmentDetailsPayload,
+        );
+      } else if (assignedMemberIds?.length || assignedMemberHandles?.length) {
+        const resolved = await this.resolveMultipleAssignmentDetails(
           assignedMemberIds,
           assignedMemberHandles,
         );
+        assignmentDetailsList = resolved.map((details) => ({ ...details }));
       } else if (assignedMemberId || assignedMemberHandle) {
         const singleAssignment = await this.resolveAssignmentDetails(
           assignedMemberId,
           assignedMemberHandle,
         );
         if (singleAssignment) {
-          assignmentDetailsList = [singleAssignment];
+          assignmentDetailsList = [{ ...singleAssignment }];
         }
       }
 
@@ -138,16 +155,30 @@ export class EngagementsService {
 
       if (createDto.isPrivate && assignmentDetailsList.length > 0) {
         await Promise.all(
-          assignmentDetailsList.map((details) =>
-            tx.engagementAssignment.create({
-              data: {
+          assignmentDetailsList.map((details) => {
+            const assignmentData: Prisma.EngagementAssignmentUncheckedCreateInput =
+              {
                 id: nanoid(),
                 engagementId: engagement.id,
                 memberId: details.memberId,
                 memberHandle: details.memberHandle,
-              },
-            }),
-          ),
+              };
+            if (details.startDate !== undefined) {
+              assignmentData.startDate = details.startDate;
+            }
+            if (details.endDate !== undefined) {
+              assignmentData.endDate = details.endDate;
+            }
+            if (details.agreementRate !== undefined) {
+              assignmentData.agreementRate = details.agreementRate;
+            }
+            if (details.otherRemarks !== undefined) {
+              assignmentData.otherRemarks = details.otherRemarks;
+            }
+            return tx.engagementAssignment.create({
+              data: assignmentData,
+            });
+          }),
         );
 
         const assignmentCount = await tx.engagementAssignment.count({
@@ -594,7 +625,7 @@ export class EngagementsService {
       await this.assertSkillsValid(updateDto.requiredSkills);
     }
 
-    const { durationValidation, ...payload } = updateDto;
+    const { durationValidation, assignmentDetails, ...payload } = updateDto;
     void durationValidation;
 
     const assignedMemberId = payload.assignedMemberId?.trim();
@@ -607,15 +638,23 @@ export class EngagementsService {
       throw new BadRequestException("Assigned member handle cannot be blank.");
     }
 
+    const assignmentDetailsPayload =
+      Array.isArray(assignmentDetails) && assignmentDetails.length
+        ? assignmentDetails
+        : undefined;
     const hasAssignmentArrayPayload =
+      Boolean(assignmentDetailsPayload) ||
       Array.isArray(payload.assignedMemberIds) ||
       Array.isArray(payload.assignedMemberHandles);
-    const assignmentDetailsList = hasAssignmentArrayPayload
-      ? await this.resolveMultipleAssignmentDetails(
-          payload.assignedMemberIds,
-          payload.assignedMemberHandles,
-        )
-      : [];
+    const assignmentDetailsList: ResolvedAssignmentDetails[] =
+      assignmentDetailsPayload
+        ? await this.resolveAssignmentDetailsList(assignmentDetailsPayload)
+        : hasAssignmentArrayPayload
+          ? await this.resolveMultipleAssignmentDetails(
+              payload.assignedMemberIds,
+              payload.assignedMemberHandles,
+            )
+          : [];
 
     const existingAssignments =
       (
@@ -669,7 +708,7 @@ export class EngagementsService {
       !hasAssignmentArrayPayload &&
       (payload.assignedMemberId !== undefined ||
         payload.assignedMemberHandle !== undefined);
-    const assignmentDetails = shouldUpsertAssignment
+    const assignmentDetailsResult = shouldUpsertAssignment
       ? await this.resolveAssignmentDetails(
           assignedMemberId,
           assignedMemberHandle,
@@ -744,25 +783,45 @@ export class EngagementsService {
         }
 
         await Promise.all(
-          assignmentDetailsList.map((details) =>
-            tx.engagementAssignment.upsert({
+          assignmentDetailsList.map((details) => {
+            const assignmentCreateData: Prisma.EngagementAssignmentUncheckedCreateInput =
+              {
+                id: nanoid(),
+                engagementId: id,
+                memberId: details.memberId,
+                memberHandle: details.memberHandle,
+              };
+            const assignmentUpdateData: Prisma.EngagementAssignmentUpdateInput =
+              {
+                memberHandle: details.memberHandle,
+              };
+            if (details.startDate !== undefined) {
+              assignmentCreateData.startDate = details.startDate;
+              assignmentUpdateData.startDate = details.startDate;
+            }
+            if (details.endDate !== undefined) {
+              assignmentCreateData.endDate = details.endDate;
+              assignmentUpdateData.endDate = details.endDate;
+            }
+            if (details.agreementRate !== undefined) {
+              assignmentCreateData.agreementRate = details.agreementRate;
+              assignmentUpdateData.agreementRate = details.agreementRate;
+            }
+            if (details.otherRemarks !== undefined) {
+              assignmentCreateData.otherRemarks = details.otherRemarks;
+              assignmentUpdateData.otherRemarks = details.otherRemarks;
+            }
+            return tx.engagementAssignment.upsert({
               where: {
                 engagementId_memberId: {
                   engagementId: id,
                   memberId: details.memberId,
                 },
               },
-              create: {
-                id: nanoid(),
-                engagementId: id,
-                memberId: details.memberId,
-                memberHandle: details.memberHandle,
-              },
-              update: {
-                memberHandle: details.memberHandle,
-              },
-            }),
-          ),
+              create: assignmentCreateData,
+              update: assignmentUpdateData,
+            });
+          }),
         );
 
         const desiredMemberIds = Array.from(
@@ -776,13 +835,13 @@ export class EngagementsService {
             },
           },
         });
-      } else if (shouldUpsertAssignment && assignmentDetails) {
+      } else if (shouldUpsertAssignment && assignmentDetailsResult) {
         if (requiredMemberCount !== undefined) {
           const existingAssignment = await tx.engagementAssignment.findUnique({
             where: {
               engagementId_memberId: {
                 engagementId: id,
-                memberId: assignmentDetails.memberId,
+                memberId: assignmentDetailsResult.memberId,
               },
             },
           });
@@ -806,17 +865,17 @@ export class EngagementsService {
           where: {
             engagementId_memberId: {
               engagementId: id,
-              memberId: assignmentDetails.memberId,
+              memberId: assignmentDetailsResult.memberId,
             },
           },
           create: {
             id: nanoid(),
             engagementId: id,
-            memberId: assignmentDetails.memberId,
-            memberHandle: assignmentDetails.memberHandle,
+            memberId: assignmentDetailsResult.memberId,
+            memberHandle: assignmentDetailsResult.memberHandle,
           },
           update: {
-            memberHandle: assignmentDetails.memberHandle,
+            memberHandle: assignmentDetailsResult.memberHandle,
           },
         });
       }
@@ -1111,6 +1170,106 @@ export class EngagementsService {
     );
 
     return this.hydrateCreatorEmails(engagementsWithFields);
+  }
+
+  private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {
+    startDate?: Date;
+    endDate?: Date;
+    agreementRate?: string;
+    otherRemarks?: string;
+  } {
+    const parseDate = (value?: string) => {
+      if (value === undefined || value === null || value === "") {
+        return undefined;
+      }
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException("Invalid assignment date format.");
+      }
+      return parsed;
+    };
+
+    const startDate = parseDate(details?.startDate);
+    const endDate = parseDate(details?.endDate);
+    const agreementRate =
+      details?.agreementRate !== undefined
+        ? String(details.agreementRate).trim()
+        : undefined;
+    const otherRemarks =
+      details?.otherRemarks !== undefined
+        ? String(details.otherRemarks).trim()
+        : undefined;
+
+    if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
+      throw new BadRequestException(
+        "Assignment end date must be after start date.",
+      );
+    }
+
+    return {
+      startDate,
+      endDate,
+      agreementRate: agreementRate ? agreementRate : undefined,
+      otherRemarks: otherRemarks ? otherRemarks : undefined,
+    };
+  }
+
+  private async resolveAssignmentDetailsList(
+    assignmentDetails: AssignmentDetailsDto[],
+  ): Promise<ResolvedAssignmentDetails[]> {
+    if (!Array.isArray(assignmentDetails) || assignmentDetails.length === 0) {
+      return [];
+    }
+
+    const results = await Promise.all(
+      assignmentDetails.map(async (details, index) => {
+        if (!details) {
+          throw new BadRequestException(
+            "Assignment details entries must be valid objects.",
+          );
+        }
+        const memberId = details.memberId;
+        const memberHandle = details.memberHandle;
+        if (!memberId && !memberHandle) {
+          throw new BadRequestException(
+            `Assignment details at index ${index} must include memberId or memberHandle.`,
+          );
+        }
+
+        const resolved = await this.resolveAssignmentDetails(
+          memberId,
+          memberHandle,
+        );
+        if (!resolved) {
+          throw new BadRequestException(
+            `Assignment details at index ${index} must include memberId or memberHandle.`,
+          );
+        }
+        const normalized = this.normalizeAssignmentOfferDetails(details);
+        return {
+          ...resolved,
+          ...normalized,
+        };
+      }),
+    );
+
+    const memberIdSet = new Set<string>();
+    const memberHandleSet = new Set<string>();
+    results.forEach((details) => {
+      if (memberIdSet.has(details.memberId)) {
+        throw new BadRequestException("Assigned member IDs must be unique.");
+      }
+      memberIdSet.add(details.memberId);
+      const handleKey = details.memberHandle.toLowerCase();
+      if (memberHandleSet.has(handleKey)) {
+        throw new BadRequestException(
+          "Assigned member handles must be unique.",
+        );
+      }
+      memberHandleSet.add(handleKey);
+    });
+
+    return results;
   }
 
   private async resolveAssignmentDetails(

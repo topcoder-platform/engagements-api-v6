@@ -15,6 +15,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  ValidateNested,
   MaxLength,
   Min,
 } from "class-validator";
@@ -25,6 +26,75 @@ import {
   Workload,
 } from "@prisma/client";
 import { HasDuration, IsNotWhitespace } from "../../common/validation.util";
+
+export class AssignmentDetailsDto {
+  @ApiPropertyOptional({
+    description: "Assigned member ID (string or number).",
+    example: "123456",
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === "number" ? value.toString() : value,
+  )
+  @IsString()
+  memberId?: string;
+
+  @ApiPropertyOptional({
+    description: "Assigned member handle.",
+    example: "jane_doe",
+  })
+  @IsOptional()
+  @IsString()
+  memberHandle?: string;
+
+  @ApiPropertyOptional({
+    description: "Assignment start date",
+    example: "2026-01-30T12:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: "Assignment end date",
+    example: "2026-02-28T12:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @ApiPropertyOptional({
+    description: "Assignment rate",
+    example: "75",
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    const normalized = String(value).trim();
+    return normalized.length > 0 ? normalized : undefined;
+  })
+  @IsString()
+  agreementRate?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Other remarks detailing additional terms the member must agree to",
+    example: "Complete onboarding within the first week.",
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    const normalized = String(value).trim();
+    return normalized.length > 0 ? normalized : undefined;
+  })
+  @IsString()
+  @MaxLength(2000)
+  otherRemarks?: string;
+}
 
 export class CreateEngagementDto {
   @ApiProperty({
@@ -232,6 +302,25 @@ export class CreateEngagementDto {
   @IsArray()
   @IsString({ each: true })
   assignedMemberHandles?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      "Assignment details for private engagements. Each entry must include memberId or memberHandle.",
+    example: [
+      {
+        memberHandle: "jane_doe",
+        startDate: "2026-01-30T12:00:00.000Z",
+        endDate: "2026-02-28T12:00:00.000Z",
+        agreementRate: "75",
+        otherRemarks: "Complete onboarding within the first week.",
+      },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AssignmentDetailsDto)
+  assignmentDetails?: AssignmentDetailsDto[];
 
   @ApiHideProperty()
   @HasDuration()
