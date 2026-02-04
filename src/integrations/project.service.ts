@@ -5,6 +5,16 @@ import { firstValueFrom } from "rxjs";
 import { isAxiosError } from "axios";
 import * as core from "tc-core-library-js";
 
+type ProjectUser = {
+  userId?: string | number | null;
+  email?: string | null;
+};
+
+type ProjectUsers = {
+  members: ProjectUser[];
+  invites: ProjectUser[];
+};
+
 @Injectable()
 export class ProjectService {
   private readonly logger = new Logger(ProjectService.name);
@@ -15,11 +25,11 @@ export class ProjectService {
     private readonly configService: ConfigService,
   ) {
     const authUrl = this.configService.get<string>(
-      "M2M_AUTH_URL",
+      "AUTH0_URL",
       "https://topcoder-dev.auth0.com/oauth/token",
     );
     const audience = this.configService.get<string>(
-      "M2M_AUDIENCE",
+      "AUTH0_AUDIENCE",
       "https://api.topcoder-dev.com",
     );
 
@@ -30,12 +40,13 @@ export class ProjectService {
   }
 
   async validateProjectExists(projectId: string): Promise<boolean> {
-    const baseUrl = this.configService.get<string>(
-      "TC_PROJECT_SERVICE_URL",
-      "http://localhost:8001/v5",
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
     );
     const token = await this.getM2MToken();
-    const url = `${baseUrl.replace(/\/$/, "")}/projects/${projectId}`;
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    const url = `${normalizedBaseUrl}/v5/projects/${projectId}`;
 
     try {
       const response = await firstValueFrom(
@@ -62,11 +73,51 @@ export class ProjectService {
     }
   }
 
+  async getProjectUsers(projectId: string): Promise<ProjectUsers | null> {
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
+    );
+    const token = await this.getM2MToken();
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    const url = `${normalizedBaseUrl}/v5/projects/${projectId}`;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
+
+      return {
+        members: Array.isArray(response.data?.members)
+          ? response.data.members
+          : [],
+        invites: Array.isArray(response.data?.invites)
+          ? response.data.invites
+          : [],
+      };
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return null;
+        }
+
+        this.logger.error("Project users lookup failed.", {
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
+
+      this.logger.error("Project users lookup failed.", error);
+      throw error;
+    }
+  }
+
   private async getM2MToken(): Promise<string> {
     const clientId = this.configService.get<string>("M2M_CLIENT_ID");
-    const clientSecret = this.configService.get<string>(
-      "M2M_CLIENT_SECRET",
-    );
+    const clientSecret = this.configService.get<string>("M2M_CLIENT_SECRET");
 
     if (!clientId || !clientSecret) {
       this.logger.error(

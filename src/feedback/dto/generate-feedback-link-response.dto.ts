@@ -8,12 +8,6 @@ export class GenerateFeedbackLinkResponseDto {
   feedbackUrl: string;
 
   @ApiProperty({
-    description: "Secret token embedded in the feedback link",
-    example: "abc123token",
-  })
-  secretToken: string;
-
-  @ApiProperty({
     description: "Expiration timestamp for the feedback link",
     example: "2025-01-31T00:00:00.000Z",
   })

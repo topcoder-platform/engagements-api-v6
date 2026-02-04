@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import { IsEnum, IsIn, IsOptional, IsString } from "class-validator";
 import { ApplicationStatus } from "@prisma/client";
 import { PaginationDto } from "../../engagements/dto/pagination.dto";
@@ -33,13 +34,28 @@ export class ApplicationQueryDto extends PaginationDto {
   userId?: string;
 
   @ApiPropertyOptional({
-    description: "Filter by status",
+    description:
+      "Filter by status. Accepts a single status or a comma-separated list.",
     enum: ApplicationStatus,
-    example: ApplicationStatus.SUBMITTED,
+    isArray: true,
+    example: [ApplicationStatus.SUBMITTED, ApplicationStatus.UNDER_REVIEW],
   })
   @IsOptional()
-  @IsEnum(ApplicationStatus)
-  status?: ApplicationStatus;
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === "") {
+      return undefined;
+    }
+
+    const values = Array.isArray(value) ? value : [value];
+    const normalized = values
+      .flatMap((item) => (typeof item === "string" ? item.split(",") : item))
+      .map((item) => (typeof item === "string" ? item.trim() : item))
+      .filter((item) => item !== "" && item !== undefined && item !== null);
+
+    return normalized.length ? normalized : undefined;
+  })
+  @IsEnum(ApplicationStatus, { each: true })
+  status?: ApplicationStatus[];
 
   @ApiPropertyOptional({
     description: "Sort field",

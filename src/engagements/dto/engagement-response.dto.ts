@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { EngagementStatus } from "@prisma/client";
+import {
+  AnticipatedStart,
+  EngagementStatus,
+  Role,
+  Workload,
+} from "@prisma/client";
+import { Transform } from "class-transformer";
+import { AssignmentResponseDto } from "./assignment-response.dto";
 
 export class EngagementResponseDto {
   @ApiProperty({
@@ -69,10 +76,11 @@ export class EngagementResponseDto {
   requiredSkills: string[];
 
   @ApiProperty({
-    description: "Application deadline",
-    example: "2025-02-15T00:00:00.000Z",
+    description: "Anticipated start timeframe",
+    enum: AnticipatedStart,
+    example: AnticipatedStart.IMMEDIATE,
   })
-  applicationDeadline: Date;
+  anticipatedStart: AnticipatedStart;
 
   @ApiProperty({
     description: "Engagement status",
@@ -93,6 +101,12 @@ export class EngagementResponseDto {
   })
   createdBy: string;
 
+  @ApiPropertyOptional({
+    description: "Created by user email",
+    example: "jane_doe@example.com",
+  })
+  createdByEmail?: string | null;
+
   @ApiProperty({
     description: "Updated timestamp",
     example: "2025-01-10T12:00:00.000Z",
@@ -106,14 +120,90 @@ export class EngagementResponseDto {
   updatedBy?: string;
 
   @ApiPropertyOptional({
-    description: "Assigned member ID",
+    description: "Deprecated: first assigned member ID (use assignments).",
     example: "123456",
+    deprecated: true,
   })
   assignedMemberId?: string;
 
   @ApiPropertyOptional({
-    description: "Assigned member handle",
+    description: "Deprecated: first assigned member handle (use assignments).",
     example: "jane_doe",
+    deprecated: true,
   })
   assignedMemberHandle?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Assignment records for this engagement (canonical collection)",
+    type: AssignmentResponseDto,
+    isArray: true,
+    example: [
+      {
+        id: "9a9a5f4d-2a3b-4e9c-9f1c-2b3c4d5e6f7a",
+        engagementId: "4c4dd8a7-2f5a-4f6d-8f7b-1d2c3b4a5e6f",
+        memberId: "123456",
+        memberHandle: "jane_doe",
+        createdAt: "2025-01-01T12:00:00.000Z",
+        updatedAt: "2025-01-10T12:00:00.000Z",
+      },
+    ],
+  })
+  assignments?: AssignmentResponseDto[];
+
+  @ApiProperty({
+    description: "Whether the engagement is private",
+    example: false,
+  })
+  isPrivate: boolean;
+
+  @ApiPropertyOptional({
+    description: "Number of members required",
+    example: 3,
+  })
+  requiredMemberCount?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "Deprecated: array of assigned member IDs derived from assignments (use assignments).",
+    example: ["123456", "789012"],
+    deprecated: true,
+  })
+  assignedMembers?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      "Deprecated: array of assigned member handles derived from assignments (use assignments).",
+    example: ["john_doe", "jane_smith"],
+    deprecated: true,
+  })
+  assignedMemberHandles?: string[];
+
+  @ApiPropertyOptional({
+    description: "Role for the engagement",
+    enum: Role,
+    example: Role.SOFTWARE_DEVELOPER,
+  })
+  @Transform(({ value }) => value?.toString())
+  role?: Role;
+
+  @ApiPropertyOptional({
+    description: "Workload for the engagement",
+    enum: Workload,
+    example: Workload.FULL_TIME,
+  })
+  @Transform(({ value }) => value?.toString())
+  workload?: Workload;
+
+  @ApiPropertyOptional({
+    description: "Compensation range",
+    example: "$600-$700 USD",
+  })
+  compensationRange?: string;
+
+  @ApiPropertyOptional({
+    description: "Number of applications for the engagement",
+    example: 12,
+  })
+  applicationsCount?: number;
 }

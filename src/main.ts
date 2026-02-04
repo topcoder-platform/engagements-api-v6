@@ -1,5 +1,5 @@
-import { ValidationPipe } from "@nestjs/common";
-import { HttpAdapterHost, NestFactory } from "@nestjs/core";
+import { ClassSerializerInterceptor, ValidationPipe } from "@nestjs/common";
+import { HttpAdapterHost, NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { PrismaClientExceptionFilter } from "./common/filters/prisma-client-exception.filter";
@@ -11,6 +11,7 @@ async function bootstrap() {
   app.enableCors();
 
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   //const config = app.get(ConfigService);
   const port = Number(process.env.PORT || 3000);
 
@@ -33,9 +34,9 @@ async function bootstrap() {
         "authentication with appropriate scopes.",
     )
     .setVersion("6.0")
-    .addServer("http://localhost:3000/v6/engagements", "Local")
-    .addServer("https://api.topcoder-dev.com/v6/engagements", "Dev")
-    .addServer("https://api.topcoder.com/v6/engagements", "Prod")
+    .addServer("http://localhost:3000", "Local")
+    .addServer("https://api.topcoder-dev.com", "Dev")
+    .addServer("https://api.topcoder.com", "Prod")
     .addBearerAuth(
       {
         type: "http",
@@ -46,14 +47,8 @@ async function bootstrap() {
       },
       "bearer",
     )
-    .addTag(
-      "Engagements",
-      "Endpoints for managing engagement opportunities",
-    )
-    .addTag(
-      "Applications",
-      "Endpoints for managing engagement applications",
-    )
+    .addTag("Engagements", "Endpoints for managing engagement opportunities")
+    .addTag("Applications", "Endpoints for managing engagement applications")
     .addTag(
       "Feedback",
       "Endpoints for managing engagement feedback, including anonymous customer feedback",

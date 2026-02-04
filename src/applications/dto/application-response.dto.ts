@@ -21,6 +21,12 @@ export class ApplicationResponseDto {
   })
   userId: string;
 
+  @ApiPropertyOptional({
+    description: "Applicant handle",
+    example: "jane_doe",
+  })
+  handle?: string | null;
+
   @ApiProperty({
     description: "Applicant email",
     example: "member@example.com",
@@ -38,6 +44,12 @@ export class ApplicationResponseDto {
     example: "123 Main St, Springfield, IL 62704",
   })
   address?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Mobile phone number",
+    example: "+1 (555) 123-4567",
+  })
+  mobileNumber?: string | null;
 
   @ApiPropertyOptional({
     description: "Cover letter",

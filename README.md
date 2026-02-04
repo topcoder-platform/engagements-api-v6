@@ -37,13 +37,33 @@ pnpm prisma:migrate
 pnpm start:dev
 ```
 
+## Configuration
+
+Set the following environment variables (see `.env.example` for defaults):
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | Port the API listens on. |
+| `DATABASE_URL` | PostgreSQL connection string used by Prisma. |
+| `AUTH_SECRET` | Shared secret for JWT verification in local/dev scenarios. |
+| `VALID_ISSUERS` | JSON array of allowed JWT issuers. |
+| `TOPCODER_API_URL_BASE` | Base URL for Topcoder API services. |
+| `PLATFORM_UI_BASE_URL` | Platform UI base URL used to generate anonymous feedback links. |
+| `AUTH0_URL` | Auth0 token endpoint for M2M client credentials. |
+| `M2M_CLIENT_ID` | Auth0 M2M client ID. |
+| `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |
+| `AUTH0_AUDIENCE` | Auth0 audience for M2M tokens. |
+| `SENDGRID_ASSIGNMENT_OFFER_TEMPLATE_ID` | SendGrid template ID for assignment offer emails. |
+| `SENDGRID_ASSIGNMENT_OFFER_ACCEPTED_TEMPLATE_ID` | SendGrid template ID for assignment offer accepted emails. |
+| `SENDGRID_ASSIGNMENT_OFFER_REJECTED_TEMPLATE_ID` | SendGrid template ID for assignment offer rejected emails. |
+
 ## Authentication
 
 This API uses JWT authentication for user requests and supports M2M tokens for service-to-service access. Provide a Bearer token with the required scopes for protected endpoints.
 
 ## Security & Authorization
 
-The API supports both user JWTs and machine-to-machine (M2M) tokens. User tokens are evaluated for roles and scopes, while M2M tokens rely on scopes. Administrators and Topcoder Project Managers have elevated privileges for management operations.
+The API supports both user JWTs and machine-to-machine (M2M) tokens. User tokens are evaluated for roles and scopes, while M2M tokens rely on scopes. Administrators, Topcoder Project Managers, Topcoder Task Managers, and Topcoder Talent Managers have elevated privileges for management operations.
 
 | Scope | Description | Endpoints |
 | --- | --- | --- |
@@ -51,7 +71,7 @@ The API supports both user JWTs and machine-to-machine (M2M) tokens. User tokens
 | `write:engagements` | Create and update engagements | `POST /engagements`, `PUT /engagements/:id` |
 | `manage:engagements` | Full engagement management including deletion | `DELETE /engagements/:id` |
 | `read:applications` | View applications | `GET /applications`, `GET /applications/:id`, `GET /engagements/:id/applications` |
-| `write:applications` | Submit and update applications | `POST /engagements/:id/applications`, `PATCH /applications/:id/status` |
+| `write:applications` | Submit and update applications | `POST /engagements/:id/applications`, `PATCH /applications/:id/status`, `PATCH /applications/:id/approve` |
 
 ## M2M Token Configuration
 
@@ -59,6 +79,6 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 
 ## Role-Based Access
 
-- Administrators and Topcoder Project Managers can bypass scope checks for most management operations.
+- Administrators, Topcoder Project Managers, Topcoder Task Managers, and Topcoder Talent Managers can bypass scope checks for most management operations.
 - Regular members can view engagements and manage their own applications.
-- Project Managers can view and update application statuses for engagements they own.
+- Project Managers can view and update application statuses for engagements they created, while Task Managers and Talent Managers can do so across engagements.

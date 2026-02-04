@@ -37,11 +37,11 @@ export class MemberService {
     private readonly configService: ConfigService,
   ) {
     const authUrl = this.configService.get<string>(
-      "M2M_AUTH_URL",
+      "AUTH0_URL",
       "https://topcoder-dev.auth0.com/oauth/token",
     );
     const audience = this.configService.get<string>(
-      "M2M_AUDIENCE",
+      "AUTH0_AUDIENCE",
       "https://api.topcoder-dev.com",
     );
 
@@ -56,10 +56,7 @@ export class MemberService {
     firstName: string | null;
     lastName: string | null;
   } | null> {
-    const members = await this.fetchMembers(
-      userId,
-      "email,firstName,lastName",
-    );
+    const members = await this.fetchMembers(userId, "email,firstName,lastName");
     const member = members[0];
     if (!member) {
       return null;
@@ -72,13 +69,92 @@ export class MemberService {
     };
   }
 
+  async getMemberEmailsByUserIds(
+    userIds: string[],
+  ): Promise<Map<string, string>> {
+    const normalizedUserIds = Array.from(
+      new Set(
+        userIds
+          .map((userId) => userId?.trim())
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
+    );
+
+    if (!normalizedUserIds.length) {
+      return new Map();
+    }
+
+    const members = await this.fetchMembersByUserIds(
+      normalizedUserIds,
+      "userId,email",
+    );
+    const emailByUserId = new Map<string, string>();
+
+    members.forEach((member) => {
+      if (member.userId === undefined || member.userId === null) {
+        return;
+      }
+
+      const email = member.email ?? "";
+      if (!email) {
+        return;
+      }
+
+      emailByUserId.set(String(member.userId), email);
+    });
+
+    return emailByUserId;
+  }
+
+  async getMemberHandleByUserId(userId: string): Promise<string | null> {
+    const members = await this.fetchMembers(userId, "handle");
+    const member = members[0];
+    if (!member?.handle) {
+      return null;
+    }
+
+    return member.handle;
+  }
+
+  async getMemberUserIdByHandle(handle: string): Promise<string | null> {
+    const token = await this.getM2MToken();
+    const baseUrl = this.getMemberApiBaseUrl();
+    const url = `${baseUrl}/${encodeURIComponent(handle)}?fields=userId`;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
+      const userId = response.data?.userId;
+      if (userId === undefined || userId === null) {
+        return null;
+      }
+
+      return String(userId);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return null;
+        }
+
+        this.logger.error("Member lookup failed.", {
+          status: error.response?.status,
+          data: error.response?.data,
+          handle,
+        });
+        throw error;
+      }
+
+      this.logger.error("Member lookup failed.", error);
+      throw error;
+    }
+  }
+
   async getMemberAddress(userId: string): Promise<MemberAddress | null> {
     const token = await this.getM2MToken();
-    const members = await this.fetchMembers(
-      userId,
-      "addresses,handle",
-      token,
-    );
+    const members = await this.fetchMembers(userId, "addresses,handle", token);
     const member = members[0];
     if (!member) {
       return null;
@@ -158,17 +234,13 @@ export class MemberService {
     fields?: string,
     token?: string,
   ): Promise<MemberRecord[]> {
-    const baseUrl = this.configService.get<string>(
-      "MEMBER_API_V6_URL",
-      "http://localhost:3001/v6",
-    );
+    const baseUrl = this.getMemberApiBaseUrl();
     const authToken = token ?? (await this.getM2MToken());
-    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
     const encodedUserId = encodeURIComponent(userId);
     const query = fields
-      ? `userIds=${encodedUserId}&fields=${encodeURIComponent(fields)}`
-      : `userIds=${encodedUserId}`;
-    const url = `${normalizedBaseUrl}/members?${query}`;
+      ? `userId=${encodedUserId}&fields=${encodeURIComponent(fields)}`
+      : `userId=${encodedUserId}`;
+    const url = `${baseUrl}?${query}`;
 
     try {
       const response = await firstValueFrom(
@@ -196,16 +268,67 @@ export class MemberService {
     }
   }
 
+  private async fetchMembersByUserIds(
+    userIds: string[],
+    fields?: string,
+    token?: string,
+  ): Promise<MemberRecord[]> {
+    const normalizedUserIds = Array.from(
+      new Set(
+        userIds
+          .map((userId) => userId?.trim())
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
+    );
+
+    if (!normalizedUserIds.length) {
+      return [];
+    }
+
+    if (normalizedUserIds.length === 1) {
+      return this.fetchMembers(normalizedUserIds[0], fields, token);
+    }
+
+    const baseUrl = this.getMemberApiBaseUrl();
+    const authToken = token ?? (await this.getM2MToken());
+    const query = normalizedUserIds
+      .map((userId) => `userIds=${encodeURIComponent(userId)}`)
+      .join("&");
+    const fieldsQuery = fields ? `&fields=${encodeURIComponent(fields)}` : "";
+    const url = `${baseUrl}?${query}${fieldsQuery}&perPage=${normalizedUserIds.length}`;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }),
+      );
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return [];
+        }
+
+        this.logger.error("Member lookup failed.", {
+          status: error.response?.status,
+          data: error.response?.data,
+          userIds: normalizedUserIds,
+        });
+        throw error;
+      }
+
+      this.logger.error("Member lookup failed.", error);
+      throw error;
+    }
+  }
+
   private async fetchMemberTraits(
     handle: string,
     token: string,
   ): Promise<unknown> {
-    const baseUrl = this.configService.get<string>(
-      "MEMBER_API_V6_URL",
-      "http://localhost:3001/v6",
-    );
-    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
-    const url = `${normalizedBaseUrl}/members/${encodeURIComponent(handle)}/traits`;
+    const baseUrl = this.getMemberApiBaseUrl();
+    const url = `${baseUrl}/${encodeURIComponent(handle)}/traits`;
 
     try {
       const response = await firstValueFrom(
@@ -233,11 +356,9 @@ export class MemberService {
     }
   }
 
-  private async getM2MToken(): Promise<string> {
+  async getM2MToken(): Promise<string> {
     const clientId = this.configService.get<string>("M2M_CLIENT_ID");
-    const clientSecret = this.configService.get<string>(
-      "M2M_CLIENT_SECRET",
-    );
+    const clientSecret = this.configService.get<string>("M2M_CLIENT_SECRET");
 
     if (!clientId || !clientSecret) {
       this.logger.error(
@@ -247,5 +368,14 @@ export class MemberService {
     }
 
     return (await this.m2m.getMachineToken(clientId, clientSecret)) as string;
+  }
+
+  private getMemberApiBaseUrl(): string {
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
+    );
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    return `${normalizedBaseUrl}/v6/members`;
   }
 }

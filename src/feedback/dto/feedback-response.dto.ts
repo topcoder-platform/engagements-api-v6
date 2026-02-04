@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { EngagementResponseDto } from "../../engagements/dto";
 
 export class FeedbackResponseDto {
   @ApiProperty({
@@ -9,10 +8,10 @@ export class FeedbackResponseDto {
   id: string;
 
   @ApiProperty({
-    description: "Engagement ID",
-    example: "4c4dd8a7-2f5a-4f6d-8f7b-1d2c3b4a5e6f",
+    description: "Engagement assignment ID",
+    example: "9e3b5d41-5e5b-4f0a-9d7d-1b2c3d4e5f6a",
   })
-  engagementId: string;
+  engagementAssignmentId: string;
 
   @ApiProperty({
     description: "Feedback text",
@@ -55,10 +54,4 @@ export class FeedbackResponseDto {
     example: "2025-01-10T12:00:00.000Z",
   })
   updatedAt: Date;
-
-  @ApiPropertyOptional({
-    description: "Engagement details",
-    type: EngagementResponseDto,
-  })
-  engagement?: EngagementResponseDto;
 }

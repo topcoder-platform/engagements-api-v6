@@ -7,13 +7,15 @@ import {
 import { EngagementFeedback, Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { ERROR_MESSAGES } from "../common/constants";
+import { normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
-import { EngagementsService } from "../engagements/engagements.service";
 import {
   CreateFeedbackDto,
   FEEDBACK_SORT_FIELDS,
   FeedbackQueryDto,
+  FeedbackResponseDto,
   FeedbackSortBy,
+  AnonymousFeedbackResponseDto,
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
 
@@ -21,35 +23,93 @@ import { PaginatedResponse } from "../engagements/dto";
 export class FeedbackService {
   private readonly logger = new Logger(FeedbackService.name);
 
-  constructor(
-    private readonly db: DbService,
-    private readonly engagementsService: EngagementsService,
-  ) {}
+  constructor(private readonly db: DbService) {}
 
-  async createAuthenticated(
-    engagementId: string,
+  private transformToResponseDto(
+    feedback: EngagementFeedback,
+  ): FeedbackResponseDto {
+    return {
+      id: feedback.id,
+      engagementAssignmentId: feedback.engagementAssignmentId,
+      feedbackText: feedback.feedbackText,
+      rating: feedback.rating ?? null,
+      givenByMemberId: feedback.givenByMemberId ?? null,
+      givenByHandle: feedback.givenByHandle ?? null,
+      givenByEmail: feedback.givenByEmail ?? null,
+      createdAt: feedback.createdAt,
+      updatedAt: feedback.updatedAt,
+    };
+  }
+
+  private async createFeedbackRecord(
+    assignmentId: string,
     createDto: CreateFeedbackDto,
-    userId: string,
-    handle: string,
+    memberId?: string,
+    handle?: string,
+    email?: string,
   ): Promise<EngagementFeedback> {
-    await this.engagementsService.findOne(engagementId);
-
-    const engagement = await this.db.engagement.findUnique({
-      where: { id: engagementId },
-      select: { assignedMemberId: true },
+    this.logger.debug("Creating feedback", {
+      engagementAssignmentId: assignmentId,
+      memberId,
+      handle,
+      email,
     });
 
-    if (!engagement?.assignedMemberId) {
+    return this.db.engagementFeedback.create({
+      data: {
+        id: nanoid(),
+        engagementAssignmentId: assignmentId,
+        feedbackText: createDto.feedbackText,
+        rating: createDto.rating,
+        givenByMemberId: memberId,
+        givenByHandle: handle,
+        givenByEmail: email,
+      },
+    });
+  }
+
+  private async validateAssignment(engagementId: string, assignmentId: string) {
+    const assignment = await this.db.engagementAssignment.findUnique({
+      where: { id: assignmentId },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+    }
+
+    if (assignment.engagementId !== engagementId) {
       throw new BadRequestException(
-        ERROR_MESSAGES.EngagementNotAssigned,
+        ERROR_MESSAGES.AssignmentEngagementMismatch,
       );
     }
 
-    return this.create(engagementId, createDto, userId, handle, undefined);
+    return assignment;
+  }
+
+  async createAuthenticated(
+    engagementId: string,
+    assignmentId: string,
+    createDto: CreateFeedbackDto,
+    userId: string,
+    handle: string,
+  ): Promise<FeedbackResponseDto> {
+    const normalizedUserId = normalizeUserId(userId) ?? userId;
+    await this.validateAssignment(engagementId, assignmentId);
+
+    const result = await this.createFeedbackRecord(
+      assignmentId,
+      createDto,
+      normalizedUserId,
+      handle,
+      undefined,
+    );
+
+    return this.transformToResponseDto(result);
   }
 
   async generateFeedbackLink(
     engagementId: string,
+    assignmentId: string,
     customerEmail: string,
     expirationDays = 30,
   ): Promise<{
@@ -57,18 +117,7 @@ export class FeedbackService {
     expiresAt: Date;
     customerEmail: string;
   }> {
-    await this.engagementsService.findOne(engagementId);
-
-    const engagement = await this.db.engagement.findUnique({
-      where: { id: engagementId },
-      select: { assignedMemberId: true },
-    });
-
-    if (!engagement?.assignedMemberId) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.EngagementNotAssigned,
-      );
-    }
+    await this.validateAssignment(engagementId, assignmentId);
 
     const expiresAt = new Date(
       Date.now() + expirationDays * 24 * 60 * 60 * 1000,
@@ -82,7 +131,7 @@ export class FeedbackService {
         await this.db.engagementFeedback.create({
           data: {
             id: nanoid(),
-            engagementId,
+            engagementAssignmentId: assignmentId,
             feedbackText: "",
             rating: null,
             givenByEmail: customerEmail,
@@ -98,7 +147,7 @@ export class FeedbackService {
           if (error.code === "P2002" && target.includes("secretToken")) {
             this.logger.warn(
               "Secret token collision detected while generating feedback link",
-              { attempt, engagementId },
+              { attempt, engagementId, assignmentId },
             );
             continue;
           }
@@ -115,7 +164,6 @@ export class FeedbackService {
   async validateSecretToken(secretToken: string): Promise<EngagementFeedback> {
     const feedback = await this.db.engagementFeedback.findUnique({
       where: { secretToken },
-      include: { engagement: true },
     });
 
     if (!feedback) {
@@ -135,64 +183,77 @@ export class FeedbackService {
   async submitAnonymousFeedback(
     secretToken: string,
     createDto: CreateFeedbackDto,
-  ): Promise<EngagementFeedback> {
+  ): Promise<FeedbackResponseDto> {
     const feedback = await this.validateSecretToken(secretToken);
 
     this.logger.log("Submitting anonymous feedback", {
       feedbackId: feedback.id,
-      engagementId: feedback.engagementId,
+      engagementAssignmentId: feedback.engagementAssignmentId,
       givenByEmail: feedback.givenByEmail,
     });
 
-    return this.db.engagementFeedback.update({
+    const result = await this.db.engagementFeedback.update({
       where: { id: feedback.id },
       data: {
         feedbackText: createDto.feedbackText,
         rating: createDto.rating,
       },
-      include: { engagement: true },
     });
+
+    return this.transformToResponseDto(result);
+  }
+
+  async getAnonymousFeedback(
+    secretToken: string,
+  ): Promise<AnonymousFeedbackResponseDto> {
+    const feedback = await this.validateSecretToken(secretToken);
+
+    const assignment = await this.db.engagementAssignment.findUnique({
+      where: { id: feedback.engagementAssignmentId },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+    }
+
+    return {
+      memberHandle: assignment.memberHandle,
+      feedbackText: feedback.feedbackText,
+      rating: feedback.rating ?? null,
+    };
   }
 
   async create(
-    engagementId: string,
+    assignmentId: string,
     createDto: CreateFeedbackDto,
     memberId?: string,
     handle?: string,
     email?: string,
-  ): Promise<EngagementFeedback> {
-    this.logger.debug("Creating feedback", {
-      engagementId,
-      memberId,
+  ): Promise<FeedbackResponseDto> {
+    const normalizedMemberId = normalizeUserId(memberId) ?? memberId;
+    const result = await this.createFeedbackRecord(
+      assignmentId,
+      createDto,
+      normalizedMemberId,
       handle,
       email,
-    });
+    );
 
-    return this.db.engagementFeedback.create({
-      data: {
-        id: nanoid(),
-        engagementId,
-        feedbackText: createDto.feedbackText,
-        rating: createDto.rating,
-        givenByMemberId: memberId,
-        givenByHandle: handle,
-        givenByEmail: email,
-      },
-    });
+    return this.transformToResponseDto(result);
   }
 
   async findAll(
     query: FeedbackQueryDto,
-  ): Promise<PaginatedResponse<EngagementFeedback>> {
+  ): Promise<PaginatedResponse<FeedbackResponseDto>> {
     this.logger.debug("Listing feedback", {
-      engagementId: query.engagementId,
+      engagementAssignmentId: query.engagementAssignmentId,
       givenByMemberId: query.givenByMemberId,
     });
 
     const where: Prisma.EngagementFeedbackWhereInput = {};
 
-    if (query.engagementId) {
-      where.engagementId = query.engagementId;
+    if (query.engagementAssignmentId) {
+      where.engagementAssignmentId = query.engagementAssignmentId;
     }
 
     if (query.givenByMemberId) {
@@ -224,7 +285,7 @@ export class FeedbackService {
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
 
     return {
-      data,
+      data: data.map((feedback) => this.transformToResponseDto(feedback)),
       meta: {
         page,
         perPage,
@@ -234,16 +295,23 @@ export class FeedbackService {
     };
   }
 
-  async findByEngagement(
+  async findByAssignment(
     engagementId: string,
-  ): Promise<EngagementFeedback[]> {
-    this.logger.debug("Listing feedback for engagement", { engagementId });
-    return this.db.engagementFeedback.findMany({
-      where: { engagementId },
+    assignmentId: string,
+  ): Promise<FeedbackResponseDto[]> {
+    await this.validateAssignment(engagementId, assignmentId);
+    this.logger.debug("Listing feedback for assignment", {
+      engagementId,
+      assignmentId,
     });
+    const feedback = await this.db.engagementFeedback.findMany({
+      where: { engagementAssignmentId: assignmentId },
+    });
+
+    return feedback.map((entry) => this.transformToResponseDto(entry));
   }
 
-  async findOne(id: string): Promise<EngagementFeedback> {
+  async findOne(id: string): Promise<FeedbackResponseDto> {
     const feedback = await this.db.engagementFeedback.findUnique({
       where: { id },
     });
@@ -252,6 +320,6 @@ export class FeedbackService {
       throw new NotFoundException("Feedback not found.");
     }
 
-    return feedback;
+    return this.transformToResponseDto(feedback);
   }
 }

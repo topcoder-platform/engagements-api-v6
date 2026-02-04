@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsIn,
   IsOptional,
@@ -13,14 +14,16 @@ import { PaginationDto } from "./pagination.dto";
 
 export enum EngagementSortBy {
   CreatedAt = "createdAt",
-  ApplicationDeadline = "applicationDeadline",
+  UpdatedAt = "updatedAt",
+  AnticipatedStart = "anticipatedStart",
   Status = "status",
   Title = "title",
 }
 
 export const ENGAGEMENT_SORT_FIELDS: EngagementSortBy[] = [
   EngagementSortBy.CreatedAt,
-  EngagementSortBy.ApplicationDeadline,
+  EngagementSortBy.UpdatedAt,
+  EngagementSortBy.AnticipatedStart,
   EngagementSortBy.Status,
   EngagementSortBy.Title,
 ];
@@ -68,6 +71,42 @@ export class EngagementQueryDto extends PaginationDto {
   @IsArray()
   @Transform(transformArray)
   countries?: string[];
+
+  @ApiPropertyOptional({
+    description: "Filter by time zones",
+    example: ["America/Chicago"],
+  })
+  @IsOptional()
+  @IsArray()
+  @Transform(transformArray)
+  timeZones?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      "Include private engagements (requires admin, PM, Task Manager, or Talent Manager role)",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === "") {
+      return undefined;
+    }
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "string") {
+      const normalized = value.toLowerCase();
+      if (normalized === "true") {
+        return true;
+      }
+      if (normalized === "false") {
+        return false;
+      }
+    }
+    return value;
+  })
+  includePrivate?: boolean;
 
   @ApiPropertyOptional({
     description: "Sort field",

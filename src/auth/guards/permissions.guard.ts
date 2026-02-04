@@ -7,12 +7,13 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { SCOPES_KEY } from "../decorators/scopes.decorator";
-import { UserRoles } from "../../app-constants";
+import { PrivilegedUserRoles } from "../../app-constants";
+import { getUserRoles } from "../../common/user.util";
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   private static readonly adminRoles = new Set(
-    Object.values(UserRoles).map((role) => role.toLowerCase()),
+    PrivilegedUserRoles.map((role) => role.toLowerCase()),
   );
 
   constructor(private reflector: Reflector) {}
@@ -23,14 +24,14 @@ export class PermissionsGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    if (!requiredScopes?.length) {
-      return true;
-    }
-
     const { authUser } = context.switchToHttp().getRequest();
 
     if (!authUser) {
       throw new UnauthorizedException("You are not authenticated.");
+    }
+
+    if (!requiredScopes?.length) {
+      return true;
     }
 
     if (authUser.isMachine) {
@@ -39,7 +40,7 @@ export class PermissionsGuard implements CanActivate {
         return true;
       }
     } else {
-      const roles: string[] = authUser.roles ?? [];
+      const roles = getUserRoles(authUser);
       if (this.isAdmin(roles)) {
         return true;
       }

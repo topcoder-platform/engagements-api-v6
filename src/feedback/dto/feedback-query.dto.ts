@@ -14,12 +14,12 @@ export const FEEDBACK_SORT_FIELDS: FeedbackSortBy[] = [
 
 export class FeedbackQueryDto extends PaginationDto {
   @ApiPropertyOptional({
-    description: "Filter by engagement ID",
-    example: "4c4dd8a7-2f5a-4f6d-8f7b-1d2c3b4a5e6f",
+    description: "Filter by engagement assignment ID",
+    example: "9e3b5d41-5e5b-4f0a-9d7d-1b2c3d4e5f6a",
   })
   @IsOptional()
   @IsString()
-  engagementId?: string;
+  engagementAssignmentId?: string;
 
   @ApiPropertyOptional({
     description: "Filter by member ID",
