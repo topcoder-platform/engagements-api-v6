@@ -23,6 +23,7 @@ enum ApplicationStatus {
   SUBMITTED
   UNDER_REVIEW
   SELECTED
+  ACCEPTED
   REJECTED
 }
 

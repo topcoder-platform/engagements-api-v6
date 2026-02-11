@@ -1,3 +1,4 @@
+import { AssignmentStatus } from "@prisma/client";
 import { EngagementsService } from "./engagements.service";
 
 describe("EngagementsService", () => {
@@ -77,6 +78,7 @@ describe("EngagementsService", () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
   it("sets createdBy to system for M2M tokens", async () => {
@@ -129,5 +131,95 @@ describe("EngagementsService", () => {
         data: expect.objectContaining({ updatedBy: "system" }),
       }),
     );
+  });
+
+  it("sets assignment endDate to now when status is terminated", async () => {
+    const now = new Date("2026-02-11T12:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(now);
+
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "eng-1",
+          isPrivate: false,
+          assignments: [],
+        }),
+      },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.ASSIGNED,
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.TERMINATED,
+          endDate: now,
+          terminationReason: "Client request",
+        }),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.updateAssignmentStatus(
+      "eng-1",
+      "assign-1",
+      AssignmentStatus.TERMINATED,
+      "  Client request  ",
+    );
+
+    const updateArgs = tx.engagementAssignment.update.mock.calls[0][0];
+    expect(updateArgs).toMatchObject({
+      where: { id: "assign-1" },
+      data: {
+        status: AssignmentStatus.TERMINATED,
+        terminationReason: "Client request",
+      },
+    });
+    expect(updateArgs.data.endDate).toBeInstanceOf(Date);
+    expect(updateArgs.data.endDate.toISOString()).toBe(now.toISOString());
+  });
+
+  it("does not set assignment endDate when status is not terminated", async () => {
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "eng-1",
+          isPrivate: false,
+          assignments: [],
+        }),
+      },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.ASSIGNED,
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.COMPLETED,
+        }),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.updateAssignmentStatus(
+      "eng-1",
+      "assign-1",
+      AssignmentStatus.COMPLETED,
+    );
+
+    const updateArgs = tx.engagementAssignment.update.mock.calls[0][0];
+    expect(updateArgs).toMatchObject({
+      where: { id: "assign-1" },
+      data: {
+        status: AssignmentStatus.COMPLETED,
+      },
+    });
+    expect(updateArgs.data).not.toHaveProperty("endDate");
   });
 });

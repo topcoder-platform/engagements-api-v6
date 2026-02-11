@@ -234,9 +234,12 @@ export class EngagementsService {
     );
   }
 
-  private async emitMemberAssignedEvents(
-    engagement: Engagement & { assignments?: EngagementAssignment[] },
-  ): Promise<void> {
+  private async emitMemberAssignedEvents(engagement: {
+    id: string;
+    isPrivate: boolean;
+    requiredSkills: string[];
+    assignments?: EngagementAssignment[];
+  }): Promise<void> {
     if (!engagement.isPrivate || !engagement.assignments?.length) {
       return;
     }
@@ -657,11 +660,8 @@ export class EngagementsService {
           : [];
 
     const existingAssignments =
-      (
-        existingEngagement as Engagement & {
-          assignments?: EngagementAssignment[];
-        }
-      ).assignments ?? [];
+      (existingEngagement as { assignments?: EngagementAssignment[] })
+        .assignments ?? [];
     const totalAssignmentCount = existingAssignments.length;
     const activeAssignmentCount = existingAssignments.filter(
       (assignment) =>
@@ -887,12 +887,7 @@ export class EngagementsService {
       });
     });
 
-    const updatedAssignments =
-      (
-        updatedEngagement as Engagement & {
-          assignments?: EngagementAssignment[];
-        }
-      ).assignments ?? [];
+    const updatedAssignments = updatedEngagement.assignments ?? [];
     const existingMemberIds = new Set(
       existingAssignments.map((assignment) => String(assignment.memberId)),
     );
@@ -960,7 +955,7 @@ export class EngagementsService {
     });
   }
 
-  async updateAssignmentStatus(
+  updateAssignmentStatus(
     engagementId: string,
     assignmentId: string,
     status: AssignmentStatus,
@@ -1004,6 +999,9 @@ export class EngagementsService {
       const normalizedRemarks =
         typeof otherRemarks === "string" ? otherRemarks.trim() : otherRemarks;
       const data: Prisma.EngagementAssignmentUpdateInput = { status };
+      if (status === AssignmentStatus.TERMINATED) {
+        data.endDate = new Date();
+      }
       if (terminationReason !== undefined) {
         data.terminationReason = normalizedReason || null;
       }
@@ -1411,7 +1409,7 @@ export class EngagementsService {
   }
 
   private applyAssignmentFields<
-    T extends Engagement & {
+    T extends {
       assignments?: EngagementAssignment[];
     },
   >(

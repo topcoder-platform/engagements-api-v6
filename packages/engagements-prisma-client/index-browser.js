@@ -245,6 +245,7 @@ exports.ApplicationStatus = exports.$Enums.ApplicationStatus = {
   SUBMITTED: 'SUBMITTED',
   UNDER_REVIEW: 'UNDER_REVIEW',
   SELECTED: 'SELECTED',
+  ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'
 };
 

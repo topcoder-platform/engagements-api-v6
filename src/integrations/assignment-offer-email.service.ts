@@ -96,6 +96,7 @@ export class AssignmentOfferEmailService {
         month: "short",
         day: "2-digit",
         year: "numeric",
+        timeZone: "UTC",
       })
         .format(date)
         .replace(/,/g, "");
