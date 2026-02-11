@@ -999,7 +999,10 @@ export class EngagementsService {
       const normalizedRemarks =
         typeof otherRemarks === "string" ? otherRemarks.trim() : otherRemarks;
       const data: Prisma.EngagementAssignmentUpdateInput = { status };
-      if (status === AssignmentStatus.TERMINATED) {
+      if (
+        status === AssignmentStatus.TERMINATED ||
+        status === AssignmentStatus.COMPLETED
+      ) {
         data.endDate = new Date();
       }
       if (terminationReason !== undefined) {

@@ -182,7 +182,10 @@ describe("EngagementsService", () => {
     expect(updateArgs.data.endDate.toISOString()).toBe(now.toISOString());
   });
 
-  it("does not set assignment endDate when status is not terminated", async () => {
+  it("sets assignment endDate to now when status is completed", async () => {
+    const now = new Date("2026-02-11T13:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(now);
+
     const tx = {
       engagement: {
         findUnique: jest.fn().mockResolvedValue({
@@ -201,6 +204,7 @@ describe("EngagementsService", () => {
           id: "assign-1",
           engagementId: "eng-1",
           status: AssignmentStatus.COMPLETED,
+          endDate: now,
         }),
       },
     };
@@ -218,6 +222,48 @@ describe("EngagementsService", () => {
       where: { id: "assign-1" },
       data: {
         status: AssignmentStatus.COMPLETED,
+      },
+    });
+    expect(updateArgs.data.endDate).toBeInstanceOf(Date);
+    expect(updateArgs.data.endDate.toISOString()).toBe(now.toISOString());
+  });
+
+  it("does not set assignment endDate when status is neither completed nor terminated", async () => {
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "eng-1",
+          isPrivate: false,
+          assignments: [],
+        }),
+      },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.ASSIGNED,
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.OFFER_REJECTED,
+        }),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.updateAssignmentStatus(
+      "eng-1",
+      "assign-1",
+      AssignmentStatus.OFFER_REJECTED,
+    );
+
+    const updateArgs = tx.engagementAssignment.update.mock.calls[0][0];
+    expect(updateArgs).toMatchObject({
+      where: { id: "assign-1" },
+      data: {
+        status: AssignmentStatus.OFFER_REJECTED,
       },
     });
     expect(updateArgs.data).not.toHaveProperty("endDate");
