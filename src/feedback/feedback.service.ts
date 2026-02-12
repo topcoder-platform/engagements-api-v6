@@ -41,7 +41,7 @@ export class FeedbackService {
     };
   }
 
-  private async createFeedbackRecord(
+  private createFeedbackRecord(
     assignmentId: string,
     createDto: CreateFeedbackDto,
     memberId?: string,
