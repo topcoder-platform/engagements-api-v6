@@ -389,6 +389,7 @@ export class EngagementsService {
     const orderBy: Prisma.EngagementOrderByWithRelationInput = {
       [sortBy]: query.sortOrder,
     };
+    const includeAssignments = query.includePrivate === true;
 
     const [data, totalCount] = await Promise.all([
       this.db.engagement.findMany({
@@ -396,25 +397,40 @@ export class EngagementsService {
         skip,
         take: perPage,
         orderBy,
-        include: {
-          _count: {
-            select: {
-              applications: true,
+        include: includeAssignments
+          ? {
+              _count: {
+                select: {
+                  applications: true,
+                },
+              },
+              assignments: true,
+            }
+          : {
+              _count: {
+                select: {
+                  applications: true,
+                },
+              },
             },
-          },
-          assignments: true,
-        },
       }),
       this.db.engagement.count({ where }),
     ]);
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
-    const engagements = data.map(({ _count, ...engagement }) =>
-      this.applyAssignmentFields({
+    const engagements = data.map(({ _count, ...engagement }) => {
+      const engagementWithCount = {
         ...engagement,
         applicationsCount: _count.applications,
-      }),
-    );
+      } as Engagement & {
+        assignments?: EngagementAssignment[];
+        applicationsCount: number;
+      };
+
+      return includeAssignments
+        ? this.applyAssignmentFields(engagementWithCount)
+        : engagementWithCount;
+    });
     const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
 
     return {
@@ -1163,14 +1179,8 @@ export class EngagementsService {
         status: EngagementStatus.OPEN,
       },
       orderBy: { createdAt: "desc" },
-      include: { assignments: true },
     });
-
-    const engagementsWithFields = engagements.map((engagement) =>
-      this.applyAssignmentFields(engagement),
-    );
-
-    return this.hydrateCreatorEmails(engagementsWithFields);
+    return this.hydrateCreatorEmails(engagements);
   }
 
   private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {

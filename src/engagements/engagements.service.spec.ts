@@ -9,6 +9,8 @@ describe("EngagementsService", () => {
       create: jest.Mock;
       findUnique: jest.Mock;
       update: jest.Mock;
+      findMany: jest.Mock;
+      count: jest.Mock;
     };
   };
   let projectService: { validateProjectExists: jest.Mock };
@@ -43,6 +45,8 @@ describe("EngagementsService", () => {
         create: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
+        findMany: jest.fn(),
+        count: jest.fn(),
       },
     };
     projectService = {
@@ -131,6 +135,123 @@ describe("EngagementsService", () => {
         data: expect.objectContaining({ updatedBy: "system" }),
       }),
     );
+  });
+
+  it("does not include assignment details for public engagement listings", async () => {
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Public engagement",
+        description: "Public description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: "OPEN",
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "123456",
+        isPrivate: false,
+        requiredMemberCount: 2,
+        _count: {
+          applications: 3,
+        },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+
+    const result = await service.findAll({
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: {
+          _count: {
+            select: {
+              applications: true,
+            },
+          },
+        },
+      }),
+    );
+
+    expect(result.data[0]).not.toHaveProperty("assignments");
+    expect(result.data[0]).not.toHaveProperty("assignedMemberId");
+    expect(result.data[0]).not.toHaveProperty("assignedMemberHandle");
+    expect(result.data[0]).not.toHaveProperty("assignedMembers");
+    expect(result.data[0]).not.toHaveProperty("assignedMemberHandles");
+  });
+
+  it("includes assignment details for privileged engagement listings", async () => {
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Private engagement",
+        description: "Private description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: "OPEN",
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "123456",
+        isPrivate: true,
+        assignments: [
+          {
+            id: "assignment-1",
+            engagementId: "eng-1",
+            memberId: "100000",
+            memberHandle: "member1",
+            status: AssignmentStatus.SELECTED,
+            createdAt: new Date("2026-02-11T11:00:00.000Z"),
+            updatedAt: new Date("2026-02-11T11:00:00.000Z"),
+            agreementRate: "80",
+            otherRemarks: "Confidential terms",
+            startDate: new Date("2026-02-12T00:00:00.000Z"),
+            endDate: new Date("2026-03-12T00:00:00.000Z"),
+            terminationReason: null,
+          },
+        ],
+        _count: {
+          applications: 1,
+        },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+
+    const result = await service.findAll({
+      includePrivate: true,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: {
+          _count: {
+            select: {
+              applications: true,
+            },
+          },
+          assignments: true,
+        },
+      }),
+    );
+
+    expect(result.data[0]).toHaveProperty("assignments");
+    expect(result.data[0]).toHaveProperty("assignedMemberId", "100000");
+    expect(result.data[0]).toHaveProperty("assignedMemberHandle", "member1");
+    expect(result.data[0]).toHaveProperty("assignedMembers", ["100000"]);
+    expect(result.data[0]).toHaveProperty("assignedMemberHandles", ["member1"]);
   });
 
   it("sets assignment endDate to now when status is terminated", async () => {
