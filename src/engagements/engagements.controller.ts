@@ -194,11 +194,30 @@ export class EngagementsController {
     description: "Engagement retrieved.",
     type: EngagementResponseDto,
   })
+  @ApiUnauthorizedResponse({
+    description:
+      "Private engagements require administrator, talent manager, or M2M authentication.",
+  })
   @ApiNotFoundResponse({ description: "Engagement not found." })
-  async findOne(@Param("id") id: string): Promise<Engagement> {
-    return this.engagementsService.findOne(id, {
+  async findOne(
+    @Param("id") id: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<Engagement> {
+    const canViewPrivateEngagement = this.canViewAssignmentDetails(
+      req.authUser,
+    );
+    const engagement = await this.engagementsService.findOne(id, {
       includeCreatorEmail: true,
+      includeAssignments: canViewPrivateEngagement,
     });
+
+    if (engagement.isPrivate && !canViewPrivateEngagement) {
+      throw new UnauthorizedException(
+        "You are not authorized to access this private engagement.",
+      );
+    }
+
+    return engagement;
   }
 
   @Put(":id")
@@ -457,5 +476,20 @@ export class EngagementsController {
         "You are not authorized to include private engagements.",
       );
     }
+  }
+
+  private canViewAssignmentDetails(authUser?: Record<string, any>): boolean {
+    if (!authUser) {
+      return false;
+    }
+
+    if (authUser.isMachine) {
+      return true;
+    }
+
+    const roles = getUserRoles(authUser);
+    return roles.some((role) =>
+      this.includePrivateRoles.has(role?.toLowerCase()),
+    );
   }
 }

@@ -569,7 +569,10 @@ export class EngagementsService {
 
   async findOne(
     id: string,
-    options: { includeCreatorEmail?: boolean } = {},
+    options: {
+      includeCreatorEmail?: boolean;
+      includeAssignments?: boolean;
+    } = {},
   ): Promise<Engagement> {
     const engagement = await this.db.engagement.findUnique({
       where: { id },
@@ -580,18 +583,25 @@ export class EngagementsService {
     }
 
     this.logger.debug("Raw engagement", engagement);
+    const includeAssignments = options.includeAssignments !== false;
 
-    const engagementWithAssignments = this.applyAssignmentFields(engagement);
+    const engagementWithFields = includeAssignments
+      ? this.applyAssignmentFields(engagement)
+      : (() => {
+          const { assignments, ...rest } = engagement;
+          void assignments;
+          return rest;
+        })();
 
     const normalizedEngagement = {
-      ...engagementWithAssignments,
-      role: engagementWithAssignments.role
-        ? (engagementWithAssignments.role.toString() as Role)
+      ...engagementWithFields,
+      role: engagementWithFields.role
+        ? (engagementWithFields.role.toString() as Role)
         : null,
-      workload: engagementWithAssignments.workload
-        ? (engagementWithAssignments.workload.toString() as Workload)
+      workload: engagementWithFields.workload
+        ? (engagementWithFields.workload.toString() as Workload)
         : null,
-      compensationRange: engagementWithAssignments.compensationRange ?? null,
+      compensationRange: engagementWithFields.compensationRange ?? null,
     };
 
     if (!options.includeCreatorEmail) {
