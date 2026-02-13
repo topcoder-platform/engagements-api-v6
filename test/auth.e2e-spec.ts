@@ -28,6 +28,21 @@ const tokenFixtures: Record<string, Record<string, any>> = {
     userId: "123456",
     roles: [UserRoles.Admin],
   },
+  "talent-manager-user": {
+    isMachine: false,
+    userId: "222222",
+    roles: [UserRoles.TalentManager],
+  },
+  "project-manager-user": {
+    isMachine: false,
+    userId: "333333",
+    roles: [UserRoles.ProjectManager],
+  },
+  "task-manager-user": {
+    isMachine: false,
+    userId: "444444",
+    roles: [UserRoles.TaskManager],
+  },
   "member-user": {
     isMachine: false,
     userId: "654321",
@@ -262,6 +277,49 @@ describe("Authentication & Authorization (e2e)", () => {
         .get("/engagements/eng-1")
         .set("Authorization", "Bearer bare-user")
         .expect(200);
+    });
+  });
+
+  describe("includePrivate Access", () => {
+    it("allows admin user to request includePrivate=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true")
+        .set("Authorization", "Bearer admin-user")
+        .expect(200);
+    });
+
+    it("allows talent manager user to request includePrivate=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true")
+        .set("Authorization", "Bearer talent-manager-user")
+        .expect(200);
+    });
+
+    it("allows M2M token to request includePrivate=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true")
+        .set("Authorization", "Bearer m2m-read")
+        .expect(200);
+    });
+
+    it("returns 401 for project manager requesting includePrivate=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true")
+        .set("Authorization", "Bearer project-manager-user")
+        .expect(401);
+    });
+
+    it("returns 401 for task manager requesting includePrivate=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true")
+        .set("Authorization", "Bearer task-manager-user")
+        .expect(401);
+    });
+
+    it("returns 401 for anonymous request with includePrivate=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true")
+        .expect(401);
     });
   });
 
