@@ -267,16 +267,212 @@ describe("Authentication & Authorization (e2e)", () => {
     });
 
     it("allows anonymous access to engagement by ID", async () => {
+      engagementsServiceMock.findOne.mockClear();
+
       await request(app.getHttpServer())
         .get("/engagements/eng-1")
         .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-1",
+        expect.objectContaining({
+          includeAssignments: false,
+          includeCreatorEmail: true,
+        }),
+      );
     });
 
     it("allows authenticated user without scopes to access engagement by ID", async () => {
+      engagementsServiceMock.findOne.mockClear();
+
       await request(app.getHttpServer())
         .get("/engagements/eng-1")
         .set("Authorization", "Bearer bare-user")
         .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-1",
+        expect.objectContaining({
+          includeAssignments: false,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("includes assignments for admin user when accessing engagement by ID", async () => {
+      engagementsServiceMock.findOne.mockClear();
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-1")
+        .set("Authorization", "Bearer admin-user")
+        .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-1",
+        expect.objectContaining({
+          includeAssignments: true,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("includes assignments for talent manager user when accessing engagement by ID", async () => {
+      engagementsServiceMock.findOne.mockClear();
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-1")
+        .set("Authorization", "Bearer talent-manager-user")
+        .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-1",
+        expect.objectContaining({
+          includeAssignments: true,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("includes assignments for M2M token when accessing engagement by ID", async () => {
+      engagementsServiceMock.findOne.mockClear();
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-1")
+        .set("Authorization", "Bearer m2m-read")
+        .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-1",
+        expect.objectContaining({
+          includeAssignments: true,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+  });
+
+  describe("Private Engagement Access", () => {
+    it("returns 401 for anonymous access when engagement is private", async () => {
+      engagementsServiceMock.findOne.mockClear();
+      engagementsServiceMock.findOne.mockResolvedValueOnce({
+        id: "eng-private",
+        isPrivate: true,
+      });
+
+      await request(app.getHttpServer()).get("/engagements/eng-private").expect(401);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-private",
+        expect.objectContaining({
+          includeAssignments: false,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("returns 401 for non-privileged user when engagement is private", async () => {
+      engagementsServiceMock.findOne.mockClear();
+      engagementsServiceMock.findOne.mockResolvedValueOnce({
+        id: "eng-private",
+        isPrivate: true,
+      });
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-private")
+        .set("Authorization", "Bearer member-user")
+        .expect(401);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-private",
+        expect.objectContaining({
+          includeAssignments: false,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("returns 401 for project manager when engagement is private", async () => {
+      engagementsServiceMock.findOne.mockClear();
+      engagementsServiceMock.findOne.mockResolvedValueOnce({
+        id: "eng-private",
+        isPrivate: true,
+      });
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-private")
+        .set("Authorization", "Bearer project-manager-user")
+        .expect(401);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-private",
+        expect.objectContaining({
+          includeAssignments: false,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("allows admin when engagement is private", async () => {
+      engagementsServiceMock.findOne.mockClear();
+      engagementsServiceMock.findOne.mockResolvedValueOnce({
+        id: "eng-private",
+        isPrivate: true,
+      });
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-private")
+        .set("Authorization", "Bearer admin-user")
+        .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-private",
+        expect.objectContaining({
+          includeAssignments: true,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("allows talent manager when engagement is private", async () => {
+      engagementsServiceMock.findOne.mockClear();
+      engagementsServiceMock.findOne.mockResolvedValueOnce({
+        id: "eng-private",
+        isPrivate: true,
+      });
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-private")
+        .set("Authorization", "Bearer talent-manager-user")
+        .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-private",
+        expect.objectContaining({
+          includeAssignments: true,
+          includeCreatorEmail: true,
+        }),
+      );
+    });
+
+    it("allows M2M when engagement is private", async () => {
+      engagementsServiceMock.findOne.mockClear();
+      engagementsServiceMock.findOne.mockResolvedValueOnce({
+        id: "eng-private",
+        isPrivate: true,
+      });
+
+      await request(app.getHttpServer())
+        .get("/engagements/eng-private")
+        .set("Authorization", "Bearer m2m-read")
+        .expect(200);
+
+      expect(engagementsServiceMock.findOne).toHaveBeenCalledWith(
+        "eng-private",
+        expect.objectContaining({
+          includeAssignments: true,
+          includeCreatorEmail: true,
+        }),
+      );
     });
   });
 
