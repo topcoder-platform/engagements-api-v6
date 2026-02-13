@@ -12,6 +12,7 @@ import {
   Put,
   Query,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -30,7 +31,12 @@ import {
 import { Request } from "express";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import { Scopes as ScopesDecorator } from "../auth/decorators/scopes.decorator";
-import { Scopes as AppScopes, PrivilegedUserRoles } from "../app-constants";
+import {
+  Scopes as AppScopes,
+  PrivilegedUserRoles,
+  TalentManagerRoles,
+  UserRoles,
+} from "../app-constants";
 import {
   CreateEngagementDto,
   CreateEngagementDurationDatesDto,
@@ -57,6 +63,9 @@ import { getUserRoles } from "../common/user.util";
 export class EngagementsController {
   private readonly privilegedRoles = new Set(
     PrivilegedUserRoles.map((role) => role.toLowerCase()),
+  );
+  private readonly includePrivateRoles = new Set(
+    [UserRoles.Admin, ...TalentManagerRoles].map((role) => role.toLowerCase()),
   );
 
   constructor(private readonly engagementsService: EngagementsService) {}
@@ -127,7 +136,7 @@ export class EngagementsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<Engagement>> {
     if (query.includePrivate) {
-      this.assertAdminOrPm(req.authUser);
+      this.assertCanIncludePrivate(req.authUser);
     }
     return this.engagementsService.findAll(query);
   }
@@ -423,6 +432,29 @@ export class EngagementsController {
     if (!normalizedScopes.includes(requiredScope.toLowerCase())) {
       throw new ForbiddenException(
         "You do not have the required permissions to access this resource.",
+      );
+    }
+  }
+
+  private assertCanIncludePrivate(authUser?: Record<string, any>) {
+    if (!authUser) {
+      throw new UnauthorizedException(
+        "Authentication is required to include private engagements.",
+      );
+    }
+
+    if (authUser.isMachine) {
+      return;
+    }
+
+    const roles = getUserRoles(authUser);
+    const isAllowed = roles.some((role) =>
+      this.includePrivateRoles.has(role?.toLowerCase()),
+    );
+
+    if (!isAllowed) {
+      throw new UnauthorizedException(
+        "You are not authorized to include private engagements.",
       );
     }
   }
