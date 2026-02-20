@@ -8,6 +8,20 @@ import {
 import { Transform } from "class-transformer";
 import { AssignmentResponseDto } from "./assignment-response.dto";
 
+class EngagementProjectResponseDto {
+  @ApiProperty({
+    description: "Project ID",
+    example: "3d9b37b5-1a5d-4c48-a60f-5f73c2f7f1b6",
+  })
+  id: string;
+
+  @ApiPropertyOptional({
+    description: "Project name",
+    example: "Platform Modernization",
+  })
+  name?: string;
+}
+
 export class EngagementResponseDto {
   @ApiProperty({
     description: "Engagement ID",
@@ -20,6 +34,18 @@ export class EngagementResponseDto {
     example: "3d9b37b5-1a5d-4c48-a60f-5f73c2f7f1b6",
   })
   projectId: string;
+
+  @ApiPropertyOptional({
+    description: "Project name",
+    example: "Platform Modernization",
+  })
+  projectName?: string;
+
+  @ApiPropertyOptional({
+    description: "Project summary object",
+    type: EngagementProjectResponseDto,
+  })
+  project?: EngagementProjectResponseDto;
 
   @ApiProperty({
     description: "Engagement title",

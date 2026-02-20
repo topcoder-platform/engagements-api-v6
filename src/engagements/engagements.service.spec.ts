@@ -13,7 +13,10 @@ describe("EngagementsService", () => {
       count: jest.Mock;
     };
   };
-  let projectService: { validateProjectExists: jest.Mock };
+  let projectService: {
+    getProjectNamesByIds: jest.Mock;
+    validateProjectExists: jest.Mock;
+  };
   let skillsService: { validateSkillsExist: jest.Mock };
   let memberService: {
     getMemberHandleByUserId: jest.Mock;
@@ -50,6 +53,7 @@ describe("EngagementsService", () => {
       },
     };
     projectService = {
+      getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
       validateProjectExists: jest.fn().mockResolvedValue(true),
     };
     skillsService = {
@@ -252,6 +256,52 @@ describe("EngagementsService", () => {
     expect(result.data[0]).toHaveProperty("assignedMemberHandle", "member1");
     expect(result.data[0]).toHaveProperty("assignedMembers", ["100000"]);
     expect(result.data[0]).toHaveProperty("assignedMemberHandles", ["member1"]);
+  });
+
+  it("hydrates project details in engagement listings", async () => {
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Public engagement",
+        description: "Public description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: "OPEN",
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "123456",
+        isPrivate: false,
+        requiredMemberCount: 2,
+        _count: {
+          applications: 3,
+        },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([["project-1", "Platform UI Refresh"]]),
+    );
+
+    const result = await service.findAll({
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(projectService.getProjectNamesByIds).toHaveBeenCalledWith([
+      "project-1",
+    ]);
+    expect(result.data[0]).toMatchObject({
+      project: {
+        id: "project-1",
+        name: "Platform UI Refresh",
+      },
+      projectName: "Platform UI Refresh",
+    });
   });
 
   it("sets assignment endDate to now when status is terminated", async () => {

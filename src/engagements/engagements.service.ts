@@ -51,6 +51,11 @@ type ResolvedAssignmentDetails = {
   otherRemarks?: string;
 };
 
+type EngagementProjectReference = {
+  id: string;
+  name?: string;
+};
+
 @Injectable()
 export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
@@ -432,9 +437,11 @@ export class EngagementsService {
         : engagementWithCount;
     });
     const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
+    const hydratedEngagementsWithProjectDetails =
+      await this.hydrateProjectDetails(hydratedEngagements);
 
     return {
-      data: hydratedEngagements,
+      data: hydratedEngagementsWithProjectDetails,
       meta: {
         page,
         perPage,
@@ -555,9 +562,11 @@ export class EngagementsService {
       }),
     );
     const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
+    const hydratedEngagementsWithProjectDetails =
+      await this.hydrateProjectDetails(hydratedEngagements);
 
     return {
-      data: hydratedEngagements,
+      data: hydratedEngagementsWithProjectDetails,
       meta: {
         page,
         perPage,
@@ -1190,7 +1199,9 @@ export class EngagementsService {
       },
       orderBy: { createdAt: "desc" },
     });
-    return this.hydrateCreatorEmails(engagements);
+    const engagementsWithCreatorEmails =
+      await this.hydrateCreatorEmails(engagements);
+    return this.hydrateProjectDetails(engagementsWithCreatorEmails);
   }
 
   private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {
@@ -1526,6 +1537,115 @@ export class EngagementsService {
         : null;
 
       return { ...engagement, createdByEmail };
+    });
+  }
+
+  private normalizeProjectId(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalizedProjectId = value.trim();
+    return normalizedProjectId || undefined;
+  }
+
+  private normalizeProjectName(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalizedProjectName = value.trim();
+    return normalizedProjectName || undefined;
+  }
+
+  private async hydrateProjectDetails<
+    T extends {
+      project?: {
+        id?: string | null;
+        name?: string | null;
+      };
+      projectId: string;
+      projectName?: string | null;
+    },
+  >(
+    engagements: T[],
+  ): Promise<
+    Array<
+      T & {
+        project: EngagementProjectReference;
+        projectName?: string;
+      }
+    >
+  > {
+    if (!engagements.length) {
+      return engagements as Array<
+        T & {
+          project: EngagementProjectReference;
+          projectName?: string;
+        }
+      >;
+    }
+
+    const projectIds = Array.from(
+      new Set(
+        engagements
+          .map((engagement) => this.normalizeProjectId(engagement.projectId))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (!projectIds.length) {
+      return engagements as Array<
+        T & {
+          project: EngagementProjectReference;
+          projectName?: string;
+        }
+      >;
+    }
+
+    let projectNameByProjectId = new Map<string, string>();
+
+    try {
+      projectNameByProjectId =
+        await this.projectService.getProjectNamesByIds(projectIds);
+    } catch (error) {
+      this.logger.warn("Failed to hydrate engagement project names.", {
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+
+    return engagements.map((engagement) => {
+      const normalizedProjectId = this.normalizeProjectId(engagement.projectId);
+      if (!normalizedProjectId) {
+        return engagement as T & {
+          project: EngagementProjectReference;
+          projectName?: string;
+        };
+      }
+
+      const existingProject = engagement.project;
+      const existingProjectName =
+        this.normalizeProjectName(engagement.projectName) ??
+        this.normalizeProjectName(existingProject?.name);
+      const resolvedProjectName =
+        existingProjectName ??
+        this.normalizeProjectName(
+          projectNameByProjectId.get(normalizedProjectId),
+        );
+
+      const project: EngagementProjectReference = {
+        id: this.normalizeProjectId(existingProject?.id) ?? normalizedProjectId,
+      };
+
+      if (resolvedProjectName) {
+        project.name = resolvedProjectName;
+      }
+
+      return {
+        ...engagement,
+        project,
+        ...(resolvedProjectName ? { projectName: resolvedProjectName } : {}),
+      };
     });
   }
 
