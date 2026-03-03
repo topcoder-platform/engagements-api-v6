@@ -267,6 +267,6 @@ export class ProjectService {
       ? `?fields=${encodeURIComponent(fields.join(","))}`
       : "";
 
-    return `${normalizedBaseUrl}/v5/projects/${projectId}${query}`;
+    return `${normalizedBaseUrl}/v6/projects/${projectId}${query}`;
   }
 }
