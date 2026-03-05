@@ -313,6 +313,10 @@ export class EngagementsService {
     );
   }
 
+  /**
+   * Lists engagements with pagination and filters.
+   * Public/non-includePrivate feeds always exclude ON_HOLD, including explicit status filters.
+   */
   async findAll(
     query: EngagementQueryDto,
   ): Promise<PaginatedResponse<Engagement>> {
@@ -322,6 +326,7 @@ export class EngagementsService {
       search: query.search,
     });
 
+    const isPublicFeed = query.includePrivate !== true;
     const where: Prisma.EngagementWhereInput = query.includePrivate
       ? {}
       : { isPrivate: false };
@@ -332,7 +337,10 @@ export class EngagementsService {
     }
 
     if (query.status) {
-      where.status = query.status;
+      andFilters.push({ status: query.status });
+    }
+    if (isPublicFeed) {
+      andFilters.push({ status: { notIn: [EngagementStatus.ON_HOLD] } });
     }
 
     if (query.search) {
@@ -941,9 +949,31 @@ export class EngagementsService {
     );
   }
 
+  /**
+   * Removes an engagement by UUID.
+   *
+   * Designed for Administrator-only use when an engagement was created in error
+   * and has no active member assignments.
+   *
+   * @param id Engagement UUID.
+   * @throws {NotFoundException} If the engagement does not exist.
+   * @throws {BadRequestException} If the engagement has one or more active assignments.
+   */
   async remove(id: string): Promise<void> {
     this.logger.debug("Removing engagement", { id });
     await this.findOne(id);
+
+    const activeAssignmentCount = await this.db.engagementAssignment.count({
+      where: {
+        engagementId: id,
+        status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+      },
+    });
+
+    if (activeAssignmentCount > 0) {
+      throw new BadRequestException(ERROR_MESSAGES.EngagementHasMembers);
+    }
+
     await this.db.engagement.delete({ where: { id } });
   }
 
@@ -1190,6 +1220,9 @@ export class EngagementsService {
     }
   }
 
+  /**
+   * Lists public engagements that are currently OPEN.
+   */
   async findAllActive(): Promise<Engagement[]> {
     this.logger.debug("Listing active engagements");
     const engagements = await this.db.engagement.findMany({

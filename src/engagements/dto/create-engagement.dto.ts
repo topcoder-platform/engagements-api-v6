@@ -229,7 +229,7 @@ export class CreateEngagementDto {
   anticipatedStart: AnticipatedStart;
 
   @ApiPropertyOptional({
-    description: "Engagement status",
+    description: "Engagement status, including ON_HOLD when applicable",
     enum: EngagementStatus,
     example: EngagementStatus.OPEN,
   })

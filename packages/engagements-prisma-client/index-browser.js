@@ -226,7 +226,8 @@ exports.EngagementStatus = exports.$Enums.EngagementStatus = {
   OPEN: 'OPEN',
   ACTIVE: 'ACTIVE',
   CANCELLED: 'CANCELLED',
-  CLOSED: 'CLOSED'
+  CLOSED: 'CLOSED',
+  ON_HOLD: 'ON_HOLD'
 };
 
 exports.Role = exports.$Enums.Role = {

@@ -38,7 +38,8 @@ export class EngagementQueryDto extends PaginationDto {
   projectId?: string;
 
   @ApiPropertyOptional({
-    description: "Filter by status",
+    description:
+      "Filter by status. ON_HOLD requires the same authorization as includePrivate=true (admin, talent manager, or M2M token).",
     enum: EngagementStatus,
     example: EngagementStatus.OPEN,
   })

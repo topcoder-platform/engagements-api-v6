@@ -31,4 +31,6 @@ export const ERROR_MESSAGES = {
   MemberExperienceNotFound: "Member experience record not found",
   UnauthorizedExperienceAccess:
     "You do not have permission to access this experience record",
+  EngagementHasMembers:
+    "This engagement cannot be deleted because it has members assigned to it. Cancel the engagement instead.",
 };

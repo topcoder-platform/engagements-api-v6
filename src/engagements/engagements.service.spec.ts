@@ -1,5 +1,10 @@
-import { AssignmentStatus } from "@prisma/client";
+import { BadRequestException } from "@nestjs/common";
+import { AssignmentStatus, EngagementStatus } from "@prisma/client";
 import { EngagementsService } from "./engagements.service";
+
+jest.mock("nanoid", () => ({
+  nanoid: () => "test-id",
+}));
 
 describe("EngagementsService", () => {
   let service: EngagementsService;
@@ -10,6 +15,10 @@ describe("EngagementsService", () => {
       findUnique: jest.Mock;
       update: jest.Mock;
       findMany: jest.Mock;
+      count: jest.Mock;
+      delete: jest.Mock;
+    };
+    engagementAssignment: {
       count: jest.Mock;
     };
   };
@@ -49,6 +58,10 @@ describe("EngagementsService", () => {
         findUnique: jest.fn(),
         update: jest.fn(),
         findMany: jest.fn(),
+        count: jest.fn(),
+        delete: jest.fn(),
+      },
+      engagementAssignment: {
         count: jest.fn(),
       },
     };
@@ -304,6 +317,93 @@ describe("EngagementsService", () => {
     });
   });
 
+  it("excludes ON_HOLD from default public engagement listings", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          isPrivate: false,
+          AND: expect.arrayContaining([
+            { status: { notIn: [EngagementStatus.ON_HOLD] } },
+          ]),
+        }),
+      }),
+    );
+  });
+
+  it("does not allow public status=ON_HOLD listings to return ON_HOLD engagements", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    const result = await service.findAll({
+      status: EngagementStatus.ON_HOLD,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    const findManyArg = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyArg.where).toMatchObject({
+      isPrivate: false,
+    });
+    expect(findManyArg.where.AND).toEqual(
+      expect.arrayContaining([
+        { status: EngagementStatus.ON_HOLD },
+        { status: { notIn: [EngagementStatus.ON_HOLD] } },
+      ]),
+    );
+    expect(result.data).toEqual([]);
+  });
+
+  it("allows includePrivate status=ON_HOLD listings for privileged queries", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      includePrivate: true,
+      status: EngagementStatus.ON_HOLD,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    const findManyArg = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyArg.where).not.toHaveProperty("isPrivate");
+    expect(findManyArg.where.AND).toEqual(
+      expect.arrayContaining([{ status: EngagementStatus.ON_HOLD }]),
+    );
+    expect(findManyArg.where.AND).not.toEqual(
+      expect.arrayContaining([
+        { status: { notIn: [EngagementStatus.ON_HOLD] } },
+      ]),
+    );
+  });
+
+  it("findAllActive always uses public OPEN-only filtering", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+
+    await service.findAllActive();
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith({
+      where: {
+        isPrivate: false,
+        status: EngagementStatus.OPEN,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  });
+
   it("sets assignment endDate to now when status is terminated", async () => {
     const now = new Date("2026-02-11T12:00:00.000Z");
     jest.useFakeTimers().setSystemTime(now);
@@ -438,5 +538,27 @@ describe("EngagementsService", () => {
       },
     });
     expect(updateArgs.data).not.toHaveProperty("endDate");
+  });
+
+  it("throws BadRequestException when removing an engagement with active assignments", async () => {
+    jest.spyOn(service, "findOne").mockResolvedValue({ id: "eng-1" } as any);
+    db.engagementAssignment.count.mockResolvedValue(1);
+
+    await expect(service.remove("eng-1")).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    expect(db.engagement.delete).not.toHaveBeenCalled();
+  });
+
+  it("deletes an engagement when there are no active assignments", async () => {
+    jest.spyOn(service, "findOne").mockResolvedValue({ id: "eng-1" } as any);
+    db.engagementAssignment.count.mockResolvedValue(0);
+
+    await service.remove("eng-1");
+
+    expect(db.engagement.delete).toHaveBeenCalledWith({
+      where: { id: "eng-1" },
+    });
   });
 });

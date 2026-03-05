@@ -56,6 +56,8 @@ Set the following environment variables (see `.env.example` for defaults):
 | `SENDGRID_ASSIGNMENT_OFFER_TEMPLATE_ID` | SendGrid template ID for assignment offer emails. |
 | `SENDGRID_ASSIGNMENT_OFFER_ACCEPTED_TEMPLATE_ID` | SendGrid template ID for assignment offer accepted emails. |
 | `SENDGRID_ASSIGNMENT_OFFER_REJECTED_TEMPLATE_ID` | SendGrid template ID for assignment offer rejected emails. |
+| `SENDGRID_UNDER_REVIEW_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application is under review. |
+| `SENDGRID_REJECTED_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application was not selected. |
 
 ## Authentication
 

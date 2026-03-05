@@ -18,6 +18,7 @@ import { DbService } from "../db/db.service";
 import { MemberService } from "../integrations/member.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
+import { ApplicationStatusEmailService } from "../integrations/application-status-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
 import { EngagementsService } from "../engagements/engagements.service";
 import {
@@ -75,6 +76,7 @@ export class ApplicationsService {
     private readonly engagementsService: EngagementsService,
     private readonly eventBusService: EventBusService,
     private readonly assignmentOfferEmailService: AssignmentOfferEmailService,
+    private readonly applicationStatusEmailService: ApplicationStatusEmailService,
   ) {}
 
   async create(
@@ -272,6 +274,21 @@ export class ApplicationsService {
     );
   }
 
+  /**
+   * Updates an application's status and applies related side-effects.
+   *
+   * Besides assignment and unassignment workflows, transitions to
+   * `UNDER_REVIEW` and `REJECTED` trigger a non-blocking applicant email
+   * notification.
+   *
+   * @param id - Application ID.
+   * @param status - New application status.
+   * @param authUser - Authenticated user context used for authorization and
+   *   `updatedBy`.
+   * @param assignmentDetails - Optional assignment details used when selecting a
+   *   member.
+   * @returns The updated engagement application row.
+   */
   async updateStatus(
     id: string,
     status: ApplicationStatus,
@@ -292,13 +309,46 @@ export class ApplicationsService {
       await this.handleMemberUnassignment(application);
     }
 
-    return this.db.engagementApplication.update({
+    const updatedApplication = await this.db.engagementApplication.update({
       where: { id },
       data: {
         status,
         updatedBy: authUserId,
       },
     });
+
+    const emailStatus =
+      status === ApplicationStatus.UNDER_REVIEW
+        ? "UNDER_REVIEW"
+        : status === ApplicationStatus.REJECTED
+          ? "REJECTED"
+          : null;
+
+    if (emailStatus) {
+      try {
+        void this.applicationStatusEmailService
+          .sendApplicationStatusEmail({
+            memberId: application.userId,
+            status: emailStatus,
+            engagementTitle: application.engagement.title,
+          })
+          .catch((error: unknown) => {
+            const message =
+              error instanceof Error ? error.message : "unknown error";
+            this.logger.error(
+              `Failed to send application status email for application ${application.id}: ${message}`,
+            );
+          });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "unknown error";
+        this.logger.error(
+          `Failed to queue application status email for application ${application.id}: ${message}`,
+        );
+      }
+    }
+
+    return updatedApplication;
   }
 
   private normalizeAssignmentDetails(details?: ApproveApplicationDto): {
