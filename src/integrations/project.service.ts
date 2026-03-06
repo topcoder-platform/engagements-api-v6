@@ -176,6 +176,76 @@ export class ProjectService {
     return projectNamesById;
   }
 
+  /**
+   * Resolves project IDs where the authenticated user is a member.
+   *
+   * Uses the caller's JWT bearer token against the projects API with
+   * `memberOnly=true` and paginates through all pages.
+   *
+   * Returns an empty list when the authorization header is missing/invalid or
+   * when project lookup fails, to fail closed for permission-sensitive callers.
+   */
+  async getMemberProjectIdsForUser(
+    authorizationHeader?: string | string[],
+  ): Promise<string[]> {
+    const normalizedAuthorizationHeader =
+      this.normalizeAuthorizationHeader(authorizationHeader);
+    if (!normalizedAuthorizationHeader) {
+      return [];
+    }
+
+    const projectIds = new Set<string>();
+    const perPage = 100;
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const url = this.getMemberProjectsUrl(page, perPage);
+
+      try {
+        const response = await firstValueFrom(
+          this.httpService.get(url, {
+            headers: { Authorization: normalizedAuthorizationHeader },
+          }),
+        );
+
+        const projects = Array.isArray(response.data) ? response.data : [];
+        projects.forEach((project) => {
+          const projectId = this.normalizeProjectId(
+            (project as ProjectResponse).id,
+          );
+          if (projectId) {
+            projectIds.add(projectId);
+          }
+        });
+
+        const totalPages = this.parseNumericHeader(
+          response.headers?.["x-total-pages"],
+        );
+        if (totalPages && totalPages > 0) {
+          hasMore = page < totalPages;
+        } else {
+          hasMore = projects.length === perPage;
+        }
+        page += 1;
+      } catch (error) {
+        if (isAxiosError(error)) {
+          this.logger.warn(
+            `Failed to fetch member projects for user-scoped engagement filtering (status=${error.response?.status ?? "unknown"}).`,
+          );
+          return [];
+        }
+
+        this.logger.warn(
+          "Failed to fetch member projects for user-scoped engagement filtering.",
+        );
+        return [];
+      }
+    }
+
+    return Array.from(projectIds);
+  }
+
   private async getM2MToken(): Promise<string> {
     const clientId = this.configService.get<string>("M2M_CLIENT_ID");
     const clientSecret = this.configService.get<string>("M2M_CLIENT_SECRET");
@@ -190,9 +260,45 @@ export class ProjectService {
     return (await this.m2m.getMachineToken(clientId, clientSecret)) as string;
   }
 
-  private normalizeProjectId(projectId: string): string | undefined {
-    const normalizedProjectId = String(projectId || "").trim();
+  private normalizeProjectId(projectId: unknown): string | undefined {
+    if (projectId === undefined || projectId === null) {
+      return undefined;
+    }
+
+    if (typeof projectId !== "string" && typeof projectId !== "number") {
+      return undefined;
+    }
+
+    const normalizedProjectId = String(projectId).trim();
     return normalizedProjectId || undefined;
+  }
+
+  private normalizeAuthorizationHeader(
+    authorizationHeader?: string | string[],
+  ): string | undefined {
+    const rawValue = Array.isArray(authorizationHeader)
+      ? authorizationHeader.find(
+          (value) => typeof value === "string" && value.trim().length > 0,
+        )
+      : authorizationHeader;
+
+    if (!rawValue || typeof rawValue !== "string") {
+      return undefined;
+    }
+
+    const normalized = rawValue.trim();
+    if (!normalized) {
+      return undefined;
+    }
+
+    return /^Bearer\s+/i.test(normalized) ? normalized : `Bearer ${normalized}`;
+  }
+
+  private parseNumericHeader(headerValue: unknown): number | undefined {
+    const rawValue = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+    const numericValue =
+      typeof rawValue === "number" ? rawValue : Number(rawValue);
+    return Number.isFinite(numericValue) ? numericValue : undefined;
   }
 
   private normalizeProjectName(projectName: unknown): string | undefined {
@@ -301,5 +407,21 @@ export class ProjectService {
       : "";
 
     return `${normalizedBaseUrl}/v6/projects/${projectId}${query}`;
+  }
+
+  private getMemberProjectsUrl(page: number, perPage: number): string {
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
+    );
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    const query = new URLSearchParams({
+      memberOnly: "true",
+      fields: "id",
+      page: String(page),
+      perPage: String(perPage),
+    });
+
+    return `${normalizedBaseUrl}/v6/projects?${query.toString()}`;
   }
 }

@@ -84,6 +84,7 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 - Administrators, Topcoder Project Managers, Topcoder Task Managers, and Topcoder Talent Managers can bypass scope checks for most management operations.
 - Regular members can view engagements and manage their own applications.
 - Project Managers can view and update application statuses for engagements they created, while Task Managers and Talent Managers can do so across engagements.
+- Talent Managers are server-scoped to engagements from projects where they are members when listing engagements.
 
 ## Response Notes
 

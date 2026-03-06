@@ -138,7 +138,11 @@ export class EngagementsController {
     if (query.includePrivate || query.status === EngagementStatus.ON_HOLD) {
       this.assertCanIncludePrivate(req.authUser);
     }
-    return this.engagementsService.findAll(query);
+    return this.engagementsService.findAll(
+      query,
+      req.authUser,
+      req.headers.authorization,
+    );
   }
 
   @Get("active")

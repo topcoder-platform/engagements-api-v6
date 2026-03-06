@@ -15,7 +15,11 @@ import {
   Workload,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
-import { PrivilegedUserRoles } from "../app-constants";
+import {
+  PrivilegedUserRoles,
+  TalentManagerRoles,
+  UserRoles,
+} from "../app-constants";
 import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
@@ -61,6 +65,10 @@ export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
   private readonly privilegedRoles = new Set(
     PrivilegedUserRoles.map((role) => role.toLowerCase()),
+  );
+  private readonly adminRoles = new Set([UserRoles.Admin.toLowerCase()]);
+  private readonly talentManagerRoles = new Set(
+    TalentManagerRoles.map((role) => role.toLowerCase()),
   );
 
   constructor(
@@ -318,16 +326,31 @@ export class EngagementsService {
    * Public/non-includePrivate feeds always exclude ON_HOLD, including explicit status filters.
    * Supports `projectId` and `projectIds` project filtering.
    * When both are provided, `projectIds` takes precedence.
+   * TM users are server-scoped to engagements from projects where they are members.
    */
   async findAll(
     query: EngagementQueryDto,
+    authUser?: Record<string, any>,
+    authorizationHeader?: string | string[],
   ): Promise<PaginatedResponse<Engagement>> {
+    const projectScope = await this.resolveProjectScope(
+      query,
+      authUser,
+      authorizationHeader,
+    );
+
     this.logger.debug("Listing engagements", {
       projectId: query.projectId,
       projectIds: query.projectIds,
+      scopedProjectId: projectScope.projectId,
+      scopedProjectIds: projectScope.projectIds,
       status: query.status,
       search: query.search,
     });
+
+    if (projectScope.isEmpty) {
+      return this.emptyPaginatedResponse(query.page, query.perPage);
+    }
 
     const isPublicFeed = query.includePrivate !== true;
     const where: Prisma.EngagementWhereInput = query.includePrivate
@@ -335,11 +358,11 @@ export class EngagementsService {
       : { isPrivate: false };
     const andFilters: Prisma.EngagementWhereInput[] = [];
 
-    if (query.projectId) {
-      where.projectId = query.projectId;
+    if (projectScope.projectId) {
+      where.projectId = projectScope.projectId;
     }
-    if (query.projectIds?.length) {
-      where.projectId = { in: query.projectIds };
+    if (projectScope.projectIds?.length) {
+      where.projectId = { in: projectScope.projectIds };
     }
 
     if (query.status) {
@@ -1765,5 +1788,100 @@ export class EngagementsService {
     }
 
     return new Date(dateValue);
+  }
+
+  private emptyPaginatedResponse(
+    page: number,
+    perPage: number,
+  ): PaginatedResponse<Engagement> {
+    return {
+      data: [],
+      meta: {
+        page,
+        perPage,
+        totalCount: 0,
+        totalPages: 0,
+      },
+    };
+  }
+
+  private async resolveProjectScope(
+    query: EngagementQueryDto,
+    authUser?: Record<string, any>,
+    authorizationHeader?: string | string[],
+  ): Promise<{
+    projectId?: string;
+    projectIds?: string[];
+    isEmpty: boolean;
+  }> {
+    const normalizedProjectId = this.normalizeProjectId(query.projectId);
+    const normalizedProjectIds = Array.from(
+      new Set(
+        (query.projectIds ?? [])
+          .map((projectId) => this.normalizeProjectId(projectId))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (!this.isTalentManagerOnly(authUser)) {
+      return {
+        projectId: normalizedProjectId,
+        projectIds: normalizedProjectIds.length
+          ? normalizedProjectIds
+          : undefined,
+        isEmpty: false,
+      };
+    }
+
+    const memberProjectIds =
+      await this.projectService.getMemberProjectIdsForUser(authorizationHeader);
+    if (!memberProjectIds.length) {
+      return { isEmpty: true };
+    }
+
+    const memberProjectIdSet = new Set(memberProjectIds);
+
+    if (normalizedProjectIds.length) {
+      const scopedProjectIds = normalizedProjectIds.filter((projectId) =>
+        memberProjectIdSet.has(projectId),
+      );
+      if (!scopedProjectIds.length) {
+        return { isEmpty: true };
+      }
+
+      return { projectIds: scopedProjectIds, isEmpty: false };
+    }
+
+    if (normalizedProjectId) {
+      if (!memberProjectIdSet.has(normalizedProjectId)) {
+        return { isEmpty: true };
+      }
+
+      return { projectId: normalizedProjectId, isEmpty: false };
+    }
+
+    return { projectIds: memberProjectIds, isEmpty: false };
+  }
+
+  private isTalentManagerOnly(authUser?: Record<string, any>): boolean {
+    if (!authUser || authUser.isMachine) {
+      return false;
+    }
+
+    const normalizedRoles = getUserRoles(authUser).map((role) =>
+      role?.toLowerCase(),
+    );
+
+    const hasTalentManagerRole = normalizedRoles.some((role) =>
+      this.talentManagerRoles.has(role),
+    );
+    if (!hasTalentManagerRole) {
+      return false;
+    }
+
+    const hasAdminRole = normalizedRoles.some((role) =>
+      this.adminRoles.has(role),
+    );
+    return !hasAdminRole;
   }
 }

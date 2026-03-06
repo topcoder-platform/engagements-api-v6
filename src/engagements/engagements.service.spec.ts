@@ -24,6 +24,7 @@ describe("EngagementsService", () => {
     };
   };
   let projectService: {
+    getMemberProjectIdsForUser: jest.Mock;
     getProjectNamesByIds: jest.Mock;
     hasBillingAccountAssigned: jest.Mock;
     validateProjectExists: jest.Mock;
@@ -68,6 +69,7 @@ describe("EngagementsService", () => {
       },
     };
     projectService = {
+      getMemberProjectIdsForUser: jest.fn().mockResolvedValue([]),
       getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
       hasBillingAccountAssigned: jest.fn().mockResolvedValue(false),
       validateProjectExists: jest.fn().mockResolvedValue(true),
@@ -365,6 +367,93 @@ describe("EngagementsService", () => {
     expect(result.data[0]).toHaveProperty("assignedMemberHandle", "member1");
     expect(result.data[0]).toHaveProperty("assignedMembers", ["100000"]);
     expect(result.data[0]).toHaveProperty("assignedMemberHandles", ["member1"]);
+  });
+
+  it("scopes TM listings to member projects when no project filter is provided", async () => {
+    projectService.getMemberProjectIdsForUser.mockResolvedValue([
+      "project-2",
+      "project-3",
+    ]);
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll(
+      {
+        includePrivate: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      { roles: ["Talent Manager"] },
+      "Bearer tm-token",
+    );
+
+    expect(projectService.getMemberProjectIdsForUser).toHaveBeenCalledWith(
+      "Bearer tm-token",
+    );
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          projectId: { in: ["project-2", "project-3"] },
+        }),
+      }),
+    );
+  });
+
+  it("returns empty listing when TM user has no member projects", async () => {
+    projectService.getMemberProjectIdsForUser.mockResolvedValue([]);
+
+    const result = await service.findAll(
+      {
+        includePrivate: true,
+        page: 2,
+        perPage: 10,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      { roles: ["Topcoder Talent Manager"] },
+      "Bearer tm-token",
+    );
+
+    expect(db.engagement.findMany).not.toHaveBeenCalled();
+    expect(db.engagement.count).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      data: [],
+      meta: {
+        page: 2,
+        perPage: 10,
+        totalCount: 0,
+        totalPages: 0,
+      },
+    });
+  });
+
+  it("intersects requested projectIds with TM member projects", async () => {
+    projectService.getMemberProjectIdsForUser.mockResolvedValue(["project-2"]);
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll(
+      {
+        includePrivate: true,
+        projectIds: ["project-1", "project-2", "project-3"],
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      { roles: ["Talent Manager"] },
+      "Bearer tm-token",
+    );
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          projectId: { in: ["project-2"] },
+        }),
+      }),
+    );
   });
 
   it("hydrates project details in engagement listings", async () => {
