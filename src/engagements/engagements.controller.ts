@@ -236,7 +236,8 @@ export class EngagementsController {
     type: EngagementResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "Invalid request payload.",
+    description:
+      "Invalid request payload, or project reassignment is blocked because the current project has a billing account.",
   })
   @ApiUnauthorizedResponse({
     description: "Missing or invalid authentication token.",

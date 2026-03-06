@@ -1,5 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { AssignmentStatus, EngagementStatus } from "@prisma/client";
+import { ERROR_MESSAGES } from "../common/constants";
 import { EngagementsService } from "./engagements.service";
 
 jest.mock("nanoid", () => ({
@@ -24,6 +25,7 @@ describe("EngagementsService", () => {
   };
   let projectService: {
     getProjectNamesByIds: jest.Mock;
+    hasBillingAccountAssigned: jest.Mock;
     validateProjectExists: jest.Mock;
   };
   let skillsService: { validateSkillsExist: jest.Mock };
@@ -67,6 +69,7 @@ describe("EngagementsService", () => {
     };
     projectService = {
       getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
+      hasBillingAccountAssigned: jest.fn().mockResolvedValue(false),
       validateProjectExists: jest.fn().mockResolvedValue(true),
     };
     skillsService = {
@@ -152,6 +155,99 @@ describe("EngagementsService", () => {
         data: expect.objectContaining({ updatedBy: "system" }),
       }),
     );
+  });
+
+  it("blocks changing project when current project has a billing account", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: false,
+      requiredMemberCount: undefined,
+      assignments: [],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    projectService.hasBillingAccountAssigned.mockResolvedValue(true);
+
+    await expect(
+      service.update("eng-1", { projectId: "project-2" } as any, {
+        sub: "123456",
+      }),
+    ).rejects.toThrow(ERROR_MESSAGES.ProjectChangeBlockedByBillingAccount);
+
+    expect(projectService.hasBillingAccountAssigned).toHaveBeenCalledWith(
+      "project-1",
+    );
+    expect(projectService.validateProjectExists).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("allows project updates when the current project has no billing account", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: false,
+      requiredMemberCount: undefined,
+      assignments: [],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    projectService.hasBillingAccountAssigned.mockResolvedValue(false);
+
+    const tx = {
+      engagement: {
+        update: jest.fn().mockResolvedValue({
+          ...existingEngagement,
+          projectId: "project-2",
+        }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update("eng-1", { projectId: "project-2" } as any, {
+      sub: "123456",
+    });
+
+    expect(projectService.hasBillingAccountAssigned).toHaveBeenCalledWith(
+      "project-1",
+    );
+    expect(projectService.validateProjectExists).toHaveBeenCalledWith(
+      "project-2",
+    );
+    expect(tx.engagement.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          projectId: "project-2",
+        }),
+      }),
+    );
+  });
+
+  it("does not run billing-account guard when projectId is unchanged", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: false,
+      requiredMemberCount: undefined,
+      assignments: [],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    projectService.hasBillingAccountAssigned.mockResolvedValue(true);
+
+    const tx = {
+      engagement: {
+        update: jest.fn().mockResolvedValue(existingEngagement),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update("eng-1", { projectId: "project-1" } as any, {
+      sub: "123456",
+    });
+
+    expect(projectService.hasBillingAccountAssigned).not.toHaveBeenCalled();
+    expect(projectService.validateProjectExists).toHaveBeenCalledWith(
+      "project-1",
+    );
+    expect(tx.engagement.update).toHaveBeenCalled();
   });
 
   it("does not include assignment details for public engagement listings", async () => {

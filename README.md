@@ -90,3 +90,4 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 - `GET /engagements`, `GET /engagements/active`, and `GET /engagements/my-assignments` include project metadata on each engagement record:
   - `projectName` (if available)
   - `project` object with `id` and optional `name`
+- `PUT /engagements/:id` rejects project reassignment when the engagement's current project already has a `billingAccountId`.

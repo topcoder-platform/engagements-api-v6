@@ -26,6 +26,7 @@ type CachedProjectName = {
 };
 
 type ProjectResponse = {
+  billingAccountId?: unknown;
   id?: string | number | null;
   invites?: ProjectUser[] | null;
   members?: ProjectUser[] | null;
@@ -77,6 +78,38 @@ export class ProjectService {
       members: Array.isArray(project.members) ? project.members : [],
       invites: Array.isArray(project.invites) ? project.invites : [],
     };
+  }
+
+  /**
+   * Checks whether a project currently has a billing account assigned.
+   *
+   * This is used by engagement updates to block reassignment to a different
+   * project when the existing project is already linked to billing.
+   *
+   * @param projectId Project id being inspected.
+   * @returns `true` when a non-empty `billingAccountId` exists, otherwise `false`.
+   * @throws Error Propagates token lookup and project lookup errors (except 404).
+   */
+  async hasBillingAccountAssigned(projectId: string): Promise<boolean> {
+    const token = await this.getM2MToken();
+    const project = await this.fetchProjectById(projectId, token, [
+      "id",
+      "billingAccountId",
+    ]);
+
+    if (!project) {
+      return false;
+    }
+
+    if (typeof project.billingAccountId === "string") {
+      return project.billingAccountId.trim().length > 0;
+    }
+
+    if (typeof project.billingAccountId === "number") {
+      return Number.isFinite(project.billingAccountId);
+    }
+
+    return false;
   }
 
   async getProjectNamesByIds(

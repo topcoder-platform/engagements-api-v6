@@ -670,6 +670,22 @@ export class EngagementsService {
     const existingEngagement = await this.findOne(id);
 
     if (updateDto.projectId) {
+      const normalizedCurrentProjectId = this.normalizeProjectId(
+        existingEngagement.projectId,
+      );
+      const normalizedUpdatedProjectId = this.normalizeProjectId(
+        updateDto.projectId,
+      );
+
+      if (
+        normalizedUpdatedProjectId &&
+        normalizedUpdatedProjectId !== normalizedCurrentProjectId
+      ) {
+        await this.assertProjectReassignmentAllowed(
+          existingEngagement.projectId,
+        );
+      }
+
       await this.assertProjectExists(updateDto.projectId);
     }
 
@@ -1708,6 +1724,29 @@ export class EngagementsService {
     const exists = await this.projectService.validateProjectExists(projectId);
     if (!exists) {
       throw new NotFoundException(ERROR_MESSAGES.ProjectNotFound);
+    }
+  }
+
+  /**
+   * Ensures engagement project reassignment is allowed for the current project.
+   *
+   * Project reassignment is blocked when the current project already has a
+   * billing account, because that project is financially bound.
+   *
+   * @param currentProjectId Existing project id on the engagement.
+   * @returns Resolves when the engagement project can be changed.
+   * @throws BadRequestException When the current project has a billing account.
+   */
+  private async assertProjectReassignmentAllowed(
+    currentProjectId: string,
+  ): Promise<void> {
+    const hasBillingAccount =
+      await this.projectService.hasBillingAccountAssigned(currentProjectId);
+
+    if (hasBillingAccount) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.ProjectChangeBlockedByBillingAccount,
+      );
     }
   }
 
