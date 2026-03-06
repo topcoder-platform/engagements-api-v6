@@ -316,12 +316,15 @@ export class EngagementsService {
   /**
    * Lists engagements with pagination and filters.
    * Public/non-includePrivate feeds always exclude ON_HOLD, including explicit status filters.
+   * Supports `projectId` and `projectIds` project filtering.
+   * When both are provided, `projectIds` takes precedence.
    */
   async findAll(
     query: EngagementQueryDto,
   ): Promise<PaginatedResponse<Engagement>> {
     this.logger.debug("Listing engagements", {
       projectId: query.projectId,
+      projectIds: query.projectIds,
       status: query.status,
       search: query.search,
     });
@@ -334,6 +337,9 @@ export class EngagementsService {
 
     if (query.projectId) {
       where.projectId = query.projectId;
+    }
+    if (query.projectIds?.length) {
+      where.projectId = { in: query.projectIds };
     }
 
     if (query.status) {

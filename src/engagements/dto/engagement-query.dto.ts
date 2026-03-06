@@ -28,6 +28,13 @@ export const ENGAGEMENT_SORT_FIELDS: EngagementSortBy[] = [
   EngagementSortBy.Title,
 ];
 
+/**
+ * Query parameters for listing engagements.
+ *
+ * `projectId` filters by a single project.
+ * `projectIds` filters by multiple projects using an `IN` query.
+ * When both are provided, `projectIds` takes precedence.
+ */
 export class EngagementQueryDto extends PaginationDto {
   @ApiPropertyOptional({
     description: "Filter by project ID",
@@ -36,6 +43,19 @@ export class EngagementQueryDto extends PaginationDto {
   @IsOptional()
   @IsString()
   projectId?: string;
+
+  @ApiPropertyOptional({
+    description: "Filter by project IDs",
+    example: [
+      "3d9b37b5-1a5d-4c48-a60f-5f73c2f7f1b6",
+      "4f5e9f5a-19b6-41e2-9dfe-8ce7adfce54b",
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(transformArray)
+  projectIds?: string[];
 
   @ApiPropertyOptional({
     description:
