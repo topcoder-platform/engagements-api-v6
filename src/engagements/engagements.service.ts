@@ -585,7 +585,11 @@ export class EngagementsService {
               applications: true,
             },
           },
-          assignments: true,
+          assignments: {
+            where: {
+              memberId: userIdentifier,
+            },
+          },
         },
       }),
       this.db.engagement.count({ where }),
