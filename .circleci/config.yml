@@ -64,7 +64,6 @@ workflows:
           branches:
             only:
               - develop
-              - PM-4206
             
     # Production builds are exectuted only on tagged commits to the
     # master branch.
