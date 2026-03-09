@@ -130,8 +130,18 @@ export class ApplicationsService {
     if (!memberHandle) {
       throw new BadRequestException("Member handle not found.");
     }
+    
+    this.logger.debug("[Completeness] Checking profile completeness", {
+      memberHandle,
+      userId: normalizedUserId,
+    });
 
     const percentComplete = await this.memberService.getMemberProfileCompleteness(memberHandle);
+
+    this.logger.debug("[Completeness] Profile completeness result", {
+      memberHandle,
+      percentComplete,
+    });
 
     if (percentComplete !== 1) {
       throw new BadRequestException(

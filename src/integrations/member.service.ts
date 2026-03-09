@@ -178,6 +178,11 @@ export class MemberService {
     const baseUrl = this.getMemberApiBaseUrl();
     const url = `${baseUrl}/${encodeURIComponent(handle)}/profileCompleteness`;
 
+    this.logger.debug("[Completeness] Calling Member API for profile completeness", {
+      handle,
+      url,
+    });
+
     try {
       const response = await firstValueFrom(
         this.httpService.get(url, {
@@ -186,6 +191,12 @@ export class MemberService {
       );
 
       const percentComplete = response.data?.data?.percentComplete;
+
+      this.logger.debug("[Completeness] Member API response", {
+        handle,
+        percentComplete,
+        rawResponse: response.data,
+      });
       return percentComplete == null ? null : Number(percentComplete);
     } catch (error) {
       if (isAxiosError(error)) {
