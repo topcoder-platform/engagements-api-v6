@@ -178,10 +178,9 @@ export class MemberService {
     const baseUrl = this.getMemberApiBaseUrl();
     const url = `${baseUrl}/${encodeURIComponent(handle)}/profileCompleteness`;
 
-    this.logger.debug("[Completeness] Calling Member API for profile completeness", {
-      handle,
-      url,
-    });
+    this.logger.debug(
+      `[Completeness] Calling API handle=${handle} url=${url} tokenExists=${!!token}`
+    );
 
     try {
       const response = await firstValueFrom(
@@ -192,17 +191,18 @@ export class MemberService {
 
       const percentComplete = response.data?.data?.percentComplete;
 
-      this.logger.debug("[Completeness] Member API response", {
-        handle,
-        percentComplete,
-        rawResponse: response.data,
-      });
+      this.logger.debug(
+        `[Completeness] Success handle=${handle} percentComplete=${percentComplete}`
+      );
       return percentComplete == null ? null : Number(percentComplete);
     } catch (error) {
       if (isAxiosError(error)) {
         if (error.response?.status === 404) {
           return null;
         }
+        this.logger.error(
+          `[Completeness] Axios error handle=${handle} url=${url} status=${error.response?.status} data=${JSON.stringify(error.response?.data)}`
+        );
 
         this.logger.error("Member profile completeness lookup failed.", {
           status: error.response?.status,
