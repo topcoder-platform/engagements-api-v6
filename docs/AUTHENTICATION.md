@@ -27,7 +27,8 @@ M2M tokens are issued via the Auth0 client credentials flow. These tokens do not
 ## Role-Based Access
 
 - Administrators and Topcoder Project Managers can bypass scope checks for most management operations.
-- Regular members can view engagements and manage their own applications.
+- Regular members can view public engagements and manage their own applications.
+- Assigned members can view the details of their own private engagements.
 - Project Managers can view and update application statuses for engagements they own.
 
 ## Code Examples

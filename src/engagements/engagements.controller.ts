@@ -50,7 +50,7 @@ import {
 } from "./dto";
 import { EngagementsService } from "./engagements.service";
 import { Engagement, EngagementStatus } from "@prisma/client";
-import { getUserRoles } from "../common/user.util";
+import { getUserIdentifier, getUserRoles } from "../common/user.util";
 
 @ApiTags("Engagements")
 @ApiExtraModels(
@@ -191,7 +191,8 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Get engagement by ID",
     description:
-      "Retrieves a single engagement by ID. Authentication is optional.",
+      "Retrieves a single engagement by ID. Authentication is optional for public engagements. " +
+      "Private engagements are limited to privileged users, M2M clients, and assigned members.",
   })
   @ApiResponse({
     status: 200,
@@ -200,25 +201,45 @@ export class EngagementsController {
   })
   @ApiUnauthorizedResponse({
     description:
-      "Private engagements require administrator, talent manager, or M2M authentication.",
+      "Private engagements require privileged, assigned-member, or M2M authentication.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   async findOne(
     @Param("id") id: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<Engagement> {
-    const canViewPrivateEngagement = this.canViewAssignmentDetails(
-      req.authUser,
-    );
-    const engagement = await this.engagementsService.findOne(id, {
+    const canViewAllAssignments = this.canViewAssignmentDetails(req.authUser);
+    const viewerId =
+      req.authUser && !req.authUser.isMachine
+        ? getUserIdentifier(req.authUser)
+        : undefined;
+
+    let engagement = await this.engagementsService.findOne(id, {
       includeCreatorEmail: true,
-      includeAssignments: canViewPrivateEngagement,
+      includeAssignments: canViewAllAssignments,
     });
 
-    if (engagement.isPrivate && !canViewPrivateEngagement) {
-      throw new UnauthorizedException(
-        "You are not authorized to access this private engagement.",
+    if (engagement.isPrivate && !canViewAllAssignments) {
+      if (!req.authUser || !viewerId) {
+        throw new UnauthorizedException(
+          "You are not authorized to access this private engagement.",
+        );
+      }
+
+      engagement = await this.engagementsService.findOne(id, {
+        includeCreatorEmail: true,
+        includeAssignments: true,
+        assignmentMemberId: viewerId,
+      });
+
+      const isAssignedMember = engagement.assignments?.some(
+        (assignment) => assignment.memberId === viewerId,
       );
+      if (!isAssignedMember) {
+        throw new UnauthorizedException(
+          "You are not authorized to access this private engagement.",
+        );
+      }
     }
 
     return engagement;

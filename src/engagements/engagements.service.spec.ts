@@ -302,6 +302,58 @@ describe("EngagementsService", () => {
     expect(result.data[0]).not.toHaveProperty("assignedMemberHandles");
   });
 
+  it("filters assignments when loading an engagement for an assigned member", async () => {
+    db.engagement.findUnique.mockResolvedValue({
+      id: "eng-1",
+      projectId: "project-1",
+      title: "Private engagement",
+      description: "Private description",
+      timeZones: ["UTC"],
+      countries: ["US"],
+      requiredSkills: ["skill-1"],
+      anticipatedStart: "IMMEDIATE",
+      status: EngagementStatus.OPEN,
+      createdAt: new Date("2026-02-11T10:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+      createdBy: "123456",
+      isPrivate: true,
+      assignments: [
+        {
+          id: "assignment-1",
+          engagementId: "eng-1",
+          memberId: "123456",
+          memberHandle: "testaws1",
+          status: AssignmentStatus.SELECTED,
+          createdAt: new Date("2026-02-11T11:00:00.000Z"),
+          updatedAt: new Date("2026-02-11T11:00:00.000Z"),
+          agreementRate: "80",
+          otherRemarks: "Confidential terms",
+          startDate: new Date("2026-02-12T00:00:00.000Z"),
+          endDate: new Date("2026-03-12T00:00:00.000Z"),
+          terminationReason: null,
+        },
+      ],
+    });
+
+    const result = await service.findOne("eng-1", {
+      includeAssignments: true,
+      assignmentMemberId: "123456",
+    });
+
+    expect(db.engagement.findUnique).toHaveBeenCalledWith({
+      where: { id: "eng-1" },
+      include: {
+        assignments: {
+          where: {
+            memberId: "123456",
+          },
+        },
+      },
+    });
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments?.[0].memberId).toBe("123456");
+  });
+
   it("includes assignment details for privileged engagement listings", async () => {
     db.engagement.findMany.mockResolvedValue([
       {

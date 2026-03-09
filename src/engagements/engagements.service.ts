@@ -60,6 +60,10 @@ type EngagementProjectReference = {
   name?: string;
 };
 
+type EngagementDetail = Engagement & {
+  assignments?: EngagementAssignment[];
+};
+
 @Injectable()
 export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
@@ -618,11 +622,20 @@ export class EngagementsService {
     options: {
       includeCreatorEmail?: boolean;
       includeAssignments?: boolean;
+      assignmentMemberId?: string;
     } = {},
-  ): Promise<Engagement> {
+  ): Promise<EngagementDetail> {
     const engagement = await this.db.engagement.findUnique({
       where: { id },
-      include: { assignments: true },
+      include: {
+        assignments: options.assignmentMemberId
+          ? {
+              where: {
+                memberId: options.assignmentMemberId,
+              },
+            }
+          : true,
+      },
     });
     if (!engagement) {
       throw new NotFoundException("Engagement not found.");
