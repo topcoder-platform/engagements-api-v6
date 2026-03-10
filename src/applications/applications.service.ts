@@ -123,6 +123,22 @@ export class ApplicationsService {
       throw new NotFoundException(ERROR_MESSAGES.MemberNotFound);
     }
 
+    const memberHandle = await this.memberService.getMemberHandleByUserId(
+      normalizedUserId,
+    );
+
+    if (!memberHandle) {
+      throw new BadRequestException("Member handle not found.");
+    }
+    
+    const percentComplete = await this.memberService.getMemberProfileCompleteness(memberHandle);
+
+    if (percentComplete !== 1) {
+      throw new BadRequestException(
+        "Your profile must be 100% complete before applying.",
+      );
+    }
+
     const memberAddress =
       await this.memberService.getMemberAddress(normalizedUserId);
     const formattedAddress = this.formatAddress(memberAddress);
