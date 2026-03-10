@@ -17,6 +17,7 @@ enum EngagementStatus {
   ACTIVE
   CANCELLED
   CLOSED
+  ON_HOLD
 }
 
 enum ApplicationStatus {

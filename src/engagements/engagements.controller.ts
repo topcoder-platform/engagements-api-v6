@@ -49,8 +49,8 @@ import {
   UpdateEngagementDto,
 } from "./dto";
 import { EngagementsService } from "./engagements.service";
-import { Engagement } from "@prisma/client";
-import { getUserRoles } from "../common/user.util";
+import { Engagement, EngagementStatus } from "@prisma/client";
+import { getUserIdentifier, getUserRoles } from "../common/user.util";
 
 @ApiTags("Engagements")
 @ApiExtraModels(
@@ -135,10 +135,14 @@ export class EngagementsController {
     @Query() query: EngagementQueryDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<Engagement>> {
-    if (query.includePrivate) {
+    if (query.includePrivate || query.status === EngagementStatus.ON_HOLD) {
       this.assertCanIncludePrivate(req.authUser);
     }
-    return this.engagementsService.findAll(query);
+    return this.engagementsService.findAll(
+      query,
+      req.authUser,
+      req.headers.authorization,
+    );
   }
 
   @Get("active")
@@ -187,7 +191,8 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Get engagement by ID",
     description:
-      "Retrieves a single engagement by ID. Authentication is optional.",
+      "Retrieves a single engagement by ID. Authentication is optional for public engagements. " +
+      "Private engagements are limited to privileged users, M2M clients, and assigned members.",
   })
   @ApiResponse({
     status: 200,
@@ -196,25 +201,45 @@ export class EngagementsController {
   })
   @ApiUnauthorizedResponse({
     description:
-      "Private engagements require administrator, talent manager, or M2M authentication.",
+      "Private engagements require privileged, assigned-member, or M2M authentication.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   async findOne(
     @Param("id") id: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<Engagement> {
-    const canViewPrivateEngagement = this.canViewAssignmentDetails(
-      req.authUser,
-    );
-    const engagement = await this.engagementsService.findOne(id, {
+    const canViewAllAssignments = this.canViewAssignmentDetails(req.authUser);
+    const viewerId =
+      req.authUser && !req.authUser.isMachine
+        ? getUserIdentifier(req.authUser)
+        : undefined;
+
+    let engagement = await this.engagementsService.findOne(id, {
       includeCreatorEmail: true,
-      includeAssignments: canViewPrivateEngagement,
+      includeAssignments: canViewAllAssignments,
     });
 
-    if (engagement.isPrivate && !canViewPrivateEngagement) {
-      throw new UnauthorizedException(
-        "You are not authorized to access this private engagement.",
+    if (engagement.isPrivate && !canViewAllAssignments) {
+      if (!req.authUser || !viewerId) {
+        throw new UnauthorizedException(
+          "You are not authorized to access this private engagement.",
+        );
+      }
+
+      engagement = await this.engagementsService.findOne(id, {
+        includeCreatorEmail: true,
+        includeAssignments: true,
+        assignmentMemberId: viewerId,
+      });
+
+      const isAssignedMember = engagement.assignments?.some(
+        (assignment) => assignment.memberId === viewerId,
       );
+      if (!isAssignedMember) {
+        throw new UnauthorizedException(
+          "You are not authorized to access this private engagement.",
+        );
+      }
     }
 
     return engagement;
@@ -236,7 +261,8 @@ export class EngagementsController {
     type: EngagementResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "Invalid request payload.",
+    description:
+      "Invalid request payload, or project reassignment is blocked because the current project has a billing account.",
   })
   @ApiUnauthorizedResponse({
     description: "Missing or invalid authentication token.",
@@ -399,25 +425,55 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Delete engagement",
     description:
-      "Deletes an engagement. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
-      "or manage:engagements scope for M2M clients.",
+      "Deletes an engagement. Requires Administrator role for user tokens, or manage:engagements scope for M2M clients. " +
+      "The engagement must have no active member assignments.",
   })
   @ApiResponse({ status: 204, description: "Engagement deleted." })
+  @ApiBadRequestResponse({
+    description:
+      "Engagement has active member assignments and cannot be deleted.",
+  })
   @ApiUnauthorizedResponse({
     description: "Missing or invalid authentication token.",
   })
   @ApiForbiddenResponse({
     description:
-      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or manage:engagements scope.",
+      "Insufficient permissions. Requires Administrator role or manage:engagements scope.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   @HttpCode(HttpStatus.NO_CONTENT)
+  /**
+   * Deletes an engagement by ID.
+   *
+   * Restricted to Administrator users for user tokens. M2M clients may call this
+   * endpoint with the manage:engagements scope.
+   *
+   * Engagements with active member assignments are rejected with HTTP 400. The
+   * service layer enforces this member-assignment guard.
+   */
   async remove(
     @Param("id") id: string,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<void> {
-    this.assertAdminOrPm(req.authUser);
+    this.assertAdminOnly(req.authUser);
     await this.engagementsService.remove(id);
+  }
+
+  private assertAdminOnly(authUser?: Record<string, any>) {
+    if (authUser?.isMachine) {
+      return;
+    }
+
+    const roles = getUserRoles(authUser);
+    const isAdmin = roles.some(
+      (role) => role?.toLowerCase() === UserRoles.Admin.toLowerCase(),
+    );
+
+    if (!isAdmin) {
+      throw new ForbiddenException(
+        "Only Administrator users can delete engagements.",
+      );
+    }
   }
 
   private assertAdminOrPm(authUser?: Record<string, any>) {

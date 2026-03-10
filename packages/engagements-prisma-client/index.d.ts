@@ -47,7 +47,8 @@ export namespace $Enums {
   OPEN: 'OPEN',
   ACTIVE: 'ACTIVE',
   CANCELLED: 'CANCELLED',
-  CLOSED: 'CLOSED'
+  CLOSED: 'CLOSED',
+  ON_HOLD: 'ON_HOLD'
 };
 
 export type EngagementStatus = (typeof EngagementStatus)[keyof typeof EngagementStatus]

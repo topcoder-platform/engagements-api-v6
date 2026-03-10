@@ -1,5 +1,11 @@
-import { AssignmentStatus } from "@prisma/client";
+import { BadRequestException } from "@nestjs/common";
+import { AssignmentStatus, EngagementStatus } from "@prisma/client";
+import { ERROR_MESSAGES } from "../common/constants";
 import { EngagementsService } from "./engagements.service";
+
+jest.mock("nanoid", () => ({
+  nanoid: () => "test-id",
+}));
 
 describe("EngagementsService", () => {
   let service: EngagementsService;
@@ -11,9 +17,18 @@ describe("EngagementsService", () => {
       update: jest.Mock;
       findMany: jest.Mock;
       count: jest.Mock;
+      delete: jest.Mock;
+    };
+    engagementAssignment: {
+      count: jest.Mock;
     };
   };
-  let projectService: { validateProjectExists: jest.Mock };
+  let projectService: {
+    getMemberProjectIdsForUser: jest.Mock;
+    getProjectNamesByIds: jest.Mock;
+    hasBillingAccountAssigned: jest.Mock;
+    validateProjectExists: jest.Mock;
+  };
   let skillsService: { validateSkillsExist: jest.Mock };
   let memberService: {
     getMemberHandleByUserId: jest.Mock;
@@ -47,9 +62,16 @@ describe("EngagementsService", () => {
         update: jest.fn(),
         findMany: jest.fn(),
         count: jest.fn(),
+        delete: jest.fn(),
+      },
+      engagementAssignment: {
+        count: jest.fn(),
       },
     };
     projectService = {
+      getMemberProjectIdsForUser: jest.fn().mockResolvedValue([]),
+      getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
+      hasBillingAccountAssigned: jest.fn().mockResolvedValue(false),
       validateProjectExists: jest.fn().mockResolvedValue(true),
     };
     skillsService = {
@@ -137,6 +159,99 @@ describe("EngagementsService", () => {
     );
   });
 
+  it("blocks changing project when current project has a billing account", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: false,
+      requiredMemberCount: undefined,
+      assignments: [],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    projectService.hasBillingAccountAssigned.mockResolvedValue(true);
+
+    await expect(
+      service.update("eng-1", { projectId: "project-2" } as any, {
+        sub: "123456",
+      }),
+    ).rejects.toThrow(ERROR_MESSAGES.ProjectChangeBlockedByBillingAccount);
+
+    expect(projectService.hasBillingAccountAssigned).toHaveBeenCalledWith(
+      "project-1",
+    );
+    expect(projectService.validateProjectExists).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("allows project updates when the current project has no billing account", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: false,
+      requiredMemberCount: undefined,
+      assignments: [],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    projectService.hasBillingAccountAssigned.mockResolvedValue(false);
+
+    const tx = {
+      engagement: {
+        update: jest.fn().mockResolvedValue({
+          ...existingEngagement,
+          projectId: "project-2",
+        }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update("eng-1", { projectId: "project-2" } as any, {
+      sub: "123456",
+    });
+
+    expect(projectService.hasBillingAccountAssigned).toHaveBeenCalledWith(
+      "project-1",
+    );
+    expect(projectService.validateProjectExists).toHaveBeenCalledWith(
+      "project-2",
+    );
+    expect(tx.engagement.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          projectId: "project-2",
+        }),
+      }),
+    );
+  });
+
+  it("does not run billing-account guard when projectId is unchanged", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: false,
+      requiredMemberCount: undefined,
+      assignments: [],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    projectService.hasBillingAccountAssigned.mockResolvedValue(true);
+
+    const tx = {
+      engagement: {
+        update: jest.fn().mockResolvedValue(existingEngagement),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update("eng-1", { projectId: "project-1" } as any, {
+      sub: "123456",
+    });
+
+    expect(projectService.hasBillingAccountAssigned).not.toHaveBeenCalled();
+    expect(projectService.validateProjectExists).toHaveBeenCalledWith(
+      "project-1",
+    );
+    expect(tx.engagement.update).toHaveBeenCalled();
+  });
+
   it("does not include assignment details for public engagement listings", async () => {
     db.engagement.findMany.mockResolvedValue([
       {
@@ -185,6 +300,58 @@ describe("EngagementsService", () => {
     expect(result.data[0]).not.toHaveProperty("assignedMemberHandle");
     expect(result.data[0]).not.toHaveProperty("assignedMembers");
     expect(result.data[0]).not.toHaveProperty("assignedMemberHandles");
+  });
+
+  it("filters assignments when loading an engagement for an assigned member", async () => {
+    db.engagement.findUnique.mockResolvedValue({
+      id: "eng-1",
+      projectId: "project-1",
+      title: "Private engagement",
+      description: "Private description",
+      timeZones: ["UTC"],
+      countries: ["US"],
+      requiredSkills: ["skill-1"],
+      anticipatedStart: "IMMEDIATE",
+      status: EngagementStatus.OPEN,
+      createdAt: new Date("2026-02-11T10:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+      createdBy: "123456",
+      isPrivate: true,
+      assignments: [
+        {
+          id: "assignment-1",
+          engagementId: "eng-1",
+          memberId: "123456",
+          memberHandle: "testaws1",
+          status: AssignmentStatus.SELECTED,
+          createdAt: new Date("2026-02-11T11:00:00.000Z"),
+          updatedAt: new Date("2026-02-11T11:00:00.000Z"),
+          agreementRate: "80",
+          otherRemarks: "Confidential terms",
+          startDate: new Date("2026-02-12T00:00:00.000Z"),
+          endDate: new Date("2026-03-12T00:00:00.000Z"),
+          terminationReason: null,
+        },
+      ],
+    });
+
+    const result = await service.findOne("eng-1", {
+      includeAssignments: true,
+      assignmentMemberId: "123456",
+    });
+
+    expect(db.engagement.findUnique).toHaveBeenCalledWith({
+      where: { id: "eng-1" },
+      include: {
+        assignments: {
+          where: {
+            memberId: "123456",
+          },
+        },
+      },
+    });
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments?.[0].memberId).toBe("123456");
   });
 
   it("includes assignment details for privileged engagement listings", async () => {
@@ -252,6 +419,226 @@ describe("EngagementsService", () => {
     expect(result.data[0]).toHaveProperty("assignedMemberHandle", "member1");
     expect(result.data[0]).toHaveProperty("assignedMembers", ["100000"]);
     expect(result.data[0]).toHaveProperty("assignedMemberHandles", ["member1"]);
+  });
+
+  it("scopes TM listings to member projects when no project filter is provided", async () => {
+    projectService.getMemberProjectIdsForUser.mockResolvedValue([
+      "project-2",
+      "project-3",
+    ]);
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll(
+      {
+        includePrivate: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      { roles: ["Talent Manager"] },
+      "Bearer tm-token",
+    );
+
+    expect(projectService.getMemberProjectIdsForUser).toHaveBeenCalledWith(
+      "Bearer tm-token",
+    );
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          projectId: { in: ["project-2", "project-3"] },
+        }),
+      }),
+    );
+  });
+
+  it("returns empty listing when TM user has no member projects", async () => {
+    projectService.getMemberProjectIdsForUser.mockResolvedValue([]);
+
+    const result = await service.findAll(
+      {
+        includePrivate: true,
+        page: 2,
+        perPage: 10,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      { roles: ["Topcoder Talent Manager"] },
+      "Bearer tm-token",
+    );
+
+    expect(db.engagement.findMany).not.toHaveBeenCalled();
+    expect(db.engagement.count).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      data: [],
+      meta: {
+        page: 2,
+        perPage: 10,
+        totalCount: 0,
+        totalPages: 0,
+      },
+    });
+  });
+
+  it("intersects requested projectIds with TM member projects", async () => {
+    projectService.getMemberProjectIdsForUser.mockResolvedValue(["project-2"]);
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll(
+      {
+        includePrivate: true,
+        projectIds: ["project-1", "project-2", "project-3"],
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      { roles: ["Talent Manager"] },
+      "Bearer tm-token",
+    );
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          projectId: { in: ["project-2"] },
+        }),
+      }),
+    );
+  });
+
+  it("hydrates project details in engagement listings", async () => {
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Public engagement",
+        description: "Public description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: "OPEN",
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "123456",
+        isPrivate: false,
+        requiredMemberCount: 2,
+        _count: {
+          applications: 3,
+        },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([["project-1", "Platform UI Refresh"]]),
+    );
+
+    const result = await service.findAll({
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(projectService.getProjectNamesByIds).toHaveBeenCalledWith([
+      "project-1",
+    ]);
+    expect(result.data[0]).toMatchObject({
+      project: {
+        id: "project-1",
+        name: "Platform UI Refresh",
+      },
+      projectName: "Platform UI Refresh",
+    });
+  });
+
+  it("excludes ON_HOLD from default public engagement listings", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          isPrivate: false,
+          AND: expect.arrayContaining([
+            { status: { notIn: [EngagementStatus.ON_HOLD] } },
+          ]),
+        }),
+      }),
+    );
+  });
+
+  it("does not allow public status=ON_HOLD listings to return ON_HOLD engagements", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    const result = await service.findAll({
+      status: EngagementStatus.ON_HOLD,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    const findManyArg = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyArg.where).toMatchObject({
+      isPrivate: false,
+    });
+    expect(findManyArg.where.AND).toEqual(
+      expect.arrayContaining([
+        { status: EngagementStatus.ON_HOLD },
+        { status: { notIn: [EngagementStatus.ON_HOLD] } },
+      ]),
+    );
+    expect(result.data).toEqual([]);
+  });
+
+  it("allows includePrivate status=ON_HOLD listings for privileged queries", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      includePrivate: true,
+      status: EngagementStatus.ON_HOLD,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    const findManyArg = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyArg.where).not.toHaveProperty("isPrivate");
+    expect(findManyArg.where.AND).toEqual(
+      expect.arrayContaining([{ status: EngagementStatus.ON_HOLD }]),
+    );
+    expect(findManyArg.where.AND).not.toEqual(
+      expect.arrayContaining([
+        { status: { notIn: [EngagementStatus.ON_HOLD] } },
+      ]),
+    );
+  });
+
+  it("findAllActive always uses public OPEN-only filtering", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+
+    await service.findAllActive();
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith({
+      where: {
+        isPrivate: false,
+        status: EngagementStatus.OPEN,
+      },
+      orderBy: { createdAt: "desc" },
+    });
   });
 
   it("sets assignment endDate to now when status is terminated", async () => {
@@ -388,5 +775,27 @@ describe("EngagementsService", () => {
       },
     });
     expect(updateArgs.data).not.toHaveProperty("endDate");
+  });
+
+  it("throws BadRequestException when removing an engagement with active assignments", async () => {
+    jest.spyOn(service, "findOne").mockResolvedValue({ id: "eng-1" } as any);
+    db.engagementAssignment.count.mockResolvedValue(1);
+
+    await expect(service.remove("eng-1")).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    expect(db.engagement.delete).not.toHaveBeenCalled();
+  });
+
+  it("deletes an engagement when there are no active assignments", async () => {
+    jest.spyOn(service, "findOne").mockResolvedValue({ id: "eng-1" } as any);
+    db.engagementAssignment.count.mockResolvedValue(0);
+
+    await service.remove("eng-1");
+
+    expect(db.engagement.delete).toHaveBeenCalledWith({
+      where: { id: "eng-1" },
+    });
   });
 });

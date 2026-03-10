@@ -173,6 +173,39 @@ export class MemberService {
     return this.extractAddressFromTraits(traits);
   }
 
+  async getMemberProfileCompleteness(handle: string): Promise<number | null> {
+    const token = await this.getM2MToken();
+    const baseUrl = this.getMemberApiBaseUrl();
+    const url = `${baseUrl}/${encodeURIComponent(handle)}/profileCompleteness`;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
+
+      const percentComplete = response.data?.data?.percentComplete;
+      return percentComplete == null ? null : Number(percentComplete);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return null;
+        }
+
+        this.logger.error("Member profile completeness lookup failed.", {
+          status: error.response?.status,
+          data: error.response?.data,
+          handle,
+        });
+        throw error;
+      }
+
+      this.logger.error("Member profile completeness lookup failed.", error);
+      throw error;
+    }
+  }
+
   private extractAddressFromMember(member: MemberRecord): MemberAddress | null {
     if (!member.addresses?.length) {
       return null;

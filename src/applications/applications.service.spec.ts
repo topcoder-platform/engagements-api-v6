@@ -34,6 +34,9 @@ describe("ApplicationsService", () => {
   let assignmentOfferEmailService: {
     sendAssignmentOfferEmail: jest.Mock;
   };
+  let applicationStatusEmailService: {
+    sendApplicationStatusEmail: jest.Mock;
+  };
 
   const createDto = {
     coverLetter: "I am excited to apply for this engagement.",
@@ -72,12 +75,16 @@ describe("ApplicationsService", () => {
     assignmentOfferEmailService = {
       sendAssignmentOfferEmail: jest.fn().mockResolvedValue(undefined),
     };
+    applicationStatusEmailService = {
+      sendApplicationStatusEmail: jest.fn().mockResolvedValue(undefined),
+    };
     service = new ApplicationsService(
       db as any,
       memberService as any,
       engagementsService as any,
       eventBusService as any,
       assignmentOfferEmailService as any,
+      applicationStatusEmailService as any,
     );
   });
 
@@ -115,6 +122,107 @@ describe("ApplicationsService", () => {
         data: expect.objectContaining({ updatedBy: "system" }),
       }),
     );
+  });
+
+  it.each([
+    {
+      status: ApplicationStatus.UNDER_REVIEW,
+      emailStatus: "UNDER_REVIEW",
+    },
+    {
+      status: ApplicationStatus.REJECTED,
+      emailStatus: "REJECTED",
+    },
+  ] as const)(
+    "sends application status email when status is $status",
+    async ({ status, emailStatus }) => {
+      const application = {
+        id: "app-1",
+        engagementId: "eng-1",
+        userId: "user-1",
+        status: ApplicationStatus.SUBMITTED,
+        engagement: { title: "Senior Product Designer" },
+      };
+      const updatedApplication = {
+        ...application,
+        status,
+      };
+      jest.spyOn(service, "findOne").mockResolvedValue(application as any);
+      db.engagementApplication.update.mockResolvedValue(updatedApplication);
+
+      await service.updateStatus("app-1", status, { userId: "manager-1" });
+
+      expect(
+        applicationStatusEmailService.sendApplicationStatusEmail,
+      ).toHaveBeenCalledWith({
+        memberId: "user-1",
+        status: emailStatus,
+        engagementTitle: "Senior Product Designer",
+      });
+      expect(
+        db.engagementApplication.update.mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        applicationStatusEmailService.sendApplicationStatusEmail.mock
+          .invocationCallOrder[0],
+      );
+    },
+  );
+
+  it("does not send application status email for statuses without notification side effects", async () => {
+    const application = {
+      id: "app-1",
+      engagementId: "eng-1",
+      userId: "user-1",
+      status: ApplicationStatus.SUBMITTED,
+      engagement: { title: "Senior Product Designer" },
+    };
+    const updatedApplication = {
+      ...application,
+      status: ApplicationStatus.SUBMITTED,
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
+    db.engagementApplication.update.mockResolvedValue(updatedApplication);
+
+    await service.updateStatus("app-1", ApplicationStatus.SUBMITTED, {
+      userId: "manager-1",
+    });
+
+    expect(
+      applicationStatusEmailService.sendApplicationStatusEmail,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("returns updated application when application status email dispatch rejects", async () => {
+    const application = {
+      id: "app-1",
+      engagementId: "eng-1",
+      userId: "user-1",
+      status: ApplicationStatus.SUBMITTED,
+      engagement: { title: "Senior Product Designer" },
+    };
+    const updatedApplication = {
+      ...application,
+      status: ApplicationStatus.REJECTED,
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
+    db.engagementApplication.update.mockResolvedValue(updatedApplication);
+    applicationStatusEmailService.sendApplicationStatusEmail.mockRejectedValue(
+      new Error("send failed"),
+    );
+
+    await expect(
+      service.updateStatus("app-1", ApplicationStatus.REJECTED, {
+        userId: "manager-1",
+      }),
+    ).resolves.toEqual(updatedApplication);
+
+    expect(
+      applicationStatusEmailService.sendApplicationStatusEmail,
+    ).toHaveBeenCalledWith({
+      memberId: "user-1",
+      status: "REJECTED",
+      engagementTitle: "Senior Product Designer",
+    });
   });
 
   it("does not activate engagement when accepting an application", async () => {

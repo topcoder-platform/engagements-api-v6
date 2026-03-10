@@ -13,6 +13,8 @@ export const ERROR_MESSAGES = {
   MissingDuration:
     "Provide durationStartDate and durationEndDate, or durationWeeks, or durationMonths.",
   ProjectNotFound: "Project not found.",
+  ProjectChangeBlockedByBillingAccount:
+    "Cannot change engagement project because the current project has a billing account assigned.",
   InvalidSkills: "One or more required skills are invalid.",
   DuplicateApplication: "You have already applied to this engagement",
   MemberNotFound: "Member profile not found",
@@ -31,4 +33,6 @@ export const ERROR_MESSAGES = {
   MemberExperienceNotFound: "Member experience record not found",
   UnauthorizedExperienceAccess:
     "You do not have permission to access this experience record",
+  EngagementHasMembers:
+    "This engagement cannot be deleted because it has members assigned to it. Cancel the engagement instead.",
 };

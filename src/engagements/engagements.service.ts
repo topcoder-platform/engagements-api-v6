@@ -15,7 +15,11 @@ import {
   Workload,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
-import { PrivilegedUserRoles } from "../app-constants";
+import {
+  PrivilegedUserRoles,
+  TalentManagerRoles,
+  UserRoles,
+} from "../app-constants";
 import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
@@ -51,11 +55,24 @@ type ResolvedAssignmentDetails = {
   otherRemarks?: string;
 };
 
+type EngagementProjectReference = {
+  id: string;
+  name?: string;
+};
+
+type EngagementDetail = Engagement & {
+  assignments?: EngagementAssignment[];
+};
+
 @Injectable()
 export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
   private readonly privilegedRoles = new Set(
     PrivilegedUserRoles.map((role) => role.toLowerCase()),
+  );
+  private readonly adminRoles = new Set([UserRoles.Admin.toLowerCase()]);
+  private readonly talentManagerRoles = new Set(
+    TalentManagerRoles.map((role) => role.toLowerCase()),
   );
 
   constructor(
@@ -308,26 +325,55 @@ export class EngagementsService {
     );
   }
 
+  /**
+   * Lists engagements with pagination and filters.
+   * Public/non-includePrivate feeds always exclude ON_HOLD, including explicit status filters.
+   * Supports `projectId` and `projectIds` project filtering.
+   * When both are provided, `projectIds` takes precedence.
+   * TM users are server-scoped to engagements from projects where they are members.
+   */
   async findAll(
     query: EngagementQueryDto,
+    authUser?: Record<string, any>,
+    authorizationHeader?: string | string[],
   ): Promise<PaginatedResponse<Engagement>> {
+    const projectScope = await this.resolveProjectScope(
+      query,
+      authUser,
+      authorizationHeader,
+    );
+
     this.logger.debug("Listing engagements", {
       projectId: query.projectId,
+      projectIds: query.projectIds,
+      scopedProjectId: projectScope.projectId,
+      scopedProjectIds: projectScope.projectIds,
       status: query.status,
       search: query.search,
     });
 
+    if (projectScope.isEmpty) {
+      return this.emptyPaginatedResponse(query.page, query.perPage);
+    }
+
+    const isPublicFeed = query.includePrivate !== true;
     const where: Prisma.EngagementWhereInput = query.includePrivate
       ? {}
       : { isPrivate: false };
     const andFilters: Prisma.EngagementWhereInput[] = [];
 
-    if (query.projectId) {
-      where.projectId = query.projectId;
+    if (projectScope.projectId) {
+      where.projectId = projectScope.projectId;
+    }
+    if (projectScope.projectIds?.length) {
+      where.projectId = { in: projectScope.projectIds };
     }
 
     if (query.status) {
-      where.status = query.status;
+      andFilters.push({ status: query.status });
+    }
+    if (isPublicFeed) {
+      andFilters.push({ status: { notIn: [EngagementStatus.ON_HOLD] } });
     }
 
     if (query.search) {
@@ -432,9 +478,11 @@ export class EngagementsService {
         : engagementWithCount;
     });
     const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
+    const hydratedEngagementsWithProjectDetails =
+      await this.hydrateProjectDetails(hydratedEngagements);
 
     return {
-      data: hydratedEngagements,
+      data: hydratedEngagementsWithProjectDetails,
       meta: {
         page,
         perPage,
@@ -541,7 +589,11 @@ export class EngagementsService {
               applications: true,
             },
           },
-          assignments: true,
+          assignments: {
+            where: {
+              memberId: userIdentifier,
+            },
+          },
         },
       }),
       this.db.engagement.count({ where }),
@@ -555,9 +607,11 @@ export class EngagementsService {
       }),
     );
     const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
+    const hydratedEngagementsWithProjectDetails =
+      await this.hydrateProjectDetails(hydratedEngagements);
 
     return {
-      data: hydratedEngagements,
+      data: hydratedEngagementsWithProjectDetails,
       meta: {
         page,
         perPage,
@@ -572,11 +626,20 @@ export class EngagementsService {
     options: {
       includeCreatorEmail?: boolean;
       includeAssignments?: boolean;
+      assignmentMemberId?: string;
     } = {},
-  ): Promise<Engagement> {
+  ): Promise<EngagementDetail> {
     const engagement = await this.db.engagement.findUnique({
       where: { id },
-      include: { assignments: true },
+      include: {
+        assignments: options.assignmentMemberId
+          ? {
+              where: {
+                memberId: options.assignmentMemberId,
+              },
+            }
+          : true,
+      },
     });
     if (!engagement) {
       throw new NotFoundException("Engagement not found.");
@@ -647,6 +710,22 @@ export class EngagementsService {
     const existingEngagement = await this.findOne(id);
 
     if (updateDto.projectId) {
+      const normalizedCurrentProjectId = this.normalizeProjectId(
+        existingEngagement.projectId,
+      );
+      const normalizedUpdatedProjectId = this.normalizeProjectId(
+        updateDto.projectId,
+      );
+
+      if (
+        normalizedUpdatedProjectId &&
+        normalizedUpdatedProjectId !== normalizedCurrentProjectId
+      ) {
+        await this.assertProjectReassignmentAllowed(
+          existingEngagement.projectId,
+        );
+      }
+
       await this.assertProjectExists(updateDto.projectId);
     }
 
@@ -932,9 +1011,31 @@ export class EngagementsService {
     );
   }
 
+  /**
+   * Removes an engagement by UUID.
+   *
+   * Designed for Administrator-only use when an engagement was created in error
+   * and has no active member assignments.
+   *
+   * @param id Engagement UUID.
+   * @throws {NotFoundException} If the engagement does not exist.
+   * @throws {BadRequestException} If the engagement has one or more active assignments.
+   */
   async remove(id: string): Promise<void> {
     this.logger.debug("Removing engagement", { id });
     await this.findOne(id);
+
+    const activeAssignmentCount = await this.db.engagementAssignment.count({
+      where: {
+        engagementId: id,
+        status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+      },
+    });
+
+    if (activeAssignmentCount > 0) {
+      throw new BadRequestException(ERROR_MESSAGES.EngagementHasMembers);
+    }
+
     await this.db.engagement.delete({ where: { id } });
   }
 
@@ -1181,6 +1282,9 @@ export class EngagementsService {
     }
   }
 
+  /**
+   * Lists public engagements that are currently OPEN.
+   */
   async findAllActive(): Promise<Engagement[]> {
     this.logger.debug("Listing active engagements");
     const engagements = await this.db.engagement.findMany({
@@ -1190,7 +1294,9 @@ export class EngagementsService {
       },
       orderBy: { createdAt: "desc" },
     });
-    return this.hydrateCreatorEmails(engagements);
+    const engagementsWithCreatorEmails =
+      await this.hydrateCreatorEmails(engagements);
+    return this.hydrateProjectDetails(engagementsWithCreatorEmails);
   }
 
   private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {
@@ -1529,6 +1635,115 @@ export class EngagementsService {
     });
   }
 
+  private normalizeProjectId(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalizedProjectId = value.trim();
+    return normalizedProjectId || undefined;
+  }
+
+  private normalizeProjectName(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalizedProjectName = value.trim();
+    return normalizedProjectName || undefined;
+  }
+
+  private async hydrateProjectDetails<
+    T extends {
+      project?: {
+        id?: string | null;
+        name?: string | null;
+      };
+      projectId: string;
+      projectName?: string | null;
+    },
+  >(
+    engagements: T[],
+  ): Promise<
+    Array<
+      T & {
+        project: EngagementProjectReference;
+        projectName?: string;
+      }
+    >
+  > {
+    if (!engagements.length) {
+      return engagements as Array<
+        T & {
+          project: EngagementProjectReference;
+          projectName?: string;
+        }
+      >;
+    }
+
+    const projectIds = Array.from(
+      new Set(
+        engagements
+          .map((engagement) => this.normalizeProjectId(engagement.projectId))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (!projectIds.length) {
+      return engagements as Array<
+        T & {
+          project: EngagementProjectReference;
+          projectName?: string;
+        }
+      >;
+    }
+
+    let projectNameByProjectId = new Map<string, string>();
+
+    try {
+      projectNameByProjectId =
+        await this.projectService.getProjectNamesByIds(projectIds);
+    } catch (error) {
+      this.logger.warn("Failed to hydrate engagement project names.", {
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+
+    return engagements.map((engagement) => {
+      const normalizedProjectId = this.normalizeProjectId(engagement.projectId);
+      if (!normalizedProjectId) {
+        return engagement as T & {
+          project: EngagementProjectReference;
+          projectName?: string;
+        };
+      }
+
+      const existingProject = engagement.project;
+      const existingProjectName =
+        this.normalizeProjectName(engagement.projectName) ??
+        this.normalizeProjectName(existingProject?.name);
+      const resolvedProjectName =
+        existingProjectName ??
+        this.normalizeProjectName(
+          projectNameByProjectId.get(normalizedProjectId),
+        );
+
+      const project: EngagementProjectReference = {
+        id: this.normalizeProjectId(existingProject?.id) ?? normalizedProjectId,
+      };
+
+      if (resolvedProjectName) {
+        project.name = resolvedProjectName;
+      }
+
+      return {
+        ...engagement,
+        project,
+        ...(resolvedProjectName ? { projectName: resolvedProjectName } : {}),
+      };
+    });
+  }
+
   private assertNonBlankField(value: unknown, fieldName: string): void {
     if (typeof value !== "string" || value.trim().length === 0) {
       throw new BadRequestException(
@@ -1552,6 +1767,29 @@ export class EngagementsService {
     }
   }
 
+  /**
+   * Ensures engagement project reassignment is allowed for the current project.
+   *
+   * Project reassignment is blocked when the current project already has a
+   * billing account, because that project is financially bound.
+   *
+   * @param currentProjectId Existing project id on the engagement.
+   * @returns Resolves when the engagement project can be changed.
+   * @throws BadRequestException When the current project has a billing account.
+   */
+  private async assertProjectReassignmentAllowed(
+    currentProjectId: string,
+  ): Promise<void> {
+    const hasBillingAccount =
+      await this.projectService.hasBillingAccountAssigned(currentProjectId);
+
+    if (hasBillingAccount) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.ProjectChangeBlockedByBillingAccount,
+      );
+    }
+  }
+
   private async assertSkillsValid(skillIds: string[]): Promise<void> {
     const { invalid } = await this.skillsService.validateSkillsExist(skillIds);
     if (invalid.length) {
@@ -1567,5 +1805,100 @@ export class EngagementsService {
     }
 
     return new Date(dateValue);
+  }
+
+  private emptyPaginatedResponse(
+    page: number,
+    perPage: number,
+  ): PaginatedResponse<Engagement> {
+    return {
+      data: [],
+      meta: {
+        page,
+        perPage,
+        totalCount: 0,
+        totalPages: 0,
+      },
+    };
+  }
+
+  private async resolveProjectScope(
+    query: EngagementQueryDto,
+    authUser?: Record<string, any>,
+    authorizationHeader?: string | string[],
+  ): Promise<{
+    projectId?: string;
+    projectIds?: string[];
+    isEmpty: boolean;
+  }> {
+    const normalizedProjectId = this.normalizeProjectId(query.projectId);
+    const normalizedProjectIds = Array.from(
+      new Set(
+        (query.projectIds ?? [])
+          .map((projectId) => this.normalizeProjectId(projectId))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    );
+
+    if (!this.isTalentManagerOnly(authUser)) {
+      return {
+        projectId: normalizedProjectId,
+        projectIds: normalizedProjectIds.length
+          ? normalizedProjectIds
+          : undefined,
+        isEmpty: false,
+      };
+    }
+
+    const memberProjectIds =
+      await this.projectService.getMemberProjectIdsForUser(authorizationHeader);
+    if (!memberProjectIds.length) {
+      return { isEmpty: true };
+    }
+
+    const memberProjectIdSet = new Set(memberProjectIds);
+
+    if (normalizedProjectIds.length) {
+      const scopedProjectIds = normalizedProjectIds.filter((projectId) =>
+        memberProjectIdSet.has(projectId),
+      );
+      if (!scopedProjectIds.length) {
+        return { isEmpty: true };
+      }
+
+      return { projectIds: scopedProjectIds, isEmpty: false };
+    }
+
+    if (normalizedProjectId) {
+      if (!memberProjectIdSet.has(normalizedProjectId)) {
+        return { isEmpty: true };
+      }
+
+      return { projectId: normalizedProjectId, isEmpty: false };
+    }
+
+    return { projectIds: memberProjectIds, isEmpty: false };
+  }
+
+  private isTalentManagerOnly(authUser?: Record<string, any>): boolean {
+    if (!authUser || authUser.isMachine) {
+      return false;
+    }
+
+    const normalizedRoles = getUserRoles(authUser).map((role) =>
+      role?.toLowerCase(),
+    );
+
+    const hasTalentManagerRole = normalizedRoles.some((role) =>
+      this.talentManagerRoles.has(role),
+    );
+    if (!hasTalentManagerRole) {
+      return false;
+    }
+
+    const hasAdminRole = normalizedRoles.some((role) =>
+      this.adminRoles.has(role),
+    );
+    return !hasAdminRole;
   }
 }

@@ -19,6 +19,10 @@ const tokenFixtures: Record<string, Record<string, any>> = {
     isMachine: true,
     scopes: ["write:engagements"],
   },
+  "m2m-manage": {
+    isMachine: true,
+    scopes: ["manage:engagements"],
+  },
   "m2m-invalid": {
     isMachine: true,
     scopes: ["write:engagements"],
@@ -531,6 +535,71 @@ describe("Authentication & Authorization (e2e)", () => {
         .get("/engagements/my-assignments")
         .set("Authorization", "Bearer malformed")
         .expect(401);
+    });
+  });
+
+  describe("Delete Engagement Authorization", () => {
+    it("allows administrator user to delete an engagement", async () => {
+      engagementsServiceMock.remove.mockClear();
+      engagementsServiceMock.remove.mockResolvedValueOnce(undefined);
+
+      await request(app.getHttpServer())
+        .delete("/engagements/eng-1")
+        .set("Authorization", "Bearer admin-user")
+        .expect(204);
+
+      expect(engagementsServiceMock.remove).toHaveBeenCalledWith("eng-1");
+    });
+
+    it("returns 403 for project manager user", async () => {
+      engagementsServiceMock.remove.mockClear();
+
+      await request(app.getHttpServer())
+        .delete("/engagements/eng-1")
+        .set("Authorization", "Bearer project-manager-user")
+        .expect(403);
+
+      expect(engagementsServiceMock.remove).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 for task manager user", async () => {
+      engagementsServiceMock.remove.mockClear();
+
+      await request(app.getHttpServer())
+        .delete("/engagements/eng-1")
+        .set("Authorization", "Bearer task-manager-user")
+        .expect(403);
+
+      expect(engagementsServiceMock.remove).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 for talent manager user", async () => {
+      engagementsServiceMock.remove.mockClear();
+
+      await request(app.getHttpServer())
+        .delete("/engagements/eng-1")
+        .set("Authorization", "Bearer talent-manager-user")
+        .expect(403);
+
+      expect(engagementsServiceMock.remove).not.toHaveBeenCalled();
+    });
+
+    it("requires manage:engagements for M2M tokens", async () => {
+      engagementsServiceMock.remove.mockClear();
+
+      await request(app.getHttpServer())
+        .delete("/engagements/eng-1")
+        .set("Authorization", "Bearer m2m-write")
+        .expect(403);
+
+      expect(engagementsServiceMock.remove).not.toHaveBeenCalled();
+
+      await request(app.getHttpServer())
+        .delete("/engagements/eng-1")
+        .set("Authorization", "Bearer m2m-manage")
+        .expect(204);
+
+      expect(engagementsServiceMock.remove).toHaveBeenCalledWith("eng-1");
     });
   });
 

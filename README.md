@@ -56,6 +56,8 @@ Set the following environment variables (see `.env.example` for defaults):
 | `SENDGRID_ASSIGNMENT_OFFER_TEMPLATE_ID` | SendGrid template ID for assignment offer emails. |
 | `SENDGRID_ASSIGNMENT_OFFER_ACCEPTED_TEMPLATE_ID` | SendGrid template ID for assignment offer accepted emails. |
 | `SENDGRID_ASSIGNMENT_OFFER_REJECTED_TEMPLATE_ID` | SendGrid template ID for assignment offer rejected emails. |
+| `SENDGRID_UNDER_REVIEW_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application is under review. |
+| `SENDGRID_REJECTED_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application was not selected. |
 
 ## Authentication
 
@@ -80,5 +82,14 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 ## Role-Based Access
 
 - Administrators, Topcoder Project Managers, Topcoder Task Managers, and Topcoder Talent Managers can bypass scope checks for most management operations.
-- Regular members can view engagements and manage their own applications.
+- Regular members can view public engagements and manage their own applications.
+- Assigned members can view the details of their own private engagements.
 - Project Managers can view and update application statuses for engagements they created, while Task Managers and Talent Managers can do so across engagements.
+- Talent Managers are server-scoped to engagements from projects where they are members when listing engagements.
+
+## Response Notes
+
+- `GET /engagements`, `GET /engagements/active`, and `GET /engagements/my-assignments` include project metadata on each engagement record:
+  - `projectName` (if available)
+  - `project` object with `id` and optional `name`
+- `PUT /engagements/:id` rejects project reassignment when the engagement's current project already has a `billingAccountId`.
