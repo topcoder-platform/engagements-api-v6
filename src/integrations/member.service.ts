@@ -11,6 +11,7 @@ type MemberRecord = {
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
+  status?: string | null;
   addresses?: Array<{
     streetAddr1?: string | null;
     streetAddr2?: string | null;
@@ -114,6 +115,55 @@ export class MemberService {
     }
 
     return member.handle;
+  }
+
+  /**
+   * Returns a map of userId to whether the member profile is active (status ACTIVE).
+   * Members not returned by the API or without ACTIVE status are treated as inactive.
+   * On Member API failure, returns an empty map and logs; does not throw.
+   */
+  async getMemberActiveByUserIds(
+    userIds: string[],
+  ): Promise<Map<string, boolean>> {
+    const normalizedUserIds = Array.from(
+      new Set(
+        userIds
+          .map((userId) => userId?.trim())
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
+    );
+
+    if (!normalizedUserIds.length) {
+      return new Map();
+    }
+
+    try {
+      const members = await this.fetchMembersByUserIds(
+        normalizedUserIds,
+        "userId,status",
+      );
+      const activeByUserId = new Map<string, boolean>();
+
+      members.forEach((member) => {
+        if (member.userId === undefined || member.userId === null) {
+          return;
+        }
+        const key = String(member.userId);
+        const status = member.status;
+        const isActive =
+          typeof status === "string" &&
+          String(status).toUpperCase().trim() === "ACTIVE";
+        activeByUserId.set(key, isActive);
+      });
+
+      return activeByUserId;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      this.logger.warn(
+        `Member active status lookup failed (${normalizedUserIds.length} userIds): ${message}`,
+      );
+      return new Map();
+    }
   }
 
   async getMemberUserIdByHandle(handle: string): Promise<string | null> {

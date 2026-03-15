@@ -32,7 +32,10 @@ import {
   ApproveApplicationDto,
   UpdateApplicationStatusDto,
 } from "./dto";
-import { ApplicationsService } from "./applications.service";
+import {
+  ApplicationsService,
+  ApplicationWithActive,
+} from "./applications.service";
 import { EngagementApplication } from "@prisma/client";
 import { PaginatedResponse } from "../engagements/dto";
 import { getUserRoles } from "../common/user.util";
@@ -103,7 +106,7 @@ export class ApplicationsController {
   async findAll(
     @Query() query: ApplicationQueryDto,
     @Req() req: Request & { authUser?: Record<string, any> },
-  ): Promise<PaginatedResponse<EngagementApplication>> {
+  ): Promise<PaginatedResponse<ApplicationWithActive>> {
     this.assertMachineScope(req.authUser, AppScopes.ReadApplications);
     return this.applicationsService.findAll(query, req.authUser ?? {});
   }
@@ -164,7 +167,7 @@ export class ApplicationsController {
   async findByEngagement(
     @Param("engagementId") engagementId: string,
     @Req() req: Request & { authUser?: Record<string, any> },
-  ): Promise<EngagementApplication[]> {
+  ): Promise<ApplicationWithActive[]> {
     this.assertAdminOrPm(req.authUser);
     return this.applicationsService.findByEngagement(
       engagementId,

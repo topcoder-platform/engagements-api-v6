@@ -107,6 +107,12 @@ export class ApplicationResponseDto {
   updatedBy?: string | null;
 
   @ApiPropertyOptional({
+    description: "Whether the member profile is active (from Member API).",
+    example: true,
+  })
+  active?: boolean;
+
+  @ApiPropertyOptional({
     description: "Engagement details",
     type: EngagementResponseDto,
   })

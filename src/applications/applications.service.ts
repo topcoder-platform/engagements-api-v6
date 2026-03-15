@@ -56,6 +56,8 @@ type ApplicationWithEngagement = Prisma.EngagementApplicationGetPayload<{
   include: { engagement: true };
 }>;
 
+export type ApplicationWithActive = EngagementApplication & { active: boolean };
+
 const PROJECT_MANAGER_ROLE_SET = new Set(
   ProjectManagerRoles.map((role) => role.toLowerCase()),
 );
@@ -123,15 +125,15 @@ export class ApplicationsService {
       throw new NotFoundException(ERROR_MESSAGES.MemberNotFound);
     }
 
-    const memberHandle = await this.memberService.getMemberHandleByUserId(
-      normalizedUserId,
-    );
+    const memberHandle =
+      await this.memberService.getMemberHandleByUserId(normalizedUserId);
 
     if (!memberHandle) {
       throw new BadRequestException("Member handle not found.");
     }
-    
-    const percentComplete = await this.memberService.getMemberProfileCompleteness(memberHandle);
+
+    const percentComplete =
+      await this.memberService.getMemberProfileCompleteness(memberHandle);
 
     if (percentComplete !== 1) {
       throw new BadRequestException(
@@ -171,7 +173,7 @@ export class ApplicationsService {
   async findAll(
     query: ApplicationQueryDto,
     authUser: Record<string, any>,
-  ): Promise<PaginatedResponse<EngagementApplication>> {
+  ): Promise<PaginatedResponse<ApplicationWithActive>> {
     const where: Prisma.EngagementApplicationWhereInput = {};
     const isAdmin = this.isAdmin(authUser);
     const isProjectManager = this.isProjectManager(authUser);
@@ -227,8 +229,27 @@ export class ApplicationsService {
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
 
+    let enrichedData: Array<EngagementApplication & { active: boolean }> = data;
+    if (data.length > 0) {
+      const userIds: string[] = Array.from(
+        new Set(
+          data
+            .map((app) => app.userId)
+            .filter(
+              (id): id is string => typeof id === "string" && id.length > 0,
+            ),
+        ),
+      );
+      const activeByUserId =
+        await this.memberService.getMemberActiveByUserIds(userIds);
+      enrichedData = data.map((app) => ({
+        ...app,
+        active: activeByUserId.get(app.userId) ?? false,
+      }));
+    }
+
     return {
-      data,
+      data: enrichedData,
       meta: {
         page,
         perPage,
@@ -263,7 +284,7 @@ export class ApplicationsService {
   async findByEngagement(
     engagementId: string,
     authUser: Record<string, any>,
-  ): Promise<EngagementApplication[]> {
+  ): Promise<ApplicationWithActive[]> {
     await this.engagementsService.findOne(engagementId);
 
     if (!this.isAdminOrPm(authUser)) {
@@ -272,9 +293,30 @@ export class ApplicationsService {
       );
     }
 
-    return this.db.engagementApplication.findMany({
+    const applications = await this.db.engagementApplication.findMany({
       where: { engagementId },
     });
+
+    if (applications.length === 0) {
+      return [];
+    }
+
+    const userIds: string[] = Array.from(
+      new Set(
+        applications
+          .map((app) => app.userId)
+          .filter(
+            (id): id is string => typeof id === "string" && id.length > 0,
+          ),
+      ),
+    );
+    const activeByUserId =
+      await this.memberService.getMemberActiveByUserIds(userIds);
+
+    return applications.map((app) => ({
+      ...app,
+      active: activeByUserId.get(app.userId) ?? false,
+    }));
   }
 
   async approve(
