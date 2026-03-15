@@ -229,34 +229,29 @@ export class ApplicationsService {
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
 
-    let enrichedData: Array<EngagementApplication & { active: boolean }> = data;
-    if (data.length > 0) {
-      const userIds: string[] = Array.from(
-        new Set(
-          data
-            .map((app) => app.userId)
-            .filter(
-              (id): id is string => typeof id === "string" && id.length > 0,
-            ),
-        ),
-      );
-      const activeByUserId =
-        await this.memberService.getMemberActiveByUserIds(userIds);
-      enrichedData = data.map((app) => ({
-        ...app,
-        active: activeByUserId.get(app.userId) ?? false,
-      }));
+    const meta = { page, perPage, totalCount, totalPages };
+
+    if (data.length === 0) {
+      return { data: [], meta };
     }
 
-    return {
-      data: enrichedData,
-      meta: {
-        page,
-        perPage,
-        totalCount,
-        totalPages,
-      },
-    };
+    const userIds: string[] = Array.from(
+      new Set(
+        data
+          .map((app) => app.userId)
+          .filter(
+            (id): id is string => typeof id === "string" && id.length > 0,
+          ),
+      ),
+    );
+    const activeByUserId =
+      await this.memberService.getMemberActiveByUserIds(userIds);
+    const enrichedData: ApplicationWithActive[] = data.map((app) => ({
+      ...app,
+      active: activeByUserId.get(app.userId) ?? false,
+    }));
+
+    return { data: enrichedData, meta };
   }
 
   async findOne(
