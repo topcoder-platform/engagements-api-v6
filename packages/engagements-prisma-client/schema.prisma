@@ -115,18 +115,21 @@ model EngagementApplication {
 }
 
 model EngagementAssignment {
-  id                String           @id @default(uuid())
-  engagementId      String
-  memberId          String
-  memberHandle      String
-  status            AssignmentStatus @default(SELECTED)
-  agreementRate     String?
-  otherRemarks      String?
-  terminationReason String?
-  startDate         DateTime?
-  endDate           DateTime?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id                   String           @id @default(uuid())
+  engagementId         String
+  memberId             String
+  memberHandle         String
+  status               AssignmentStatus @default(SELECTED)
+  agreementRate        String?
+  ratePerHour          String?
+  standardHoursPerWeek Int?
+  durationMonths       Int?
+  otherRemarks         String?
+  terminationReason    String?
+  startDate            DateTime?
+  endDate              DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   engagement        Engagement           @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   feedback          EngagementFeedback[]

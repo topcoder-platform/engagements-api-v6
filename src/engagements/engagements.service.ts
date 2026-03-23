@@ -50,7 +50,9 @@ type ResolvedAssignmentDetails = {
   memberId: string;
   memberHandle: string;
   startDate?: Date;
-  endDate?: Date;
+  durationMonths?: number;
+  ratePerHour?: string;
+  standardHoursPerWeek?: number;
   agreementRate?: string;
   otherRemarks?: string;
 };
@@ -183,8 +185,15 @@ export class EngagementsService {
             if (details.startDate !== undefined) {
               assignmentData.startDate = details.startDate;
             }
-            if (details.endDate !== undefined) {
-              assignmentData.endDate = details.endDate;
+            if (details.durationMonths !== undefined) {
+              assignmentData.durationMonths = details.durationMonths;
+            }
+            if (details.ratePerHour !== undefined) {
+              assignmentData.ratePerHour = details.ratePerHour;
+            }
+            if (details.standardHoursPerWeek !== undefined) {
+              assignmentData.standardHoursPerWeek =
+                details.standardHoursPerWeek;
             }
             if (details.agreementRate !== undefined) {
               assignmentData.agreementRate = details.agreementRate;
@@ -318,10 +327,84 @@ export class EngagementsService {
         engagementId: assignment.engagementId,
         engagementTitle: engagement.title,
         assignmentStartDate: assignment.startDate ?? null,
-        assignmentEndDate: assignment.endDate ?? null,
+        durationMonths: assignment.durationMonths ?? null,
+        ratePerHour: assignment.ratePerHour ?? null,
+        standardHoursPerWeek: assignment.standardHoursPerWeek ?? null,
         agreementRate: assignment.agreementRate ?? null,
         otherRemarks: assignment.otherRemarks ?? null,
       })),
+    );
+  }
+
+  /**
+   * Sends assignment-update emails for existing assignments whose member-facing
+   * terms changed during an engagement edit.
+   *
+   * @param engagement - Engagement owning the updated assignments.
+   * @param assignments - Existing assignments with changed offer details.
+   * @returns A promise that resolves after all update email publish attempts
+   *   settle.
+   */
+  private async sendAssignmentUpdatedEmails(
+    engagement: Engagement,
+    assignments?: EngagementAssignment[],
+  ): Promise<void> {
+    if (!assignments?.length) {
+      return;
+    }
+
+    await this.assignmentOfferEmailService.sendAssignmentUpdatedEmails(
+      assignments.map((assignment) => ({
+        memberId: String(assignment.memberId),
+        memberHandle: assignment.memberHandle,
+        assignmentId: assignment.id,
+        engagementId: assignment.engagementId,
+        engagementTitle: engagement.title,
+        assignmentStartDate: assignment.startDate ?? null,
+        durationMonths: assignment.durationMonths ?? null,
+        ratePerHour: assignment.ratePerHour ?? null,
+        standardHoursPerWeek: assignment.standardHoursPerWeek ?? null,
+        agreementRate: assignment.agreementRate ?? null,
+        otherRemarks: assignment.otherRemarks ?? null,
+      })),
+    );
+  }
+
+  /**
+   * Compares assignment fields that are exposed in member-facing offer screens
+   * to determine whether an update email should be sent.
+   *
+   * @param previousAssignment - Persisted assignment values before the update.
+   * @param nextAssignment - Assignment values after the update completes.
+   * @returns `true` when any offer-detail field changed; otherwise `false`.
+   */
+  private didAssignmentOfferDetailsChange(
+    previousAssignment: {
+      startDate: Date | null;
+      durationMonths: number | null;
+      ratePerHour: string | null;
+      standardHoursPerWeek: number | null;
+      agreementRate: string | null;
+      otherRemarks: string | null;
+    },
+    nextAssignment: {
+      startDate: Date | null;
+      durationMonths: number | null;
+      ratePerHour: string | null;
+      standardHoursPerWeek: number | null;
+      agreementRate: string | null;
+      otherRemarks: string | null;
+    },
+  ): boolean {
+    return (
+      previousAssignment.startDate?.getTime() !==
+        nextAssignment.startDate?.getTime() ||
+      previousAssignment.durationMonths !== nextAssignment.durationMonths ||
+      previousAssignment.ratePerHour !== nextAssignment.ratePerHour ||
+      previousAssignment.standardHoursPerWeek !==
+        nextAssignment.standardHoursPerWeek ||
+      previousAssignment.agreementRate !== nextAssignment.agreementRate ||
+      previousAssignment.otherRemarks !== nextAssignment.otherRemarks
     );
   }
 
@@ -904,9 +987,19 @@ export class EngagementsService {
               assignmentCreateData.startDate = details.startDate;
               assignmentUpdateData.startDate = details.startDate;
             }
-            if (details.endDate !== undefined) {
-              assignmentCreateData.endDate = details.endDate;
-              assignmentUpdateData.endDate = details.endDate;
+            if (details.durationMonths !== undefined) {
+              assignmentCreateData.durationMonths = details.durationMonths;
+              assignmentUpdateData.durationMonths = details.durationMonths;
+            }
+            if (details.ratePerHour !== undefined) {
+              assignmentCreateData.ratePerHour = details.ratePerHour;
+              assignmentUpdateData.ratePerHour = details.ratePerHour;
+            }
+            if (details.standardHoursPerWeek !== undefined) {
+              assignmentCreateData.standardHoursPerWeek =
+                details.standardHoursPerWeek;
+              assignmentUpdateData.standardHoursPerWeek =
+                details.standardHoursPerWeek;
             }
             if (details.agreementRate !== undefined) {
               assignmentCreateData.agreementRate = details.agreementRate;
@@ -993,13 +1086,37 @@ export class EngagementsService {
     });
 
     const updatedAssignments = updatedEngagement.assignments ?? [];
-    const existingMemberIds = new Set(
-      existingAssignments.map((assignment) => String(assignment.memberId)),
+    const existingAssignmentsByMemberId = new Map(
+      existingAssignments.map((assignment) => [
+        String(assignment.memberId),
+        assignment,
+      ]),
     );
     const newAssignments = updatedAssignments.filter(
-      (assignment) => !existingMemberIds.has(String(assignment.memberId)),
+      (assignment) =>
+        !existingAssignmentsByMemberId.has(String(assignment.memberId)),
+    );
+    const updatedAssignmentsForEmail = updatedAssignments.filter(
+      (assignment) => {
+        const existingAssignment = existingAssignmentsByMemberId.get(
+          String(assignment.memberId),
+        );
+
+        if (!existingAssignment) {
+          return false;
+        }
+
+        return this.didAssignmentOfferDetailsChange(
+          existingAssignment,
+          assignment,
+        );
+      },
     );
     await this.sendAssignmentOfferEmails(updatedEngagement, newAssignments);
+    await this.sendAssignmentUpdatedEmails(
+      updatedEngagement,
+      updatedAssignmentsForEmail,
+    );
 
     const engagementWithFields = this.applyAssignmentFields(updatedEngagement);
     const [hydrated] = await this.hydrateCreatorEmails([engagementWithFields]);
@@ -1301,7 +1418,9 @@ export class EngagementsService {
 
   private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {
     startDate?: Date;
-    endDate?: Date;
+    durationMonths?: number;
+    ratePerHour?: string;
+    standardHoursPerWeek?: number;
     agreementRate?: string;
     otherRemarks?: string;
   } {
@@ -1317,28 +1436,92 @@ export class EngagementsService {
     };
 
     const startDate = parseDate(details?.startDate);
-    const endDate = parseDate(details?.endDate);
-    const agreementRate =
+    const durationMonths = details?.durationMonths;
+    const ratePerHour =
+      details?.ratePerHour !== undefined
+        ? String(details.ratePerHour).trim()
+        : undefined;
+    const standardHoursPerWeek = details?.standardHoursPerWeek;
+    const agreementRate = this.calculateAssignmentAgreementRate(
+      ratePerHour,
+      standardHoursPerWeek,
       details?.agreementRate !== undefined
         ? String(details.agreementRate).trim()
-        : undefined;
+        : undefined,
+    );
     const otherRemarks =
       details?.otherRemarks !== undefined
         ? String(details.otherRemarks).trim()
         : undefined;
 
-    if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
-      throw new BadRequestException(
-        "Assignment end date must be after start date.",
-      );
-    }
-
     return {
       startDate,
-      endDate,
+      durationMonths,
+      ratePerHour,
+      standardHoursPerWeek,
       agreementRate: agreementRate ? agreementRate : undefined,
       otherRemarks: otherRemarks ? otherRemarks : undefined,
     };
+  }
+
+  /**
+   * Calculates the weekly assignment rate from hourly inputs used by assignment
+   * creation and update flows, while preserving support for legacy payloads
+   * that still send a per-week rate directly.
+   *
+   * @param ratePerHour - Assignment rate per hour from the incoming payload.
+   * @param standardHoursPerWeek - Standard hours per week from the incoming
+   *   payload.
+   * @param fallbackAgreementRate - Legacy assignment rate per week supplied by
+   *   older clients.
+   * @returns The normalized assignment rate per week string, or `undefined`
+   *   when no rate fields were provided.
+   * @throws BadRequestException When only one required field is provided or
+   *   when the supplied values are not positive numbers.
+   */
+  private calculateAssignmentAgreementRate(
+    ratePerHour?: string,
+    standardHoursPerWeek?: number,
+    fallbackAgreementRate?: string,
+  ): string | undefined {
+    const hasRatePerHour = ratePerHour !== undefined;
+    const hasStandardHours = standardHoursPerWeek !== undefined;
+
+    if (hasRatePerHour !== hasStandardHours) {
+      throw new BadRequestException(
+        "ratePerHour and standardHoursPerWeek must be provided together.",
+      );
+    }
+
+    if (hasRatePerHour && hasStandardHours) {
+      const parsedRatePerHour = Number(ratePerHour);
+      const parsedStandardHours = Number(standardHoursPerWeek);
+
+      if (!Number.isFinite(parsedRatePerHour) || parsedRatePerHour <= 0) {
+        throw new BadRequestException("ratePerHour must be a positive number.");
+      }
+
+      if (!Number.isInteger(parsedStandardHours) || parsedStandardHours <= 0) {
+        throw new BadRequestException(
+          "standardHoursPerWeek must be a positive integer.",
+        );
+      }
+
+      return Number(
+        (parsedRatePerHour * parsedStandardHours).toFixed(2),
+      ).toString();
+    }
+
+    if (!fallbackAgreementRate) {
+      return undefined;
+    }
+
+    const parsedAgreementRate = Number(fallbackAgreementRate);
+    if (!Number.isFinite(parsedAgreementRate) || parsedAgreementRate <= 0) {
+      throw new BadRequestException("agreementRate must be a positive number.");
+    }
+
+    return fallbackAgreementRate;
   }
 
   private async resolveAssignmentDetailsList(

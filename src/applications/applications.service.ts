@@ -123,15 +123,15 @@ export class ApplicationsService {
       throw new NotFoundException(ERROR_MESSAGES.MemberNotFound);
     }
 
-    const memberHandle = await this.memberService.getMemberHandleByUserId(
-      normalizedUserId,
-    );
+    const memberHandle =
+      await this.memberService.getMemberHandleByUserId(normalizedUserId);
 
     if (!memberHandle) {
       throw new BadRequestException("Member handle not found.");
     }
-    
-    const percentComplete = await this.memberService.getMemberProfileCompleteness(memberHandle);
+
+    const percentComplete =
+      await this.memberService.getMemberProfileCompleteness(memberHandle);
 
     if (percentComplete !== 1) {
       throw new BadRequestException(
@@ -369,7 +369,9 @@ export class ApplicationsService {
 
   private normalizeAssignmentDetails(details?: ApproveApplicationDto): {
     startDate?: Date;
-    endDate?: Date;
+    durationMonths?: number;
+    ratePerHour?: string;
+    standardHoursPerWeek?: number;
     agreementRate?: string;
     otherRemarks?: string | null;
     hasAny: boolean;
@@ -386,26 +388,29 @@ export class ApplicationsService {
     };
 
     const startDate = parseDate(details?.startDate);
-    const endDate = parseDate(details?.endDate);
-    const agreementRate =
-      details?.agreementRate !== undefined ? details.agreementRate : undefined;
+    const durationMonths = details?.durationMonths;
+    const ratePerHour = details?.ratePerHour;
+    const standardHoursPerWeek = details?.standardHoursPerWeek;
+    const agreementRate = this.calculateAgreementRate(
+      ratePerHour,
+      standardHoursPerWeek,
+      details?.agreementRate,
+    );
     const otherRemarks =
       details?.otherRemarks !== undefined ? details.otherRemarks : undefined;
 
-    if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
-      throw new BadRequestException(
-        "Assignment end date must be after start date.",
-      );
-    }
-
     return {
       startDate,
-      endDate,
+      durationMonths,
+      ratePerHour,
+      standardHoursPerWeek,
       agreementRate,
       otherRemarks,
       hasAny:
         startDate !== undefined ||
-        endDate !== undefined ||
+        durationMonths !== undefined ||
+        ratePerHour !== undefined ||
+        standardHoursPerWeek !== undefined ||
         agreementRate !== undefined ||
         otherRemarks !== undefined,
     };
@@ -450,13 +455,25 @@ export class ApplicationsService {
 
       if (existingAssignment) {
         let updatedAssignment = existingAssignment;
+        let shouldSendUpdatedEmail = false;
         if (normalizedAssignment.hasAny) {
           const updateData: Prisma.EngagementAssignmentUpdateInput = {};
+          shouldSendUpdatedEmail = this.didAssignmentOfferDetailsChange(
+            existingAssignment,
+            normalizedAssignment,
+          );
           if (normalizedAssignment.startDate !== undefined) {
             updateData.startDate = normalizedAssignment.startDate;
           }
-          if (normalizedAssignment.endDate !== undefined) {
-            updateData.endDate = normalizedAssignment.endDate;
+          if (normalizedAssignment.durationMonths !== undefined) {
+            updateData.durationMonths = normalizedAssignment.durationMonths;
+          }
+          if (normalizedAssignment.ratePerHour !== undefined) {
+            updateData.ratePerHour = normalizedAssignment.ratePerHour;
+          }
+          if (normalizedAssignment.standardHoursPerWeek !== undefined) {
+            updateData.standardHoursPerWeek =
+              normalizedAssignment.standardHoursPerWeek;
           }
           if (normalizedAssignment.agreementRate !== undefined) {
             updateData.agreementRate = normalizedAssignment.agreementRate;
@@ -481,10 +498,13 @@ export class ApplicationsService {
             id: updatedAssignment.id,
             engagementId: updatedAssignment.engagementId,
             startDate: updatedAssignment.startDate,
-            endDate: updatedAssignment.endDate,
+            durationMonths: updatedAssignment.durationMonths,
+            ratePerHour: updatedAssignment.ratePerHour,
+            standardHoursPerWeek: updatedAssignment.standardHoursPerWeek,
             agreementRate: updatedAssignment.agreementRate,
             otherRemarks: updatedAssignment.otherRemarks,
           },
+          shouldSendUpdatedEmail,
         };
       }
 
@@ -515,8 +535,14 @@ export class ApplicationsService {
           ...(normalizedAssignment.startDate !== undefined && {
             startDate: normalizedAssignment.startDate,
           }),
-          ...(normalizedAssignment.endDate !== undefined && {
-            endDate: normalizedAssignment.endDate,
+          ...(normalizedAssignment.durationMonths !== undefined && {
+            durationMonths: normalizedAssignment.durationMonths,
+          }),
+          ...(normalizedAssignment.ratePerHour !== undefined && {
+            ratePerHour: normalizedAssignment.ratePerHour,
+          }),
+          ...(normalizedAssignment.standardHoursPerWeek !== undefined && {
+            standardHoursPerWeek: normalizedAssignment.standardHoursPerWeek,
           }),
           ...(normalizedAssignment.agreementRate !== undefined && {
             agreementRate: normalizedAssignment.agreementRate,
@@ -545,10 +571,13 @@ export class ApplicationsService {
           id: assignment.id,
           engagementId: assignment.engagementId,
           startDate: assignment.startDate,
-          endDate: assignment.endDate,
+          durationMonths: assignment.durationMonths,
+          ratePerHour: assignment.ratePerHour,
+          standardHoursPerWeek: assignment.standardHoursPerWeek,
           agreementRate: assignment.agreementRate,
           otherRemarks: assignment.otherRemarks,
         },
+        shouldSendUpdatedEmail: false,
       };
     });
 
@@ -599,11 +628,169 @@ export class ApplicationsService {
         engagementId: engagement.id,
         engagementTitle: engagement.title,
         assignmentStartDate: assignmentResult.assignment?.startDate ?? null,
-        assignmentEndDate: assignmentResult.assignment?.endDate ?? null,
+        durationMonths: assignmentResult.assignment?.durationMonths ?? null,
+        ratePerHour: assignmentResult.assignment?.ratePerHour ?? null,
+        standardHoursPerWeek:
+          assignmentResult.assignment?.standardHoursPerWeek ?? null,
+        agreementRate: assignmentResult.assignment?.agreementRate ?? null,
+        otherRemarks: assignmentResult.assignment?.otherRemarks ?? null,
+      });
+      return;
+    }
+
+    if (assignmentResult.shouldSendUpdatedEmail) {
+      await this.assignmentOfferEmailService.sendAssignmentUpdatedEmail({
+        memberId: String(application.userId),
+        memberHandle: payloadMemberHandle,
+        assignmentId,
+        engagementId: engagement.id,
+        engagementTitle: engagement.title,
+        assignmentStartDate: assignmentResult.assignment?.startDate ?? null,
+        durationMonths: assignmentResult.assignment?.durationMonths ?? null,
+        ratePerHour: assignmentResult.assignment?.ratePerHour ?? null,
+        standardHoursPerWeek:
+          assignmentResult.assignment?.standardHoursPerWeek ?? null,
         agreementRate: assignmentResult.assignment?.agreementRate ?? null,
         otherRemarks: assignmentResult.assignment?.otherRemarks ?? null,
       });
     }
+  }
+
+  /**
+   * Calculates the weekly assignment rate from the hourly rate and standard
+   * hours inputs used by assignment selection forms.
+   *
+   * @param ratePerHour - Assignment rate per hour as a string from the request
+   *   payload.
+   * @param standardHoursPerWeek - Standard hours per week from the request
+   *   payload.
+   * @param fallbackAgreementRate - Legacy per-week rate used by older clients
+   *   that do not send the new hourly fields.
+   * @returns The normalized weekly assignment rate string, or `undefined` when
+   *   no rate fields were supplied.
+   * @throws BadRequestException When only one of the required inputs is
+   *   provided, or when the provided values are not positive numbers.
+   */
+  private calculateAgreementRate(
+    ratePerHour?: string,
+    standardHoursPerWeek?: number,
+    fallbackAgreementRate?: string,
+  ): string | undefined {
+    const hasRatePerHour = ratePerHour !== undefined;
+    const hasStandardHours = standardHoursPerWeek !== undefined;
+
+    if (hasRatePerHour !== hasStandardHours) {
+      throw new BadRequestException(
+        "ratePerHour and standardHoursPerWeek must be provided together.",
+      );
+    }
+
+    if (hasRatePerHour && hasStandardHours) {
+      const parsedRatePerHour = Number(ratePerHour);
+      const parsedStandardHours = Number(standardHoursPerWeek);
+
+      if (!Number.isFinite(parsedRatePerHour) || parsedRatePerHour <= 0) {
+        throw new BadRequestException("ratePerHour must be a positive number.");
+      }
+
+      if (!Number.isInteger(parsedStandardHours) || parsedStandardHours <= 0) {
+        throw new BadRequestException(
+          "standardHoursPerWeek must be a positive integer.",
+        );
+      }
+
+      return Number(
+        (parsedRatePerHour * parsedStandardHours).toFixed(2),
+      ).toString();
+    }
+
+    if (fallbackAgreementRate === undefined) {
+      return undefined;
+    }
+
+    const normalizedAgreementRate = fallbackAgreementRate.trim();
+    if (!normalizedAgreementRate.length) {
+      return undefined;
+    }
+
+    const parsedAgreementRate = Number(normalizedAgreementRate);
+    if (!Number.isFinite(parsedAgreementRate) || parsedAgreementRate <= 0) {
+      throw new BadRequestException("agreementRate must be a positive number.");
+    }
+
+    return normalizedAgreementRate;
+  }
+
+  /**
+   * Compares persisted assignment terms against a normalized update payload to
+   * decide whether the member should receive an assignment-update email.
+   *
+   * @param existingAssignment - The assignment row currently stored in the
+   *   database.
+   * @param normalizedAssignment - The normalized request payload containing the
+   *   edited assignment terms.
+   * @returns `true` when at least one member-facing offer field changed,
+   *   otherwise `false`.
+   */
+  private didAssignmentOfferDetailsChange(
+    existingAssignment: {
+      startDate: Date | null;
+      durationMonths: number | null;
+      ratePerHour: string | null;
+      standardHoursPerWeek: number | null;
+      agreementRate: string | null;
+      otherRemarks: string | null;
+    },
+    normalizedAssignment: {
+      startDate?: Date;
+      durationMonths?: number;
+      ratePerHour?: string;
+      standardHoursPerWeek?: number;
+      agreementRate?: string;
+      otherRemarks?: string | null;
+    },
+  ): boolean {
+    if (
+      normalizedAssignment.startDate !== undefined &&
+      normalizedAssignment.startDate.getTime() !==
+        existingAssignment.startDate?.getTime()
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedAssignment.durationMonths !== undefined &&
+      normalizedAssignment.durationMonths !== existingAssignment.durationMonths
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedAssignment.ratePerHour !== undefined &&
+      normalizedAssignment.ratePerHour !== existingAssignment.ratePerHour
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedAssignment.standardHoursPerWeek !== undefined &&
+      normalizedAssignment.standardHoursPerWeek !==
+        existingAssignment.standardHoursPerWeek
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedAssignment.agreementRate !== undefined &&
+      normalizedAssignment.agreementRate !== existingAssignment.agreementRate
+    ) {
+      return true;
+    }
+
+    return (
+      normalizedAssignment.otherRemarks !== undefined &&
+      normalizedAssignment.otherRemarks !== existingAssignment.otherRemarks
+    );
   }
 
   private async handleMemberUnassignment(
