@@ -15,11 +15,7 @@ import {
   Workload,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
-import {
-  PrivilegedUserRoles,
-  TalentManagerRoles,
-  UserRoles,
-} from "../app-constants";
+import { PrivilegedUserRoles } from "../app-constants";
 import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
@@ -71,10 +67,6 @@ export class EngagementsService {
   private readonly logger = new Logger(EngagementsService.name);
   private readonly privilegedRoles = new Set(
     PrivilegedUserRoles.map((role) => role.toLowerCase()),
-  );
-  private readonly adminRoles = new Set([UserRoles.Admin.toLowerCase()]);
-  private readonly talentManagerRoles = new Set(
-    TalentManagerRoles.map((role) => role.toLowerCase()),
   );
 
   constructor(
@@ -413,18 +405,11 @@ export class EngagementsService {
    * Public/non-includePrivate feeds always exclude ON_HOLD, including explicit status filters.
    * Supports `projectId` and `projectIds` project filtering.
    * When both are provided, `projectIds` takes precedence.
-   * TM users are server-scoped to engagements from projects where they are members.
    */
   async findAll(
     query: EngagementQueryDto,
-    authUser?: Record<string, any>,
-    authorizationHeader?: string | string[],
   ): Promise<PaginatedResponse<Engagement>> {
-    const projectScope = await this.resolveProjectScope(
-      query,
-      authUser,
-      authorizationHeader,
-    );
+    const projectScope = this.resolveProjectScope(query);
 
     this.logger.debug("Listing engagements", {
       projectId: query.projectId,
@@ -2005,15 +1990,11 @@ export class EngagementsService {
     };
   }
 
-  private async resolveProjectScope(
-    query: EngagementQueryDto,
-    authUser?: Record<string, any>,
-    authorizationHeader?: string | string[],
-  ): Promise<{
+  private resolveProjectScope(query: EngagementQueryDto): {
     projectId?: string;
     projectIds?: string[];
     isEmpty: boolean;
-  }> {
+  } {
     const normalizedProjectId = this.normalizeProjectId(query.projectId);
     const normalizedProjectIds = Array.from(
       new Set(
@@ -2023,65 +2004,12 @@ export class EngagementsService {
       ),
     );
 
-    if (!this.isTalentManagerOnly(authUser)) {
-      return {
-        projectId: normalizedProjectId,
-        projectIds: normalizedProjectIds.length
-          ? normalizedProjectIds
-          : undefined,
-        isEmpty: false,
-      };
-    }
-
-    const memberProjectIds =
-      await this.projectService.getMemberProjectIdsForUser(authorizationHeader);
-    if (!memberProjectIds.length) {
-      return { isEmpty: true };
-    }
-
-    const memberProjectIdSet = new Set(memberProjectIds);
-
-    if (normalizedProjectIds.length) {
-      const scopedProjectIds = normalizedProjectIds.filter((projectId) =>
-        memberProjectIdSet.has(projectId),
-      );
-      if (!scopedProjectIds.length) {
-        return { isEmpty: true };
-      }
-
-      return { projectIds: scopedProjectIds, isEmpty: false };
-    }
-
-    if (normalizedProjectId) {
-      if (!memberProjectIdSet.has(normalizedProjectId)) {
-        return { isEmpty: true };
-      }
-
-      return { projectId: normalizedProjectId, isEmpty: false };
-    }
-
-    return { projectIds: memberProjectIds, isEmpty: false };
-  }
-
-  private isTalentManagerOnly(authUser?: Record<string, any>): boolean {
-    if (!authUser || authUser.isMachine) {
-      return false;
-    }
-
-    const normalizedRoles = getUserRoles(authUser).map((role) =>
-      role?.toLowerCase(),
-    );
-
-    const hasTalentManagerRole = normalizedRoles.some((role) =>
-      this.talentManagerRoles.has(role),
-    );
-    if (!hasTalentManagerRole) {
-      return false;
-    }
-
-    const hasAdminRole = normalizedRoles.some((role) =>
-      this.adminRoles.has(role),
-    );
-    return !hasAdminRole;
+    return {
+      projectId: normalizedProjectId,
+      projectIds: normalizedProjectIds.length
+        ? normalizedProjectIds
+        : undefined,
+      isEmpty: false,
+    };
   }
 }
