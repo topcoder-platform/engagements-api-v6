@@ -228,12 +228,14 @@ export class AssignmentOfferEmailService {
   }
 
   /**
-   * Builds the template payload for the initial assignment-offer email.
+   * Builds the fields shared by assignment-offer and assignment-update
+   * templates.
    *
    * @param recipient - Assignment details provided by the calling service.
-   * @returns The SendGrid dynamic template data for the offer email.
+   * @returns The shared SendGrid dynamic template data delivered to both
+   *   templates.
    */
-  private buildAssignmentOfferPayload(
+  private buildSharedAssignmentPayload(
     recipient: AssignmentOfferRecipient,
   ): Record<string, number | string> {
     const contractDuration = this.toIntegerValue(recipient.durationMonths);
@@ -259,7 +261,20 @@ export class AssignmentOfferEmailService {
   }
 
   /**
-   * Builds the template payload for assignment-update emails.
+   * Builds the template payload for the initial assignment-offer email.
+   *
+   * @param recipient - Assignment details provided by the calling service.
+   * @returns The SendGrid dynamic template data for the offer email.
+   */
+  private buildAssignmentOfferPayload(
+    recipient: AssignmentOfferRecipient,
+  ): Record<string, number | string> {
+    return this.buildSharedAssignmentPayload(recipient);
+  }
+
+  /**
+   * Builds the template payload for assignment-update emails, including the
+   * same offer fields sent by the initial assignment-offer template.
    *
    * @param recipient - Assignment details provided by the calling service.
    * @param email - Member email address used by the notification.
@@ -277,7 +292,7 @@ export class AssignmentOfferEmailService {
     } | null,
     handle?: string,
   ): Record<string, number | string> {
-    const assignmentStartDate = this.formatShortDate(
+    const billingStartDate = this.formatShortDate(
       recipient.assignmentStartDate,
     );
     const assignmentEndDate = this.formatShortDate(recipient.assignmentEndDate);
@@ -293,16 +308,12 @@ export class AssignmentOfferEmailService {
       email,
       assignmentId: recipient.assignmentId ?? "",
       engagementId: recipient.engagementId ?? "",
-      engagementTitle: recipient.engagementTitle ?? "",
-      engagementUrl: this.buildEngagementUrl(),
-      assignmentStartDate,
       assignmentEndDate,
-      billingStartDate: assignmentStartDate,
+      billingStartDate,
       durationMonths: durationMonths ?? "",
-      ratePerHour: this.formatRawValue(recipient.ratePerHour),
       standardHoursPerWeek: standardHoursPerWeek ?? "",
       agreementRate: this.formatRawValue(recipient.agreementRate),
-      otherRemarks: recipient.otherRemarks ?? "",
+      ...this.buildSharedAssignmentPayload(recipient),
     };
   }
 
