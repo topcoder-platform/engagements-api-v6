@@ -733,6 +733,20 @@ describe("EngagementsService", () => {
     expect(updateArgs.data).not.toHaveProperty("endDate");
   });
 
+  it("calculates assignment agreement rates with fractional standard hours", () => {
+    expect(
+      (service as any).calculateAssignmentAgreementRate("10.5", 37.5),
+    ).toBe("393.75");
+  });
+
+  it("rejects standardHoursPerWeek values with more than two decimals", () => {
+    expect(() =>
+      (service as any).calculateAssignmentAgreementRate("10.5", 37.555),
+    ).toThrow(
+      "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
+    );
+  });
+
   it("throws BadRequestException when removing an engagement with active assignments", async () => {
     jest.spyOn(service, "findOne").mockResolvedValue({ id: "eng-1" } as any);
     db.engagementAssignment.count.mockResolvedValue(1);

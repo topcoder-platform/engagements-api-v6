@@ -12,6 +12,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNumber,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -88,12 +89,21 @@ export class AssignmentDetailsDto {
 
   @ApiPropertyOptional({
     description: "Assignment standard hours per week",
-    example: 40,
+    example: 37.5,
   })
   @IsOptional()
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsNumber(
+    { allowInfinity: false, allowNaN: false, maxDecimalPlaces: 2 },
+    {
+      message:
+        "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+    },
+  )
+  @Min(0.01, {
+    message:
+      "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+  })
   standardHoursPerWeek?: number;
 
   @ApiPropertyOptional({
@@ -349,8 +359,8 @@ export class CreateEngagementDto {
         startDate: "2026-01-30T12:00:00.000Z",
         durationMonths: 3,
         ratePerHour: "75.5",
-        standardHoursPerWeek: 40,
-        agreementRate: "3020",
+        standardHoursPerWeek: 37.5,
+        agreementRate: "2831.25",
         otherRemarks: "Complete onboarding within the first week.",
       },
     ],

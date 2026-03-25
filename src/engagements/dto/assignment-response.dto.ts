@@ -47,7 +47,7 @@ export class AssignmentResponseDto {
 
   @ApiPropertyOptional({
     description: "Assignment standard hours per week",
-    example: 40,
+    example: 37.5,
   })
   standardHoursPerWeek?: number | null;
 

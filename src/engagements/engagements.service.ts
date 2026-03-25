@@ -41,6 +41,20 @@ import { getUserIdentifier, getUserRoles } from "../common/user.util";
 
 const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
+const MAX_STANDARD_HOURS_DECIMAL_PLACES = 2;
+
+const hasAtMostDecimalPlaces = (
+  value: number,
+  maxDecimalPlaces: number,
+): boolean => {
+  const normalized = value.toString();
+  if (!normalized || /e/i.test(normalized)) {
+    return false;
+  }
+
+  const [, decimalPart = ""] = normalized.split(".");
+  return decimalPart.length <= maxDecimalPlaces;
+};
 
 type ResolvedAssignmentDetails = {
   memberId: string;
@@ -1486,15 +1500,20 @@ export class EngagementsService {
         throw new BadRequestException("ratePerHour must be a positive number.");
       }
 
-      if (!Number.isInteger(parsedStandardHours) || parsedStandardHours <= 0) {
+      if (
+        !Number.isFinite(parsedStandardHours) ||
+        parsedStandardHours <= 0 ||
+        !hasAtMostDecimalPlaces(
+          parsedStandardHours,
+          MAX_STANDARD_HOURS_DECIMAL_PLACES,
+        )
+      ) {
         throw new BadRequestException(
-          "standardHoursPerWeek must be a positive integer.",
+          "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
         );
       }
 
-      return Number(
-        (parsedRatePerHour * parsedStandardHours).toFixed(2),
-      ).toString();
+      return (parsedRatePerHour * parsedStandardHours).toFixed(2);
     }
 
     if (!fallbackAgreementRate) {

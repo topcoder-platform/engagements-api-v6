@@ -13,7 +13,7 @@ export type AssignmentOfferRecipient = {
   assignmentEndDate?: Date | string | null;
   durationMonths?: number | null;
   ratePerHour?: string | number | null;
-  standardHoursPerWeek?: number | null;
+  standardHoursPerWeek?: string | number | null;
   agreementRate?: string | number | null;
   otherRemarks?: string | null;
 };
@@ -239,7 +239,7 @@ export class AssignmentOfferEmailService {
     recipient: AssignmentOfferRecipient,
   ): Record<string, number | string> {
     const contractDuration = this.toIntegerValue(recipient.durationMonths);
-    const hoursPerWeek = this.toIntegerValue(recipient.standardHoursPerWeek);
+    const hoursPerWeek = this.toDecimalValue(recipient.standardHoursPerWeek);
     const parsedRatePerHour = this.toDecimalValue(recipient.ratePerHour);
     const weeklyPayment =
       parsedRatePerHour !== null && hoursPerWeek !== null
@@ -297,7 +297,7 @@ export class AssignmentOfferEmailService {
     );
     const assignmentEndDate = this.formatShortDate(recipient.assignmentEndDate);
     const durationMonths = this.toIntegerValue(recipient.durationMonths);
-    const standardHoursPerWeek = this.toIntegerValue(
+    const standardHoursPerWeek = this.toDecimalValue(
       recipient.standardHoursPerWeek,
     );
 

@@ -3,6 +3,7 @@ import { Transform, Type } from "class-transformer";
 import {
   IsDateString,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -51,12 +52,21 @@ export class ApproveApplicationDto {
 
   @ApiPropertyOptional({
     description: "Assignment standard hours per week",
-    example: 40,
+    example: 37.5,
   })
   @IsOptional()
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsNumber(
+    { allowInfinity: false, allowNaN: false, maxDecimalPlaces: 2 },
+    {
+      message:
+        "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+    },
+  )
+  @Min(0.01, {
+    message:
+      "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+  })
   standardHoursPerWeek?: number;
 
   @ApiPropertyOptional({
