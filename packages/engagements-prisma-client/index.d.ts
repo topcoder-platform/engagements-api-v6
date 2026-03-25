@@ -3993,8 +3993,20 @@ export namespace Prisma {
 
   export type AggregateEngagementAssignment = {
     _count: EngagementAssignmentCountAggregateOutputType | null
+    _avg: EngagementAssignmentAvgAggregateOutputType | null
+    _sum: EngagementAssignmentSumAggregateOutputType | null
     _min: EngagementAssignmentMinAggregateOutputType | null
     _max: EngagementAssignmentMaxAggregateOutputType | null
+  }
+
+  export type EngagementAssignmentAvgAggregateOutputType = {
+    standardHoursPerWeek: number | null
+    durationMonths: number | null
+  }
+
+  export type EngagementAssignmentSumAggregateOutputType = {
+    standardHoursPerWeek: number | null
+    durationMonths: number | null
   }
 
   export type EngagementAssignmentMinAggregateOutputType = {
@@ -4004,6 +4016,9 @@ export namespace Prisma {
     memberHandle: string | null
     status: $Enums.AssignmentStatus | null
     agreementRate: string | null
+    ratePerHour: string | null
+    standardHoursPerWeek: number | null
+    durationMonths: number | null
     otherRemarks: string | null
     terminationReason: string | null
     startDate: Date | null
@@ -4019,6 +4034,9 @@ export namespace Prisma {
     memberHandle: string | null
     status: $Enums.AssignmentStatus | null
     agreementRate: string | null
+    ratePerHour: string | null
+    standardHoursPerWeek: number | null
+    durationMonths: number | null
     otherRemarks: string | null
     terminationReason: string | null
     startDate: Date | null
@@ -4034,6 +4052,9 @@ export namespace Prisma {
     memberHandle: number
     status: number
     agreementRate: number
+    ratePerHour: number
+    standardHoursPerWeek: number
+    durationMonths: number
     otherRemarks: number
     terminationReason: number
     startDate: number
@@ -4044,6 +4065,16 @@ export namespace Prisma {
   }
 
 
+  export type EngagementAssignmentAvgAggregateInputType = {
+    standardHoursPerWeek?: true
+    durationMonths?: true
+  }
+
+  export type EngagementAssignmentSumAggregateInputType = {
+    standardHoursPerWeek?: true
+    durationMonths?: true
+  }
+
   export type EngagementAssignmentMinAggregateInputType = {
     id?: true
     engagementId?: true
@@ -4051,6 +4082,9 @@ export namespace Prisma {
     memberHandle?: true
     status?: true
     agreementRate?: true
+    ratePerHour?: true
+    standardHoursPerWeek?: true
+    durationMonths?: true
     otherRemarks?: true
     terminationReason?: true
     startDate?: true
@@ -4066,6 +4100,9 @@ export namespace Prisma {
     memberHandle?: true
     status?: true
     agreementRate?: true
+    ratePerHour?: true
+    standardHoursPerWeek?: true
+    durationMonths?: true
     otherRemarks?: true
     terminationReason?: true
     startDate?: true
@@ -4081,6 +4118,9 @@ export namespace Prisma {
     memberHandle?: true
     status?: true
     agreementRate?: true
+    ratePerHour?: true
+    standardHoursPerWeek?: true
+    durationMonths?: true
     otherRemarks?: true
     terminationReason?: true
     startDate?: true
@@ -4128,6 +4168,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: EngagementAssignmentAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: EngagementAssignmentSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: EngagementAssignmentMinAggregateInputType
@@ -4158,6 +4210,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: EngagementAssignmentCountAggregateInputType | true
+    _avg?: EngagementAssignmentAvgAggregateInputType
+    _sum?: EngagementAssignmentSumAggregateInputType
     _min?: EngagementAssignmentMinAggregateInputType
     _max?: EngagementAssignmentMaxAggregateInputType
   }
@@ -4169,6 +4223,9 @@ export namespace Prisma {
     memberHandle: string
     status: $Enums.AssignmentStatus
     agreementRate: string | null
+    ratePerHour: string | null
+    standardHoursPerWeek: number | null
+    durationMonths: number | null
     otherRemarks: string | null
     terminationReason: string | null
     startDate: Date | null
@@ -4176,6 +4233,8 @@ export namespace Prisma {
     createdAt: Date
     updatedAt: Date
     _count: EngagementAssignmentCountAggregateOutputType | null
+    _avg: EngagementAssignmentAvgAggregateOutputType | null
+    _sum: EngagementAssignmentSumAggregateOutputType | null
     _min: EngagementAssignmentMinAggregateOutputType | null
     _max: EngagementAssignmentMaxAggregateOutputType | null
   }
@@ -4201,6 +4260,9 @@ export namespace Prisma {
     memberHandle?: boolean
     status?: boolean
     agreementRate?: boolean
+    ratePerHour?: boolean
+    standardHoursPerWeek?: boolean
+    durationMonths?: boolean
     otherRemarks?: boolean
     terminationReason?: boolean
     startDate?: boolean
@@ -4220,6 +4282,9 @@ export namespace Prisma {
     memberHandle?: boolean
     status?: boolean
     agreementRate?: boolean
+    ratePerHour?: boolean
+    standardHoursPerWeek?: boolean
+    durationMonths?: boolean
     otherRemarks?: boolean
     terminationReason?: boolean
     startDate?: boolean
@@ -4236,6 +4301,9 @@ export namespace Prisma {
     memberHandle?: boolean
     status?: boolean
     agreementRate?: boolean
+    ratePerHour?: boolean
+    standardHoursPerWeek?: boolean
+    durationMonths?: boolean
     otherRemarks?: boolean
     terminationReason?: boolean
     startDate?: boolean
@@ -4252,6 +4320,9 @@ export namespace Prisma {
     memberHandle?: boolean
     status?: boolean
     agreementRate?: boolean
+    ratePerHour?: boolean
+    standardHoursPerWeek?: boolean
+    durationMonths?: boolean
     otherRemarks?: boolean
     terminationReason?: boolean
     startDate?: boolean
@@ -4260,7 +4331,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "status" | "agreementRate" | "otherRemarks" | "terminationReason" | "startDate" | "endDate" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
+  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "status" | "agreementRate" | "ratePerHour" | "standardHoursPerWeek" | "durationMonths" | "otherRemarks" | "terminationReason" | "startDate" | "endDate" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
   export type EngagementAssignmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
     feedback?: boolean | EngagementAssignment$feedbackArgs<ExtArgs>
@@ -4288,6 +4359,9 @@ export namespace Prisma {
       memberHandle: string
       status: $Enums.AssignmentStatus
       agreementRate: string | null
+      ratePerHour: string | null
+      standardHoursPerWeek: number | null
+      durationMonths: number | null
       otherRemarks: string | null
       terminationReason: string | null
       startDate: Date | null
@@ -4726,6 +4800,9 @@ export namespace Prisma {
     readonly memberHandle: FieldRef<"EngagementAssignment", 'String'>
     readonly status: FieldRef<"EngagementAssignment", 'AssignmentStatus'>
     readonly agreementRate: FieldRef<"EngagementAssignment", 'String'>
+    readonly ratePerHour: FieldRef<"EngagementAssignment", 'String'>
+    readonly standardHoursPerWeek: FieldRef<"EngagementAssignment", 'Float'>
+    readonly durationMonths: FieldRef<"EngagementAssignment", 'Int'>
     readonly otherRemarks: FieldRef<"EngagementAssignment", 'String'>
     readonly terminationReason: FieldRef<"EngagementAssignment", 'String'>
     readonly startDate: FieldRef<"EngagementAssignment", 'DateTime'>
@@ -7494,6 +7571,9 @@ export namespace Prisma {
     memberHandle: 'memberHandle',
     status: 'status',
     agreementRate: 'agreementRate',
+    ratePerHour: 'ratePerHour',
+    standardHoursPerWeek: 'standardHoursPerWeek',
+    durationMonths: 'durationMonths',
     otherRemarks: 'otherRemarks',
     terminationReason: 'terminationReason',
     startDate: 'startDate',
@@ -7985,6 +8065,9 @@ export namespace Prisma {
     memberHandle?: StringFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
     agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
+    ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
+    standardHoursPerWeek?: FloatNullableFilter<"EngagementAssignment"> | number | null
+    durationMonths?: IntNullableFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableFilter<"EngagementAssignment"> | string | null
     terminationReason?: StringNullableFilter<"EngagementAssignment"> | string | null
     startDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
@@ -8003,6 +8086,9 @@ export namespace Prisma {
     memberHandle?: SortOrder
     status?: SortOrder
     agreementRate?: SortOrderInput | SortOrder
+    ratePerHour?: SortOrderInput | SortOrder
+    standardHoursPerWeek?: SortOrderInput | SortOrder
+    durationMonths?: SortOrderInput | SortOrder
     otherRemarks?: SortOrderInput | SortOrder
     terminationReason?: SortOrderInput | SortOrder
     startDate?: SortOrderInput | SortOrder
@@ -8025,6 +8111,9 @@ export namespace Prisma {
     memberHandle?: StringFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
     agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
+    ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
+    standardHoursPerWeek?: FloatNullableFilter<"EngagementAssignment"> | number | null
+    durationMonths?: IntNullableFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableFilter<"EngagementAssignment"> | string | null
     terminationReason?: StringNullableFilter<"EngagementAssignment"> | string | null
     startDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
@@ -8043,6 +8132,9 @@ export namespace Prisma {
     memberHandle?: SortOrder
     status?: SortOrder
     agreementRate?: SortOrderInput | SortOrder
+    ratePerHour?: SortOrderInput | SortOrder
+    standardHoursPerWeek?: SortOrderInput | SortOrder
+    durationMonths?: SortOrderInput | SortOrder
     otherRemarks?: SortOrderInput | SortOrder
     terminationReason?: SortOrderInput | SortOrder
     startDate?: SortOrderInput | SortOrder
@@ -8050,8 +8142,10 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: EngagementAssignmentCountOrderByAggregateInput
+    _avg?: EngagementAssignmentAvgOrderByAggregateInput
     _max?: EngagementAssignmentMaxOrderByAggregateInput
     _min?: EngagementAssignmentMinOrderByAggregateInput
+    _sum?: EngagementAssignmentSumOrderByAggregateInput
   }
 
   export type EngagementAssignmentScalarWhereWithAggregatesInput = {
@@ -8064,6 +8158,9 @@ export namespace Prisma {
     memberHandle?: StringWithAggregatesFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusWithAggregatesFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
     agreementRate?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
+    ratePerHour?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
+    standardHoursPerWeek?: FloatNullableWithAggregatesFilter<"EngagementAssignment"> | number | null
+    durationMonths?: IntNullableWithAggregatesFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
     terminationReason?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
     startDate?: DateTimeNullableWithAggregatesFilter<"EngagementAssignment"> | Date | string | null
@@ -8542,6 +8639,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -8560,6 +8660,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -8576,6 +8679,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8594,6 +8700,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8611,6 +8720,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -8625,6 +8737,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -8640,6 +8755,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9238,6 +9356,17 @@ export namespace Prisma {
     not?: NestedEnumAssignmentStatusFilter<$PrismaModel> | $Enums.AssignmentStatus
   }
 
+  export type FloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type EngagementFeedbackListRelationFilter = {
     every?: EngagementFeedbackWhereInput
     some?: EngagementFeedbackWhereInput
@@ -9270,12 +9399,20 @@ export namespace Prisma {
     memberHandle?: SortOrder
     status?: SortOrder
     agreementRate?: SortOrder
+    ratePerHour?: SortOrder
+    standardHoursPerWeek?: SortOrder
+    durationMonths?: SortOrder
     otherRemarks?: SortOrder
     terminationReason?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type EngagementAssignmentAvgOrderByAggregateInput = {
+    standardHoursPerWeek?: SortOrder
+    durationMonths?: SortOrder
   }
 
   export type EngagementAssignmentMaxOrderByAggregateInput = {
@@ -9285,6 +9422,9 @@ export namespace Prisma {
     memberHandle?: SortOrder
     status?: SortOrder
     agreementRate?: SortOrder
+    ratePerHour?: SortOrder
+    standardHoursPerWeek?: SortOrder
+    durationMonths?: SortOrder
     otherRemarks?: SortOrder
     terminationReason?: SortOrder
     startDate?: SortOrder
@@ -9300,12 +9440,20 @@ export namespace Prisma {
     memberHandle?: SortOrder
     status?: SortOrder
     agreementRate?: SortOrder
+    ratePerHour?: SortOrder
+    standardHoursPerWeek?: SortOrder
+    durationMonths?: SortOrder
     otherRemarks?: SortOrder
     terminationReason?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type EngagementAssignmentSumOrderByAggregateInput = {
+    standardHoursPerWeek?: SortOrder
+    durationMonths?: SortOrder
   }
 
   export type EnumAssignmentStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -9316,6 +9464,22 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumAssignmentStatusFilter<$PrismaModel>
     _max?: NestedEnumAssignmentStatusFilter<$PrismaModel>
+  }
+
+  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
   }
 
   export type EngagementAssignmentScalarRelationFilter = {
@@ -9615,6 +9779,14 @@ export namespace Prisma {
 
   export type EnumAssignmentStatusFieldUpdateOperationsInput = {
     set?: $Enums.AssignmentStatus
+  }
+
+  export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type EngagementUpdateOneRequiredWithoutAssignmentsNestedInput = {
@@ -9985,6 +10157,22 @@ export namespace Prisma {
     _max?: NestedEnumAssignmentStatusFilter<$PrismaModel>
   }
 
+  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
   export type EngagementApplicationCreateWithoutEngagementInput = {
     id?: string
     userId: string
@@ -10039,6 +10227,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -10055,6 +10246,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -10140,6 +10334,9 @@ export namespace Prisma {
     memberHandle?: StringFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
     agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
+    ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
+    standardHoursPerWeek?: FloatNullableFilter<"EngagementAssignment"> | number | null
+    durationMonths?: IntNullableFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableFilter<"EngagementAssignment"> | string | null
     terminationReason?: StringNullableFilter<"EngagementAssignment"> | string | null
     startDate?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
@@ -10514,6 +10711,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -10531,6 +10731,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -10562,6 +10765,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10579,6 +10785,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10594,6 +10803,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -10611,6 +10823,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -10642,6 +10857,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10659,6 +10877,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10693,6 +10914,9 @@ export namespace Prisma {
     memberHandle: string
     status?: $Enums.AssignmentStatus
     agreementRate?: string | null
+    ratePerHour?: string | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
     otherRemarks?: string | null
     terminationReason?: string | null
     startDate?: Date | string | null
@@ -10764,6 +10988,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10780,6 +11007,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10796,6 +11026,9 @@ export namespace Prisma {
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
     terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

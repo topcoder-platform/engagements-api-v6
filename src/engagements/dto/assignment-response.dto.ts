@@ -34,10 +34,28 @@ export class AssignmentResponseDto {
   status: AssignmentStatus;
 
   @ApiProperty({
-    description: "Agreed upon rate for the assignment",
-    example: "80",
+    description: "Calculated assignment rate per week",
+    example: "3020",
   })
   agreementRate?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Assignment rate per hour in USD",
+    example: "75.5",
+  })
+  ratePerHour?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Assignment standard hours per week",
+    example: 37.5,
+  })
+  standardHoursPerWeek?: number | null;
+
+  @ApiPropertyOptional({
+    description: "Assignment duration in months",
+    example: 3,
+  })
+  durationMonths?: number | null;
 
   @ApiPropertyOptional({
     description:
@@ -47,13 +65,13 @@ export class AssignmentResponseDto {
   otherRemarks?: string | null;
 
   @ApiProperty({
-    description: "Assignment start date",
+    description: "Assignment billing start date",
     example: "2025-01-01T00:00:00.000Z",
   })
   startDate?: Date | null;
 
   @ApiProperty({
-    description: "Assignment end date",
+    description: "Actual assignment end date",
     example: "2025-03-01T00:00:00.000Z",
   })
   endDate?: Date | null;

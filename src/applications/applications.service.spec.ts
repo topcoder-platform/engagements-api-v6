@@ -2,6 +2,10 @@ import { ForbiddenException } from "@nestjs/common";
 import { ApplicationStatus } from "@prisma/client";
 import { ApplicationsService } from "./applications.service";
 
+jest.mock("nanoid", () => ({
+  nanoid: () => "test-id",
+}));
+
 describe("ApplicationsService", () => {
   let service: ApplicationsService;
   let db: {
@@ -367,6 +371,20 @@ describe("ApplicationsService", () => {
           updatedBy: "user-2",
         }),
       }),
+    );
+  });
+
+  it("calculates agreement rates with fractional standard hours", () => {
+    expect((service as any).calculateAgreementRate("10.5", 37.5)).toBe(
+      "393.75",
+    );
+  });
+
+  it("rejects standardHoursPerWeek values with more than two decimals", () => {
+    expect(() =>
+      (service as any).calculateAgreementRate("10.5", 37.555),
+    ).toThrow(
+      "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
     );
   });
 

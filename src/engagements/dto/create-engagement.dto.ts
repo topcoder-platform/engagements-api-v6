@@ -12,9 +12,11 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNumber,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   ValidateNested,
   MaxLength,
   Min,
@@ -26,6 +28,8 @@ import {
   Workload,
 } from "@prisma/client";
 import { HasDuration, IsNotWhitespace } from "../../common/validation.util";
+
+const POSITIVE_DECIMAL_PATTERN = /^(?:\d+|\d*\.\d+)$/;
 
 export class AssignmentDetailsDto {
   @ApiPropertyOptional({
@@ -48,7 +52,7 @@ export class AssignmentDetailsDto {
   memberHandle?: string;
 
   @ApiPropertyOptional({
-    description: "Assignment start date",
+    description: "Assignment billing start date",
     example: "2026-01-30T12:00:00.000Z",
   })
   @IsOptional()
@@ -56,16 +60,18 @@ export class AssignmentDetailsDto {
   startDate?: string;
 
   @ApiPropertyOptional({
-    description: "Assignment end date",
-    example: "2026-02-28T12:00:00.000Z",
+    description: "Assignment duration in months",
+    example: 3,
   })
   @IsOptional()
-  @IsDateString()
-  endDate?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  durationMonths?: number;
 
   @ApiPropertyOptional({
-    description: "Assignment rate",
-    example: "75",
+    description: "Assignment rate per hour in USD",
+    example: "75.5",
   })
   @IsOptional()
   @Transform(({ value }) => {
@@ -76,6 +82,47 @@ export class AssignmentDetailsDto {
     return normalized.length > 0 ? normalized : undefined;
   })
   @IsString()
+  @Matches(POSITIVE_DECIMAL_PATTERN, {
+    message: "ratePerHour must be a positive number",
+  })
+  ratePerHour?: string;
+
+  @ApiPropertyOptional({
+    description: "Assignment standard hours per week",
+    example: 37.5,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber(
+    { allowInfinity: false, allowNaN: false, maxDecimalPlaces: 2 },
+    {
+      message:
+        "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+    },
+  )
+  @Min(0.01, {
+    message:
+      "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+  })
+  standardHoursPerWeek?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "Calculated assignment rate per week. When omitted, the API computes it from ratePerHour multiplied by standardHoursPerWeek.",
+    example: "3020",
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    const normalized = String(value).trim();
+    return normalized.length > 0 ? normalized : undefined;
+  })
+  @IsString()
+  @Matches(POSITIVE_DECIMAL_PATTERN, {
+    message: "agreementRate must be a positive number",
+  })
   agreementRate?: string;
 
   @ApiPropertyOptional({
@@ -310,8 +357,10 @@ export class CreateEngagementDto {
       {
         memberHandle: "jane_doe",
         startDate: "2026-01-30T12:00:00.000Z",
-        endDate: "2026-02-28T12:00:00.000Z",
-        agreementRate: "75",
+        durationMonths: 3,
+        ratePerHour: "75.5",
+        standardHoursPerWeek: 37.5,
+        agreementRate: "2831.25",
         otherRemarks: "Complete onboarding within the first week.",
       },
     ],

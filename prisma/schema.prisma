@@ -121,6 +121,9 @@ model EngagementAssignment {
   memberHandle   String
   status         AssignmentStatus   @default(SELECTED)
   agreementRate  String?
+  ratePerHour    String?
+  standardHoursPerWeek Float?
+  durationMonths Int?
   otherRemarks   String?
   terminationReason String?
   startDate      DateTime?

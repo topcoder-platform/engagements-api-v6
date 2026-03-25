@@ -421,88 +421,44 @@ describe("EngagementsService", () => {
     expect(result.data[0]).toHaveProperty("assignedMemberHandles", ["member1"]);
   });
 
-  it("scopes TM listings to member projects when no project filter is provided", async () => {
-    projectService.getMemberProjectIdsForUser.mockResolvedValue([
-      "project-2",
-      "project-3",
-    ]);
+  it("does not scope Talent Manager listings to member projects", async () => {
     db.engagement.findMany.mockResolvedValue([]);
     db.engagement.count.mockResolvedValue(0);
 
-    await service.findAll(
-      {
-        includePrivate: true,
-        page: 1,
-        perPage: 20,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      } as any,
-      { roles: ["Talent Manager"] },
-      "Bearer tm-token",
-    );
+    await service.findAll({
+      includePrivate: true,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
 
-    expect(projectService.getMemberProjectIdsForUser).toHaveBeenCalledWith(
-      "Bearer tm-token",
-    );
+    expect(projectService.getMemberProjectIdsForUser).not.toHaveBeenCalled();
     expect(db.engagement.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
-          projectId: { in: ["project-2", "project-3"] },
-        }),
+        where: {},
       }),
     );
   });
 
-  it("returns empty listing when TM user has no member projects", async () => {
-    projectService.getMemberProjectIdsForUser.mockResolvedValue([]);
-
-    const result = await service.findAll(
-      {
-        includePrivate: true,
-        page: 2,
-        perPage: 10,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      } as any,
-      { roles: ["Topcoder Talent Manager"] },
-      "Bearer tm-token",
-    );
-
-    expect(db.engagement.findMany).not.toHaveBeenCalled();
-    expect(db.engagement.count).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      data: [],
-      meta: {
-        page: 2,
-        perPage: 10,
-        totalCount: 0,
-        totalPages: 0,
-      },
-    });
-  });
-
-  it("intersects requested projectIds with TM member projects", async () => {
-    projectService.getMemberProjectIdsForUser.mockResolvedValue(["project-2"]);
+  it("applies requested projectIds for Talent Manager listings without member intersection", async () => {
     db.engagement.findMany.mockResolvedValue([]);
     db.engagement.count.mockResolvedValue(0);
 
-    await service.findAll(
-      {
-        includePrivate: true,
-        projectIds: ["project-1", "project-2", "project-3"],
-        page: 1,
-        perPage: 20,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      } as any,
-      { roles: ["Talent Manager"] },
-      "Bearer tm-token",
-    );
+    await service.findAll({
+      includePrivate: true,
+      projectIds: ["project-1", "project-2", "project-3"],
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
 
+    expect(projectService.getMemberProjectIdsForUser).not.toHaveBeenCalled();
     expect(db.engagement.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          projectId: { in: ["project-2"] },
+          projectId: { in: ["project-1", "project-2", "project-3"] },
         }),
       }),
     );
@@ -775,6 +731,20 @@ describe("EngagementsService", () => {
       },
     });
     expect(updateArgs.data).not.toHaveProperty("endDate");
+  });
+
+  it("calculates assignment agreement rates with fractional standard hours", () => {
+    expect(
+      (service as any).calculateAssignmentAgreementRate("10.5", 37.5),
+    ).toBe("393.75");
+  });
+
+  it("rejects standardHoursPerWeek values with more than two decimals", () => {
+    expect(() =>
+      (service as any).calculateAssignmentAgreementRate("10.5", 37.555),
+    ).toThrow(
+      "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
+    );
   });
 
   it("throws BadRequestException when removing an engagement with active assignments", async () => {
