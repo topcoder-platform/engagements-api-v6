@@ -16,12 +16,15 @@ type AssignmentOfferResponseParams = {
 type ProjectUser = {
   userId?: string | number | null;
   email?: string | null;
+  role?: string | null;
 };
 
 type ProjectUsers = {
   members?: ProjectUser[] | null;
   invites?: ProjectUser[] | null;
 };
+
+const TALENT_MANAGER_PROJECT_ROLE = "manager";
 
 @Injectable()
 export class AssignmentOfferResponseEmailService {
@@ -60,8 +63,24 @@ export class AssignmentOfferResponseEmailService {
     }
 
     let handle = params.assignmentMemberHandle?.trim();
+    let memberEmail = "";
+    const memberId = params.assignmentMemberId?.trim();
+
+    if (memberId) {
+      try {
+        const memberDetails =
+          await this.memberService.getMemberByUserId(memberId);
+        memberEmail = memberDetails?.email?.trim() ?? "";
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "unknown error";
+        this.logger.error(
+          `Failed to resolve email for assignment offer response email (memberId=${memberId}): ${message}`,
+        );
+      }
+    }
+
     if (!handle) {
-      const memberId = params.assignmentMemberId?.trim();
       if (memberId) {
         try {
           handle =
@@ -116,9 +135,10 @@ export class AssignmentOfferResponseEmailService {
     const payloadHandle = handle ?? "";
 
     await Promise.all(
-      recipientEmails.map((email) =>
+      recipientEmails.map((recipientEmail) =>
         this.sendAssignmentOfferResponseEmail({
-          email,
+          recipientEmail,
+          memberEmail,
           handle: payloadHandle,
           templateId,
           decisionLabel,
@@ -133,10 +153,12 @@ export class AssignmentOfferResponseEmailService {
   private async resolveRecipientEmails(
     projectUsers: ProjectUsers,
   ): Promise<string[]> {
-    const memberUserIds = this.collectUserIds(projectUsers.members ?? []);
-    const inviteUserIds = this.collectUserIds(projectUsers.invites ?? []);
-    const inviteEmails = this.collectEmails(projectUsers.invites ?? []);
-    const userIds = Array.from(new Set([...memberUserIds, ...inviteUserIds]));
+    const talentManagerMembers = (projectUsers.members ?? []).filter((user) =>
+      this.isTalentManagerProjectUser(user),
+    );
+    const memberUserIds = this.collectUserIds(talentManagerMembers);
+    const userIds = Array.from(new Set(memberUserIds));
+    const requestedUserIds = new Set(userIds);
 
     const emailByUserId = userIds.length
       ? await this.memberService.getMemberEmailsByUserIds(userIds)
@@ -154,10 +176,26 @@ export class AssignmentOfferResponseEmailService {
       }
     };
 
-    inviteEmails.forEach(addEmail);
-    emailByUserId.forEach((email) => addEmail(email));
+    emailByUserId.forEach((email, userId) => {
+      if (requestedUserIds.has(String(userId).trim())) {
+        addEmail(email);
+      }
+    });
 
     return Array.from(emailSet.values());
+  }
+
+  /**
+   * Limits notification recipients to project members that hold the manager
+   * role, which is how projects-api represents Talent Managers associated with
+   * a project.
+   */
+  private isTalentManagerProjectUser(user: ProjectUser): boolean {
+    return (
+      String(user.role ?? "")
+        .trim()
+        .toLowerCase() === TALENT_MANAGER_PROJECT_ROLE
+    );
   }
 
   private collectUserIds(users: ProjectUser[]): string[] {
@@ -171,16 +209,9 @@ export class AssignmentOfferResponseEmailService {
       .filter((userId) => Boolean(userId));
   }
 
-  private collectEmails(users: ProjectUser[]): string[] {
-    return users
-      .map((user) => user.email)
-      .filter((email): email is string => Boolean(email))
-      .map((email) => email.trim())
-      .filter((email) => Boolean(email));
-  }
-
   private async sendAssignmentOfferResponseEmail(params: {
-    email: string;
+    recipientEmail: string;
+    memberEmail: string;
     handle: string;
     templateId: string;
     decisionLabel: string;
@@ -191,11 +222,11 @@ export class AssignmentOfferResponseEmailService {
     const payload = {
       data: {
         handle: params.handle,
-        email: params.email,
+        email: params.memberEmail,
         engagementId: params.engagementId ?? "",
         engagementTitle: params.engagementTitle ?? "",
       },
-      recipients: [params.email],
+      recipients: [params.recipientEmail],
       sendgrid_template_id: params.templateId,
       version: "v3",
     };
@@ -203,12 +234,12 @@ export class AssignmentOfferResponseEmailService {
     try {
       await this.eventBusService.postEvent("external.action.email", payload);
       this.logger.log(
-        `Published 'external.action.email' (assignment offer ${params.decisionLabel}) for project ${params.projectId} to ${params.email}.`,
+        `Published 'external.action.email' (assignment offer ${params.decisionLabel}) for project ${params.projectId} to ${params.recipientEmail}.`,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown error";
       this.logger.error(
-        `Failed to publish assignment offer ${params.decisionLabel} email for project ${params.projectId} to ${params.email}: ${message}`,
+        `Failed to publish assignment offer ${params.decisionLabel} email for project ${params.projectId} to ${params.recipientEmail}: ${message}`,
       );
     }
   }
