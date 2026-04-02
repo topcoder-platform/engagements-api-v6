@@ -4,4 +4,5 @@ export * from "./update-engagement.dto";
 export * from "./engagement-query.dto";
 export * from "./engagement-response.dto";
 export * from "./assignment-response.dto";
+export * from "./assignment-context-response.dto";
 export * from "./update-assignment-status.dto";

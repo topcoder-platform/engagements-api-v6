@@ -72,6 +72,24 @@ type EngagementProjectReference = {
   name?: string;
 };
 
+type AssignmentContextDetail = {
+  assignmentId: string;
+  engagementId: string;
+  projectId: string;
+  projectName?: string;
+  engagementTitle: string;
+  memberId: string;
+  memberHandle: string;
+  status: AssignmentStatus;
+  agreementRate?: string | null;
+  ratePerHour?: string | null;
+  standardHoursPerWeek?: number | null;
+  durationMonths?: number | null;
+  otherRemarks?: string | null;
+  startDate?: Date | null;
+  endDate?: Date | null;
+};
+
 type EngagementDetail = Engagement & {
   assignments?: EngagementAssignment[];
 };
@@ -760,6 +778,54 @@ export class EngagementsService {
         createdByEmail: null,
       }
     );
+  }
+
+  async findAssignmentContext(
+    assignmentId: string,
+  ): Promise<AssignmentContextDetail> {
+    const assignment = await this.db.engagementAssignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        engagement: true,
+      },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException("Engagement assignment not found.");
+    }
+
+    const projectId = assignment.engagement.projectId;
+    let projectName: string | undefined;
+
+    try {
+      const projectNames = await this.projectService.getProjectNamesByIds([
+        projectId,
+      ]);
+      projectName = this.normalizeProjectName(projectNames.get(projectId));
+    } catch (error) {
+      this.logger.warn("Failed to hydrate assignment project name.", {
+        assignmentId,
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+
+    return {
+      assignmentId: assignment.id,
+      engagementId: assignment.engagementId,
+      projectId,
+      projectName,
+      engagementTitle: assignment.engagement.title,
+      memberId: assignment.memberId,
+      memberHandle: assignment.memberHandle,
+      status: assignment.status,
+      agreementRate: assignment.agreementRate,
+      ratePerHour: assignment.ratePerHour,
+      standardHoursPerWeek: assignment.standardHoursPerWeek,
+      durationMonths: assignment.durationMonths,
+      otherRemarks: assignment.otherRemarks,
+      startDate: assignment.startDate,
+      endDate: assignment.endDate,
+    };
   }
 
   async update(

@@ -38,6 +38,7 @@ import {
   UserRoles,
 } from "../app-constants";
 import {
+  AssignmentContextResponseDto,
   CreateEngagementDto,
   CreateEngagementDurationDatesDto,
   CreateEngagementDurationMonthsDto,
@@ -181,6 +182,34 @@ export class EngagementsController {
   ): Promise<PaginatedResponse<Engagement>> {
     this.assertMachineScope(req.authUser, AppScopes.ReadEngagements);
     return this.engagementsService.findMyAssignments(req.authUser ?? {}, query);
+  }
+
+  @Get("assignments/:assignmentId/context")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get assignment context by ID",
+    description:
+      "Retrieves assignment, engagement, and project details for a single assignment. Requires privileged user access or read:engagements scope.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Assignment context retrieved.",
+    type: AssignmentContextResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Insufficient permissions. Requires privileged user access or read:engagements scope.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement assignment not found." })
+  async findAssignmentContext(
+    @Param("assignmentId") assignmentId: string,
+  ): Promise<AssignmentContextResponseDto> {
+    return this.engagementsService.findAssignmentContext(assignmentId);
   }
 
   @Get(":id")
