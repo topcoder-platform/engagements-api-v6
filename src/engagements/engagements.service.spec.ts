@@ -21,6 +21,7 @@ describe("EngagementsService", () => {
     };
     engagementAssignment: {
       count: jest.Mock;
+      findUnique: jest.Mock;
     };
   };
   let projectService: {
@@ -66,6 +67,7 @@ describe("EngagementsService", () => {
       },
       engagementAssignment: {
         count: jest.fn(),
+        findUnique: jest.fn(),
       },
     };
     projectService = {
@@ -352,6 +354,57 @@ describe("EngagementsService", () => {
     });
     expect(result.assignments).toHaveLength(1);
     expect(result.assignments?.[0].memberId).toBe("123456");
+  });
+
+  it("returns assignment context with project details", async () => {
+    db.engagementAssignment.findUnique.mockResolvedValue({
+      id: "assignment-1",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.ASSIGNED,
+      agreementRate: "3020",
+      ratePerHour: "75.50",
+      standardHoursPerWeek: 40,
+      durationMonths: 3,
+      otherRemarks: "Complete onboarding within the first week.",
+      startDate: new Date("2026-02-12T00:00:00.000Z"),
+      endDate: new Date("2026-05-12T00:00:00.000Z"),
+      engagement: {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Senior Frontend Engineer",
+      },
+    });
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([["project-1", "Platform Modernization"]]),
+    );
+
+    const result = await service.findAssignmentContext("assignment-1");
+
+    expect(db.engagementAssignment.findUnique).toHaveBeenCalledWith({
+      where: { id: "assignment-1" },
+      include: {
+        engagement: true,
+      },
+    });
+    expect(result).toEqual({
+      assignmentId: "assignment-1",
+      engagementId: "eng-1",
+      projectId: "project-1",
+      projectName: "Platform Modernization",
+      engagementTitle: "Senior Frontend Engineer",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.ASSIGNED,
+      agreementRate: "3020",
+      ratePerHour: "75.50",
+      standardHoursPerWeek: 40,
+      durationMonths: 3,
+      otherRemarks: "Complete onboarding within the first week.",
+      startDate: new Date("2026-02-12T00:00:00.000Z"),
+      endDate: new Date("2026-05-12T00:00:00.000Z"),
+    });
   });
 
   it("includes assignment details for privileged engagement listings", async () => {
