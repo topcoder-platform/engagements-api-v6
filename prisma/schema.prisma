@@ -135,7 +135,7 @@ model EngagementAssignment {
   feedback       EngagementFeedback[]
   memberExperiences  MemberExperience[]
 
-  @@unique([engagementId, memberId])
+  @@index([engagementId, memberId])
   @@index([engagementId])
   @@index([memberId])
 }

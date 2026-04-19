@@ -21,7 +21,11 @@ describe("EngagementsService", () => {
     };
     engagementAssignment: {
       count: jest.Mock;
+      create: jest.Mock;
+      deleteMany: jest.Mock;
+      findFirst: jest.Mock;
       findUnique: jest.Mock;
+      update: jest.Mock;
     };
   };
   let projectService: {
@@ -67,7 +71,11 @@ describe("EngagementsService", () => {
       },
       engagementAssignment: {
         count: jest.fn(),
+        create: jest.fn(),
+        deleteMany: jest.fn(),
+        findFirst: jest.fn(),
         findUnique: jest.fn(),
+        update: jest.fn(),
       },
     };
     projectService = {
@@ -252,6 +260,101 @@ describe("EngagementsService", () => {
       "project-1",
     );
     expect(tx.engagement.update).toHaveBeenCalled();
+  });
+
+  it("allows duplicate assignment rows when the previous assignment is completed", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      title: "Original engagement",
+      isPrivate: true,
+      requiredMemberCount: 1,
+      assignments: [
+        {
+          id: "assignment-completed",
+          engagementId: "eng-1",
+          memberId: "123456",
+          memberHandle: "testaws1",
+          status: AssignmentStatus.COMPLETED,
+          createdAt: new Date("2026-04-17T00:00:00.000Z"),
+          updatedAt: new Date("2026-04-17T00:00:00.000Z"),
+          agreementRate: "1200",
+          otherRemarks: null,
+          startDate: new Date("2026-04-17T00:00:00.000Z"),
+          endDate: new Date("2026-10-17T00:00:00.000Z"),
+          terminationReason: null,
+        },
+      ],
+    };
+    const newAssignment = {
+      id: "assignment-selected",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.SELECTED,
+      createdAt: new Date("2026-04-23T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-23T00:00:00.000Z"),
+      agreementRate: "1600",
+      otherRemarks: null,
+      startDate: new Date("2026-04-23T00:00:00.000Z"),
+      endDate: null,
+      terminationReason: null,
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    memberService.getMemberUserIdByHandle.mockResolvedValue("123456");
+
+    const tx = {
+      engagementAssignment: {
+        create: jest.fn().mockResolvedValue(newAssignment),
+        deleteMany: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue(existingEngagement.assignments[0]),
+      },
+      engagement: {
+        update: jest.fn().mockResolvedValue({
+          ...existingEngagement,
+          assignments: [...existingEngagement.assignments, newAssignment],
+          title: "Updated engagement",
+        }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update(
+      "eng-1",
+      {
+        assignedMemberHandles: ["testaws1", "testaws1"],
+        title: "Updated engagement",
+      } as any,
+      {
+        sub: "999999",
+      },
+    );
+
+    expect(tx.engagementAssignment.update).toHaveBeenCalledWith({
+      where: {
+        id: "assignment-completed",
+      },
+      data: expect.objectContaining({
+        memberHandle: "testaws1",
+      }),
+    });
+    expect(tx.engagementAssignment.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        engagementId: "eng-1",
+        memberHandle: "testaws1",
+        memberId: "123456",
+      }),
+    });
+    expect(tx.engagementAssignment.deleteMany).not.toHaveBeenCalled();
+    expect(tx.engagementAssignment.findFirst).not.toHaveBeenCalled();
+    expect(
+      assignmentOfferEmailService.sendAssignmentOfferEmails,
+    ).toHaveBeenCalledWith([
+      expect.objectContaining({
+        assignmentId: "assignment-selected",
+        memberId: "123456",
+      }),
+    ]);
   });
 
   it("does not include assignment details for public engagement listings", async () => {

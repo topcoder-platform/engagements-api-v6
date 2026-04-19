@@ -42,6 +42,8 @@ import { getUserIdentifier, getUserRoles } from "../common/user.util";
 const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
 const MAX_STANDARD_HOURS_DECIMAL_PLACES = 2;
+const ASSIGNED_ASSIGNMENT_REMOVAL_ERROR =
+  "Assigned assignments cannot be removed. Complete or terminate them from the assignments page instead.";
 
 const hasAtMostDecimalPlaces = (
   value: number,
@@ -56,6 +58,16 @@ const hasAtMostDecimalPlaces = (
   return decimalPart.length <= maxDecimalPlaces;
 };
 
+/**
+ * Determines whether an assignment still occupies an active/private-engagement
+ * slot that can be updated or removed through engagement management flows.
+ *
+ * @param status persisted assignment status from the database.
+ * @returns `true` when the assignment is still active or pending.
+ */
+const isActiveAssignmentStatus = (status: AssignmentStatus): boolean =>
+  !ASSIGNMENT_COMPLETION_STATUSES.includes(status);
+
 type ResolvedAssignmentDetails = {
   memberId: string;
   memberHandle: string;
@@ -65,6 +77,16 @@ type ResolvedAssignmentDetails = {
   standardHoursPerWeek?: number;
   agreementRate?: string;
   otherRemarks?: string;
+};
+
+type PlannedAssignmentMutation = {
+  activeAssignmentCount: number;
+  assignmentsToCreate: ResolvedAssignmentDetails[];
+  assignmentsToDelete: EngagementAssignment[];
+  assignmentsToUpdate: Array<{
+    assignment: EngagementAssignment;
+    details: ResolvedAssignmentDetails;
+  }>;
 };
 
 type EngagementProjectReference = {
@@ -904,11 +926,16 @@ export class EngagementsService {
       Array.isArray(payload.assignedMemberHandles);
     const assignmentDetailsList: ResolvedAssignmentDetails[] =
       assignmentDetailsPayload
-        ? await this.resolveAssignmentDetailsList(assignmentDetailsPayload)
+        ? await this.resolveAssignmentDetailsList(assignmentDetailsPayload, {
+            allowDuplicateMembers: true,
+          })
         : hasAssignmentArrayPayload
           ? await this.resolveMultipleAssignmentDetails(
               payload.assignedMemberIds,
               payload.assignedMemberHandles,
+              {
+                allowDuplicateMembers: true,
+              },
             )
           : [];
 
@@ -916,10 +943,16 @@ export class EngagementsService {
       (existingEngagement as { assignments?: EngagementAssignment[] })
         .assignments ?? [];
     const totalAssignmentCount = existingAssignments.length;
-    const activeAssignmentCount = existingAssignments.filter(
-      (assignment) =>
-        !ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status),
+    const activeAssignmentCount = existingAssignments.filter((assignment) =>
+      isActiveAssignmentStatus(assignment.status),
     ).length;
+    const assignmentMutationPlan =
+      assignmentDetailsList.length > 0
+        ? this.planAssignmentMutation(
+            existingAssignments,
+            assignmentDetailsList,
+          )
+        : undefined;
     const requiredMemberCount =
       payload.requiredMemberCount ??
       existingEngagement.requiredMemberCount ??
@@ -927,9 +960,7 @@ export class EngagementsService {
 
     if (payload.requiredMemberCount !== undefined) {
       const assignmentCountForValidation =
-        assignmentDetailsList.length > 0
-          ? assignmentDetailsList.length
-          : activeAssignmentCount;
+        assignmentMutationPlan?.activeAssignmentCount ?? activeAssignmentCount;
 
       if (assignmentCountForValidation > payload.requiredMemberCount) {
         throw new BadRequestException(
@@ -1025,18 +1056,64 @@ export class EngagementsService {
     }
 
     const updatedEngagement = await this.db.$transaction(async (tx) => {
-      if (assignmentDetailsList.length > 0) {
+      if (assignmentMutationPlan) {
         if (
           requiredMemberCount !== undefined &&
-          assignmentDetailsList.length > requiredMemberCount
+          assignmentMutationPlan.activeAssignmentCount > requiredMemberCount
         ) {
           throw new BadRequestException(
             "Assigned member count exceeds required member count.",
           );
         }
 
+        if (
+          assignmentMutationPlan.assignmentsToDelete.some(
+            (assignment) => assignment.status === AssignmentStatus.ASSIGNED,
+          )
+        ) {
+          throw new BadRequestException(ASSIGNED_ASSIGNMENT_REMOVAL_ERROR);
+        }
+
         await Promise.all(
-          assignmentDetailsList.map((details) => {
+          assignmentMutationPlan.assignmentsToUpdate.map(
+            ({ assignment, details }) => {
+              const assignmentUpdateData: Prisma.EngagementAssignmentUpdateInput =
+                {
+                  memberHandle: details.memberHandle,
+                };
+
+              if (details.startDate !== undefined) {
+                assignmentUpdateData.startDate = details.startDate;
+              }
+              if (details.durationMonths !== undefined) {
+                assignmentUpdateData.durationMonths = details.durationMonths;
+              }
+              if (details.ratePerHour !== undefined) {
+                assignmentUpdateData.ratePerHour = details.ratePerHour;
+              }
+              if (details.standardHoursPerWeek !== undefined) {
+                assignmentUpdateData.standardHoursPerWeek =
+                  details.standardHoursPerWeek;
+              }
+              if (details.agreementRate !== undefined) {
+                assignmentUpdateData.agreementRate = details.agreementRate;
+              }
+              if (details.otherRemarks !== undefined) {
+                assignmentUpdateData.otherRemarks = details.otherRemarks;
+              }
+
+              return tx.engagementAssignment.update({
+                where: {
+                  id: assignment.id,
+                },
+                data: assignmentUpdateData,
+              });
+            },
+          ),
+        );
+
+        await Promise.all(
+          assignmentMutationPlan.assignmentsToCreate.map((details) => {
             const assignmentCreateData: Prisma.EngagementAssignmentUncheckedCreateInput =
               {
                 id: nanoid(),
@@ -1044,72 +1121,57 @@ export class EngagementsService {
                 memberId: details.memberId,
                 memberHandle: details.memberHandle,
               };
-            const assignmentUpdateData: Prisma.EngagementAssignmentUpdateInput =
-              {
-                memberHandle: details.memberHandle,
-              };
             if (details.startDate !== undefined) {
               assignmentCreateData.startDate = details.startDate;
-              assignmentUpdateData.startDate = details.startDate;
             }
             if (details.durationMonths !== undefined) {
               assignmentCreateData.durationMonths = details.durationMonths;
-              assignmentUpdateData.durationMonths = details.durationMonths;
             }
             if (details.ratePerHour !== undefined) {
               assignmentCreateData.ratePerHour = details.ratePerHour;
-              assignmentUpdateData.ratePerHour = details.ratePerHour;
             }
             if (details.standardHoursPerWeek !== undefined) {
               assignmentCreateData.standardHoursPerWeek =
                 details.standardHoursPerWeek;
-              assignmentUpdateData.standardHoursPerWeek =
-                details.standardHoursPerWeek;
             }
             if (details.agreementRate !== undefined) {
               assignmentCreateData.agreementRate = details.agreementRate;
-              assignmentUpdateData.agreementRate = details.agreementRate;
             }
             if (details.otherRemarks !== undefined) {
               assignmentCreateData.otherRemarks = details.otherRemarks;
-              assignmentUpdateData.otherRemarks = details.otherRemarks;
             }
-            return tx.engagementAssignment.upsert({
-              where: {
-                engagementId_memberId: {
-                  engagementId: id,
-                  memberId: details.memberId,
-                },
-              },
-              create: assignmentCreateData,
-              update: assignmentUpdateData,
+
+            return tx.engagementAssignment.create({
+              data: assignmentCreateData,
             });
           }),
         );
 
-        const desiredMemberIds = Array.from(
-          new Set(assignmentDetailsList.map((details) => details.memberId)),
-        );
-        await tx.engagementAssignment.deleteMany({
-          where: {
-            engagementId: id,
-            memberId: {
-              notIn: desiredMemberIds,
-            },
-          },
-        });
-      } else if (shouldUpsertAssignment && assignmentDetailsResult) {
-        if (requiredMemberCount !== undefined) {
-          const existingAssignment = await tx.engagementAssignment.findUnique({
+        if (assignmentMutationPlan.assignmentsToDelete.length > 0) {
+          await tx.engagementAssignment.deleteMany({
             where: {
-              engagementId_memberId: {
-                engagementId: id,
-                memberId: assignmentDetailsResult.memberId,
+              id: {
+                in: assignmentMutationPlan.assignmentsToDelete.map(
+                  (assignment) => assignment.id,
+                ),
+              },
+            },
+          });
+        }
+      } else if (shouldUpsertAssignment && assignmentDetailsResult) {
+        const existingActiveAssignment =
+          await tx.engagementAssignment.findFirst({
+            where: {
+              engagementId: id,
+              memberId: assignmentDetailsResult.memberId,
+              status: {
+                notIn: ASSIGNMENT_COMPLETION_STATUSES,
               },
             },
           });
 
-          if (!existingAssignment) {
+        if (requiredMemberCount !== undefined) {
+          if (!existingActiveAssignment) {
             const assignmentCount = await tx.engagementAssignment.count({
               where: {
                 engagementId: id,
@@ -1124,23 +1186,25 @@ export class EngagementsService {
           }
         }
 
-        await tx.engagementAssignment.upsert({
-          where: {
-            engagementId_memberId: {
+        if (existingActiveAssignment) {
+          await tx.engagementAssignment.update({
+            where: {
+              id: existingActiveAssignment.id,
+            },
+            data: {
+              memberHandle: assignmentDetailsResult.memberHandle,
+            },
+          });
+        } else {
+          await tx.engagementAssignment.create({
+            data: {
+              id: nanoid(),
               engagementId: id,
               memberId: assignmentDetailsResult.memberId,
+              memberHandle: assignmentDetailsResult.memberHandle,
             },
-          },
-          create: {
-            id: nanoid(),
-            engagementId: id,
-            memberId: assignmentDetailsResult.memberId,
-            memberHandle: assignmentDetailsResult.memberHandle,
-          },
-          update: {
-            memberHandle: assignmentDetailsResult.memberHandle,
-          },
-        });
+          });
+        }
       }
 
       return tx.engagement.update({
@@ -1151,20 +1215,22 @@ export class EngagementsService {
     });
 
     const updatedAssignments = updatedEngagement.assignments ?? [];
-    const existingAssignmentsByMemberId = new Map(
+    const existingAssignmentIds = new Set(
+      existingAssignments.map((assignment) => String(assignment.id)),
+    );
+    const existingAssignmentsById = new Map(
       existingAssignments.map((assignment) => [
-        String(assignment.memberId),
+        String(assignment.id),
         assignment,
       ]),
     );
     const newAssignments = updatedAssignments.filter(
-      (assignment) =>
-        !existingAssignmentsByMemberId.has(String(assignment.memberId)),
+      (assignment) => !existingAssignmentIds.has(String(assignment.id)),
     );
     const updatedAssignmentsForEmail = updatedAssignments.filter(
       (assignment) => {
-        const existingAssignment = existingAssignmentsByMemberId.get(
-          String(assignment.memberId),
+        const existingAssignment = existingAssignmentsById.get(
+          String(assignment.id),
         );
 
         if (!existingAssignment) {
@@ -1596,6 +1662,9 @@ export class EngagementsService {
 
   private async resolveAssignmentDetailsList(
     assignmentDetails: AssignmentDetailsDto[],
+    options: {
+      allowDuplicateMembers?: boolean;
+    } = {},
   ): Promise<ResolvedAssignmentDetails[]> {
     if (!Array.isArray(assignmentDetails) || assignmentDetails.length === 0) {
       return [];
@@ -1633,21 +1702,23 @@ export class EngagementsService {
       }),
     );
 
-    const memberIdSet = new Set<string>();
-    const memberHandleSet = new Set<string>();
-    results.forEach((details) => {
-      if (memberIdSet.has(details.memberId)) {
-        throw new BadRequestException("Assigned member IDs must be unique.");
-      }
-      memberIdSet.add(details.memberId);
-      const handleKey = details.memberHandle.toLowerCase();
-      if (memberHandleSet.has(handleKey)) {
-        throw new BadRequestException(
-          "Assigned member handles must be unique.",
-        );
-      }
-      memberHandleSet.add(handleKey);
-    });
+    if (!options.allowDuplicateMembers) {
+      const memberIdSet = new Set<string>();
+      const memberHandleSet = new Set<string>();
+      results.forEach((details) => {
+        if (memberIdSet.has(details.memberId)) {
+          throw new BadRequestException("Assigned member IDs must be unique.");
+        }
+        memberIdSet.add(details.memberId);
+        const handleKey = details.memberHandle.toLowerCase();
+        if (memberHandleSet.has(handleKey)) {
+          throw new BadRequestException(
+            "Assigned member handles must be unique.",
+          );
+        }
+        memberHandleSet.add(handleKey);
+      });
+    }
 
     return results;
   }
@@ -1717,6 +1788,9 @@ export class EngagementsService {
   private async resolveMultipleAssignmentDetails(
     assignedMemberIds?: string[],
     assignedMemberHandles?: string[],
+    options: {
+      allowDuplicateMembers?: boolean;
+    } = {},
   ): Promise<Array<{ memberId: string; memberHandle: string }>> {
     const results: Array<{ memberId: string; memberHandle: string }> = [];
 
@@ -1753,23 +1827,25 @@ export class EngagementsService {
       );
     }
 
-    const memberIdSet = new Set<string>();
-    for (const memberId of memberIds) {
-      if (memberIdSet.has(memberId)) {
-        throw new BadRequestException("Assigned member IDs must be unique.");
+    if (!options.allowDuplicateMembers) {
+      const memberIdSet = new Set<string>();
+      for (const memberId of memberIds) {
+        if (memberIdSet.has(memberId)) {
+          throw new BadRequestException("Assigned member IDs must be unique.");
+        }
+        memberIdSet.add(memberId);
       }
-      memberIdSet.add(memberId);
-    }
 
-    const memberHandleSet = new Set<string>();
-    for (const memberHandle of memberHandles) {
-      const normalizedHandle = memberHandle.toLowerCase();
-      if (memberHandleSet.has(normalizedHandle)) {
-        throw new BadRequestException(
-          "Assigned member handles must be unique.",
-        );
+      const memberHandleSet = new Set<string>();
+      for (const memberHandle of memberHandles) {
+        const normalizedHandle = memberHandle.toLowerCase();
+        if (memberHandleSet.has(normalizedHandle)) {
+          throw new BadRequestException(
+            "Assigned member handles must be unique.",
+          );
+        }
+        memberHandleSet.add(normalizedHandle);
       }
-      memberHandleSet.add(normalizedHandle);
     }
 
     const maxLength = Math.max(memberIds.length, memberHandles.length);
@@ -1788,6 +1864,93 @@ export class EngagementsService {
     }
 
     return results;
+  }
+
+  /**
+   * Matches incoming assignment rows to persisted assignments in member order so
+   * completed, terminated, and rejected rows can remain historical while a new
+   * active assignment is created when a member is reassigned.
+   *
+   * @param existingAssignments current assignments stored for the engagement.
+   * @param assignmentDetailsList normalized assignment payload from the request.
+   * @returns the create, update, and delete operations implied by the request
+   *   plus the resulting active-assignment count.
+   * @throws {BadRequestException} when the request would leave more than one
+   *   active assignment for the same member.
+   */
+  private planAssignmentMutation(
+    existingAssignments: EngagementAssignment[],
+    assignmentDetailsList: ResolvedAssignmentDetails[],
+  ): PlannedAssignmentMutation {
+    const remainingAssignmentsByMemberId = new Map<
+      string,
+      EngagementAssignment[]
+    >();
+
+    existingAssignments.forEach((assignment) => {
+      const memberId = String(assignment.memberId);
+      const currentAssignments =
+        remainingAssignmentsByMemberId.get(memberId) ?? [];
+
+      currentAssignments.push(assignment);
+      remainingAssignmentsByMemberId.set(memberId, currentAssignments);
+    });
+
+    const assignmentsToCreate: ResolvedAssignmentDetails[] = [];
+    const assignmentsToUpdate: PlannedAssignmentMutation["assignmentsToUpdate"] =
+      [];
+    const activeAssignmentCountByMemberId = new Map<string, number>();
+
+    assignmentDetailsList.forEach((details) => {
+      const remainingAssignments =
+        remainingAssignmentsByMemberId.get(details.memberId) ?? [];
+      const matchedAssignment = remainingAssignments.shift();
+
+      if (matchedAssignment) {
+        assignmentsToUpdate.push({
+          assignment: matchedAssignment,
+          details,
+        });
+
+        if (isActiveAssignmentStatus(matchedAssignment.status)) {
+          activeAssignmentCountByMemberId.set(
+            details.memberId,
+            (activeAssignmentCountByMemberId.get(details.memberId) ?? 0) + 1,
+          );
+        }
+
+        return;
+      }
+
+      assignmentsToCreate.push(details);
+      activeAssignmentCountByMemberId.set(
+        details.memberId,
+        (activeAssignmentCountByMemberId.get(details.memberId) ?? 0) + 1,
+      );
+    });
+
+    const duplicateActiveAssignment = Array.from(
+      activeAssignmentCountByMemberId.values(),
+    ).some((count) => count > 1);
+
+    if (duplicateActiveAssignment) {
+      throw new BadRequestException("Assigned member IDs must be unique.");
+    }
+
+    const assignmentsToDelete = Array.from(
+      remainingAssignmentsByMemberId.values(),
+    )
+      .flat()
+      .filter((assignment) => isActiveAssignmentStatus(assignment.status));
+
+    return {
+      activeAssignmentCount: Array.from(
+        activeAssignmentCountByMemberId.values(),
+      ).reduce((sum, count) => sum + count, 0),
+      assignmentsToCreate,
+      assignmentsToDelete,
+      assignmentsToUpdate,
+    };
   }
 
   private applyAssignmentFields<
