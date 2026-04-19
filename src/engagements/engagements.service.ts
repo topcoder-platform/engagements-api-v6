@@ -42,6 +42,8 @@ import { getUserIdentifier, getUserRoles } from "../common/user.util";
 const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
 const MAX_STANDARD_HOURS_DECIMAL_PLACES = 2;
+const ASSIGNED_ASSIGNMENT_REMOVAL_ERROR =
+  "Assigned assignments cannot be removed. Complete or terminate them from the assignments page instead.";
 
 const hasAtMostDecimalPlaces = (
   value: number,
@@ -1026,6 +1028,24 @@ export class EngagementsService {
 
     const updatedEngagement = await this.db.$transaction(async (tx) => {
       if (assignmentDetailsList.length > 0) {
+        const desiredMemberIds = Array.from(
+          new Set(assignmentDetailsList.map((details) => details.memberId)),
+        );
+        const assignedAssignmentsToRemoveCount =
+          await tx.engagementAssignment.count({
+            where: {
+              engagementId: id,
+              memberId: {
+                notIn: desiredMemberIds,
+              },
+              status: AssignmentStatus.ASSIGNED,
+            },
+          });
+
+        if (assignedAssignmentsToRemoveCount > 0) {
+          throw new BadRequestException(ASSIGNED_ASSIGNMENT_REMOVAL_ERROR);
+        }
+
         if (
           requiredMemberCount !== undefined &&
           assignmentDetailsList.length > requiredMemberCount
@@ -1085,10 +1105,6 @@ export class EngagementsService {
               update: assignmentUpdateData,
             });
           }),
-        );
-
-        const desiredMemberIds = Array.from(
-          new Set(assignmentDetailsList.map((details) => details.memberId)),
         );
         await tx.engagementAssignment.deleteMany({
           where: {
@@ -1252,6 +1268,10 @@ export class EngagementsService {
         throw new BadRequestException(
           ERROR_MESSAGES.AssignmentEngagementMismatch,
         );
+      }
+
+      if (assignment.status === AssignmentStatus.ASSIGNED) {
+        throw new BadRequestException(ASSIGNED_ASSIGNMENT_REMOVAL_ERROR);
       }
 
       if (engagement.isPrivate && engagement.assignments.length <= 1) {

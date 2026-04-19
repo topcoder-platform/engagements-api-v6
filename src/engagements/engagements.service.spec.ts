@@ -254,6 +254,108 @@ describe("EngagementsService", () => {
     expect(tx.engagement.update).toHaveBeenCalled();
   });
 
+  it("blocks removing assigned assignments through engagement updates", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: true,
+      requiredMemberCount: 2,
+      assignments: [
+        {
+          id: "assignment-1",
+          engagementId: "eng-1",
+          memberId: "123456",
+          memberHandle: "testaws1",
+          status: AssignmentStatus.ASSIGNED,
+        },
+        {
+          id: "assignment-2",
+          engagementId: "eng-1",
+          memberId: "234567",
+          memberHandle: "testmfa1",
+          status: AssignmentStatus.SELECTED,
+        },
+      ],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    memberService.getMemberUserIdByHandle.mockResolvedValue("234567");
+
+    const tx = {
+      engagementAssignment: {
+        count: jest.fn().mockResolvedValue(1),
+        deleteMany: jest.fn(),
+        upsert: jest.fn(),
+      },
+      engagement: {
+        update: jest.fn(),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await expect(
+      service.update(
+        "eng-1",
+        {
+          assignedMemberHandles: ["testmfa1"],
+        } as any,
+        {
+          sub: "999999",
+        },
+      ),
+    ).rejects.toThrow(
+      "Assigned assignments cannot be removed. Complete or terminate them from the assignments page instead.",
+    );
+
+    expect(tx.engagementAssignment.count).toHaveBeenCalledWith({
+      where: {
+        engagementId: "eng-1",
+        memberId: {
+          notIn: ["234567"],
+        },
+        status: AssignmentStatus.ASSIGNED,
+      },
+    });
+    expect(tx.engagementAssignment.upsert).not.toHaveBeenCalled();
+    expect(tx.engagementAssignment.deleteMany).not.toHaveBeenCalled();
+    expect(tx.engagement.update).not.toHaveBeenCalled();
+  });
+
+  it("blocks removing assigned assignments directly", async () => {
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "eng-1",
+          isPrivate: true,
+          assignments: [
+            {
+              id: "assignment-1",
+            },
+            {
+              id: "assignment-2",
+            },
+          ],
+        }),
+      },
+      engagementAssignment: {
+        delete: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue({
+          id: "assignment-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.ASSIGNED,
+        }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await expect(
+      service.removeAssignment("eng-1", "assignment-1"),
+    ).rejects.toThrow(
+      "Assigned assignments cannot be removed. Complete or terminate them from the assignments page instead.",
+    );
+
+    expect(tx.engagementAssignment.delete).not.toHaveBeenCalled();
+  });
+
   it("does not include assignment details for public engagement listings", async () => {
     db.engagement.findMany.mockResolvedValue([
       {
