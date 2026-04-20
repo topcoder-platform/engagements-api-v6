@@ -34,7 +34,7 @@ import {
   UpdateEngagementDto,
 } from "./dto";
 import {
-  ASSIGNMENT_COMPLETION_STATUSES,
+  ACTIVE_ASSIGNMENT_STATUSES,
   ERROR_MESSAGES,
 } from "../common/constants";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
@@ -234,7 +234,7 @@ export class EngagementsService {
         const assignmentCount = await tx.engagementAssignment.count({
           where: {
             engagementId: engagement.id,
-            status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+            status: { in: ACTIVE_ASSIGNMENT_STATUSES },
           },
         });
 
@@ -605,7 +605,12 @@ export class EngagementsService {
     });
 
     const where: Prisma.EngagementWhereInput = {
-      assignments: { some: { memberId: userIdentifier } },
+      assignments: {
+        some: {
+          memberId: userIdentifier,
+          status: { in: ACTIVE_ASSIGNMENT_STATUSES },
+        },
+      },
     };
     const andFilters: Prisma.EngagementWhereInput[] = [];
 
@@ -692,6 +697,7 @@ export class EngagementsService {
           assignments: {
             where: {
               memberId: userIdentifier,
+              status: { in: ACTIVE_ASSIGNMENT_STATUSES },
             },
           },
         },
@@ -736,6 +742,7 @@ export class EngagementsService {
           ? {
               where: {
                 memberId: options.assignmentMemberId,
+                status: { in: ACTIVE_ASSIGNMENT_STATUSES },
               },
             }
           : true,
@@ -915,10 +922,8 @@ export class EngagementsService {
     const existingAssignments =
       (existingEngagement as { assignments?: EngagementAssignment[] })
         .assignments ?? [];
-    const totalAssignmentCount = existingAssignments.length;
-    const activeAssignmentCount = existingAssignments.filter(
-      (assignment) =>
-        !ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status),
+    const activeAssignmentCount = existingAssignments.filter((assignment) =>
+      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
     ).length;
     const requiredMemberCount =
       payload.requiredMemberCount ??
@@ -948,7 +953,7 @@ export class EngagementsService {
         Boolean(assignedMemberId) ||
         Boolean(assignedMemberHandle) ||
         assignmentDetailsList.length > 0 ||
-        totalAssignmentCount > 0;
+        activeAssignmentCount > 0;
 
       if (!hasAssignedMember) {
         throw new BadRequestException(
@@ -1074,46 +1079,60 @@ export class EngagementsService {
               assignmentCreateData.otherRemarks = details.otherRemarks;
               assignmentUpdateData.otherRemarks = details.otherRemarks;
             }
-            return tx.engagementAssignment.upsert({
-              where: {
-                engagementId_memberId: {
+            return tx.engagementAssignment
+              .findFirst({
+                where: {
                   engagementId: id,
                   memberId: details.memberId,
+                  status: { in: ACTIVE_ASSIGNMENT_STATUSES },
                 },
-              },
-              create: assignmentCreateData,
-              update: assignmentUpdateData,
-            });
+                orderBy: { createdAt: "desc" },
+              })
+              .then((existingActiveAssignment) =>
+                existingActiveAssignment
+                  ? tx.engagementAssignment.update({
+                      where: { id: existingActiveAssignment.id },
+                      data: assignmentUpdateData,
+                    })
+                  : tx.engagementAssignment.create({
+                      data: assignmentCreateData,
+                    }),
+              );
           }),
         );
 
         const desiredMemberIds = Array.from(
           new Set(assignmentDetailsList.map((details) => details.memberId)),
         );
-        await tx.engagementAssignment.deleteMany({
+        await tx.engagementAssignment.updateMany({
           where: {
             engagementId: id,
             memberId: {
               notIn: desiredMemberIds,
             },
+            status: { in: ACTIVE_ASSIGNMENT_STATUSES },
+          },
+          data: {
+            status: AssignmentStatus.TERMINATED,
+            endDate: new Date(),
           },
         });
       } else if (shouldUpsertAssignment && assignmentDetailsResult) {
         if (requiredMemberCount !== undefined) {
-          const existingAssignment = await tx.engagementAssignment.findUnique({
+          const existingAssignment = await tx.engagementAssignment.findFirst({
             where: {
-              engagementId_memberId: {
-                engagementId: id,
-                memberId: assignmentDetailsResult.memberId,
-              },
+              engagementId: id,
+              memberId: assignmentDetailsResult.memberId,
+              status: { in: ACTIVE_ASSIGNMENT_STATUSES },
             },
+            orderBy: { createdAt: "desc" },
           });
 
           if (!existingAssignment) {
             const assignmentCount = await tx.engagementAssignment.count({
               where: {
                 engagementId: id,
-                status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+                status: { in: ACTIVE_ASSIGNMENT_STATUSES },
               },
             });
             if (assignmentCount >= requiredMemberCount) {
@@ -1124,23 +1143,33 @@ export class EngagementsService {
           }
         }
 
-        await tx.engagementAssignment.upsert({
-          where: {
-            engagementId_memberId: {
+        const existingActiveAssignment =
+          await tx.engagementAssignment.findFirst({
+            where: {
               engagementId: id,
               memberId: assignmentDetailsResult.memberId,
+              status: { in: ACTIVE_ASSIGNMENT_STATUSES },
             },
-          },
-          create: {
-            id: nanoid(),
-            engagementId: id,
-            memberId: assignmentDetailsResult.memberId,
-            memberHandle: assignmentDetailsResult.memberHandle,
-          },
-          update: {
-            memberHandle: assignmentDetailsResult.memberHandle,
-          },
-        });
+            orderBy: { createdAt: "desc" },
+          });
+
+        if (existingActiveAssignment) {
+          await tx.engagementAssignment.update({
+            where: { id: existingActiveAssignment.id },
+            data: {
+              memberHandle: assignmentDetailsResult.memberHandle,
+            },
+          });
+        } else {
+          await tx.engagementAssignment.create({
+            data: {
+              id: nanoid(),
+              engagementId: id,
+              memberId: assignmentDetailsResult.memberId,
+              memberHandle: assignmentDetailsResult.memberHandle,
+            },
+          });
+        }
       }
 
       return tx.engagement.update({
@@ -1151,20 +1180,21 @@ export class EngagementsService {
     });
 
     const updatedAssignments = updatedEngagement.assignments ?? [];
-    const existingAssignmentsByMemberId = new Map(
+    const existingAssignmentsById = new Map(
       existingAssignments.map((assignment) => [
-        String(assignment.memberId),
+        String(assignment.id),
         assignment,
       ]),
     );
     const newAssignments = updatedAssignments.filter(
       (assignment) =>
-        !existingAssignmentsByMemberId.has(String(assignment.memberId)),
+        !existingAssignmentsById.has(String(assignment.id)) &&
+        ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
     );
     const updatedAssignmentsForEmail = updatedAssignments.filter(
       (assignment) => {
-        const existingAssignment = existingAssignmentsByMemberId.get(
-          String(assignment.memberId),
+        const existingAssignment = existingAssignmentsById.get(
+          String(assignment.id),
         );
 
         if (!existingAssignment) {
@@ -1197,35 +1227,48 @@ export class EngagementsService {
    * Removes an engagement by UUID.
    *
    * Designed for Administrator-only use when an engagement was created in error
-   * and has no active member assignments.
+   * and has no assignment history.
    *
    * @param id Engagement UUID.
    * @throws {NotFoundException} If the engagement does not exist.
-   * @throws {BadRequestException} If the engagement has one or more active assignments.
+   * @throws {BadRequestException} If the engagement has any assignments.
    */
   async remove(id: string): Promise<void> {
     this.logger.debug("Removing engagement", { id });
     await this.findOne(id);
 
-    const activeAssignmentCount = await this.db.engagementAssignment.count({
+    const assignmentCount = await this.db.engagementAssignment.count({
       where: {
         engagementId: id,
-        status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
       },
     });
 
-    if (activeAssignmentCount > 0) {
+    if (assignmentCount > 0) {
       throw new BadRequestException(ERROR_MESSAGES.EngagementHasMembers);
     }
 
     await this.db.engagement.delete({ where: { id } });
   }
 
+  /**
+   * Terminates an engagement assignment without deleting its historical row.
+   *
+   * Used by the assignment-removal endpoint and application unselection flow to
+   * end the active assignment while preserving feedback, experience records,
+   * and assignment audit history.
+   *
+   * @param engagementId Engagement UUID that owns the assignment.
+   * @param assignmentId Assignment UUID to terminate.
+   * @returns Resolves when the assignment has been terminated or was already terminal.
+   * @throws {NotFoundException} If the engagement or assignment does not exist.
+   * @throws {BadRequestException} If the assignment belongs to another engagement,
+   *   or terminating it would leave a private engagement with no active members.
+   */
   async removeAssignment(
     engagementId: string,
     assignmentId: string,
   ): Promise<void> {
-    this.logger.debug("Removing engagement assignment", {
+    this.logger.debug("Terminating engagement assignment", {
       engagementId,
       assignmentId,
     });
@@ -1254,13 +1297,35 @@ export class EngagementsService {
         );
       }
 
-      if (engagement.isPrivate && engagement.assignments.length <= 1) {
+      const activeAssignmentCount = engagement.assignments.filter(
+        (currentAssignment) =>
+          ACTIVE_ASSIGNMENT_STATUSES.includes(currentAssignment.status),
+      ).length;
+      const isActiveAssignment = ACTIVE_ASSIGNMENT_STATUSES.includes(
+        assignment.status,
+      );
+
+      if (
+        engagement.isPrivate &&
+        isActiveAssignment &&
+        activeAssignmentCount <= 1
+      ) {
         throw new BadRequestException(
           "Private engagements must have at least one assigned member",
         );
       }
 
-      await tx.engagementAssignment.delete({ where: { id: assignmentId } });
+      if (!isActiveAssignment) {
+        return;
+      }
+
+      await tx.engagementAssignment.update({
+        where: { id: assignmentId },
+        data: {
+          status: AssignmentStatus.TERMINATED,
+          endDate: new Date(),
+        },
+      });
     });
   }
 
@@ -1806,7 +1871,15 @@ export class EngagementsService {
       return engagement;
     }
 
-    const sortedAssignments = [...engagement.assignments].sort((a, b) => {
+    const activeAssignments = engagement.assignments.filter((assignment) =>
+      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
+    );
+
+    if (!activeAssignments.length) {
+      return engagement;
+    }
+
+    const sortedActiveAssignments = [...activeAssignments].sort((a, b) => {
       const timeA = a.createdAt.getTime();
       const timeB = b.createdAt.getTime();
       if (timeA !== timeB) {
@@ -1817,12 +1890,12 @@ export class EngagementsService {
 
     return {
       ...engagement,
-      assignedMemberId: sortedAssignments[0]?.memberId,
-      assignedMemberHandle: sortedAssignments[0]?.memberHandle,
-      assignedMembers: sortedAssignments.map(
+      assignedMemberId: sortedActiveAssignments[0]?.memberId,
+      assignedMemberHandle: sortedActiveAssignments[0]?.memberHandle,
+      assignedMembers: sortedActiveAssignments.map(
         (assignment) => assignment.memberId,
       ),
-      assignedMemberHandles: sortedAssignments.map(
+      assignedMemberHandles: sortedActiveAssignments.map(
         (assignment) => assignment.memberHandle,
       ),
     };

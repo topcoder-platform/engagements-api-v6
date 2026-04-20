@@ -1,6 +1,7 @@
 # Assignment Status Flow
 
 This diagram describes how an engagement assignment moves between statuses and the conditions for each transition.
+Assignment rows are preserved after terminal transitions; unassignment and assignment removal mark active rows as `TERMINATED` instead of deleting them.
 
 ```mermaid
 stateDiagram-v2

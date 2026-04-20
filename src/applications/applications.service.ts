@@ -30,7 +30,7 @@ import {
 } from "./dto";
 import { PaginatedResponse } from "../engagements/dto";
 import {
-  ASSIGNMENT_COMPLETION_STATUSES,
+  ACTIVE_ASSIGNMENT_STATUSES,
   ERROR_MESSAGES,
 } from "../common/constants";
 import {
@@ -458,13 +458,13 @@ export class ApplicationsService {
       const engagementId = engagement.id;
       const memberId = application.userId;
 
-      const existingAssignment = await tx.engagementAssignment.findUnique({
+      const existingAssignment = await tx.engagementAssignment.findFirst({
         where: {
-          engagementId_memberId: {
-            engagementId,
-            memberId,
-          },
+          engagementId,
+          memberId,
+          status: { in: ACTIVE_ASSIGNMENT_STATUSES },
         },
+        orderBy: { createdAt: "desc" },
       });
 
       if (existingAssignment) {
@@ -525,7 +525,7 @@ export class ApplicationsService {
       const assignmentCount = await tx.engagementAssignment.count({
         where: {
           engagementId,
-          status: { notIn: ASSIGNMENT_COMPLETION_STATUSES },
+          status: { in: ACTIVE_ASSIGNMENT_STATUSES },
         },
       });
 
@@ -815,13 +815,13 @@ export class ApplicationsService {
   private async handleMemberUnassignment(
     application: ApplicationWithEngagement,
   ): Promise<void> {
-    const assignment = await this.db.engagementAssignment.findUnique({
+    const assignment = await this.db.engagementAssignment.findFirst({
       where: {
-        engagementId_memberId: {
-          engagementId: application.engagementId,
-          memberId: application.userId,
-        },
+        engagementId: application.engagementId,
+        memberId: application.userId,
+        status: { in: ACTIVE_ASSIGNMENT_STATUSES },
       },
+      orderBy: { createdAt: "desc" },
       select: { id: true },
     });
 
