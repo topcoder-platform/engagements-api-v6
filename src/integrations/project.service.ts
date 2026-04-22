@@ -101,15 +101,39 @@ export class ProjectService {
       return false;
     }
 
-    if (typeof project.billingAccountId === "string") {
-      return project.billingAccountId.trim().length > 0;
+    return this.normalizeBillingAccountId(project.billingAccountId) !== null;
+  }
+
+  /**
+   * Resolves the trusted billing account assigned to a project.
+   *
+   * Assignment payment callers use this server-side project metadata instead of
+   * request-supplied billing account ids when validating engagement payouts.
+   *
+   * @param projectId Project id being inspected.
+   * @returns Positive billing account id, or `null` when the project exists and
+   * has no configured billing account.
+   * @throws Error Propagates token lookup and project lookup failures.
+   * @throws Error when the project is missing or returns a malformed billing
+   * account id.
+   */
+  async getProjectBillingAccountId(projectId: string): Promise<number | null> {
+    const token = await this.getM2MToken();
+    const project = await this.fetchProjectById(projectId, token, [
+      "id",
+      "billingAccountId",
+    ]);
+
+    if (!project) {
+      throw new Error(
+        `Project ${projectId} was not found while resolving billingAccountId.`,
+      );
     }
 
-    if (typeof project.billingAccountId === "number") {
-      return Number.isFinite(project.billingAccountId);
-    }
-
-    return false;
+    return this.resolveConfiguredBillingAccountId(
+      project.billingAccountId,
+      projectId,
+    );
   }
 
   async getProjectNamesByIds(
@@ -271,6 +295,73 @@ export class ProjectService {
 
     const normalizedProjectId = String(projectId).trim();
     return normalizedProjectId || undefined;
+  }
+
+  /**
+   * Converts a raw project billing account value into a positive integer id.
+   *
+   * @param billingAccountId Raw value from the projects API.
+   * @returns Positive billing account id, or `null` when the value is missing
+   * or cannot be normalized.
+   */
+  private normalizeBillingAccountId(billingAccountId: unknown): number | null {
+    if (billingAccountId === undefined || billingAccountId === null) {
+      return null;
+    }
+
+    if (
+      typeof billingAccountId !== "string" &&
+      typeof billingAccountId !== "number"
+    ) {
+      return null;
+    }
+
+    const normalizedBillingAccountId = String(billingAccountId).trim();
+
+    if (!/^\d+$/.test(normalizedBillingAccountId)) {
+      return null;
+    }
+
+    const parsedBillingAccountId = Number(normalizedBillingAccountId);
+
+    return Number.isSafeInteger(parsedBillingAccountId) &&
+      parsedBillingAccountId > 0
+      ? parsedBillingAccountId
+      : null;
+  }
+
+  /**
+   * Normalizes a billing account id when `null` must only mean "not configured".
+   *
+   * @param billingAccountId Raw project billing-account value.
+   * @param projectId Project id used for diagnostic errors.
+   * @returns Positive billing account id, or `null` when the project has no
+   * configured billing account.
+   * @throws Error when the project returns a non-empty value that cannot be
+   * normalized into a positive integer billing account id.
+   */
+  private resolveConfiguredBillingAccountId(
+    billingAccountId: unknown,
+    projectId: string,
+  ): number | null {
+    if (billingAccountId === undefined || billingAccountId === null) {
+      return null;
+    }
+
+    if (typeof billingAccountId === "string" && !billingAccountId.trim()) {
+      return null;
+    }
+
+    const normalizedBillingAccountId =
+      this.normalizeBillingAccountId(billingAccountId);
+
+    if (normalizedBillingAccountId === null) {
+      throw new Error(
+        `Project ${projectId} returned an invalid billingAccountId.`,
+      );
+    }
+
+    return normalizedBillingAccountId;
   }
 
   private normalizeAuthorizationHeader(

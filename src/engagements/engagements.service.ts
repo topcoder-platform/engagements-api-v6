@@ -76,6 +76,7 @@ type AssignmentContextDetail = {
   assignmentId: string;
   engagementId: string;
   projectId: string;
+  billingAccountId: number | null;
   projectName?: string;
   engagementTitle: string;
   memberId: string;
@@ -816,10 +817,14 @@ export class EngagementsService {
       });
     }
 
+    const billingAccountId =
+      await this.projectService.getProjectBillingAccountId(projectId);
+
     return {
       assignmentId: assignment.id,
       engagementId: assignment.engagementId,
       projectId,
+      billingAccountId,
       projectName,
       engagementTitle: assignment.engagement.title,
       memberId: assignment.memberId,

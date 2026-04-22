@@ -26,6 +26,7 @@ describe("EngagementsService", () => {
   };
   let projectService: {
     getMemberProjectIdsForUser: jest.Mock;
+    getProjectBillingAccountId: jest.Mock;
     getProjectNamesByIds: jest.Mock;
     hasBillingAccountAssigned: jest.Mock;
     validateProjectExists: jest.Mock;
@@ -72,6 +73,7 @@ describe("EngagementsService", () => {
     };
     projectService = {
       getMemberProjectIdsForUser: jest.fn().mockResolvedValue([]),
+      getProjectBillingAccountId: jest.fn().mockResolvedValue(null),
       getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
       hasBillingAccountAssigned: jest.fn().mockResolvedValue(false),
       validateProjectExists: jest.fn().mockResolvedValue(true),
@@ -468,6 +470,7 @@ describe("EngagementsService", () => {
     projectService.getProjectNamesByIds.mockResolvedValue(
       new Map([["project-1", "Platform Modernization"]]),
     );
+    projectService.getProjectBillingAccountId.mockResolvedValue(80001063);
 
     const result = await service.findAssignmentContext("assignment-1");
 
@@ -481,6 +484,7 @@ describe("EngagementsService", () => {
       assignmentId: "assignment-1",
       engagementId: "eng-1",
       projectId: "project-1",
+      billingAccountId: 80001063,
       projectName: "Platform Modernization",
       engagementTitle: "Senior Frontend Engineer",
       memberId: "123456",
@@ -494,6 +498,63 @@ describe("EngagementsService", () => {
       startDate: new Date("2026-02-12T00:00:00.000Z"),
       endDate: new Date("2026-05-12T00:00:00.000Z"),
     });
+  });
+
+  it("keeps assignment context available when only project-name hydration fails", async () => {
+    db.engagementAssignment.findUnique.mockResolvedValue({
+      id: "assignment-1",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.ASSIGNED,
+      agreementRate: "3020",
+      ratePerHour: "75.50",
+      standardHoursPerWeek: 40,
+      durationMonths: 3,
+      otherRemarks: "Complete onboarding within the first week.",
+      startDate: new Date("2026-02-12T00:00:00.000Z"),
+      endDate: new Date("2026-05-12T00:00:00.000Z"),
+      engagement: {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Senior Frontend Engineer",
+      },
+    });
+    projectService.getProjectNamesByIds.mockRejectedValue(
+      new Error("projects name lookup failed"),
+    );
+    projectService.getProjectBillingAccountId.mockResolvedValue(null);
+
+    const result = await service.findAssignmentContext("assignment-1");
+
+    expect(result).toMatchObject({
+      assignmentId: "assignment-1",
+      billingAccountId: null,
+      projectId: "project-1",
+    });
+    expect(result.projectName).toBeUndefined();
+  });
+
+  it("propagates assignment billing-account lookup failures", async () => {
+    const lookupError = new Error("projects billing lookup failed");
+    db.engagementAssignment.findUnique.mockResolvedValue({
+      id: "assignment-1",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.ASSIGNED,
+      engagement: {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Senior Frontend Engineer",
+      },
+    });
+    projectService.getProjectNamesByIds.mockResolvedValue(new Map());
+    projectService.getProjectBillingAccountId.mockRejectedValue(lookupError);
+
+    await expect(service.findAssignmentContext("assignment-1")).rejects.toThrow(
+      lookupError,
+    );
   });
 
   it("includes assignment details for privileged engagement listings", async () => {
