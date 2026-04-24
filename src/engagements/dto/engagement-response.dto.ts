@@ -146,14 +146,16 @@ export class EngagementResponseDto {
   updatedBy?: string;
 
   @ApiPropertyOptional({
-    description: "Deprecated: first assigned member ID (use assignments).",
+    description:
+      "Deprecated: first active assigned member ID (use assignments).",
     example: "123456",
     deprecated: true,
   })
   assignedMemberId?: string;
 
   @ApiPropertyOptional({
-    description: "Deprecated: first assigned member handle (use assignments).",
+    description:
+      "Deprecated: first active assigned member handle (use assignments).",
     example: "jane_doe",
     deprecated: true,
   })
@@ -191,7 +193,7 @@ export class EngagementResponseDto {
 
   @ApiPropertyOptional({
     description:
-      "Deprecated: array of assigned member IDs derived from assignments (use assignments).",
+      "Deprecated: array of active assigned member IDs derived from assignments (use assignments).",
     example: ["123456", "789012"],
     deprecated: true,
   })
@@ -199,7 +201,7 @@ export class EngagementResponseDto {
 
   @ApiPropertyOptional({
     description:
-      "Deprecated: array of assigned member handles derived from assignments (use assignments).",
+      "Deprecated: array of active assigned member handles derived from assignments (use assignments).",
     example: ["john_doe", "jane_smith"],
     deprecated: true,
   })

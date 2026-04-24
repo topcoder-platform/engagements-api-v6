@@ -8102,7 +8102,6 @@ export namespace Prisma {
 
   export type EngagementAssignmentWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    engagementId_memberId?: EngagementAssignmentEngagementIdMemberIdCompoundUniqueInput
     AND?: EngagementAssignmentWhereInput | EngagementAssignmentWhereInput[]
     OR?: EngagementAssignmentWhereInput[]
     NOT?: EngagementAssignmentWhereInput | EngagementAssignmentWhereInput[]
@@ -8123,7 +8122,7 @@ export namespace Prisma {
     engagement?: XOR<EngagementScalarRelationFilter, EngagementWhereInput>
     feedback?: EngagementFeedbackListRelationFilter
     memberExperiences?: MemberExperienceListRelationFilter
-  }, "id" | "engagementId_memberId">
+  }, "id">
 
   export type EngagementAssignmentOrderByWithAggregationInput = {
     id?: SortOrder
@@ -9385,11 +9384,6 @@ export namespace Prisma {
 
   export type MemberExperienceOrderByRelationAggregateInput = {
     _count?: SortOrder
-  }
-
-  export type EngagementAssignmentEngagementIdMemberIdCompoundUniqueInput = {
-    engagementId: string
-    memberId: string
   }
 
   export type EngagementAssignmentCountOrderByAggregateInput = {

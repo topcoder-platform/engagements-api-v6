@@ -311,12 +311,15 @@ export class EngagementsController {
   @ScopesDecorator(AppScopes.WriteEngagements, AppScopes.ManageEngagements)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Remove engagement assignment",
+    summary: "Terminate engagement assignment",
     description:
-      "Removes an assignment from an engagement. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
+      "Marks an active assignment as TERMINATED while preserving its assignment history. Requires admin, PM, Task Manager, or Talent Manager role for user tokens, " +
       "or write:engagements/manage:engagements scope for M2M clients.",
   })
-  @ApiResponse({ status: 204, description: "Engagement assignment removed." })
+  @ApiResponse({
+    status: 204,
+    description: "Engagement assignment terminated.",
+  })
   @ApiBadRequestResponse({
     description: "Invalid request payload.",
   })
@@ -451,12 +454,12 @@ export class EngagementsController {
     summary: "Delete engagement",
     description:
       "Deletes an engagement. Requires Administrator role for user tokens, or manage:engagements scope for M2M clients. " +
-      "The engagement must have no active member assignments.",
+      "The engagement must have no assignment history.",
   })
   @ApiResponse({ status: 204, description: "Engagement deleted." })
   @ApiBadRequestResponse({
     description:
-      "Engagement has active member assignments and cannot be deleted.",
+      "Engagement has member assignment history and cannot be deleted.",
   })
   @ApiUnauthorizedResponse({
     description: "Missing or invalid authentication token.",
@@ -473,8 +476,8 @@ export class EngagementsController {
    * Restricted to Administrator users for user tokens. M2M clients may call this
    * endpoint with the manage:engagements scope.
    *
-   * Engagements with active member assignments are rejected with HTTP 400. The
-   * service layer enforces this member-assignment guard.
+   * Engagements with member assignment history are rejected with HTTP 400 so
+   * assignment rows are never deleted through cascading engagement deletion.
    */
   async remove(
     @Param("id") id: string,

@@ -20,6 +20,15 @@ export class AssignmentContextResponseDto {
   })
   projectId: string;
 
+  @ApiProperty({
+    description:
+      "Trusted billing account id assigned to the assignment's project, " +
+      "or null when no billing account is configured",
+    example: 80001063,
+    nullable: true,
+  })
+  billingAccountId: number | null;
+
   @ApiPropertyOptional({
     description: "Project name",
     example: "Platform Modernization",

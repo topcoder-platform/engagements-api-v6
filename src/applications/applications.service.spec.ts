@@ -1,5 +1,5 @@
 import { ForbiddenException } from "@nestjs/common";
-import { ApplicationStatus } from "@prisma/client";
+import { ApplicationStatus, AssignmentStatus } from "@prisma/client";
 import { ApplicationsService } from "./applications.service";
 
 jest.mock("nanoid", () => ({
@@ -17,6 +17,7 @@ describe("ApplicationsService", () => {
     };
     engagementAssignment: {
       findUnique: jest.Mock;
+      findFirst: jest.Mock;
       count: jest.Mock;
       create: jest.Mock;
     };
@@ -56,6 +57,7 @@ describe("ApplicationsService", () => {
       },
       engagementAssignment: {
         findUnique: jest.fn(),
+        findFirst: jest.fn(),
         count: jest.fn(),
         create: jest.fn(),
       },
@@ -255,7 +257,7 @@ describe("ApplicationsService", () => {
         update: txEngagementUpdate,
       },
       engagementAssignment: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn().mockResolvedValue(null),
         count: jest.fn().mockResolvedValue(0),
         create: jest.fn().mockResolvedValue({ id: "assign-1" }),
       },
@@ -301,7 +303,7 @@ describe("ApplicationsService", () => {
         update: jest.fn(),
       },
       engagementAssignment: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn().mockResolvedValue(null),
         count: jest.fn().mockResolvedValue(0),
         create: jest.fn().mockResolvedValue({ id: "assign-1" }),
       },
@@ -331,7 +333,7 @@ describe("ApplicationsService", () => {
     );
   });
 
-  it("removes assignment when selected application is moved to submitted", async () => {
+  it("terminates active assignment when selected application is moved to submitted", async () => {
     const application = {
       id: "app-1",
       engagementId: "eng-1",
@@ -339,7 +341,7 @@ describe("ApplicationsService", () => {
       status: ApplicationStatus.SELECTED,
     };
     jest.spyOn(service, "findOne").mockResolvedValue(application as any);
-    db.engagementAssignment.findUnique.mockResolvedValue({
+    db.engagementAssignment.findFirst.mockResolvedValue({
       id: "assign-1",
     });
     db.engagementApplication.update.mockResolvedValue({
@@ -351,13 +353,13 @@ describe("ApplicationsService", () => {
       userId: "user-2",
     });
 
-    expect(db.engagementAssignment.findUnique).toHaveBeenCalledWith({
+    expect(db.engagementAssignment.findFirst).toHaveBeenCalledWith({
       where: {
-        engagementId_memberId: {
-          engagementId: "eng-1",
-          memberId: "user-1",
-        },
+        engagementId: "eng-1",
+        memberId: "user-1",
+        status: { in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED] },
       },
+      orderBy: { createdAt: "desc" },
       select: { id: true },
     });
     expect(engagementsService.removeAssignment).toHaveBeenCalledWith(

@@ -26,6 +26,7 @@ describe("EngagementsService", () => {
   };
   let projectService: {
     getMemberProjectIdsForUser: jest.Mock;
+    getProjectBillingAccountId: jest.Mock;
     getProjectNamesByIds: jest.Mock;
     hasBillingAccountAssigned: jest.Mock;
     validateProjectExists: jest.Mock;
@@ -72,6 +73,7 @@ describe("EngagementsService", () => {
     };
     projectService = {
       getMemberProjectIdsForUser: jest.fn().mockResolvedValue([]),
+      getProjectBillingAccountId: jest.fn().mockResolvedValue(null),
       getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
       hasBillingAccountAssigned: jest.fn().mockResolvedValue(false),
       validateProjectExists: jest.fn().mockResolvedValue(true),
@@ -159,6 +161,92 @@ describe("EngagementsService", () => {
         data: expect.objectContaining({ updatedBy: "system" }),
       }),
     );
+  });
+
+  it("terminates omitted active assignments when updating assignment details", async () => {
+    const now = new Date("2026-02-12T09:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(now);
+
+    const existingAssignment = {
+      id: "assign-1",
+      engagementId: "eng-1",
+      memberId: "member-1",
+      memberHandle: "handle1",
+      status: AssignmentStatus.SELECTED,
+      createdAt: new Date("2026-02-11T10:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+    };
+    const omittedAssignment = {
+      id: "assign-2",
+      engagementId: "eng-1",
+      memberId: "member-2",
+      memberHandle: "handle2",
+      status: AssignmentStatus.ASSIGNED,
+      createdAt: new Date("2026-02-11T11:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T11:00:00.000Z"),
+    };
+    const existingEngagement = {
+      id: "eng-1",
+      projectId: "project-1",
+      isPrivate: true,
+      requiredMemberCount: 2,
+      assignments: [existingAssignment, omittedAssignment],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    memberService.getMemberHandleByUserId.mockResolvedValue("handle1");
+
+    const tx = {
+      engagement: {
+        update: jest.fn().mockResolvedValue({
+          ...existingEngagement,
+          assignments: [
+            existingAssignment,
+            {
+              ...omittedAssignment,
+              status: AssignmentStatus.TERMINATED,
+              endDate: now,
+            },
+          ],
+        }),
+      },
+      engagementAssignment: {
+        findFirst: jest.fn().mockResolvedValue(existingAssignment),
+        update: jest.fn().mockResolvedValue(existingAssignment),
+        create: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update(
+      "eng-1",
+      {
+        assignmentDetails: [
+          {
+            memberId: "member-1",
+            memberHandle: "handle1",
+          },
+        ],
+      } as any,
+      { sub: "manager-1" },
+    );
+
+    expect(tx.engagementAssignment.updateMany).toHaveBeenCalledWith({
+      where: {
+        engagementId: "eng-1",
+        memberId: {
+          notIn: ["member-1"],
+        },
+        status: {
+          in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
+        },
+      },
+      data: {
+        status: AssignmentStatus.TERMINATED,
+        endDate: now,
+      },
+    });
   });
 
   it("blocks changing project when current project has a billing account", async () => {
@@ -348,6 +436,9 @@ describe("EngagementsService", () => {
         assignments: {
           where: {
             memberId: "123456",
+            status: {
+              in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
+            },
           },
         },
       },
@@ -379,6 +470,7 @@ describe("EngagementsService", () => {
     projectService.getProjectNamesByIds.mockResolvedValue(
       new Map([["project-1", "Platform Modernization"]]),
     );
+    projectService.getProjectBillingAccountId.mockResolvedValue(80001063);
 
     const result = await service.findAssignmentContext("assignment-1");
 
@@ -392,6 +484,7 @@ describe("EngagementsService", () => {
       assignmentId: "assignment-1",
       engagementId: "eng-1",
       projectId: "project-1",
+      billingAccountId: 80001063,
       projectName: "Platform Modernization",
       engagementTitle: "Senior Frontend Engineer",
       memberId: "123456",
@@ -405,6 +498,63 @@ describe("EngagementsService", () => {
       startDate: new Date("2026-02-12T00:00:00.000Z"),
       endDate: new Date("2026-05-12T00:00:00.000Z"),
     });
+  });
+
+  it("keeps assignment context available when only project-name hydration fails", async () => {
+    db.engagementAssignment.findUnique.mockResolvedValue({
+      id: "assignment-1",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.ASSIGNED,
+      agreementRate: "3020",
+      ratePerHour: "75.50",
+      standardHoursPerWeek: 40,
+      durationMonths: 3,
+      otherRemarks: "Complete onboarding within the first week.",
+      startDate: new Date("2026-02-12T00:00:00.000Z"),
+      endDate: new Date("2026-05-12T00:00:00.000Z"),
+      engagement: {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Senior Frontend Engineer",
+      },
+    });
+    projectService.getProjectNamesByIds.mockRejectedValue(
+      new Error("projects name lookup failed"),
+    );
+    projectService.getProjectBillingAccountId.mockResolvedValue(null);
+
+    const result = await service.findAssignmentContext("assignment-1");
+
+    expect(result).toMatchObject({
+      assignmentId: "assignment-1",
+      billingAccountId: null,
+      projectId: "project-1",
+    });
+    expect(result.projectName).toBeUndefined();
+  });
+
+  it("propagates assignment billing-account lookup failures", async () => {
+    const lookupError = new Error("projects billing lookup failed");
+    db.engagementAssignment.findUnique.mockResolvedValue({
+      id: "assignment-1",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.ASSIGNED,
+      engagement: {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Senior Frontend Engineer",
+      },
+    });
+    projectService.getProjectNamesByIds.mockResolvedValue(new Map());
+    projectService.getProjectBillingAccountId.mockRejectedValue(lookupError);
+
+    await expect(service.findAssignmentContext("assignment-1")).rejects.toThrow(
+      lookupError,
+    );
   });
 
   it("includes assignment details for privileged engagement listings", async () => {
@@ -800,7 +950,7 @@ describe("EngagementsService", () => {
     );
   });
 
-  it("throws BadRequestException when removing an engagement with active assignments", async () => {
+  it("throws BadRequestException when removing an engagement with assignment history", async () => {
     jest.spyOn(service, "findOne").mockResolvedValue({ id: "eng-1" } as any);
     db.engagementAssignment.count.mockResolvedValue(1);
 
@@ -811,7 +961,7 @@ describe("EngagementsService", () => {
     expect(db.engagement.delete).not.toHaveBeenCalled();
   });
 
-  it("deletes an engagement when there are no active assignments", async () => {
+  it("deletes an engagement when there is no assignment history", async () => {
     jest.spyOn(service, "findOne").mockResolvedValue({ id: "eng-1" } as any);
     db.engagementAssignment.count.mockResolvedValue(0);
 
@@ -819,6 +969,51 @@ describe("EngagementsService", () => {
 
     expect(db.engagement.delete).toHaveBeenCalledWith({
       where: { id: "eng-1" },
+    });
+  });
+
+  it("terminates an active assignment instead of deleting it", async () => {
+    const now = new Date("2026-02-12T10:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(now);
+
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "eng-1",
+          isPrivate: false,
+          assignments: [
+            {
+              id: "assign-1",
+              status: AssignmentStatus.ASSIGNED,
+            },
+          ],
+        }),
+      },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.ASSIGNED,
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.TERMINATED,
+          endDate: now,
+        }),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.removeAssignment("eng-1", "assign-1");
+
+    expect(tx.engagementAssignment.update).toHaveBeenCalledWith({
+      where: { id: "assign-1" },
+      data: {
+        status: AssignmentStatus.TERMINATED,
+        endDate: now,
+      },
     });
   });
 });

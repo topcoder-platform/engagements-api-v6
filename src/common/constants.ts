@@ -3,6 +3,11 @@ import { AssignmentStatus } from "@prisma/client";
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PER_PAGE = 20;
 
+export const ACTIVE_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
+  AssignmentStatus.SELECTED,
+  AssignmentStatus.ASSIGNED,
+];
+
 export const ASSIGNMENT_COMPLETION_STATUSES: AssignmentStatus[] = [
   AssignmentStatus.OFFER_REJECTED,
   AssignmentStatus.COMPLETED,
@@ -34,5 +39,5 @@ export const ERROR_MESSAGES = {
   UnauthorizedExperienceAccess:
     "You do not have permission to access this experience record",
   EngagementHasMembers:
-    "This engagement cannot be deleted because it has members assigned to it. Cancel the engagement instead.",
+    "This engagement cannot be deleted because it has member assignment history. Cancel the engagement instead.",
 };
