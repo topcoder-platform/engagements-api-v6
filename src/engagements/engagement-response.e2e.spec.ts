@@ -2,6 +2,7 @@ import { INestApplication, UnauthorizedException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AnticipatedStart,
+  AssignmentStatus,
   EngagementStatus,
   Role,
   Workload,
@@ -171,6 +172,9 @@ describe("Engagement Response (e2e)", () => {
           assignments: {
             where: {
               memberId: "123456",
+              status: {
+                in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
+              },
             },
           },
         },
