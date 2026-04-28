@@ -36,6 +36,7 @@ import {
 import {
   ACTIVE_ASSIGNMENT_STATUSES,
   ERROR_MESSAGES,
+  MY_ASSIGNMENTS_STATUSES,
 } from "../common/constants";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
 
@@ -609,7 +610,7 @@ export class EngagementsService {
       assignments: {
         some: {
           memberId: userIdentifier,
-          status: { in: ACTIVE_ASSIGNMENT_STATUSES },
+          status: { in: MY_ASSIGNMENTS_STATUSES },
         },
       },
     };
@@ -698,7 +699,7 @@ export class EngagementsService {
           assignments: {
             where: {
               memberId: userIdentifier,
-              status: { in: ACTIVE_ASSIGNMENT_STATUSES },
+              status: { in: MY_ASSIGNMENTS_STATUSES },
             },
           },
         },
