@@ -163,7 +163,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "List assigned engagements",
     description:
-      "Returns engagements assigned to the authenticated user. M2M clients require read:engagements scope.",
+      "Returns active and past engagements assigned to the authenticated user. M2M clients require read:engagements scope.",
   })
   @ApiResponse({
     status: 200,

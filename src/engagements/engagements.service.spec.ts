@@ -447,6 +447,112 @@ describe("EngagementsService", () => {
     expect(result.assignments?.[0].memberId).toBe("123456");
   });
 
+  it("includes active and past assignment details in my assignments", async () => {
+    const selectedAssignment = {
+      id: "assignment-selected",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.SELECTED,
+      createdAt: new Date("2026-02-11T11:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T11:00:00.000Z"),
+    };
+    const completedAssignment = {
+      id: "assignment-completed",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.COMPLETED,
+      createdAt: new Date("2026-02-10T11:00:00.000Z"),
+      updatedAt: new Date("2026-02-12T11:00:00.000Z"),
+    };
+    const terminatedAssignment = {
+      id: "assignment-terminated",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.TERMINATED,
+      createdAt: new Date("2026-02-09T11:00:00.000Z"),
+      updatedAt: new Date("2026-02-13T11:00:00.000Z"),
+    };
+    const expectedStatuses = [
+      AssignmentStatus.SELECTED,
+      AssignmentStatus.ASSIGNED,
+      AssignmentStatus.COMPLETED,
+      AssignmentStatus.TERMINATED,
+    ];
+
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Private engagement",
+        description: "Private description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: EngagementStatus.OPEN,
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "talent-manager",
+        isPrivate: true,
+        assignments: [
+          selectedAssignment,
+          completedAssignment,
+          terminatedAssignment,
+        ],
+        _count: {
+          applications: 1,
+        },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+
+    const result = await service.findMyAssignments({ userId: "123456" }, {
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          assignments: {
+            where: {
+              memberId: "123456",
+              status: { in: expectedStatuses },
+            },
+          },
+        }),
+        where: {
+          assignments: {
+            some: {
+              memberId: "123456",
+              status: { in: expectedStatuses },
+            },
+          },
+        },
+      }),
+    );
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: {
+        assignments: {
+          some: {
+            memberId: "123456",
+            status: { in: expectedStatuses },
+          },
+        },
+      },
+    });
+    expect((result.data[0] as any).assignments).toEqual([
+      selectedAssignment,
+      completedAssignment,
+      terminatedAssignment,
+    ]);
+  });
+
   it("returns assignment context with project details", async () => {
     db.engagementAssignment.findUnique.mockResolvedValue({
       id: "assignment-1",
