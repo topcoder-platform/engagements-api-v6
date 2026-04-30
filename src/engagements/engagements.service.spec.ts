@@ -234,12 +234,8 @@ describe("EngagementsService", () => {
 
     expect(tx.engagementAssignment.updateMany).toHaveBeenCalledWith({
       where: {
-        engagementId: "eng-1",
-        memberId: {
-          notIn: ["member-1"],
-        },
-        status: {
-          in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
+        id: {
+          in: ["assign-2"],
         },
       },
       data: {
@@ -248,6 +244,205 @@ describe("EngagementsService", () => {
       },
     });
   });
+
+  it("allows duplicate assignment rows when the previous assignment is completed", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      title: "Original engagement",
+      isPrivate: true,
+      requiredMemberCount: 1,
+      assignments: [
+        {
+          id: "assignment-completed",
+          engagementId: "eng-1",
+          memberId: "123456",
+          memberHandle: "testaws1",
+          status: AssignmentStatus.COMPLETED,
+          createdAt: new Date("2026-04-17T00:00:00.000Z"),
+          updatedAt: new Date("2026-04-17T00:00:00.000Z"),
+          agreementRate: "1200",
+          otherRemarks: null,
+          startDate: new Date("2026-04-17T00:00:00.000Z"),
+          endDate: new Date("2026-10-17T00:00:00.000Z"),
+          terminationReason: null,
+        },
+      ],
+    };
+    const newAssignment = {
+      id: "assignment-selected",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.SELECTED,
+      createdAt: new Date("2026-04-23T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-23T00:00:00.000Z"),
+      agreementRate: "1600",
+      otherRemarks: null,
+      startDate: new Date("2026-04-23T00:00:00.000Z"),
+      endDate: null,
+      terminationReason: null,
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    memberService.getMemberUserIdByHandle.mockResolvedValue("123456");
+
+    const tx = {
+      engagementAssignment: {
+        create: jest.fn().mockResolvedValue(newAssignment),
+        update: jest.fn().mockResolvedValue(existingEngagement.assignments[0]),
+        updateMany: jest.fn(),
+      },
+      engagement: {
+        update: jest.fn().mockResolvedValue({
+          ...existingEngagement,
+          assignments: [...existingEngagement.assignments, newAssignment],
+          title: "Updated engagement",
+        }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update(
+      "eng-1",
+      {
+        assignedMemberHandles: ["testaws1", "testaws1"],
+        title: "Updated engagement",
+      } as any,
+      {
+        sub: "999999",
+      },
+    );
+
+    expect(tx.engagementAssignment.update).toHaveBeenCalledWith({
+      where: {
+        id: "assignment-completed",
+      },
+      data: expect.objectContaining({
+        memberHandle: "testaws1",
+      }),
+    });
+    expect(tx.engagementAssignment.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        engagementId: "eng-1",
+        memberHandle: "testaws1",
+        memberId: "123456",
+      }),
+    });
+    expect(tx.engagementAssignment.updateMany).not.toHaveBeenCalled();
+    expect(
+      assignmentOfferEmailService.sendAssignmentOfferEmails,
+    ).toHaveBeenCalledWith([
+      expect.objectContaining({
+        assignmentId: "assignment-selected",
+        memberId: "123456",
+      }),
+    ]);
+  });
+
+  it.each([AssignmentStatus.COMPLETED, AssignmentStatus.TERMINATED])(
+    "creates a new assignment when the previous assignment is %s and only the new row is submitted",
+    async (previousStatus) => {
+      const existingAssignment = {
+        id: "assignment-previous",
+        engagementId: "eng-1",
+        memberId: "123456",
+        memberHandle: "testaws1",
+        status: previousStatus,
+        createdAt: new Date("2026-04-17T00:00:00.000Z"),
+        updatedAt: new Date("2026-04-17T00:00:00.000Z"),
+        agreementRate: "1200",
+        otherRemarks: null,
+        startDate: new Date("2026-04-17T00:00:00.000Z"),
+        endDate: new Date("2026-04-22T00:00:00.000Z"),
+        terminationReason:
+          previousStatus === AssignmentStatus.TERMINATED
+            ? "Client request"
+            : null,
+      };
+      const existingEngagement = {
+        id: "eng-1",
+        title: "Original engagement",
+        isPrivate: true,
+        requiredMemberCount: 1,
+        assignments: [existingAssignment],
+      };
+      const newAssignment = {
+        id: "assignment-selected",
+        engagementId: "eng-1",
+        memberId: "123456",
+        memberHandle: "testaws1",
+        status: AssignmentStatus.SELECTED,
+        createdAt: new Date("2026-04-23T00:00:00.000Z"),
+        updatedAt: new Date("2026-04-23T00:00:00.000Z"),
+        agreementRate: "1600.00",
+        otherRemarks: null,
+        startDate: new Date("2026-04-23T00:00:00.000Z"),
+        endDate: null,
+        terminationReason: null,
+      };
+      jest
+        .spyOn(service, "findOne")
+        .mockResolvedValue(existingEngagement as any);
+      memberService.getMemberUserIdByHandle.mockResolvedValue("123456");
+
+      const tx = {
+        engagementAssignment: {
+          create: jest.fn().mockResolvedValue(newAssignment),
+          update: jest.fn(),
+          updateMany: jest.fn(),
+        },
+        engagement: {
+          update: jest.fn().mockResolvedValue({
+            ...existingEngagement,
+            assignments: [existingAssignment, newAssignment],
+            title: "Updated engagement",
+          }),
+        },
+      };
+      db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+      await service.update(
+        "eng-1",
+        {
+          assignmentDetails: [
+            {
+              durationMonths: 3,
+              memberHandle: "testaws1",
+              ratePerHour: "40",
+              standardHoursPerWeek: 40,
+              startDate: "2026-04-23T00:00:00.000Z",
+            },
+          ],
+          title: "Updated engagement",
+        } as any,
+        {
+          sub: "999999",
+        },
+      );
+
+      expect(tx.engagementAssignment.update).not.toHaveBeenCalled();
+      expect(tx.engagementAssignment.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          agreementRate: "1600.00",
+          durationMonths: 3,
+          engagementId: "eng-1",
+          memberHandle: "testaws1",
+          memberId: "123456",
+          ratePerHour: "40",
+          standardHoursPerWeek: 40,
+          startDate: new Date("2026-04-23T00:00:00.000Z"),
+        }),
+      });
+      expect(tx.engagementAssignment.updateMany).not.toHaveBeenCalled();
+      expect(
+        assignmentOfferEmailService.sendAssignmentOfferEmails,
+      ).toHaveBeenCalledWith([
+        expect.objectContaining({
+          assignmentId: "assignment-selected",
+          memberId: "123456",
+        }),
+      ]);
+    },
+  );
 
   it("blocks changing project when current project has a billing account", async () => {
     const existingEngagement = {
@@ -445,6 +640,112 @@ describe("EngagementsService", () => {
     });
     expect(result.assignments).toHaveLength(1);
     expect(result.assignments?.[0].memberId).toBe("123456");
+  });
+
+  it("includes active and past assignment details in my assignments", async () => {
+    const selectedAssignment = {
+      id: "assignment-selected",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.SELECTED,
+      createdAt: new Date("2026-02-11T11:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T11:00:00.000Z"),
+    };
+    const completedAssignment = {
+      id: "assignment-completed",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.COMPLETED,
+      createdAt: new Date("2026-02-10T11:00:00.000Z"),
+      updatedAt: new Date("2026-02-12T11:00:00.000Z"),
+    };
+    const terminatedAssignment = {
+      id: "assignment-terminated",
+      engagementId: "eng-1",
+      memberId: "123456",
+      memberHandle: "testaws1",
+      status: AssignmentStatus.TERMINATED,
+      createdAt: new Date("2026-02-09T11:00:00.000Z"),
+      updatedAt: new Date("2026-02-13T11:00:00.000Z"),
+    };
+    const expectedStatuses = [
+      AssignmentStatus.SELECTED,
+      AssignmentStatus.ASSIGNED,
+      AssignmentStatus.COMPLETED,
+      AssignmentStatus.TERMINATED,
+    ];
+
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Private engagement",
+        description: "Private description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: EngagementStatus.OPEN,
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "talent-manager",
+        isPrivate: true,
+        assignments: [
+          selectedAssignment,
+          completedAssignment,
+          terminatedAssignment,
+        ],
+        _count: {
+          applications: 1,
+        },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+
+    const result = await service.findMyAssignments({ userId: "123456" }, {
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          assignments: {
+            where: {
+              memberId: "123456",
+              status: { in: expectedStatuses },
+            },
+          },
+        }),
+        where: {
+          assignments: {
+            some: {
+              memberId: "123456",
+              status: { in: expectedStatuses },
+            },
+          },
+        },
+      }),
+    );
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: {
+        assignments: {
+          some: {
+            memberId: "123456",
+            status: { in: expectedStatuses },
+          },
+        },
+      },
+    });
+    expect((result.data[0] as any).assignments).toEqual([
+      selectedAssignment,
+      completedAssignment,
+      terminatedAssignment,
+    ]);
   });
 
   it("returns assignment context with project details", async () => {

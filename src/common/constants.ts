@@ -8,6 +8,13 @@ export const ACTIVE_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
   AssignmentStatus.ASSIGNED,
 ];
 
+export const MY_ASSIGNMENTS_STATUSES: AssignmentStatus[] = [
+  AssignmentStatus.SELECTED,
+  AssignmentStatus.ASSIGNED,
+  AssignmentStatus.COMPLETED,
+  AssignmentStatus.TERMINATED,
+];
+
 export const ASSIGNMENT_COMPLETION_STATUSES: AssignmentStatus[] = [
   AssignmentStatus.OFFER_REJECTED,
   AssignmentStatus.COMPLETED,

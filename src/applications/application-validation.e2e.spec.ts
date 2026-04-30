@@ -10,6 +10,10 @@ import { EngagementsService } from "../engagements/engagements.service";
 import { ApplicationsService } from "./applications.service";
 import { DbService } from "../db/db.service";
 
+jest.mock("nanoid", () => ({
+  nanoid: () => "test-id",
+}));
+
 const tokenFixtures: Record<string, Record<string, any>> = {
   "bare-user": {
     isMachine: false,
@@ -46,7 +50,7 @@ describe("Application Validation (e2e)", () => {
 
   const postApplication = (payload: Record<string, unknown>) =>
     request(app.getHttpServer())
-      .post("/engagements/eng-1/applications")
+      .post("/eng-1/applications")
       .set("Authorization", "Bearer bare-user")
       .send(payload);
 
