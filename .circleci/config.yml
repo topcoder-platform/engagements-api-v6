@@ -64,7 +64,8 @@ workflows:
           branches:
             only:
               - develop
-            
+              - PM-4669_payment-cycles
+
     # Production builds are exectuted only on tagged commits to the
     # master branch.
     - "build-prod":
