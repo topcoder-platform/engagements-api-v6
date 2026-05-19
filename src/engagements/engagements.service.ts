@@ -1094,8 +1094,9 @@ export class EngagementsService {
               if (details.ratePerHour !== undefined) {
                 assignmentUpdateData.ratePerHour = details.ratePerHour;
               }
-              assignmentUpdateData.paymentCycle =
-                details.paymentCycle ?? DEFAULT_PAYMENT_CYCLE;
+              if (details.paymentCycle !== undefined) {
+                assignmentUpdateData.paymentCycle = details.paymentCycle;
+              }
               if (details.standardHoursPerDay !== undefined) {
                 assignmentUpdateData.standardHoursPerDay =
                   details.standardHoursPerDay;
