@@ -1,5 +1,5 @@
 import { ForbiddenException } from "@nestjs/common";
-import { ApplicationStatus, AssignmentStatus } from "@prisma/client";
+import { ApplicationStatus, AssignmentStatus, PaymentCycle } from "@prisma/client";
 import { ApplicationsService } from "./applications.service";
 
 jest.mock("nanoid", () => ({
@@ -38,6 +38,7 @@ describe("ApplicationsService", () => {
   let eventBusService: { postEvent: jest.Mock };
   let assignmentOfferEmailService: {
     sendAssignmentOfferEmail: jest.Mock;
+    sendAssignmentUpdatedEmail: jest.Mock;
   };
   let applicationStatusEmailService: {
     sendApplicationStatusEmail: jest.Mock;
@@ -80,6 +81,7 @@ describe("ApplicationsService", () => {
     };
     assignmentOfferEmailService = {
       sendAssignmentOfferEmail: jest.fn().mockResolvedValue(undefined),
+      sendAssignmentUpdatedEmail: jest.fn().mockResolvedValue(undefined),
     };
     applicationStatusEmailService = {
       sendApplicationStatusEmail: jest.fn().mockResolvedValue(undefined),
@@ -377,16 +379,16 @@ describe("ApplicationsService", () => {
   });
 
   it("calculates agreement rates with fractional standard hours", () => {
-    expect((service as any).calculateAgreementRate("10.5", 37.5)).toBe(
+    expect((service as any).calculateAgreementRate("10.5", 7.5)).toBe(
       "393.75",
     );
   });
 
-  it("rejects standardHoursPerWeek values with more than two decimals", () => {
+  it("rejects standardHoursPerDay values with more than two decimals", () => {
     expect(() =>
-      (service as any).calculateAgreementRate("10.5", 37.555),
+      (service as any).calculateAgreementRate("10.5", 7.555),
     ).toThrow(
-      "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
+      "standardHoursPerDay must be a positive number with up to 2 decimal places.",
     );
   });
 
@@ -411,5 +413,75 @@ describe("ApplicationsService", () => {
       undefined,
     );
     expect(result).toBe(application);
+  });
+
+  it("updates assignment paymentCycle and sends updated email", async () => {
+    const application = {
+      id: "app-1",
+      engagementId: "eng-1",
+      userId: "user-1",
+      status: ApplicationStatus.SUBMITTED,
+    };
+    const engagement = {
+      id: "eng-1",
+      title: "Senior Frontend Engineer",
+      requiredMemberCount: 3,
+      requiredSkills: ["skill-1"],
+    };
+    const existingAssignment = {
+      id: "assign-1",
+      engagementId: "eng-1",
+      memberId: "user-1",
+      memberHandle: "member-handle",
+      status: AssignmentStatus.SELECTED,
+      startDate: null,
+      durationMonths: 3,
+      paymentCycle: PaymentCycle.WEEKLY,
+      ratePerHour: "10",
+      standardHoursPerDay: 8,
+      agreementRate: "400.00",
+      otherRemarks: null,
+    };
+    const updatedAssignment = {
+      ...existingAssignment,
+      paymentCycle: PaymentCycle.MONTHLY,
+    };
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue(engagement),
+      },
+      engagementAssignment: {
+        findFirst: jest.fn().mockResolvedValue(existingAssignment),
+        update: jest.fn().mockResolvedValue(updatedAssignment),
+      },
+    };
+
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
+    memberService.getMemberHandleByUserId.mockResolvedValue("member-handle");
+    db.$transaction.mockImplementation((callback) => callback(tx as any));
+    db.engagementApplication.update.mockResolvedValue({
+      ...application,
+      status: ApplicationStatus.SELECTED,
+    });
+
+    await service.updateStatus(
+      "app-1",
+      ApplicationStatus.SELECTED,
+      { userId: "manager-1" },
+      { paymentCycle: PaymentCycle.MONTHLY } as any,
+    );
+
+    expect(tx.engagementAssignment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          paymentCycle: PaymentCycle.MONTHLY,
+        }),
+      }),
+    );
+    expect(assignmentOfferEmailService.sendAssignmentUpdatedEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentCycle: PaymentCycle.MONTHLY,
+      }),
+    );
   });
 });

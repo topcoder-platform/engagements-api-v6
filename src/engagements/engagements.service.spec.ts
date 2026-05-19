@@ -408,7 +408,7 @@ describe("EngagementsService", () => {
               durationMonths: 3,
               memberHandle: "testaws1",
               ratePerHour: "40",
-              standardHoursPerWeek: 40,
+              standardHoursPerDay: 8,
               startDate: "2026-04-23T00:00:00.000Z",
             },
           ],
@@ -428,7 +428,7 @@ describe("EngagementsService", () => {
           memberHandle: "testaws1",
           memberId: "123456",
           ratePerHour: "40",
-          standardHoursPerWeek: 40,
+          standardHoursPerDay: 8,
           startDate: new Date("2026-04-23T00:00:00.000Z"),
         }),
       });
@@ -757,7 +757,7 @@ describe("EngagementsService", () => {
       status: AssignmentStatus.ASSIGNED,
       agreementRate: "3020",
       ratePerHour: "75.50",
-      standardHoursPerWeek: 40,
+      standardHoursPerDay: 8,
       durationMonths: 3,
       otherRemarks: "Complete onboarding within the first week.",
       startDate: new Date("2026-02-12T00:00:00.000Z"),
@@ -793,7 +793,7 @@ describe("EngagementsService", () => {
       status: AssignmentStatus.ASSIGNED,
       agreementRate: "3020",
       ratePerHour: "75.50",
-      standardHoursPerWeek: 40,
+      standardHoursPerDay: 8,
       durationMonths: 3,
       otherRemarks: "Complete onboarding within the first week.",
       startDate: new Date("2026-02-12T00:00:00.000Z"),
@@ -810,7 +810,7 @@ describe("EngagementsService", () => {
       status: AssignmentStatus.ASSIGNED,
       agreementRate: "3020",
       ratePerHour: "75.50",
-      standardHoursPerWeek: 40,
+      standardHoursPerDay: 8,
       durationMonths: 3,
       otherRemarks: "Complete onboarding within the first week.",
       startDate: new Date("2026-02-12T00:00:00.000Z"),
@@ -1239,16 +1239,14 @@ describe("EngagementsService", () => {
 
   it("calculates assignment agreement rates with fractional standard hours", () => {
     expect(
-      (service as any).calculateAssignmentAgreementRate("10.5", 37.5),
+      (service as any).calculateAssignmentAgreementRate("10.5", 7.5),
     ).toBe("393.75");
   });
 
-  it("rejects standardHoursPerWeek values with more than two decimals", () => {
-    expect(() =>
-      (service as any).calculateAssignmentAgreementRate("10.5", 37.555),
-    ).toThrow(
-      "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
-    );
+  it("calculates assignment agreement rate for high precision standard hours", () => {
+    expect(
+      (service as any).calculateAssignmentAgreementRate("10.5", 7.555),
+    ).toBe("396.59");
   });
 
   it("throws BadRequestException when removing an engagement with assignment history", async () => {
