@@ -10,6 +10,7 @@ import {
   EngagementAssignment,
   AssignmentStatus,
   EngagementStatus,
+  PaymentCycle,
   Role,
   Prisma,
   Workload,
@@ -43,6 +44,7 @@ import { getUserIdentifier, getUserRoles } from "../common/user.util";
 const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
 const MAX_STANDARD_HOURS_DECIMAL_PLACES = 2;
+const DEFAULT_PAYMENT_CYCLE = PaymentCycle.WEEKLY;
 
 const hasAtMostDecimalPlaces = (
   value: number,
@@ -62,8 +64,9 @@ type ResolvedAssignmentDetails = {
   memberHandle: string;
   startDate?: Date;
   durationMonths?: number;
+  paymentCycle?: PaymentCycle;
   ratePerHour?: string;
-  standardHoursPerWeek?: number;
+  standardHoursPerDay?: number;
   agreementRate?: string;
   otherRemarks?: string;
 };
@@ -94,8 +97,9 @@ type AssignmentContextDetail = {
   memberHandle: string;
   status: AssignmentStatus;
   agreementRate?: string | null;
+  paymentCycle?: PaymentCycle | null;
   ratePerHour?: string | null;
-  standardHoursPerWeek?: number | null;
+  standardHoursPerDay?: number | null;
   durationMonths?: number | null;
   otherRemarks?: string | null;
   startDate?: Date | null;
@@ -227,9 +231,10 @@ export class EngagementsService {
             if (details.ratePerHour !== undefined) {
               assignmentData.ratePerHour = details.ratePerHour;
             }
-            if (details.standardHoursPerWeek !== undefined) {
-              assignmentData.standardHoursPerWeek =
-                details.standardHoursPerWeek;
+            assignmentData.paymentCycle =
+              details.paymentCycle ?? DEFAULT_PAYMENT_CYCLE;
+            if (details.standardHoursPerDay !== undefined) {
+              assignmentData.standardHoursPerDay = details.standardHoursPerDay;
             }
             if (details.agreementRate !== undefined) {
               assignmentData.agreementRate = details.agreementRate;
@@ -364,8 +369,9 @@ export class EngagementsService {
         engagementTitle: engagement.title,
         assignmentStartDate: assignment.startDate ?? null,
         durationMonths: assignment.durationMonths ?? null,
+        paymentCycle: assignment.paymentCycle ?? DEFAULT_PAYMENT_CYCLE,
         ratePerHour: assignment.ratePerHour ?? null,
-        standardHoursPerWeek: assignment.standardHoursPerWeek ?? null,
+        standardHoursPerDay: assignment.standardHoursPerDay ?? null,
         agreementRate: assignment.agreementRate ?? null,
         otherRemarks: assignment.otherRemarks ?? null,
       })),
@@ -398,8 +404,9 @@ export class EngagementsService {
         engagementTitle: engagement.title,
         assignmentStartDate: assignment.startDate ?? null,
         durationMonths: assignment.durationMonths ?? null,
+        paymentCycle: assignment.paymentCycle ?? DEFAULT_PAYMENT_CYCLE,
         ratePerHour: assignment.ratePerHour ?? null,
-        standardHoursPerWeek: assignment.standardHoursPerWeek ?? null,
+        standardHoursPerDay: assignment.standardHoursPerDay ?? null,
         agreementRate: assignment.agreementRate ?? null,
         otherRemarks: assignment.otherRemarks ?? null,
       })),
@@ -418,16 +425,18 @@ export class EngagementsService {
     previousAssignment: {
       startDate: Date | null;
       durationMonths: number | null;
+      paymentCycle: PaymentCycle | null;
       ratePerHour: string | null;
-      standardHoursPerWeek: number | null;
+      standardHoursPerDay: number | null;
       agreementRate: string | null;
       otherRemarks: string | null;
     },
     nextAssignment: {
       startDate: Date | null;
       durationMonths: number | null;
+      paymentCycle: PaymentCycle | null;
       ratePerHour: string | null;
-      standardHoursPerWeek: number | null;
+      standardHoursPerDay: number | null;
       agreementRate: string | null;
       otherRemarks: string | null;
     },
@@ -436,9 +445,10 @@ export class EngagementsService {
       previousAssignment.startDate?.getTime() !==
         nextAssignment.startDate?.getTime() ||
       previousAssignment.durationMonths !== nextAssignment.durationMonths ||
+      previousAssignment.paymentCycle !== nextAssignment.paymentCycle ||
       previousAssignment.ratePerHour !== nextAssignment.ratePerHour ||
-      previousAssignment.standardHoursPerWeek !==
-        nextAssignment.standardHoursPerWeek ||
+      previousAssignment.standardHoursPerDay !==
+        nextAssignment.standardHoursPerDay ||
       previousAssignment.agreementRate !== nextAssignment.agreementRate ||
       previousAssignment.otherRemarks !== nextAssignment.otherRemarks
     );
@@ -842,8 +852,9 @@ export class EngagementsService {
       memberHandle: assignment.memberHandle,
       status: assignment.status,
       agreementRate: assignment.agreementRate,
+      paymentCycle: assignment.paymentCycle,
       ratePerHour: assignment.ratePerHour,
-      standardHoursPerWeek: assignment.standardHoursPerWeek,
+      standardHoursPerDay: assignment.standardHoursPerDay,
       durationMonths: assignment.durationMonths,
       otherRemarks: assignment.otherRemarks,
       startDate: assignment.startDate,
@@ -1083,9 +1094,12 @@ export class EngagementsService {
               if (details.ratePerHour !== undefined) {
                 assignmentUpdateData.ratePerHour = details.ratePerHour;
               }
-              if (details.standardHoursPerWeek !== undefined) {
-                assignmentUpdateData.standardHoursPerWeek =
-                  details.standardHoursPerWeek;
+              if (details.paymentCycle !== undefined) {
+                assignmentUpdateData.paymentCycle = details.paymentCycle;
+              }
+              if (details.standardHoursPerDay !== undefined) {
+                assignmentUpdateData.standardHoursPerDay =
+                  details.standardHoursPerDay;
               }
               if (details.agreementRate !== undefined) {
                 assignmentUpdateData.agreementRate = details.agreementRate;
@@ -1123,9 +1137,11 @@ export class EngagementsService {
             if (details.ratePerHour !== undefined) {
               assignmentCreateData.ratePerHour = details.ratePerHour;
             }
-            if (details.standardHoursPerWeek !== undefined) {
-              assignmentCreateData.standardHoursPerWeek =
-                details.standardHoursPerWeek;
+            assignmentCreateData.paymentCycle =
+              details.paymentCycle ?? DEFAULT_PAYMENT_CYCLE;
+            if (details.standardHoursPerDay !== undefined) {
+              assignmentCreateData.standardHoursPerDay =
+                details.standardHoursPerDay;
             }
             if (details.agreementRate !== undefined) {
               assignmentCreateData.agreementRate = details.agreementRate;
@@ -1587,8 +1603,9 @@ export class EngagementsService {
   private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {
     startDate?: Date;
     durationMonths?: number;
+    paymentCycle?: PaymentCycle;
     ratePerHour?: string;
-    standardHoursPerWeek?: number;
+    standardHoursPerDay?: number;
     agreementRate?: string;
     otherRemarks?: string;
   } {
@@ -1605,14 +1622,15 @@ export class EngagementsService {
 
     const startDate = parseDate(details?.startDate);
     const durationMonths = details?.durationMonths;
+    const paymentCycle = details?.paymentCycle ?? DEFAULT_PAYMENT_CYCLE;
     const ratePerHour =
       details?.ratePerHour !== undefined
         ? String(details.ratePerHour).trim()
         : undefined;
-    const standardHoursPerWeek = details?.standardHoursPerWeek;
+    const standardHoursPerDay = details?.standardHoursPerDay;
     const agreementRate = this.calculateAssignmentAgreementRate(
       ratePerHour,
-      standardHoursPerWeek,
+      standardHoursPerDay,
       details?.agreementRate !== undefined
         ? String(details.agreementRate).trim()
         : undefined,
@@ -1625,8 +1643,9 @@ export class EngagementsService {
     return {
       startDate,
       durationMonths,
+      paymentCycle,
       ratePerHour,
-      standardHoursPerWeek,
+      standardHoursPerDay,
       agreementRate: agreementRate ? agreementRate : undefined,
       otherRemarks: otherRemarks ? otherRemarks : undefined,
     };
@@ -1634,11 +1653,10 @@ export class EngagementsService {
 
   /**
    * Calculates the weekly assignment rate from hourly inputs used by assignment
-   * creation and update flows, while preserving support for legacy payloads
-   * that still send a per-week rate directly.
+   * creation and update flows, while preserving support for legacy payloads.
    *
    * @param ratePerHour - Assignment rate per hour from the incoming payload.
-   * @param standardHoursPerWeek - Standard hours per week from the incoming
+   * @param standardHoursPerDay - Standard hours per day from the incoming
    *   payload.
    * @param fallbackAgreementRate - Legacy assignment rate per week supplied by
    *   older clients.
@@ -1649,21 +1667,25 @@ export class EngagementsService {
    */
   private calculateAssignmentAgreementRate(
     ratePerHour?: string,
-    standardHoursPerWeek?: number,
+    standardHoursPerDay?: number,
     fallbackAgreementRate?: string,
   ): string | undefined {
     const hasRatePerHour = ratePerHour !== undefined;
-    const hasStandardHours = standardHoursPerWeek !== undefined;
+    const resolvedStandardHoursPerWeek =
+      standardHoursPerDay !== undefined
+        ? Number((standardHoursPerDay * 5).toFixed(2))
+        : undefined;
+    const hasStandardHours = resolvedStandardHoursPerWeek !== undefined;
 
     if (hasRatePerHour !== hasStandardHours) {
       throw new BadRequestException(
-        "ratePerHour and standardHoursPerWeek must be provided together.",
+        "ratePerHour and standardHoursPerDay must be provided together.",
       );
     }
 
     if (hasRatePerHour && hasStandardHours) {
       const parsedRatePerHour = Number(ratePerHour);
-      const parsedStandardHours = Number(standardHoursPerWeek);
+      const parsedStandardHours = Number(resolvedStandardHoursPerWeek);
 
       if (!Number.isFinite(parsedRatePerHour) || parsedRatePerHour <= 0) {
         throw new BadRequestException("ratePerHour must be a positive number.");
@@ -1678,7 +1700,7 @@ export class EngagementsService {
         )
       ) {
         throw new BadRequestException(
-          "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
+          "standardHoursPerDay must be a positive number with up to 2 decimal places.",
         );
       }
 

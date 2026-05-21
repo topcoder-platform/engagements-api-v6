@@ -1,4 +1,5 @@
 import { AssignmentOfferEmailService } from "./assignment-offer-email.service";
+import { PaymentCycle } from "@prisma/client";
 
 describe("AssignmentOfferEmailService", () => {
   let service: AssignmentOfferEmailService;
@@ -53,8 +54,9 @@ describe("AssignmentOfferEmailService", () => {
       assignmentStartDate: "2026-03-01T00:00:00.000Z",
       assignmentEndDate: "2026-03-31T00:00:00.000Z",
       durationMonths: 3,
+      paymentCycle: PaymentCycle.MONTHLY,
       ratePerHour: "125.5",
-      standardHoursPerWeek: 37.5,
+      standardHoursPerDay: 7.5,
       agreementRate: "4706.25",
       otherRemarks: "Bring your own device.",
     };
@@ -68,6 +70,8 @@ describe("AssignmentOfferEmailService", () => {
         engagementTitle: "Senior Designer",
         contractDuration: 3,
         assignmentStartDate: "1 March 2026",
+        paymentCycle: PaymentCycle.MONTHLY,
+        standardHoursPerDay: 7.5,
         hoursPerWeek: 37.5,
         ratePerHour: "125.50",
         weeklyPayment: "4706.25",
@@ -98,7 +102,8 @@ describe("AssignmentOfferEmailService", () => {
         assignmentEndDate: "Mar 31 2026",
         billingStartDate: "Mar 01 2026",
         durationMonths: 3,
-        standardHoursPerWeek: 37.5,
+        paymentCycle: PaymentCycle.MONTHLY,
+        standardHoursPerDay: 7.5,
         agreementRate: "4706.25",
       }),
       recipients: ["member@example.com"],

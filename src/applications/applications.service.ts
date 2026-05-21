@@ -11,6 +11,7 @@ import {
   AssignmentStatus,
   EngagementApplication,
   EngagementStatus,
+  PaymentCycle,
   Prisma,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
@@ -384,8 +385,9 @@ export class ApplicationsService {
   private normalizeAssignmentDetails(details?: ApproveApplicationDto): {
     startDate?: Date;
     durationMonths?: number;
+    paymentCycle?: PaymentCycle;
     ratePerHour?: string;
-    standardHoursPerWeek?: number;
+    standardHoursPerDay?: number;
     agreementRate?: string;
     otherRemarks?: string | null;
     hasAny: boolean;
@@ -403,11 +405,12 @@ export class ApplicationsService {
 
     const startDate = parseDate(details?.startDate);
     const durationMonths = details?.durationMonths;
+    const paymentCycle = details?.paymentCycle;
     const ratePerHour = details?.ratePerHour;
-    const standardHoursPerWeek = details?.standardHoursPerWeek;
+    const standardHoursPerDay = details?.standardHoursPerDay;
     const agreementRate = this.calculateAgreementRate(
       ratePerHour,
-      standardHoursPerWeek,
+      standardHoursPerDay,
       details?.agreementRate,
     );
     const otherRemarks =
@@ -416,15 +419,17 @@ export class ApplicationsService {
     return {
       startDate,
       durationMonths,
+      paymentCycle,
       ratePerHour,
-      standardHoursPerWeek,
+      standardHoursPerDay,
       agreementRate,
       otherRemarks,
       hasAny:
         startDate !== undefined ||
         durationMonths !== undefined ||
+        paymentCycle !== undefined ||
         ratePerHour !== undefined ||
-        standardHoursPerWeek !== undefined ||
+        standardHoursPerDay !== undefined ||
         agreementRate !== undefined ||
         otherRemarks !== undefined,
     };
@@ -482,12 +487,15 @@ export class ApplicationsService {
           if (normalizedAssignment.durationMonths !== undefined) {
             updateData.durationMonths = normalizedAssignment.durationMonths;
           }
+          if (normalizedAssignment.paymentCycle !== undefined) {
+            updateData.paymentCycle = normalizedAssignment.paymentCycle;
+          }
           if (normalizedAssignment.ratePerHour !== undefined) {
             updateData.ratePerHour = normalizedAssignment.ratePerHour;
           }
-          if (normalizedAssignment.standardHoursPerWeek !== undefined) {
-            updateData.standardHoursPerWeek =
-              normalizedAssignment.standardHoursPerWeek;
+          if (normalizedAssignment.standardHoursPerDay !== undefined) {
+            updateData.standardHoursPerDay =
+              normalizedAssignment.standardHoursPerDay;
           }
           if (normalizedAssignment.agreementRate !== undefined) {
             updateData.agreementRate = normalizedAssignment.agreementRate;
@@ -513,8 +521,9 @@ export class ApplicationsService {
             engagementId: updatedAssignment.engagementId,
             startDate: updatedAssignment.startDate,
             durationMonths: updatedAssignment.durationMonths,
+            paymentCycle: updatedAssignment.paymentCycle,
             ratePerHour: updatedAssignment.ratePerHour,
-            standardHoursPerWeek: updatedAssignment.standardHoursPerWeek,
+            standardHoursPerDay: updatedAssignment.standardHoursPerDay,
             agreementRate: updatedAssignment.agreementRate,
             otherRemarks: updatedAssignment.otherRemarks,
           },
@@ -552,11 +561,14 @@ export class ApplicationsService {
           ...(normalizedAssignment.durationMonths !== undefined && {
             durationMonths: normalizedAssignment.durationMonths,
           }),
+          ...(normalizedAssignment.paymentCycle !== undefined && {
+            paymentCycle: normalizedAssignment.paymentCycle,
+          }),
           ...(normalizedAssignment.ratePerHour !== undefined && {
             ratePerHour: normalizedAssignment.ratePerHour,
           }),
-          ...(normalizedAssignment.standardHoursPerWeek !== undefined && {
-            standardHoursPerWeek: normalizedAssignment.standardHoursPerWeek,
+          ...(normalizedAssignment.standardHoursPerDay !== undefined && {
+            standardHoursPerDay: normalizedAssignment.standardHoursPerDay,
           }),
           ...(normalizedAssignment.agreementRate !== undefined && {
             agreementRate: normalizedAssignment.agreementRate,
@@ -586,8 +598,9 @@ export class ApplicationsService {
           engagementId: assignment.engagementId,
           startDate: assignment.startDate,
           durationMonths: assignment.durationMonths,
+          paymentCycle: assignment.paymentCycle,
           ratePerHour: assignment.ratePerHour,
-          standardHoursPerWeek: assignment.standardHoursPerWeek,
+          standardHoursPerDay: assignment.standardHoursPerDay,
           agreementRate: assignment.agreementRate,
           otherRemarks: assignment.otherRemarks,
         },
@@ -643,9 +656,10 @@ export class ApplicationsService {
         engagementTitle: engagement.title,
         assignmentStartDate: assignmentResult.assignment?.startDate ?? null,
         durationMonths: assignmentResult.assignment?.durationMonths ?? null,
+        paymentCycle: assignmentResult.assignment?.paymentCycle ?? null,
         ratePerHour: assignmentResult.assignment?.ratePerHour ?? null,
-        standardHoursPerWeek:
-          assignmentResult.assignment?.standardHoursPerWeek ?? null,
+        standardHoursPerDay:
+          assignmentResult.assignment?.standardHoursPerDay ?? null,
         agreementRate: assignmentResult.assignment?.agreementRate ?? null,
         otherRemarks: assignmentResult.assignment?.otherRemarks ?? null,
       });
@@ -661,9 +675,10 @@ export class ApplicationsService {
         engagementTitle: engagement.title,
         assignmentStartDate: assignmentResult.assignment?.startDate ?? null,
         durationMonths: assignmentResult.assignment?.durationMonths ?? null,
+        paymentCycle: assignmentResult.assignment?.paymentCycle ?? null,
         ratePerHour: assignmentResult.assignment?.ratePerHour ?? null,
-        standardHoursPerWeek:
-          assignmentResult.assignment?.standardHoursPerWeek ?? null,
+        standardHoursPerDay:
+          assignmentResult.assignment?.standardHoursPerDay ?? null,
         agreementRate: assignmentResult.assignment?.agreementRate ?? null,
         otherRemarks: assignmentResult.assignment?.otherRemarks ?? null,
       });
@@ -676,7 +691,7 @@ export class ApplicationsService {
    *
    * @param ratePerHour - Assignment rate per hour as a string from the request
    *   payload.
-   * @param standardHoursPerWeek - Standard hours per week from the request
+  * @param standardHoursPerDay - Standard hours per day from the request
    *   payload.
    * @param fallbackAgreementRate - Legacy per-week rate used by older clients
    *   that do not send the new hourly fields.
@@ -687,39 +702,42 @@ export class ApplicationsService {
    */
   private calculateAgreementRate(
     ratePerHour?: string,
-    standardHoursPerWeek?: number,
+    standardHoursPerDay?: number,
     fallbackAgreementRate?: string,
   ): string | undefined {
     const hasRatePerHour = ratePerHour !== undefined;
-    const hasStandardHours = standardHoursPerWeek !== undefined;
+    const hasStandardHours = standardHoursPerDay !== undefined;
 
     if (hasRatePerHour !== hasStandardHours) {
       throw new BadRequestException(
-        "ratePerHour and standardHoursPerWeek must be provided together.",
+        "ratePerHour and standardHoursPerDay must be provided together.",
       );
     }
 
     if (hasRatePerHour && hasStandardHours) {
       const parsedRatePerHour = Number(ratePerHour);
-      const parsedStandardHours = Number(standardHoursPerWeek);
+      const parsedStandardHoursPerDay = Number(standardHoursPerDay);
 
       if (!Number.isFinite(parsedRatePerHour) || parsedRatePerHour <= 0) {
         throw new BadRequestException("ratePerHour must be a positive number.");
       }
 
       if (
-        !Number.isFinite(parsedStandardHours) ||
-        parsedStandardHours <= 0 ||
+        !Number.isFinite(parsedStandardHoursPerDay) ||
+        parsedStandardHoursPerDay <= 0 ||
         !hasAtMostDecimalPlaces(
-          parsedStandardHours,
+          parsedStandardHoursPerDay,
           MAX_STANDARD_HOURS_DECIMAL_PLACES,
         )
       ) {
         throw new BadRequestException(
-          "standardHoursPerWeek must be a positive number with up to 2 decimal places.",
+          "standardHoursPerDay must be a positive number with up to 2 decimal places.",
         );
       }
 
+      const parsedStandardHours = Number(
+        (parsedStandardHoursPerDay * 5).toFixed(2),
+      );
       return (parsedRatePerHour * parsedStandardHours).toFixed(2);
     }
 
@@ -755,16 +773,18 @@ export class ApplicationsService {
     existingAssignment: {
       startDate: Date | null;
       durationMonths: number | null;
+      paymentCycle: PaymentCycle | null;
       ratePerHour: string | null;
-      standardHoursPerWeek: number | null;
+      standardHoursPerDay: number | null;
       agreementRate: string | null;
       otherRemarks: string | null;
     },
     normalizedAssignment: {
       startDate?: Date;
       durationMonths?: number;
+      paymentCycle?: PaymentCycle;
       ratePerHour?: string;
-      standardHoursPerWeek?: number;
+      standardHoursPerDay?: number;
       agreementRate?: string;
       otherRemarks?: string | null;
     },
@@ -785,6 +805,13 @@ export class ApplicationsService {
     }
 
     if (
+      normalizedAssignment.paymentCycle !== undefined &&
+      normalizedAssignment.paymentCycle !== existingAssignment.paymentCycle
+    ) {
+      return true;
+    }
+
+    if (
       normalizedAssignment.ratePerHour !== undefined &&
       normalizedAssignment.ratePerHour !== existingAssignment.ratePerHour
     ) {
@@ -792,9 +819,9 @@ export class ApplicationsService {
     }
 
     if (
-      normalizedAssignment.standardHoursPerWeek !== undefined &&
-      normalizedAssignment.standardHoursPerWeek !==
-        existingAssignment.standardHoursPerWeek
+      normalizedAssignment.standardHoursPerDay !== undefined &&
+      normalizedAssignment.standardHoursPerDay !==
+        existingAssignment.standardHoursPerDay
     ) {
       return true;
     }

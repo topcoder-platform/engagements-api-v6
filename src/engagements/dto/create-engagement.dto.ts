@@ -24,6 +24,7 @@ import {
 import {
   AnticipatedStart,
   EngagementStatus,
+  PaymentCycle,
   Role,
   Workload,
 } from "@prisma/client";
@@ -88,8 +89,17 @@ export class AssignmentDetailsDto {
   ratePerHour?: string;
 
   @ApiPropertyOptional({
-    description: "Assignment standard hours per week",
-    example: 37.5,
+    description: "Assignment payment cycle",
+    enum: PaymentCycle,
+    example: PaymentCycle.WEEKLY,
+  })
+  @IsOptional()
+  @IsEnum(PaymentCycle)
+  paymentCycle?: PaymentCycle;
+
+  @ApiPropertyOptional({
+    description: "Assignment standard hours per day",
+    example: 7.5,
   })
   @IsOptional()
   @Type(() => Number)
@@ -97,18 +107,18 @@ export class AssignmentDetailsDto {
     { allowInfinity: false, allowNaN: false, maxDecimalPlaces: 2 },
     {
       message:
-        "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+        "standardHoursPerDay must be a positive number with up to 2 decimal places",
     },
   )
   @Min(0.01, {
     message:
-      "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+      "standardHoursPerDay must be a positive number with up to 2 decimal places",
   })
-  standardHoursPerWeek?: number;
+  standardHoursPerDay?: number;
 
   @ApiPropertyOptional({
     description:
-      "Calculated assignment rate per week. When omitted, the API computes it from ratePerHour multiplied by standardHoursPerWeek.",
+      "Calculated assignment rate per week. When omitted, the API computes it from ratePerHour multiplied by standardHoursPerDay * 5.",
     example: "3020",
   })
   @IsOptional()
@@ -359,7 +369,8 @@ export class CreateEngagementDto {
         startDate: "2026-01-30T12:00:00.000Z",
         durationMonths: 3,
         ratePerHour: "75.5",
-        standardHoursPerWeek: 37.5,
+        paymentCycle: PaymentCycle.WEEKLY,
+        standardHoursPerDay: 7.5,
         agreementRate: "2831.25",
         otherRemarks: "Complete onboarding within the first week.",
       },
