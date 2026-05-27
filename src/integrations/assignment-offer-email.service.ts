@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { PaymentCycle } from "@prisma/client";
 import { EventBusService } from "./event-bus.service";
 import { MemberService } from "./member.service";
 
@@ -12,8 +13,9 @@ export type AssignmentOfferRecipient = {
   assignmentStartDate?: Date | string | null;
   assignmentEndDate?: Date | string | null;
   durationMonths?: number | null;
+  paymentCycle?: PaymentCycle | null;
   ratePerHour?: string | number | null;
-  standardHoursPerWeek?: string | number | null;
+  standardHoursPerDay?: string | number | null;
   agreementRate?: string | number | null;
   otherRemarks?: string | null;
 };
@@ -239,11 +241,13 @@ export class AssignmentOfferEmailService {
     recipient: AssignmentOfferRecipient,
   ): Record<string, number | string> {
     const contractDuration = this.toIntegerValue(recipient.durationMonths);
-    const hoursPerWeek = this.toDecimalValue(recipient.standardHoursPerWeek);
+    const hoursPerDay = this.toDecimalValue(recipient.standardHoursPerDay);
+    const resolvedHoursPerWeek =
+      hoursPerDay !== null ? Number((hoursPerDay * 5).toFixed(2)) : null;
     const parsedRatePerHour = this.toDecimalValue(recipient.ratePerHour);
     const weeklyPayment =
-      parsedRatePerHour !== null && hoursPerWeek !== null
-        ? (parsedRatePerHour * hoursPerWeek).toFixed(2)
+      parsedRatePerHour !== null && resolvedHoursPerWeek !== null
+        ? (parsedRatePerHour * resolvedHoursPerWeek).toFixed(2)
         : this.formatDecimalValue(recipient.agreementRate);
     const otherRemarks = recipient.otherRemarks ?? "";
 
@@ -251,7 +255,9 @@ export class AssignmentOfferEmailService {
       engagementTitle: recipient.engagementTitle ?? "",
       contractDuration: contractDuration ?? "",
       assignmentStartDate: this.formatLongDate(recipient.assignmentStartDate),
-      hoursPerWeek: hoursPerWeek ?? "",
+      paymentCycle: recipient.paymentCycle ?? PaymentCycle.WEEKLY,
+      standardHoursPerDay: hoursPerDay ?? "",
+      hoursPerWeek: resolvedHoursPerWeek ?? "",
       ratePerHour: this.formatDecimalValue(recipient.ratePerHour),
       weeklyPayment,
       otherRemarks,
@@ -297,8 +303,8 @@ export class AssignmentOfferEmailService {
     );
     const assignmentEndDate = this.formatShortDate(recipient.assignmentEndDate);
     const durationMonths = this.toIntegerValue(recipient.durationMonths);
-    const standardHoursPerWeek = this.toDecimalValue(
-      recipient.standardHoursPerWeek,
+    const standardHoursPerDay = this.toDecimalValue(
+      recipient.standardHoursPerDay,
     );
 
     return {
@@ -311,7 +317,8 @@ export class AssignmentOfferEmailService {
       assignmentEndDate,
       billingStartDate,
       durationMonths: durationMonths ?? "",
-      standardHoursPerWeek: standardHoursPerWeek ?? "",
+      paymentCycle: recipient.paymentCycle ?? PaymentCycle.WEEKLY,
+      standardHoursPerDay: standardHoursPerDay ?? "",
       agreementRate: this.formatRawValue(recipient.agreementRate),
       ...this.buildSharedAssignmentPayload(recipient),
     };
