@@ -1,5 +1,9 @@
 import { ForbiddenException } from "@nestjs/common";
-import { ApplicationStatus, AssignmentStatus, PaymentCycle } from "@prisma/client";
+import {
+  ApplicationStatus,
+  AssignmentStatus,
+  PaymentCycle,
+} from "@prisma/client";
 import { ApplicationsService } from "./applications.service";
 
 jest.mock("nanoid", () => ({
@@ -379,9 +383,7 @@ describe("ApplicationsService", () => {
   });
 
   it("calculates agreement rates with fractional standard hours", () => {
-    expect((service as any).calculateAgreementRate("10.5", 7.5)).toBe(
-      "393.75",
-    );
+    expect((service as any).calculateAgreementRate("10.5", 7.5)).toBe("393.75");
   });
 
   it("rejects standardHoursPerDay values with more than two decimals", () => {
@@ -478,7 +480,9 @@ describe("ApplicationsService", () => {
         }),
       }),
     );
-    expect(assignmentOfferEmailService.sendAssignmentUpdatedEmail).toHaveBeenCalledWith(
+    expect(
+      assignmentOfferEmailService.sendAssignmentUpdatedEmail,
+    ).toHaveBeenCalledWith(
       expect.objectContaining({
         paymentCycle: PaymentCycle.MONTHLY,
       }),

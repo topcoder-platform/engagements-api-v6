@@ -691,7 +691,7 @@ export class ApplicationsService {
    *
    * @param ratePerHour - Assignment rate per hour as a string from the request
    *   payload.
-  * @param standardHoursPerDay - Standard hours per day from the request
+   * @param standardHoursPerDay - Standard hours per day from the request
    *   payload.
    * @param fallbackAgreementRate - Legacy per-week rate used by older clients
    *   that do not send the new hourly fields.
