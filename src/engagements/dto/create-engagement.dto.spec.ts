@@ -49,5 +49,4 @@ describe("AssignmentDetailsDto validation", () => {
         "standardHoursPerDay must be a positive number with up to 2 decimal places",
     });
   });
-
 });

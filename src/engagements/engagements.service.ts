@@ -185,12 +185,6 @@ export class EngagementsService {
         }
       }
 
-      if (assignmentDetailsList.length === 0) {
-        throw new BadRequestException(
-          "Private engagements must have at least one assigned member",
-        );
-      }
-
       if (
         payload.requiredMemberCount !== undefined &&
         assignmentDetailsList.length > payload.requiredMemberCount
@@ -980,25 +974,6 @@ export class EngagementsService {
       }
     }
 
-    const willBePrivate =
-      payload.isPrivate === true ||
-      (payload.isPrivate === undefined &&
-        existingEngagement.isPrivate === true);
-
-    if (willBePrivate) {
-      const hasAssignedMember =
-        Boolean(assignedMemberId) ||
-        Boolean(assignedMemberHandle) ||
-        assignmentDetailsList.length > 0 ||
-        activeAssignmentCount > 0;
-
-      if (!hasAssignedMember) {
-        throw new BadRequestException(
-          "Private engagements must have at least one assigned member",
-        );
-      }
-    }
-
     const shouldUpsertAssignment =
       !hasAssignmentArrayPayload &&
       (payload.assignedMemberId !== undefined ||
@@ -1315,8 +1290,7 @@ export class EngagementsService {
    * @param assignmentId Assignment UUID to terminate.
    * @returns Resolves when the assignment has been terminated or was already terminal.
    * @throws {NotFoundException} If the engagement or assignment does not exist.
-   * @throws {BadRequestException} If the assignment belongs to another engagement,
-   *   or terminating it would leave a private engagement with no active members.
+   * @throws {BadRequestException} If the assignment belongs to another engagement.
    */
   async removeAssignment(
     engagementId: string,
@@ -1351,23 +1325,9 @@ export class EngagementsService {
         );
       }
 
-      const activeAssignmentCount = engagement.assignments.filter(
-        (currentAssignment) =>
-          ACTIVE_ASSIGNMENT_STATUSES.includes(currentAssignment.status),
-      ).length;
       const isActiveAssignment = ACTIVE_ASSIGNMENT_STATUSES.includes(
         assignment.status,
       );
-
-      if (
-        engagement.isPrivate &&
-        isActiveAssignment &&
-        activeAssignmentCount <= 1
-      ) {
-        throw new BadRequestException(
-          "Private engagements must have at least one assigned member",
-        );
-      }
 
       if (!isActiveAssignment) {
         return;

@@ -135,6 +135,44 @@ describe("EngagementsService", () => {
     );
   });
 
+  it("creates private engagements without an assigned member", async () => {
+    const engagement = {
+      id: "eng-1",
+      isPrivate: true,
+      requiredMemberCount: 1,
+    };
+    const engagementWithAssignments = {
+      ...engagement,
+      assignments: [],
+    };
+    const tx = {
+      engagement: {
+        create: jest.fn().mockResolvedValue(engagement),
+        findUnique: jest.fn().mockResolvedValue(engagementWithAssignments),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.create(
+      {
+        ...createDto,
+        isPrivate: true,
+        requiredMemberCount: 1,
+      } as any,
+      { sub: "manager-1" },
+    );
+
+    expect(tx.engagement.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isPrivate: true,
+          requiredMemberCount: 1,
+        }),
+      }),
+    );
+  });
+
   it("sets updatedBy to system for M2M tokens", async () => {
     const existingEngagement = {
       id: "eng-1",
@@ -159,6 +197,50 @@ describe("EngagementsService", () => {
     expect(tx.engagement.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ updatedBy: "system" }),
+      }),
+    );
+  });
+
+  it("marks a private engagement completed after all assignments are completed", async () => {
+    const completedAssignment = {
+      id: "assign-1",
+      engagementId: "eng-1",
+      memberId: "member-1",
+      memberHandle: "handle1",
+      status: AssignmentStatus.COMPLETED,
+      createdAt: new Date("2026-02-11T10:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+      endDate: new Date("2026-02-12T10:00:00.000Z"),
+    };
+    const existingEngagement = {
+      id: "eng-1",
+      isPrivate: true,
+      requiredMemberCount: 1,
+      status: EngagementStatus.ACTIVE,
+      assignments: [completedAssignment],
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+
+    const tx = {
+      engagement: {
+        update: jest.fn().mockResolvedValue({
+          ...existingEngagement,
+          status: EngagementStatus.CLOSED,
+        }),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update("eng-1", { status: EngagementStatus.CLOSED } as any, {
+      sub: "manager-1",
+    });
+
+    expect(tx.engagement.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: EngagementStatus.CLOSED,
+        }),
       }),
     );
   });
@@ -1238,9 +1320,9 @@ describe("EngagementsService", () => {
   });
 
   it("calculates assignment agreement rates with fractional standard hours", () => {
-    expect(
-      (service as any).calculateAssignmentAgreementRate("10.5", 7.5),
-    ).toBe("393.75");
+    expect((service as any).calculateAssignmentAgreementRate("10.5", 7.5)).toBe(
+      "393.75",
+    );
   });
 
   it("calculates assignment agreement rate for high precision standard hours", () => {
@@ -1280,6 +1362,51 @@ describe("EngagementsService", () => {
         findUnique: jest.fn().mockResolvedValue({
           id: "eng-1",
           isPrivate: false,
+          assignments: [
+            {
+              id: "assign-1",
+              status: AssignmentStatus.ASSIGNED,
+            },
+          ],
+        }),
+      },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.ASSIGNED,
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: "assign-1",
+          engagementId: "eng-1",
+          status: AssignmentStatus.TERMINATED,
+          endDate: now,
+        }),
+      },
+    };
+
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.removeAssignment("eng-1", "assign-1");
+
+    expect(tx.engagementAssignment.update).toHaveBeenCalledWith({
+      where: { id: "assign-1" },
+      data: {
+        status: AssignmentStatus.TERMINATED,
+        endDate: now,
+      },
+    });
+  });
+
+  it("terminates the final active assignment on private engagements", async () => {
+    const now = new Date("2026-02-12T10:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(now);
+
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: "eng-1",
+          isPrivate: true,
           assignments: [
             {
               id: "assign-1",
