@@ -1,6 +1,8 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
+import { PaymentCycle } from "@prisma/client";
 import { Transform, Type } from "class-transformer";
 import {
+  IsEnum,
   IsDateString,
   IsInt,
   IsNumber,
@@ -51,8 +53,17 @@ export class ApproveApplicationDto {
   ratePerHour?: string;
 
   @ApiPropertyOptional({
-    description: "Assignment standard hours per week",
-    example: 37.5,
+    description: "Assignment payment cycle",
+    enum: PaymentCycle,
+    example: PaymentCycle.WEEKLY,
+  })
+  @IsOptional()
+  @IsEnum(PaymentCycle)
+  paymentCycle?: PaymentCycle;
+
+  @ApiPropertyOptional({
+    description: "Assignment standard hours per day",
+    example: 7.5,
   })
   @IsOptional()
   @Type(() => Number)
@@ -60,18 +71,18 @@ export class ApproveApplicationDto {
     { allowInfinity: false, allowNaN: false, maxDecimalPlaces: 2 },
     {
       message:
-        "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+        "standardHoursPerDay must be a positive number with up to 2 decimal places",
     },
   )
   @Min(0.01, {
     message:
-      "standardHoursPerWeek must be a positive number with up to 2 decimal places",
+      "standardHoursPerDay must be a positive number with up to 2 decimal places",
   })
-  standardHoursPerWeek?: number;
+  standardHoursPerDay?: number;
 
   @ApiPropertyOptional({
     description:
-      "Calculated assignment rate per week. When omitted, the API computes it from ratePerHour multiplied by standardHoursPerWeek.",
+      "Calculated assignment rate per week. When omitted, the API computes it from ratePerHour multiplied by standardHoursPerDay * 5.",
     example: "3020",
   })
   @IsOptional()

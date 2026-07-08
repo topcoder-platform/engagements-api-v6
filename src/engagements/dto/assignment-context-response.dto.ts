@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { AssignmentStatus } from "@prisma/client";
+import { AssignmentStatus, PaymentCycle } from "@prisma/client";
 
 export class AssignmentContextResponseDto {
   @ApiProperty({
@@ -73,10 +73,17 @@ export class AssignmentContextResponseDto {
   ratePerHour?: string | null;
 
   @ApiPropertyOptional({
-    description: "Assignment standard hours per week",
-    example: 37.5,
+    description: "Assignment payment cycle",
+    enum: PaymentCycle,
+    example: PaymentCycle.WEEKLY,
   })
-  standardHoursPerWeek?: number | null;
+  paymentCycle?: PaymentCycle | null;
+
+  @ApiPropertyOptional({
+    description: "Assignment standard hours per day",
+    example: 7.5,
+  })
+  standardHoursPerDay?: number | null;
 
   @ApiPropertyOptional({
     description: "Assignment duration in months",

@@ -36,6 +36,12 @@ enum AssignmentStatus {
   TERMINATED
 }
 
+enum PaymentCycle {
+  WEEKLY
+  FORTNIGHTLY
+  MONTHLY
+}
+
 enum Role {
   DESIGNER
   SOFTWARE_DEVELOPER
@@ -115,21 +121,24 @@ model EngagementApplication {
 }
 
 model EngagementAssignment {
-  id             String             @id @default(uuid())
-  engagementId   String
-  memberId       String
-  memberHandle   String
-  status         AssignmentStatus   @default(SELECTED)
-  agreementRate  String?
-  ratePerHour    String?
+  id                   String           @id @default(uuid())
+  engagementId         String
+  memberId             String
+  memberHandle         String
+  status               AssignmentStatus @default(SELECTED)
+  agreementRate        String?
+  ratePerHour          String?
+  paymentCycle         PaymentCycle     @default(WEEKLY)
+  standardHoursPerDay  Float?
+  /// @deprecated Use standardHoursPerDay instead.
   standardHoursPerWeek Float?
-  durationMonths Int?
-  otherRemarks   String?
-  terminationReason String?
-  startDate      DateTime?
-  endDate        DateTime?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  durationMonths       Int?
+  otherRemarks         String?
+  terminationReason    String?
+  startDate            DateTime?
+  endDate              DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   engagement     Engagement         @relation(fields: [engagementId], references: [id], onDelete: Restrict)
   feedback       EngagementFeedback[]

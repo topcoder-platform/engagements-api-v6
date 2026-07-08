@@ -173,6 +173,8 @@ exports.Prisma.EngagementAssignmentScalarFieldEnum = {
   status: 'status',
   agreementRate: 'agreementRate',
   ratePerHour: 'ratePerHour',
+  paymentCycle: 'paymentCycle',
+  standardHoursPerDay: 'standardHoursPerDay',
   standardHoursPerWeek: 'standardHoursPerWeek',
   durationMonths: 'durationMonths',
   otherRemarks: 'otherRemarks',
@@ -259,6 +261,12 @@ exports.AssignmentStatus = exports.$Enums.AssignmentStatus = {
   ASSIGNED: 'ASSIGNED',
   COMPLETED: 'COMPLETED',
   TERMINATED: 'TERMINATED'
+};
+
+exports.PaymentCycle = exports.$Enums.PaymentCycle = {
+  WEEKLY: 'WEEKLY',
+  FORTNIGHTLY: 'FORTNIGHTLY',
+  MONTHLY: 'MONTHLY'
 };
 
 exports.Prisma.ModelName = {
