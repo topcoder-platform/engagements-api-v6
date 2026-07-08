@@ -45,6 +45,15 @@ import {
   CreateEngagementDurationWeeksDto,
   EngagementQueryDto,
   EngagementResponseDto,
+  FlexiEngagementDetailDto,
+  FlexiEngagementListQueryDto,
+  FlexiEngagementListResponseDto,
+  FlexiEngagementSummaryDto,
+  FlexiMemberDetailDto,
+  FlexiMemberHistoryDto,
+  FlexiMemberListQueryDto,
+  FlexiMemberListResponseDto,
+  FlexiMemberSummaryDto,
   PaginatedResponse,
   UpdateAssignmentStatusDto,
   UpdateEngagementDto,
@@ -59,6 +68,13 @@ import { getUserIdentifier, getUserRoles } from "../common/user.util";
   CreateEngagementDurationWeeksDto,
   CreateEngagementDurationMonthsDto,
   CreateEngagementDurationDatesDto,
+  FlexiEngagementSummaryDto,
+  FlexiEngagementListResponseDto,
+  FlexiEngagementDetailDto,
+  FlexiMemberSummaryDto,
+  FlexiMemberListResponseDto,
+  FlexiMemberDetailDto,
+  FlexiMemberHistoryDto,
 )
 @Controller("engagements")
 export class EngagementsController {
@@ -210,6 +226,278 @@ export class EngagementsController {
     @Param("assignmentId") assignmentId: string,
   ): Promise<AssignmentContextResponseDto> {
     return this.engagementsService.findAssignmentContext(assignmentId);
+  }
+
+  @Get("flexi-talent/engagements/summary")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get Flexi Talent engagement summary",
+    description:
+      "Returns Flexi Talent engagement bucket counts. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Flexi engagement summary retrieved.",
+    type: FlexiEngagementSummaryDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Requires Administrator or Talent Manager role for humans, or read:engagements scope for M2M callers.",
+  })
+  /**
+   * Returns Flexi Talent engagement summary counts.
+   *
+   * @param req Authenticated request context used for endpoint-local access
+   * enforcement.
+   * @returns Engagement total/active/closed counts.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is not an allowed Flexi reader.
+   */
+  async getFlexiEngagementSummary(
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<FlexiEngagementSummaryDto> {
+    this.assertFlexiReadAccess(req.authUser);
+    return this.engagementsService.getFlexiEngagementSummary();
+  }
+
+  @Get("flexi-talent/engagements")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List Flexi Talent engagements",
+    description:
+      "Returns Flexi Talent engagement rows with flat body pagination. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Flexi engagement list retrieved.",
+    type: FlexiEngagementListResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Requires Administrator or Talent Manager role for humans, or read:engagements scope for M2M callers.",
+  })
+  /**
+   * Lists Flexi Talent engagements with bucket, search, sort, and pagination.
+   *
+   * @param query Flexi engagement list query parameters.
+   * @param req Authenticated request context used for endpoint-local access
+   * enforcement.
+   * @returns Flat body-paginated engagement list response.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is not an allowed Flexi reader.
+   */
+  async getFlexiEngagementList(
+    @Query() query: FlexiEngagementListQueryDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<FlexiEngagementListResponseDto> {
+    this.assertFlexiReadAccess(req.authUser);
+    return this.engagementsService.getFlexiEngagementList(query);
+  }
+
+  @Get("flexi-talent/engagements/:engagementId")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get Flexi Talent engagement detail",
+    description:
+      "Returns a Flexi Talent engagement detail read model. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Flexi engagement detail retrieved.",
+    type: FlexiEngagementDetailDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Requires Administrator or Talent Manager role for humans, or read:engagements scope for M2M callers.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement not found." })
+  /**
+   * Gets one Flexi Talent engagement detail payload.
+   *
+   * @param engagementId Engagement id to fetch.
+   * @param req Authenticated request context used for endpoint-local access
+   * enforcement.
+   * @returns Flexi engagement detail response.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is not an allowed Flexi reader.
+   */
+  async getFlexiEngagementDetail(
+    @Param("engagementId") engagementId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<FlexiEngagementDetailDto> {
+    this.assertFlexiReadAccess(req.authUser);
+    return this.engagementsService.getFlexiEngagementDetail(engagementId);
+  }
+
+  @Get("flexi-talent/members/summary")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get Flexi Talent member summary",
+    description:
+      "Returns Flexi Talent member bucket counts. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Flexi member summary retrieved.",
+    type: FlexiMemberSummaryDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Requires Administrator or Talent Manager role for humans, or read:engagements scope for M2M callers.",
+  })
+  /**
+   * Returns Flexi Talent member summary counts.
+   *
+   * @param req Authenticated request context used for endpoint-local access
+   * enforcement.
+   * @returns Member total/assigned/completed counts.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is not an allowed Flexi reader.
+   */
+  async getFlexiMemberSummary(
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<FlexiMemberSummaryDto> {
+    this.assertFlexiReadAccess(req.authUser);
+    return this.engagementsService.getFlexiMemberSummary();
+  }
+
+  @Get("flexi-talent/members")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List Flexi Talent members",
+    description:
+      "Returns Flexi Talent member rows with flat body pagination. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Flexi member list retrieved.",
+    type: FlexiMemberListResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Requires Administrator or Talent Manager role for humans, or read:engagements scope for M2M callers.",
+  })
+  /**
+   * Lists Flexi Talent members with bucket, search, sort, and pagination.
+   *
+   * @param query Flexi member list query parameters.
+   * @param req Authenticated request context used for endpoint-local access
+   * enforcement.
+   * @returns Flat body-paginated member list response.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is not an allowed Flexi reader.
+   */
+  async getFlexiMemberList(
+    @Query() query: FlexiMemberListQueryDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<FlexiMemberListResponseDto> {
+    this.assertFlexiReadAccess(req.authUser);
+    return this.engagementsService.getFlexiMemberList(query);
+  }
+
+  @Get("flexi-talent/members/:memberId/history")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get Flexi Talent member history",
+    description:
+      "Returns the full Flexi Talent assignment history for one member. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Flexi member history retrieved.",
+    type: FlexiMemberHistoryDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Requires Administrator or Talent Manager role for humans, or read:engagements scope for M2M callers.",
+  })
+  @ApiNotFoundResponse({ description: "Member assignment history not found." })
+  /**
+   * Gets the unpaginated Flexi Talent assignment history for one member.
+   *
+   * @param memberId Member id to fetch.
+   * @param req Authenticated request context used for endpoint-local access
+   * enforcement.
+   * @returns Flexi member history response.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is not an allowed Flexi reader.
+   */
+  async getFlexiMemberHistory(
+    @Param("memberId") memberId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<FlexiMemberHistoryDto> {
+    this.assertFlexiReadAccess(req.authUser);
+    return this.engagementsService.getFlexiMemberHistory(memberId);
+  }
+
+  @Get("flexi-talent/members/:memberId")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get Flexi Talent member detail",
+    description:
+      "Returns the Flexi Talent right-rail detail for one member. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Flexi member detail retrieved.",
+    type: FlexiMemberDetailDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Requires Administrator or Talent Manager role for humans, or read:engagements scope for M2M callers.",
+  })
+  @ApiNotFoundResponse({ description: "Member assignment history not found." })
+  /**
+   * Gets the Flexi Talent right-rail detail for one member.
+   *
+   * @param memberId Member id to fetch.
+   * @param req Authenticated request context used for endpoint-local access
+   * enforcement.
+   * @returns Flexi member detail response.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is not an allowed Flexi reader.
+   */
+  async getFlexiMemberDetail(
+    @Param("memberId") memberId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<FlexiMemberDetailDto> {
+    this.assertFlexiReadAccess(req.authUser);
+    return this.engagementsService.getFlexiMemberDetail(memberId);
   }
 
   @Get(":id")
@@ -535,6 +823,42 @@ export class EngagementsController {
     if (!normalizedScopes.includes(requiredScope.toLowerCase())) {
       throw new ForbiddenException(
         "You do not have the required permissions to access this resource.",
+      );
+    }
+  }
+
+  /**
+   * Enforces endpoint-local Flexi Talent read access.
+   *
+   * Human callers must carry the Administrator or Talent Manager role set used
+   * for private engagement inclusion. M2M callers must carry the requested
+   * read:engagements scope.
+   *
+   * @param authUser Authenticated user or M2M claims from the request.
+   * @throws UnauthorizedException When authentication is missing.
+   * @throws ForbiddenException When the caller is outside the Flexi read
+   * contract.
+   */
+  private assertFlexiReadAccess(authUser?: Record<string, any>): void {
+    if (!authUser) {
+      throw new UnauthorizedException(
+        "Authentication is required to access Flexi Talent engagement data.",
+      );
+    }
+
+    if (authUser.isMachine) {
+      this.assertMachineScope(authUser, AppScopes.ReadEngagements);
+      return;
+    }
+
+    const roles = getUserRoles(authUser);
+    const isAllowed = roles.some((role) =>
+      this.includePrivateRoles.has(role?.toLowerCase()),
+    );
+
+    if (!isAllowed) {
+      throw new ForbiddenException(
+        "Flexi Talent engagement reads require Administrator or Talent Manager role.",
       );
     }
   }

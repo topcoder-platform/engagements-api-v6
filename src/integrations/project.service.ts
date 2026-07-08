@@ -40,6 +40,7 @@ export class ProjectService {
   private readonly projectNameCache = new Map<string, CachedProjectName>();
   private readonly projectNameCacheTtlMs = 5 * 60 * 1000;
   private readonly projectLookupBatchSize = 10;
+  private readonly flexiProjectSearchCap = 50;
 
   constructor(
     private readonly httpService: HttpService,
@@ -198,6 +199,71 @@ export class ProjectService {
     }
 
     return projectNamesById;
+  }
+
+  /**
+   * Resolves project ids whose names match Flexi Talent engagement search text.
+   *
+   * The helper intentionally does nothing for short search text, requests only
+   * the first bounded projects page with minimal `id,name` fields, caps ids
+   * before the engagements Prisma query is built, and seeds the project-name
+   * cache so later row hydration can reuse the same names.
+   *
+   * @param searchText Raw list search text from the Flexi engagement query.
+   * @returns Matching project ids capped to the Flexi search limit, or an empty
+   * list when search is too short or project lookup fails.
+   */
+  async searchFlexiProjectIdsByName(searchText?: string): Promise<string[]> {
+    const normalizedSearchText =
+      typeof searchText === "string" ? searchText.trim() : "";
+
+    if (normalizedSearchText.length < 3) {
+      return [];
+    }
+
+    const token = await this.getM2MToken();
+    const url = this.getFlexiProjectSearchUrl(normalizedSearchText);
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
+      const projects = this.extractProjectList(response.data);
+      const projectIds: string[] = [];
+
+      projects.slice(0, this.flexiProjectSearchCap).forEach((project) => {
+        const projectId = this.normalizeProjectId(project.id);
+        if (!projectId) {
+          return;
+        }
+
+        projectIds.push(projectId);
+
+        const projectName = this.normalizeProjectName(project.name);
+        if (projectName) {
+          this.setCachedProjectName(projectId, projectName);
+        }
+      });
+
+      return Array.from(new Set(projectIds)).slice(
+        0,
+        this.flexiProjectSearchCap,
+      );
+    } catch (error) {
+      if (isAxiosError(error)) {
+        this.logger.warn(
+          `Failed to search projects for Flexi engagement search (status=${error.response?.status ?? "unknown"}).`,
+        );
+        return [];
+      }
+
+      this.logger.warn(
+        "Failed to search projects for Flexi engagement search.",
+      );
+      return [];
+    }
   }
 
   /**
@@ -401,6 +467,22 @@ export class ProjectService {
     return normalizedProjectName || undefined;
   }
 
+  private extractProjectList(data: unknown): ProjectResponse[] {
+    if (Array.isArray(data)) {
+      return data as ProjectResponse[];
+    }
+
+    if (
+      data &&
+      typeof data === "object" &&
+      Array.isArray((data as { data?: unknown }).data)
+    ) {
+      return (data as { data: ProjectResponse[] }).data;
+    }
+
+    return [];
+  }
+
   private getCachedProjectName(projectId: string): string | undefined {
     const cacheEntry = this.projectNameCache.get(projectId);
     if (!cacheEntry) {
@@ -511,6 +593,22 @@ export class ProjectService {
       fields: "id",
       page: String(page),
       perPage: String(perPage),
+    });
+
+    return `${normalizedBaseUrl}/v6/projects?${query.toString()}`;
+  }
+
+  private getFlexiProjectSearchUrl(searchText: string): string {
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
+    );
+    const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+    const query = new URLSearchParams({
+      fields: "id,name",
+      name: searchText,
+      page: "1",
+      perPage: String(this.flexiProjectSearchCap),
     });
 
     return `${normalizedBaseUrl}/v6/projects?${query.toString()}`;

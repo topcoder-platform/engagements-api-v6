@@ -6,3 +6,5 @@ export * from "./engagement-response.dto";
 export * from "./assignment-response.dto";
 export * from "./assignment-context-response.dto";
 export * from "./update-assignment-status.dto";
+export * from "./flexi-engagement.dto";
+export * from "./flexi-member.dto";
