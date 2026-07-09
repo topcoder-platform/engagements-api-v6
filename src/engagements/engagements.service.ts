@@ -64,6 +64,7 @@ const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
 const MAX_STANDARD_HOURS_DECIMAL_PLACES = 2;
 const DEFAULT_PAYMENT_CYCLE = PaymentCycle.WEEKLY;
+const FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV = "FLEXI_TALENT_IGNORED_PROJECT_IDS";
 
 const hasAtMostDecimalPlaces = (
   value: number,
@@ -144,6 +145,7 @@ type FlexiEngagementListFilters = {
   bucket: FlexiEngagementBucket;
   searchText?: string;
   projectIds: string[];
+  ignoredProjectIds: string[];
 };
 
 type FlexiEngagementListRow = Pick<
@@ -222,6 +224,10 @@ export class EngagementsService {
   private readonly privilegedRoles = new Set(
     PrivilegedUserRoles.map((role) => role.toLowerCase()),
   );
+  private readonly flexiTalentIgnoredProjectIds =
+    this.parseConfiguredProjectIds(
+      process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV],
+    );
 
   constructor(
     private readonly db: DbService,
@@ -973,20 +979,25 @@ export class EngagementsService {
   async getFlexiEngagementSummary(): Promise<FlexiEngagementSummaryDto> {
     this.logger.debug("Getting Flexi engagement summary");
 
+    const totalWhere = this.buildFlexiEngagementWhere({
+      bucket: FlexiEngagementBucket.Total,
+      projectIds: [],
+      ignoredProjectIds: this.flexiTalentIgnoredProjectIds,
+    });
+    const activeWhere = this.buildFlexiEngagementWhere({
+      bucket: FlexiEngagementBucket.Active,
+      projectIds: [],
+      ignoredProjectIds: this.flexiTalentIgnoredProjectIds,
+    });
+    const closedWhere = this.buildFlexiEngagementWhere({
+      bucket: FlexiEngagementBucket.Closed,
+      projectIds: [],
+      ignoredProjectIds: this.flexiTalentIgnoredProjectIds,
+    });
     const [total, active, closed] = await Promise.all([
-      this.db.engagement.count(),
-      this.db.engagement.count({
-        where: {
-          status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] },
-        },
-      }),
-      this.db.engagement.count({
-        where: {
-          status: {
-            in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
-          },
-        },
-      }),
+      this.db.engagement.count({ where: totalWhere }),
+      this.db.engagement.count({ where: activeWhere }),
+      this.db.engagement.count({ where: closedWhere }),
     ]);
 
     return { total, active, closed };
@@ -1070,6 +1081,9 @@ export class EngagementsService {
     if (!engagement) {
       throw new NotFoundException("Engagement not found.");
     }
+    if (this.isFlexiTalentProjectIgnored(engagement.projectId)) {
+      throw new NotFoundException("Engagement not found.");
+    }
 
     const [projectNamesById, skillNamesById] = await Promise.all([
       this.getFlexiProjectNames([engagement.projectId]),
@@ -1119,6 +1133,7 @@ export class EngagementsService {
     const assignments = await this.db.engagementAssignment.findMany({
       where: {
         status: { in: this.getFlexiQualifyingAssignmentStatuses() },
+        ...this.buildFlexiTalentAssignmentIgnoreWhere(),
       },
       select: {
         memberId: true,
@@ -2489,13 +2504,22 @@ export class EngagementsService {
   ): Promise<FlexiEngagementListFilters> {
     const searchText = query.searchText?.trim() || undefined;
     const projectIds = searchText
-      ? await this.projectService.searchFlexiProjectIdsByName(searchText)
+      ? (await this.projectService.searchFlexiProjectIdsByName(searchText))
+          .map((projectId) => this.normalizeProjectId(projectId))
+          .filter((projectId): projectId is string => {
+            if (!projectId) {
+              return false;
+            }
+
+            return !this.isFlexiTalentProjectIgnored(projectId);
+          })
       : [];
 
     return {
       bucket: query.bucket,
       searchText,
       projectIds,
+      ignoredProjectIds: this.flexiTalentIgnoredProjectIds,
     };
   }
 
@@ -2513,6 +2537,10 @@ export class EngagementsService {
   ): Prisma.EngagementWhereInput {
     const where: Prisma.EngagementWhereInput = {};
     const andFilters: Prisma.EngagementWhereInput[] = [];
+
+    if (filters.ignoredProjectIds.length) {
+      where.projectId = { notIn: filters.ignoredProjectIds };
+    }
 
     if (filters.bucket === FlexiEngagementBucket.Active) {
       andFilters.push({
@@ -2692,6 +2720,14 @@ export class EngagementsService {
     filters: FlexiEngagementListFilters,
   ): Prisma.Sql {
     const clauses: Prisma.Sql[] = [];
+
+    if (filters.ignoredProjectIds.length) {
+      clauses.push(
+        Prisma.sql`e."projectId" NOT IN (${Prisma.join(
+          filters.ignoredProjectIds,
+        )})`,
+      );
+    }
 
     if (filters.bucket === FlexiEngagementBucket.Active) {
       clauses.push(
@@ -3011,6 +3047,11 @@ export class EngagementsService {
     const searchSql = searchText
       ? Prisma.sql`AND a."memberHandle" ILIKE ${`%${searchText}%`}`
       : Prisma.empty;
+    const ignoredProjectSql = this.flexiTalentIgnoredProjectIds.length
+      ? Prisma.sql`AND e."projectId" NOT IN (${Prisma.join(
+          this.flexiTalentIgnoredProjectIds,
+        )})`
+      : Prisma.empty;
 
     return Prisma.sql`
       WITH filtered_assignments AS (
@@ -3040,6 +3081,7 @@ export class EngagementsService {
         WHERE a."status" IN (${this.buildAssignmentStatusListSql(
           this.getFlexiQualifyingAssignmentStatuses(),
         )})
+        ${ignoredProjectSql}
         ${searchSql}
       ),
       scored_assignments AS (
@@ -3264,6 +3306,7 @@ export class EngagementsService {
   }): Promise<FlexiAssignmentWithEngagement[]> {
     const where: Prisma.EngagementAssignmentWhereInput = {
       status: { in: this.getFlexiQualifyingAssignmentStatuses() },
+      ...this.buildFlexiTalentAssignmentIgnoreWhere(),
     };
     const searchText = options.searchText?.trim();
 
@@ -3283,6 +3326,63 @@ export class EngagementsService {
         engagement: true,
       },
     });
+  }
+
+  /**
+   * Parses a comma-separated project ignore list from configuration.
+   *
+   * Flexi Talent engagement and member read paths use the returned project IDs
+   * to hide data for ignored Work projects. Blank entries and duplicate project
+   * IDs are ignored; the parser is tolerant and does not throw.
+   *
+   * @param rawValue Raw environment value from `FLEXI_TALENT_IGNORED_PROJECT_IDS`.
+   * @returns Normalized project IDs that should be excluded from Flexi payloads.
+   */
+  private parseConfiguredProjectIds(rawValue?: string): string[] {
+    return Array.from(
+      new Set(
+        (rawValue ?? "")
+          .split(",")
+          .map((projectId) => this.normalizeProjectId(projectId))
+          .filter((projectId): projectId is string => Boolean(projectId)),
+      ),
+    );
+  }
+
+  /**
+   * Builds the assignment relation filter for the Flexi Talent project ignore list.
+   *
+   * Member summary, list, detail, and history queries merge this condition into
+   * their assignment filters so ignored project assignments cannot select or
+   * count a member row.
+   *
+   * @returns Assignment where fragment excluding configured ignored projects.
+   */
+  private buildFlexiTalentAssignmentIgnoreWhere(): Prisma.EngagementAssignmentWhereInput {
+    if (!this.flexiTalentIgnoredProjectIds.length) {
+      return {};
+    }
+
+    return {
+      engagement: {
+        projectId: {
+          notIn: this.flexiTalentIgnoredProjectIds,
+        },
+      },
+    };
+  }
+
+  /**
+   * Checks whether Flexi Talent should hide a project.
+   *
+   * Direct engagement detail lookups use this after fetching by engagement id so
+   * ignored-project engagements are reported the same way as missing rows.
+   *
+   * @param projectId Project id from an engagement row.
+   * @returns True when the project id is configured for Flexi Talent exclusion.
+   */
+  private isFlexiTalentProjectIgnored(projectId: string): boolean {
+    return this.flexiTalentIgnoredProjectIds.includes(projectId);
   }
 
   /**

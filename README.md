@@ -49,6 +49,7 @@ Set the following environment variables (see `.env.example` for defaults):
 | `VALID_ISSUERS` | JSON array of allowed JWT issuers. |
 | `TOPCODER_API_URL_BASE` | Base URL for Topcoder API services. |
 | `PLATFORM_UI_BASE_URL` | Platform UI base URL used to generate anonymous feedback links. |
+| `FLEXI_TALENT_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs excluded from all Flexi Talent engagement and member responses. |
 | `AUTH0_URL` | Auth0 token endpoint for M2M client credentials. |
 | `M2M_CLIENT_ID` | Auth0 M2M client ID. |
 | `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |
@@ -95,6 +96,7 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
   - `projectName` (if available)
   - `project` object with `id` and optional `name`
 - `PUT /engagements/:id` rejects project reassignment when the engagement's current project already has a `billingAccountId`.
+- Flexi Talent endpoints exclude engagements and member assignment rows whose `projectId` is configured in `FLEXI_TALENT_IGNORED_PROJECT_IDS`.
 - Flexi Talent list endpoints return pagination at the top level of the response body instead of the legacy nested `meta` shape:
 
 ```json
