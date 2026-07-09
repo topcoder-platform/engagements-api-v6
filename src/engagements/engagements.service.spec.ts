@@ -1911,14 +1911,12 @@ describe("EngagementsService", () => {
 
     const pageSql = normalizeSql(db.$queryRaw.mock.calls[1][0]);
 
+    expect(pageSql).toContain('CASE WHEN "hasCurrent" THEN 0 ELSE 1 END ASC');
     expect(pageSql).toContain(
-      'CASE WHEN "isCurrentlyAssigned" THEN 0 ELSE 1 END ASC',
+      'CASE WHEN "hasCurrent" THEN "daysRemaining" ELSE NULL END DESC',
     );
     expect(pageSql).toContain(
-      'CASE WHEN "isCurrentlyAssigned" THEN "daysRemaining" ELSE NULL END DESC',
-    );
-    expect(pageSql).toContain(
-      'CASE WHEN NOT "isCurrentlyAssigned" THEN "latestCompletedAt" ELSE NULL END ASC',
+      'CASE WHEN NOT "hasCurrent" THEN "latestCompletedAt" ELSE NULL END ASC',
     );
     expect(result.data.map((row) => row.handle)).toEqual([
       "active-long",
@@ -2066,7 +2064,7 @@ describe("EngagementsService", () => {
     expect(db.engagementAssignment.findMany).not.toHaveBeenCalled();
     expect(pageSql).toContain('HAVING BOOL_OR("isCurrent")');
     expect(pageSql).toContain(
-      'CASE WHEN "isCurrentlyAssigned" THEN "daysRemaining" ELSE NULL END ASC',
+      'CASE WHEN "hasCurrent" THEN "daysRemaining" ELSE NULL END ASC',
     );
     expect(result.data.map((row) => row.handle)).toEqual(["alpha", "beta"]);
     expect(result.data.map((row) => row.daysRemaining)).toEqual([null, null]);
