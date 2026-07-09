@@ -31,11 +31,30 @@ import {
   AssignmentDetailsDto,
   EngagementQueryDto,
   EngagementSortBy,
+  FlexiEngagementAssignmentRowDto,
+  FlexiEngagementBucket,
+  FlexiEngagementDetailDto,
+  FlexiEngagementListItemDto,
+  FlexiEngagementListQueryDto,
+  FlexiEngagementListResponseDto,
+  FlexiEngagementSortBy,
+  FlexiEngagementSummaryDto,
+  FlexiMemberBucket,
+  FlexiMemberDetailDto,
+  FlexiMemberHistoryDto,
+  FlexiMemberHistoryItemDto,
+  FlexiMemberListItemDto,
+  FlexiMemberListQueryDto,
+  FlexiMemberListResponseDto,
+  FlexiMemberSortBy,
+  FlexiMemberSummaryDto,
+  FlexiSkillReferenceDto,
   PaginatedResponse,
   UpdateEngagementDto,
 } from "./dto";
 import {
   ACTIVE_ASSIGNMENT_STATUSES,
+  ASSIGNMENT_COMPLETION_STATUSES,
   ERROR_MESSAGES,
   MY_ASSIGNMENTS_STATUSES,
 } from "../common/constants";
@@ -108,6 +127,93 @@ type AssignmentContextDetail = {
 
 type EngagementDetail = Engagement & {
   assignments?: EngagementAssignment[];
+};
+
+type FlexiAssignmentWithEngagement = EngagementAssignment & {
+  engagement: Engagement;
+};
+
+type FlexiAssignmentTieRow = Pick<
+  EngagementAssignment,
+  "id" | "memberId" | "memberHandle"
+> & {
+  engagement: Pick<Engagement, "title">;
+};
+
+type FlexiEngagementListFilters = {
+  bucket: FlexiEngagementBucket;
+  searchText?: string;
+  projectIds: string[];
+};
+
+type FlexiEngagementListRow = Pick<
+  Engagement,
+  "id" | "projectId" | "title" | "status" | "requiredMemberCount"
+> & {
+  assignedMemberCount: number;
+};
+
+type FlexiEngagementListSqlRow = Pick<
+  Engagement,
+  "id" | "projectId" | "title" | "status" | "requiredMemberCount"
+> & {
+  assignedMemberCount: number | bigint | string;
+};
+
+type FlexiDurationFields = {
+  durationMonths?: number | null;
+  durationWeeks?: number | null;
+  durationStartDate?: Date | null;
+  durationEndDate?: Date | null;
+  durationLabel?: string | null;
+};
+
+type FlexiTimingFields = {
+  resolvedEndDate?: Date | null;
+  timeLeftDays?: number | null;
+  isOverdue: boolean;
+};
+
+type FlexiMemberAssignmentGroup = {
+  memberId: string;
+  assignments: FlexiAssignmentWithEngagement[];
+};
+
+type FlexiMemberListAssignment = Pick<
+  EngagementAssignment,
+  "id" | "engagementId" | "memberId" | "memberHandle" | "status"
+> & {
+  engagement: Pick<Engagement, "id" | "projectId" | "title">;
+};
+
+type FlexiPrimaryAssignment<
+  TAssignment extends FlexiAssignmentTieRow = FlexiAssignmentWithEngagement,
+> = {
+  assignment: TAssignment;
+  isCurrentlyAssigned: boolean;
+  daysRemaining?: number | null;
+  latestCompletedAt?: Date | null;
+};
+
+type FlexiMemberListPrimaryAssignment =
+  FlexiPrimaryAssignment<FlexiMemberListAssignment>;
+
+type FlexiMemberListSqlRow = {
+  assignmentId: string;
+  engagementId: string;
+  memberId: string;
+  memberHandle: string;
+  status: AssignmentStatus;
+  engagementProjectId: string;
+  engagementTitle: string;
+  isCurrentlyAssigned: boolean;
+  daysRemaining: number | bigint | string | null;
+  latestCompletedAt: Date | null;
+};
+
+type FlexiListPage<TRow> = {
+  rows: TRow[];
+  total: number;
 };
 
 @Injectable()
@@ -853,6 +959,358 @@ export class EngagementsService {
       otherRemarks: assignment.otherRemarks,
       startDate: assignment.startDate,
       endDate: assignment.endDate,
+    };
+  }
+
+  /**
+   * Returns Flexi Talent engagement bucket counts.
+   *
+   * Counts are independent of list filters: total counts all engagements,
+   * active counts OPEN and ACTIVE, and closed counts CLOSED and CANCELLED.
+   *
+   * @returns Engagement summary counts for the Flexi Talent dashboard.
+   */
+  async getFlexiEngagementSummary(): Promise<FlexiEngagementSummaryDto> {
+    this.logger.debug("Getting Flexi engagement summary");
+
+    const [total, active, closed] = await Promise.all([
+      this.db.engagement.count(),
+      this.db.engagement.count({
+        where: {
+          status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] },
+        },
+      }),
+      this.db.engagement.count({
+        where: {
+          status: {
+            in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
+          },
+        },
+      }),
+    ]);
+
+    return { total, active, closed };
+  }
+
+  /**
+   * Lists Flexi Talent engagements with database-paged member counts.
+   *
+   * The method applies Flexi bucket/search rules once, lets Prisma page simple
+   * name sorting, and isolates aggregate member-count sorting in a
+   * parameterized SQL helper so only page rows are hydrated with project names.
+   *
+   * @param query Flexi engagement list filters, sorting, and pagination.
+   * @returns Flat body-paginated engagement list response.
+   */
+  async getFlexiEngagementList(
+    query: FlexiEngagementListQueryDto,
+  ): Promise<FlexiEngagementListResponseDto> {
+    this.logger.debug("Listing Flexi engagements", {
+      bucket: query.bucket,
+      searchText: query.searchText,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
+
+    const page = query.page;
+    const perPage = query.perPage;
+    const skip = (page - 1) * perPage;
+    const filters = await this.resolveFlexiEngagementListFilters(query);
+    const { rows: pagedEngagements, total } =
+      query.sortBy === FlexiEngagementSortBy.MemberCount
+        ? await this.getFlexiEngagementRowsSortedByMemberCount(
+            filters,
+            query.sortOrder,
+            skip,
+            perPage,
+          )
+        : await this.getFlexiEngagementRowsSortedByName(
+            filters,
+            query.sortOrder,
+            skip,
+            perPage,
+          );
+    const projectNamesById = await this.getFlexiProjectNames(
+      pagedEngagements.map((engagement) => engagement.projectId),
+    );
+    const data = pagedEngagements.map((engagement) =>
+      this.buildFlexiEngagementListItem(engagement, projectNamesById),
+    );
+
+    return {
+      data,
+      page,
+      perPage,
+      total,
+      totalPages: total ? Math.ceil(total / perPage) : 0,
+    };
+  }
+
+  /**
+   * Gets a Flexi Talent engagement detail payload.
+   *
+   * The method returns one engagement with all assignments, project name, skill
+   * names, active assigned-member count, and assignment timing derivations while
+   * omitting payment fields.
+   *
+   * @param engagementId Engagement id to fetch.
+   * @returns Flexi engagement detail read model.
+   * @throws {NotFoundException} If the engagement does not exist.
+   */
+  async getFlexiEngagementDetail(
+    engagementId: string,
+  ): Promise<FlexiEngagementDetailDto> {
+    this.logger.debug("Getting Flexi engagement detail", { engagementId });
+
+    const engagement = await this.db.engagement.findUnique({
+      where: { id: engagementId },
+      include: { assignments: true },
+    });
+
+    if (!engagement) {
+      throw new NotFoundException("Engagement not found.");
+    }
+
+    const [projectNamesById, skillNamesById] = await Promise.all([
+      this.getFlexiProjectNames([engagement.projectId]),
+      this.getFlexiSkillNames(engagement.requiredSkills),
+    ]);
+    const projectName = this.normalizeProjectName(
+      projectNamesById.get(engagement.projectId),
+    );
+    const skills = this.buildFlexiSkillReferences(
+      engagement.requiredSkills,
+      skillNamesById,
+    );
+    const duration = this.resolveFlexiDuration(undefined, engagement);
+    const assignedMemberCount = this.countCurrentFlexiAssignments(
+      engagement.assignments,
+    );
+
+    return {
+      engagementId: engagement.id,
+      projectId: engagement.projectId,
+      ...(projectName ? { projectName } : {}),
+      engagementTitle: engagement.title,
+      description: engagement.description,
+      status: engagement.status,
+      requiredMemberCount: engagement.requiredMemberCount,
+      assignedMemberCount,
+      skills,
+      ...duration,
+      assignments: engagement.assignments.map((assignment) =>
+        this.buildFlexiEngagementAssignmentRow(assignment, engagement),
+      ),
+    };
+  }
+
+  /**
+   * Returns assignment-centric Flexi Talent member bucket counts.
+   *
+   * Members are keyed by memberId across current and completion assignment
+   * statuses. Completed members have completion-status assignments and no
+   * current assignment.
+   *
+   * @returns Unique member counts for total, assigned, and completed buckets.
+   */
+  async getFlexiMemberSummary(): Promise<FlexiMemberSummaryDto> {
+    this.logger.debug("Getting Flexi member summary");
+
+    const assignments = await this.db.engagementAssignment.findMany({
+      where: {
+        status: { in: this.getFlexiQualifyingAssignmentStatuses() },
+      },
+      select: {
+        memberId: true,
+        status: true,
+      },
+    });
+    const membersById = new Map<
+      string,
+      { hasCurrent: boolean; hasCompletion: boolean }
+    >();
+
+    assignments.forEach((assignment) => {
+      const state = membersById.get(assignment.memberId) ?? {
+        hasCurrent: false,
+        hasCompletion: false,
+      };
+
+      if (ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)) {
+        state.hasCurrent = true;
+      }
+      if (ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status)) {
+        state.hasCompletion = true;
+      }
+
+      membersById.set(assignment.memberId, state);
+    });
+
+    let assignedMembers = 0;
+    let completedMembers = 0;
+    membersById.forEach((state) => {
+      if (state.hasCurrent) {
+        assignedMembers += 1;
+        return;
+      }
+
+      if (state.hasCompletion) {
+        completedMembers += 1;
+      }
+    });
+
+    return {
+      totalUniqueMembers: membersById.size,
+      assignedMembers,
+      completedMembers,
+    };
+  }
+
+  /**
+   * Lists Flexi Talent members with database-ranked primary assignments.
+   *
+   * The method searches member handles, applies assignment-centric buckets, and
+   * delegates primary-row selection, sorting, counting, and paging to a
+   * list-specific SQL helper that mirrors the existing comparator semantics.
+   *
+   * @param query Flexi member list filters, sorting, and pagination.
+   * @returns Flat body-paginated member list response.
+   */
+  async getFlexiMemberList(
+    query: FlexiMemberListQueryDto,
+  ): Promise<FlexiMemberListResponseDto> {
+    this.logger.debug("Listing Flexi members", {
+      bucket: query.bucket,
+      searchText: query.searchText,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
+
+    const page = query.page;
+    const perPage = query.perPage;
+    const { rows: pagedRows, total } =
+      await this.getPagedFlexiMemberListRows(query);
+    const projectNamesById = await this.getFlexiProjectNames(
+      pagedRows.map((row) => row.assignment.engagement.projectId),
+    );
+    const data = pagedRows.map((row) =>
+      this.buildFlexiMemberListItem(row, projectNamesById),
+    );
+
+    return {
+      data,
+      page,
+      perPage,
+      total,
+      totalPages: total ? Math.ceil(total / perPage) : 0,
+    };
+  }
+
+  /**
+   * Gets the Flexi Talent member right-rail detail payload.
+   *
+   * The method fetches all qualifying assignment history for a member, reuses
+   * the member-list primary assignment selection, and enriches the chosen
+   * assignment with project and skill names plus duration/timing derivations.
+   *
+   * @param memberId Member id whose detail should be returned.
+   * @returns Flexi member detail read model.
+   * @throws {NotFoundException} If the member has no qualifying assignment
+   * history.
+   */
+  async getFlexiMemberDetail(memberId: string): Promise<FlexiMemberDetailDto> {
+    this.logger.debug("Getting Flexi member detail", { memberId });
+
+    const assignments = await this.getFlexiAssignmentsWithEngagements({
+      memberId,
+    });
+    const primary = this.selectFlexiPrimaryAssignment(assignments);
+
+    if (!primary) {
+      throw new NotFoundException("Member assignment history not found.");
+    }
+
+    const assignment = primary.assignment;
+    const engagement = assignment.engagement;
+    const [projectNamesById, skillNamesById] = await Promise.all([
+      this.getFlexiProjectNames([engagement.projectId]),
+      this.getFlexiSkillNames(engagement.requiredSkills),
+    ]);
+    const projectName = this.normalizeProjectName(
+      projectNamesById.get(engagement.projectId),
+    );
+    const timing = this.resolveFlexiTiming(assignment);
+
+    return {
+      memberId: assignment.memberId,
+      handle: assignment.memberHandle,
+      isCurrentlyAssigned: primary.isCurrentlyAssigned,
+      assignmentId: assignment.id,
+      projectId: engagement.projectId,
+      ...(projectName ? { projectName } : {}),
+      engagementId: engagement.id,
+      engagementTitle: engagement.title,
+      description: engagement.description,
+      status: assignment.status,
+      displayStatusLabel: this.getAssignmentDisplayStatusLabel(
+        assignment.status,
+      ),
+      skills: this.buildFlexiSkillReferences(
+        engagement.requiredSkills,
+        skillNamesById,
+      ),
+      startDate: assignment.startDate,
+      endDate: assignment.endDate,
+      ...timing,
+      ...this.resolveFlexiDuration(assignment, engagement),
+    };
+  }
+
+  /**
+   * Gets the full unpaginated Flexi Talent assignment history for a member.
+   *
+   * Current assignments are ordered first by soonest ending assignment. Past
+   * assignments follow newest first by resolved completion timestamp, with
+   * project and skill names hydrated tolerantly.
+   *
+   * @param memberId Member id whose history should be returned.
+   * @returns Flexi member history response.
+   * @throws {NotFoundException} If the member has no qualifying assignment
+   * history.
+   */
+  async getFlexiMemberHistory(
+    memberId: string,
+  ): Promise<FlexiMemberHistoryDto> {
+    this.logger.debug("Getting Flexi member history", { memberId });
+
+    const assignments = await this.getFlexiAssignmentsWithEngagements({
+      memberId,
+    });
+
+    if (!assignments.length) {
+      throw new NotFoundException("Member assignment history not found.");
+    }
+
+    const projectNamesById = await this.getFlexiProjectNames(
+      assignments.map((assignment) => assignment.engagement.projectId),
+    );
+    const skillNamesById = await this.getFlexiSkillNames(
+      assignments.flatMap((assignment) => assignment.engagement.requiredSkills),
+    );
+    const data = assignments
+      .map((assignment) =>
+        this.buildFlexiMemberHistoryItem(
+          assignment,
+          projectNamesById,
+          skillNamesById,
+        ),
+      )
+      .sort((left, right) => this.compareFlexiMemberHistoryRows(left, right));
+
+    return {
+      memberId,
+      handle: assignments[0].memberHandle,
+      data,
     };
   }
 
@@ -2015,6 +2473,1499 @@ export class EngagementsService {
       assignmentsToTerminate,
       assignmentsToUpdate,
     };
+  }
+
+  /**
+   * Normalizes Flexi engagement list filters once per request.
+   *
+   * Project-name search remains server-resolved through ProjectService, which
+   * owns trimming, the three-character lookup gate, and result capping.
+   *
+   * @param query Flexi list query containing bucket and optional search text.
+   * @returns Normalized filters shared by Prisma and SQL list paths.
+   */
+  private async resolveFlexiEngagementListFilters(
+    query: FlexiEngagementListQueryDto,
+  ): Promise<FlexiEngagementListFilters> {
+    const searchText = query.searchText?.trim() || undefined;
+    const projectIds = searchText
+      ? await this.projectService.searchFlexiProjectIdsByName(searchText)
+      : [];
+
+    return {
+      bucket: query.bucket,
+      searchText,
+      projectIds,
+    };
+  }
+
+  /**
+   * Builds the Prisma where clause for Flexi Talent engagement lists.
+   *
+   * This remains the semantic source for bucket membership and title/project
+   * search; SQL list helpers consume the same normalized filter object.
+   *
+   * @param filters Normalized Flexi engagement list filters.
+   * @returns Engagement where clause using Flexi bucket and search semantics.
+   */
+  private buildFlexiEngagementWhere(
+    filters: FlexiEngagementListFilters,
+  ): Prisma.EngagementWhereInput {
+    const where: Prisma.EngagementWhereInput = {};
+    const andFilters: Prisma.EngagementWhereInput[] = [];
+
+    if (filters.bucket === FlexiEngagementBucket.Active) {
+      andFilters.push({
+        status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] },
+      });
+    }
+    if (filters.bucket === FlexiEngagementBucket.Closed) {
+      andFilters.push({
+        status: { in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED] },
+      });
+    }
+
+    if (filters.searchText) {
+      const searchFilters: Prisma.EngagementWhereInput[] = [
+        {
+          title: {
+            contains: filters.searchText,
+            mode: "insensitive",
+          },
+        },
+      ];
+
+      if (filters.projectIds.length) {
+        searchFilters.push({ projectId: { in: filters.projectIds } });
+      }
+
+      andFilters.push({ OR: searchFilters });
+    }
+
+    if (andFilters.length) {
+      where.AND = andFilters;
+    }
+
+    return where;
+  }
+
+  /**
+   * Fetches a database-paged Flexi engagement page for name sorting.
+   *
+   * The query pulls only list fields and a filtered active-assignment count,
+   * preserving name sort plus stable id ties without hydrating assignment rows.
+   *
+   * @param filters Normalized Flexi engagement filters.
+   * @param sortOrder Requested name sort direction.
+   * @param skip Number of rows to skip.
+   * @param take Number of rows to return.
+   * @returns Page rows plus the total matching engagement count.
+   */
+  private async getFlexiEngagementRowsSortedByName(
+    filters: FlexiEngagementListFilters,
+    sortOrder: "asc" | "desc",
+    skip: number,
+    take: number,
+  ): Promise<FlexiListPage<FlexiEngagementListRow>> {
+    const where = this.buildFlexiEngagementWhere(filters);
+    const [engagements, total] = await Promise.all([
+      this.db.engagement.findMany({
+        where,
+        select: {
+          id: true,
+          projectId: true,
+          title: true,
+          status: true,
+          requiredMemberCount: true,
+          _count: {
+            select: {
+              assignments: {
+                where: {
+                  status: { in: ACTIVE_ASSIGNMENT_STATUSES },
+                },
+              },
+            },
+          },
+        },
+        orderBy: [{ title: sortOrder }, { id: "asc" }],
+        skip,
+        take,
+      }),
+      this.db.engagement.count({ where }),
+    ]);
+
+    return {
+      rows: engagements.map((engagement) => ({
+        id: engagement.id,
+        projectId: engagement.projectId,
+        title: engagement.title,
+        status: engagement.status,
+        requiredMemberCount: engagement.requiredMemberCount,
+        assignedMemberCount: engagement._count.assignments,
+      })),
+      total,
+    };
+  }
+
+  /**
+   * Fetches a database-paged Flexi engagement page for member-count sorting.
+   *
+   * This hot-path SQL is intentionally isolated because Prisma cannot express
+   * the exact aggregate ordering without loading every candidate engagement; it
+   * preserves active assignment counting, requested count direction, title asc
+   * ties, and id asc ties.
+   *
+   * @param filters Normalized Flexi engagement filters.
+   * @param sortOrder Requested member-count sort direction.
+   * @param skip Number of rows to skip.
+   * @param take Number of rows to return.
+   * @returns Page rows plus the total matching engagement count.
+   */
+  private async getFlexiEngagementRowsSortedByMemberCount(
+    filters: FlexiEngagementListFilters,
+    sortOrder: "asc" | "desc",
+    skip: number,
+    take: number,
+  ): Promise<FlexiListPage<FlexiEngagementListRow>> {
+    const whereSql = this.buildFlexiEngagementWhereSql(filters);
+    const sortDirectionSql = this.buildSqlSortDirection(sortOrder);
+    const [countRows, rows] = await Promise.all([
+      this.db.$queryRaw<Array<{ total: bigint | number | string }>>(
+        Prisma.sql`
+          SELECT COUNT(*)::bigint AS "total"
+          FROM "Engagement" e
+          ${whereSql}
+        `,
+      ),
+      this.db.$queryRaw<FlexiEngagementListSqlRow[]>(
+        Prisma.sql`
+          SELECT
+            e."id",
+            e."projectId",
+            e."title",
+            e."status",
+            e."requiredMemberCount",
+            COUNT(a."id")::int AS "assignedMemberCount"
+          FROM "Engagement" e
+          LEFT JOIN "EngagementAssignment" a
+            ON a."engagementId" = e."id"
+           AND a."status" IN (${this.buildAssignmentStatusListSql(
+             ACTIVE_ASSIGNMENT_STATUSES,
+           )})
+          ${whereSql}
+          GROUP BY
+            e."id",
+            e."projectId",
+            e."title",
+            e."status",
+            e."requiredMemberCount"
+          ORDER BY
+            "assignedMemberCount" ${sortDirectionSql},
+            e."title" ASC,
+            e."id" ASC
+          OFFSET ${skip}
+          LIMIT ${take}
+        `,
+      ),
+    ]);
+
+    return {
+      rows: rows.map((row) => ({
+        id: row.id,
+        projectId: row.projectId,
+        title: row.title,
+        status: row.status,
+        requiredMemberCount: row.requiredMemberCount,
+        assignedMemberCount: this.coerceSqlNumber(row.assignedMemberCount),
+      })),
+      total: this.coerceSqlNumber(countRows[0]?.total),
+    };
+  }
+
+  /**
+   * Builds the SQL WHERE clause matching Flexi engagement list filters.
+   *
+   * @param filters Normalized filters also used by the Prisma where builder.
+   * @returns Parameterized SQL predicate for aggregate engagement list queries.
+   */
+  private buildFlexiEngagementWhereSql(
+    filters: FlexiEngagementListFilters,
+  ): Prisma.Sql {
+    const clauses: Prisma.Sql[] = [];
+
+    if (filters.bucket === FlexiEngagementBucket.Active) {
+      clauses.push(
+        Prisma.sql`e."status" IN (${this.buildEngagementStatusListSql([
+          EngagementStatus.OPEN,
+          EngagementStatus.ACTIVE,
+        ])})`,
+      );
+    }
+    if (filters.bucket === FlexiEngagementBucket.Closed) {
+      clauses.push(
+        Prisma.sql`e."status" IN (${this.buildEngagementStatusListSql([
+          EngagementStatus.CLOSED,
+          EngagementStatus.CANCELLED,
+        ])})`,
+      );
+    }
+
+    if (filters.searchText) {
+      const titlePattern = `%${filters.searchText}%`;
+      const searchClauses: Prisma.Sql[] = [
+        Prisma.sql`e."title" ILIKE ${titlePattern}`,
+      ];
+
+      if (filters.projectIds.length) {
+        searchClauses.push(
+          Prisma.sql`e."projectId" IN (${Prisma.join(filters.projectIds)})`,
+        );
+      }
+
+      clauses.push(Prisma.sql`(${Prisma.join(searchClauses, " OR ")})`);
+    }
+
+    if (!clauses.length) {
+      return Prisma.empty;
+    }
+
+    return Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}`;
+  }
+
+  /**
+   * Assembles a Flexi engagement list item from an engagement row.
+   *
+   * @param engagement Narrow engagement list row with assigned-member count.
+   * @param projectNamesById Hydrated project names keyed by project id.
+   * @returns Flexi engagement list item.
+   */
+  private buildFlexiEngagementListItem(
+    engagement: FlexiEngagementListRow,
+    projectNamesById: Map<string, string>,
+  ): FlexiEngagementListItemDto {
+    const projectName = this.normalizeProjectName(
+      projectNamesById.get(engagement.projectId),
+    );
+
+    return {
+      engagementId: engagement.id,
+      projectId: engagement.projectId,
+      ...(projectName ? { projectName } : {}),
+      engagementTitle: engagement.title,
+      status: engagement.status,
+      assignedMemberCount: engagement.assignedMemberCount,
+      requiredMemberCount: engagement.requiredMemberCount,
+    };
+  }
+
+  /**
+   * Counts current Flexi assignment rows using shared active status semantics.
+   *
+   * @param assignments Assignment rows for one engagement.
+   * @returns Number of assignments in ACTIVE_ASSIGNMENT_STATUSES.
+   */
+  private countCurrentFlexiAssignments(
+    assignments: EngagementAssignment[],
+  ): number {
+    return assignments.filter((assignment) =>
+      ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
+    ).length;
+  }
+
+  /**
+   * Hydrates project names for Flexi payloads through the existing project seam.
+   *
+   * @param projectIds Project ids to resolve.
+   * @returns Project name map, or an empty map when hydration fails.
+   */
+  private async getFlexiProjectNames(
+    projectIds: string[],
+  ): Promise<Map<string, string>> {
+    try {
+      return await this.projectService.getProjectNamesByIds(projectIds);
+    } catch (error) {
+      this.logger.warn("Failed to hydrate Flexi project names.", {
+        error: error instanceof Error ? error.message : error,
+      });
+      return new Map<string, string>();
+    }
+  }
+
+  /**
+   * Hydrates skill names for Flexi detail and history payloads.
+   *
+   * @param skillIds Skill ids from engagement.requiredSkills.
+   * @returns Skill name map with raw-id fallbacks when hydration fails.
+   */
+  private async getFlexiSkillNames(
+    skillIds: string[],
+  ): Promise<Map<string, string>> {
+    try {
+      return await this.skillsService.getSkillNamesByIds(skillIds);
+    } catch (error) {
+      this.logger.warn("Failed to hydrate Flexi skill names.", {
+        error: error instanceof Error ? error.message : error,
+      });
+
+      return new Map(
+        Array.from(new Set(skillIds)).map((skillId) => [skillId, skillId]),
+      );
+    }
+  }
+
+  /**
+   * Builds ordered skill references with display-name fallbacks.
+   *
+   * @param skillIds Raw required skill ids.
+   * @param skillNamesById Hydrated skill names keyed by id.
+   * @returns Skill reference DTOs preserving first-seen order.
+   */
+  private buildFlexiSkillReferences(
+    skillIds: string[],
+    skillNamesById: Map<string, string>,
+  ): FlexiSkillReferenceDto[] {
+    const seenSkillIds = new Set<string>();
+
+    return skillIds
+      .map((skillId) => skillId.trim())
+      .filter((skillId) => {
+        if (!skillId || seenSkillIds.has(skillId)) {
+          return false;
+        }
+
+        seenSkillIds.add(skillId);
+        return true;
+      })
+      .map((skillId) => ({
+        id: skillId,
+        name: skillNamesById.get(skillId) ?? skillId,
+      }));
+  }
+
+  /**
+   * Assembles an assignment row for Flexi engagement detail.
+   *
+   * @param assignment Assignment row to expose.
+   * @param engagement Parent engagement used for project and duration fallback.
+   * @returns Flexi engagement assignment row DTO.
+   */
+  private buildFlexiEngagementAssignmentRow(
+    assignment: EngagementAssignment,
+    engagement: Engagement,
+  ): FlexiEngagementAssignmentRowDto {
+    return {
+      assignmentId: assignment.id,
+      engagementId: engagement.id,
+      projectId: engagement.projectId,
+      memberId: assignment.memberId,
+      memberHandle: assignment.memberHandle,
+      status: assignment.status,
+      displayStatusLabel: this.getAssignmentDisplayStatusLabel(
+        assignment.status,
+      ),
+      startDate: assignment.startDate,
+      endDate: assignment.endDate,
+      ...this.resolveFlexiTiming(assignment),
+      ...this.resolveFlexiDuration(assignment, engagement),
+    };
+  }
+
+  /**
+   * Returns the shared current and completion statuses used by Flexi members.
+   *
+   * @returns Unique assignment statuses that qualify for member summary, list,
+   * detail, and history payloads.
+   */
+  private getFlexiQualifyingAssignmentStatuses(): AssignmentStatus[] {
+    return Array.from(
+      new Set([
+        ...ACTIVE_ASSIGNMENT_STATUSES,
+        ...ASSIGNMENT_COMPLETION_STATUSES,
+      ]),
+    );
+  }
+
+  /**
+   * Fetches a database-paged Flexi member list.
+   *
+   * The SQL is isolated to this list hot path because Prisma cannot express the
+   * existing grouped primary-assignment selection, current/completed buckets,
+   * time ordering, and stable assignment ties without reloading every row.
+   *
+   * @param query Flexi member list filters, sorting, and pagination.
+   * @returns Page rows plus the total matching member count.
+   */
+  private async getPagedFlexiMemberListRows(
+    query: FlexiMemberListQueryDto,
+  ): Promise<FlexiListPage<FlexiMemberListPrimaryAssignment>> {
+    const searchText = query.searchText?.trim() || undefined;
+    const todayUtcDate = new Date(this.getUtcDateOnlyTime(new Date()))
+      .toISOString()
+      .slice(0, 10);
+    const baseSql = this.buildFlexiMemberListBaseSql(
+      query.bucket,
+      searchText,
+      todayUtcDate,
+    );
+    const orderSql = this.buildFlexiMemberListOrderSql(query);
+    const skip = (query.page - 1) * query.perPage;
+    const [countRows, rows] = await Promise.all([
+      this.db.$queryRaw<Array<{ total: bigint | number | string }>>(
+        Prisma.sql`
+          ${baseSql}
+          SELECT COUNT(*)::bigint AS "total"
+          FROM member_flags
+        `,
+      ),
+      this.db.$queryRaw<FlexiMemberListSqlRow[]>(
+        Prisma.sql`
+          ${baseSql},
+          primary_assignments AS (
+            SELECT
+              s.*,
+              mf."hasCurrent",
+              ROW_NUMBER() OVER (
+                PARTITION BY s."memberId"
+                ORDER BY
+                  CASE
+                    WHEN mf."hasCurrent" AND s."isCurrent" THEN 0
+                    WHEN NOT mf."hasCurrent" AND s."isCompletion" THEN 0
+                    ELSE 1
+                  END ASC,
+                  CASE
+                    WHEN mf."hasCurrent"
+                     AND s."isCurrent"
+                     AND s."resolvedEndDate" IS NULL THEN 1
+                    ELSE 0
+                  END ASC,
+                  CASE
+                    WHEN mf."hasCurrent" AND s."isCurrent"
+                      THEN s."resolvedEndDate"
+                    ELSE NULL
+                  END ASC,
+                  CASE
+                    WHEN NOT mf."hasCurrent" AND s."isCompletion"
+                      THEN s."latestCompletedAt"
+                    ELSE NULL
+                  END DESC,
+                  s."engagementTitle" ASC,
+                  s."memberHandle" ASC,
+                  s."memberId" ASC,
+                  s."assignmentId" ASC
+              ) AS "primaryRank"
+            FROM scored_assignments s
+            JOIN member_flags mf
+              ON mf."memberId" = s."memberId"
+            WHERE (mf."hasCurrent" AND s."isCurrent")
+               OR (NOT mf."hasCurrent" AND s."isCompletion")
+          )
+          SELECT
+            "assignmentId",
+            "engagementId",
+            "memberId",
+            "memberHandle",
+            "status",
+            "engagementProjectId",
+            "engagementTitle",
+            "hasCurrent" AS "isCurrentlyAssigned",
+            CASE
+              WHEN "hasCurrent" THEN "daysRemaining"
+              ELSE NULL
+            END AS "daysRemaining",
+            CASE
+              WHEN "hasCurrent" THEN NULL
+              ELSE "latestCompletedAt"
+            END AS "latestCompletedAt"
+          FROM primary_assignments
+          WHERE "primaryRank" = 1
+          ORDER BY ${orderSql}
+          OFFSET ${skip}
+          LIMIT ${query.perPage}
+        `,
+      ),
+    ]);
+
+    return {
+      rows: rows.map((row) => this.mapFlexiMemberListSqlRow(row)),
+      total: this.coerceSqlNumber(countRows[0]?.total),
+    };
+  }
+
+  /**
+   * Builds the shared CTE for Flexi member list count and page queries.
+   *
+   * The CTE filters assignment rows before grouping to preserve handle-search
+   * semantics, mirrors setUTCMonth-style end-date overflow, and exposes bucket
+   * membership through member_flags.
+   *
+   * @param bucket Requested member bucket.
+   * @param searchText Optional trimmed member-handle search text.
+   * @param todayUtcDate Current UTC date-only string used for day math.
+   * @returns Parameterized SQL CTE for the member list helper.
+   */
+  private buildFlexiMemberListBaseSql(
+    bucket: FlexiMemberBucket,
+    searchText: string | undefined,
+    todayUtcDate: string,
+  ): Prisma.Sql {
+    const searchSql = searchText
+      ? Prisma.sql`AND a."memberHandle" ILIKE ${`%${searchText}%`}`
+      : Prisma.empty;
+
+    return Prisma.sql`
+      WITH filtered_assignments AS (
+        SELECT
+          a."id" AS "assignmentId",
+          a."engagementId",
+          a."memberId",
+          a."memberHandle",
+          a."status",
+          a."updatedAt",
+          e."projectId" AS "engagementProjectId",
+          e."title" AS "engagementTitle",
+          (
+            a."status" IN (${this.buildAssignmentStatusListSql(
+              ACTIVE_ASSIGNMENT_STATUSES,
+            )})
+          ) AS "isCurrent",
+          (
+            a."status" IN (${this.buildAssignmentStatusListSql(
+              ASSIGNMENT_COMPLETION_STATUSES,
+            )})
+          ) AS "isCompletion",
+          ${this.buildFlexiResolvedEndDateSql()} AS "resolvedEndDate"
+        FROM "EngagementAssignment" a
+        JOIN "Engagement" e
+          ON e."id" = a."engagementId"
+        WHERE a."status" IN (${this.buildAssignmentStatusListSql(
+          this.getFlexiQualifyingAssignmentStatuses(),
+        )})
+        ${searchSql}
+      ),
+      scored_assignments AS (
+        SELECT
+          *,
+          CASE
+            WHEN "resolvedEndDate" IS NULL THEN NULL
+            ELSE ("resolvedEndDate"::date - ${todayUtcDate}::date)::int
+          END AS "daysRemaining",
+          COALESCE("resolvedEndDate", "updatedAt") AS "latestCompletedAt"
+        FROM filtered_assignments
+      ),
+      member_flags AS (
+        SELECT
+          "memberId",
+          BOOL_OR("isCurrent") AS "hasCurrent",
+          BOOL_OR("isCompletion") AS "hasCompletion"
+        FROM scored_assignments
+        GROUP BY "memberId"
+        HAVING ${this.buildFlexiMemberBucketHavingSql(bucket)}
+      )
+    `;
+  }
+
+  /**
+   * Builds the member bucket HAVING predicate used after assignment grouping.
+   *
+   * @param bucket Requested Flexi member bucket.
+   * @returns SQL predicate matching assigned, completed-only, or total groups.
+   */
+  private buildFlexiMemberBucketHavingSql(
+    bucket: FlexiMemberBucket,
+  ): Prisma.Sql {
+    if (bucket === FlexiMemberBucket.Assigned) {
+      return Prisma.sql`BOOL_OR("isCurrent")`;
+    }
+
+    if (bucket === FlexiMemberBucket.Completed) {
+      return Prisma.sql`BOOL_OR("isCompletion") AND NOT BOOL_OR("isCurrent")`;
+    }
+
+    return Prisma.sql`BOOL_OR("isCurrent") OR BOOL_OR("isCompletion")`;
+  }
+
+  /**
+   * Builds the final ORDER BY clause for Flexi member list pages.
+   *
+   * Handle sorting respects the requested direction; time sorting preserves
+   * current-first total grouping, nullable day/date ordering, and the same final
+   * stable ties as compareFlexiMemberListRows.
+   *
+   * @param query Flexi member list sort query.
+   * @returns SQL ORDER BY fragment without the leading ORDER BY keyword.
+   */
+  private buildFlexiMemberListOrderSql(
+    query: FlexiMemberListQueryDto,
+  ): Prisma.Sql {
+    const tieSql = Prisma.sql`
+      "engagementTitle" ASC,
+      "memberHandle" ASC,
+      "memberId" ASC,
+      "assignmentId" ASC
+    `;
+
+    if (query.sortBy === FlexiMemberSortBy.Handle) {
+      return Prisma.sql`
+        "memberHandle" ${this.buildSqlSortDirection(query.sortOrder)},
+        ${tieSql}
+      `;
+    }
+
+    const currentTimeDirectionSql = this.buildSqlSortDirection(query.sortOrder);
+    const completedTimeDirectionSql = this.buildSqlSortDirection(
+      query.sortOrder === "desc" ? "asc" : "desc",
+    );
+    const totalGroupingSql =
+      query.bucket === FlexiMemberBucket.Total
+        ? Prisma.sql`
+          CASE WHEN "isCurrentlyAssigned" THEN 0 ELSE 1 END ASC,
+        `
+        : Prisma.empty;
+
+    return Prisma.sql`
+      ${totalGroupingSql}
+      CASE
+        WHEN "isCurrentlyAssigned" AND "daysRemaining" IS NULL THEN 1
+        ELSE 0
+      END ASC,
+      CASE
+        WHEN "isCurrentlyAssigned" THEN "daysRemaining"
+        ELSE NULL
+      END ${currentTimeDirectionSql},
+      CASE
+        WHEN NOT "isCurrentlyAssigned" AND "latestCompletedAt" IS NULL THEN 1
+        ELSE 0
+      END ASC,
+      CASE
+        WHEN NOT "isCurrentlyAssigned" THEN "latestCompletedAt"
+        ELSE NULL
+      END ${completedTimeDirectionSql},
+      ${tieSql}
+    `;
+  }
+
+  /**
+   * Builds SQL that mirrors resolveFlexiEndDate for assignment rows.
+   *
+   * The month expression intentionally starts from the first day of the month
+   * and adds day/time offsets to reproduce JavaScript setUTCMonth overflow
+   * behavior at month ends.
+   *
+   * @returns SQL expression resolving an assignment end timestamp or null.
+   */
+  private buildFlexiResolvedEndDateSql(): Prisma.Sql {
+    return Prisma.sql`
+      CASE
+        WHEN a."endDate" IS NOT NULL THEN a."endDate"
+        WHEN a."startDate" IS NOT NULL
+         AND a."durationMonths" IS NOT NULL THEN
+          date_trunc('month', a."startDate")
+          + make_interval(months => a."durationMonths")
+          + ((EXTRACT(DAY FROM a."startDate")::int - 1) * INTERVAL '1 day')
+          + (a."startDate" - date_trunc('day', a."startDate"))
+        ELSE NULL
+      END
+    `;
+  }
+
+  /**
+   * Converts a raw member-list row into the narrow list item input shape.
+   *
+   * @param row SQL row for one selected primary assignment.
+   * @returns Flexi member list primary assignment projection.
+   */
+  private mapFlexiMemberListSqlRow(
+    row: FlexiMemberListSqlRow,
+  ): FlexiMemberListPrimaryAssignment {
+    return {
+      assignment: {
+        id: row.assignmentId,
+        engagementId: row.engagementId,
+        memberId: row.memberId,
+        memberHandle: row.memberHandle,
+        status: row.status,
+        engagement: {
+          id: row.engagementId,
+          projectId: row.engagementProjectId,
+          title: row.engagementTitle,
+        },
+      },
+      isCurrentlyAssigned: row.isCurrentlyAssigned,
+      daysRemaining:
+        row.daysRemaining === null
+          ? null
+          : this.coerceSqlNumber(row.daysRemaining),
+      latestCompletedAt: row.latestCompletedAt,
+    };
+  }
+
+  /**
+   * Builds a parameterized AssignmentStatus list with explicit enum casts.
+   *
+   * @param statuses Assignment statuses to embed in an IN predicate.
+   * @returns SQL list fragment suitable for raw Postgres enum comparisons.
+   */
+  private buildAssignmentStatusListSql(
+    statuses: AssignmentStatus[],
+  ): Prisma.Sql {
+    return Prisma.join(
+      statuses.map((status) => Prisma.sql`${status}::"AssignmentStatus"`),
+    );
+  }
+
+  /**
+   * Builds a parameterized EngagementStatus list with explicit enum casts.
+   *
+   * @param statuses Engagement statuses to embed in an IN predicate.
+   * @returns SQL list fragment suitable for raw Postgres enum comparisons.
+   */
+  private buildEngagementStatusListSql(
+    statuses: EngagementStatus[],
+  ): Prisma.Sql {
+    return Prisma.join(
+      statuses.map((status) => Prisma.sql`${status}::"EngagementStatus"`),
+    );
+  }
+
+  /**
+   * Builds a trusted SQL sort direction from a validated query value.
+   *
+   * @param sortOrder Validated ascending or descending sort order.
+   * @returns SQL ASC or DESC keyword fragment.
+   */
+  private buildSqlSortDirection(sortOrder: "asc" | "desc"): Prisma.Sql {
+    return sortOrder === "desc" ? Prisma.sql`DESC` : Prisma.sql`ASC`;
+  }
+
+  /**
+   * Converts numeric values returned by raw SQL into JavaScript numbers.
+   *
+   * @param value Raw SQL numeric result from count or integer expressions.
+   * @returns Numeric value, defaulting missing values to zero.
+   */
+  private coerceSqlNumber(value?: number | bigint | string | null): number {
+    if (value === null || value === undefined) {
+      return 0;
+    }
+
+    return typeof value === "bigint" ? Number(value) : Number(value);
+  }
+
+  /**
+   * Fetches qualifying assignment rows with linked engagements.
+   *
+   * @param options Optional member id and member-handle search filters.
+   * @returns Assignment rows joined with their engagement.
+   */
+  private getFlexiAssignmentsWithEngagements(options: {
+    memberId?: string;
+    searchText?: string;
+  }): Promise<FlexiAssignmentWithEngagement[]> {
+    const where: Prisma.EngagementAssignmentWhereInput = {
+      status: { in: this.getFlexiQualifyingAssignmentStatuses() },
+    };
+    const searchText = options.searchText?.trim();
+
+    if (options.memberId) {
+      where.memberId = options.memberId;
+    }
+    if (searchText) {
+      where.memberHandle = {
+        contains: searchText,
+        mode: "insensitive",
+      };
+    }
+
+    return this.db.engagementAssignment.findMany({
+      where,
+      include: {
+        engagement: true,
+      },
+    });
+  }
+
+  /**
+   * Groups qualifying assignments by member id.
+   *
+   * @param assignments Assignment rows with engagements.
+   * @returns Member assignment groups keyed by memberId.
+   */
+  private groupFlexiAssignmentsByMember(
+    assignments: FlexiAssignmentWithEngagement[],
+  ): FlexiMemberAssignmentGroup[] {
+    const groupsByMemberId = new Map<string, FlexiAssignmentWithEngagement[]>();
+
+    assignments.forEach((assignment) => {
+      const group = groupsByMemberId.get(assignment.memberId) ?? [];
+
+      group.push(assignment);
+      groupsByMemberId.set(assignment.memberId, group);
+    });
+
+    return Array.from(groupsByMemberId.entries()).map(
+      ([memberId, groupAssignments]) => ({
+        memberId,
+        assignments: groupAssignments,
+      }),
+    );
+  }
+
+  /**
+   * Applies Flexi member bucket rules to grouped assignment rows.
+   *
+   * @param groups Member assignment groups.
+   * @param bucket Requested member bucket.
+   * @returns Groups matching the assigned/completed/total bucket semantics.
+   */
+  private filterFlexiMemberGroupsByBucket(
+    groups: FlexiMemberAssignmentGroup[],
+    bucket: FlexiMemberBucket,
+  ): FlexiMemberAssignmentGroup[] {
+    return groups.filter((group) => {
+      const hasCurrent = group.assignments.some((assignment) =>
+        ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
+      );
+      const hasCompletion = group.assignments.some((assignment) =>
+        ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status),
+      );
+
+      if (bucket === FlexiMemberBucket.Assigned) {
+        return hasCurrent;
+      }
+
+      if (bucket === FlexiMemberBucket.Completed) {
+        return hasCompletion && !hasCurrent;
+      }
+
+      return hasCurrent || hasCompletion;
+    });
+  }
+
+  /**
+   * Selects the primary assignment for a Flexi member row or detail view.
+   *
+   * Current members choose the current assignment ending soonest. Completed-only
+   * members choose the latest completion-status assignment.
+   *
+   * @param assignments Assignment history for one member.
+   * @returns Primary assignment selection, or undefined when none qualify.
+   */
+  private selectFlexiPrimaryAssignment(
+    assignments: FlexiAssignmentWithEngagement[],
+  ): FlexiPrimaryAssignment | undefined {
+    const currentAssignments = assignments
+      .filter((assignment) =>
+        ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
+      )
+      .sort((left, right) =>
+        this.compareFlexiAssignmentsEndingSoonest(left, right),
+      );
+
+    if (currentAssignments.length) {
+      const assignment = currentAssignments[0];
+      const timing = this.resolveFlexiTiming(assignment);
+
+      return {
+        assignment,
+        isCurrentlyAssigned: true,
+        daysRemaining: timing.timeLeftDays ?? null,
+        latestCompletedAt: null,
+      };
+    }
+
+    const completedAssignments = assignments
+      .filter((assignment) =>
+        ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status),
+      )
+      .sort((left, right) =>
+        this.compareFlexiAssignmentsByCompletionDesc(left, right),
+      );
+
+    if (!completedAssignments.length) {
+      return undefined;
+    }
+
+    const assignment = completedAssignments[0];
+
+    return {
+      assignment,
+      isCurrentlyAssigned: false,
+      daysRemaining: null,
+      latestCompletedAt: this.resolveFlexiCompletionTimestamp(assignment),
+    };
+  }
+
+  /**
+   * Compares current assignments by soonest resolved end date.
+   *
+   * @param left Left assignment with engagement.
+   * @param right Right assignment with engagement.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareFlexiAssignmentsEndingSoonest(
+    left: FlexiAssignmentWithEngagement,
+    right: FlexiAssignmentWithEngagement,
+  ): number {
+    const leftEndTime =
+      this.resolveFlexiEndDate(left)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const rightEndTime =
+      this.resolveFlexiEndDate(right)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+
+    if (leftEndTime !== rightEndTime) {
+      return leftEndTime - rightEndTime;
+    }
+
+    return this.compareFlexiAssignmentTies(left, right);
+  }
+
+  /**
+   * Compares completion assignments by newest resolved completion timestamp.
+   *
+   * @param left Left assignment with engagement.
+   * @param right Right assignment with engagement.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareFlexiAssignmentsByCompletionDesc(
+    left: FlexiAssignmentWithEngagement,
+    right: FlexiAssignmentWithEngagement,
+  ): number {
+    const leftCompletedAt = this.resolveFlexiCompletionTimestamp(left);
+    const rightCompletedAt = this.resolveFlexiCompletionTimestamp(right);
+    const timestampComparison =
+      rightCompletedAt.getTime() - leftCompletedAt.getTime();
+
+    if (timestampComparison !== 0) {
+      return timestampComparison;
+    }
+
+    return this.compareFlexiAssignmentTies(left, right);
+  }
+
+  /**
+   * Provides stable assignment tie-breakers for Flexi sorting.
+   *
+   * @param left Left assignment.
+   * @param right Right assignment.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareFlexiAssignmentTies(
+    left: FlexiAssignmentTieRow,
+    right: FlexiAssignmentTieRow,
+  ): number {
+    const titleComparison = left.engagement.title.localeCompare(
+      right.engagement.title,
+    );
+    if (titleComparison !== 0) {
+      return titleComparison;
+    }
+
+    const handleComparison = left.memberHandle.localeCompare(
+      right.memberHandle,
+    );
+    if (handleComparison !== 0) {
+      return handleComparison;
+    }
+
+    const memberIdComparison = left.memberId.localeCompare(right.memberId);
+    if (memberIdComparison !== 0) {
+      return memberIdComparison;
+    }
+
+    return left.id.localeCompare(right.id);
+  }
+
+  /**
+   * Compares derived Flexi member list rows.
+   *
+   * @param left Left primary assignment selection.
+   * @param right Right primary assignment selection.
+   * @param query Sort query.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareFlexiMemberListRows(
+    left: FlexiPrimaryAssignment,
+    right: FlexiPrimaryAssignment,
+    query: FlexiMemberListQueryDto,
+  ): number {
+    if (query.sortBy === FlexiMemberSortBy.Handle) {
+      const direction = query.sortOrder === "desc" ? -1 : 1;
+      const handleComparison = left.assignment.memberHandle.localeCompare(
+        right.assignment.memberHandle,
+      );
+
+      if (handleComparison !== 0) {
+        return handleComparison * direction;
+      }
+    } else {
+      const timeComparison = this.compareFlexiMemberRowsByTime(
+        left,
+        right,
+        query.bucket,
+        query.sortOrder,
+      );
+
+      if (timeComparison !== 0) {
+        return timeComparison;
+      }
+    }
+
+    return this.compareFlexiAssignmentTies(left.assignment, right.assignment);
+  }
+
+  /**
+   * Applies the Flexi time sort rules for member list rows.
+   *
+   * @param left Left primary assignment selection.
+   * @param right Right primary assignment selection.
+   * @param bucket Active bucket controls current/completed grouping rules.
+   * @param sortOrder Requested time sort order within each member group.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareFlexiMemberRowsByTime(
+    left: FlexiPrimaryAssignment,
+    right: FlexiPrimaryAssignment,
+    bucket: FlexiMemberBucket,
+    sortOrder: "asc" | "desc",
+  ): number {
+    if (
+      bucket === FlexiMemberBucket.Total &&
+      left.isCurrentlyAssigned !== right.isCurrentlyAssigned
+    ) {
+      return left.isCurrentlyAssigned ? -1 : 1;
+    }
+
+    if (left.isCurrentlyAssigned && right.isCurrentlyAssigned) {
+      return sortOrder === "desc"
+        ? this.compareNullableNumbersDesc(
+            left.daysRemaining,
+            right.daysRemaining,
+          )
+        : this.compareNullableNumbersAsc(
+            left.daysRemaining,
+            right.daysRemaining,
+          );
+    }
+
+    return sortOrder === "desc"
+      ? this.compareNullableDatesAsc(
+          left.latestCompletedAt,
+          right.latestCompletedAt,
+        )
+      : this.compareNullableDatesDesc(
+          left.latestCompletedAt,
+          right.latestCompletedAt,
+        );
+  }
+
+  /**
+   * Assembles a Flexi member list item from a primary assignment.
+   *
+   * @param row Primary assignment selection.
+   * @param projectNamesById Hydrated project names keyed by project id.
+   * @returns Flexi member list item.
+   */
+  private buildFlexiMemberListItem(
+    row: FlexiMemberListPrimaryAssignment,
+    projectNamesById: Map<string, string>,
+  ): FlexiMemberListItemDto {
+    const assignment = row.assignment;
+    const engagement = assignment.engagement;
+    const projectName = this.normalizeProjectName(
+      projectNamesById.get(engagement.projectId),
+    );
+
+    return {
+      memberId: assignment.memberId,
+      handle: assignment.memberHandle,
+      assignmentId: assignment.id,
+      primaryProjectId: engagement.projectId,
+      ...(projectName ? { primaryProjectName: projectName } : {}),
+      primaryEngagementId: engagement.id,
+      primaryEngagementTitle: engagement.title,
+      isCurrentlyAssigned: row.isCurrentlyAssigned,
+      daysRemaining: row.daysRemaining ?? null,
+      latestCompletedAt: row.latestCompletedAt ?? null,
+      status: assignment.status,
+      displayStatusLabel: this.getAssignmentDisplayStatusLabel(
+        assignment.status,
+      ),
+    };
+  }
+
+  /**
+   * Assembles one Flexi member history item.
+   *
+   * @param assignment Assignment with linked engagement.
+   * @param projectNamesById Hydrated project names keyed by project id.
+   * @param skillNamesById Hydrated skill names keyed by skill id.
+   * @returns Flexi member history item.
+   */
+  private buildFlexiMemberHistoryItem(
+    assignment: FlexiAssignmentWithEngagement,
+    projectNamesById: Map<string, string>,
+    skillNamesById: Map<string, string>,
+  ): FlexiMemberHistoryItemDto {
+    const engagement = assignment.engagement;
+    const projectName = this.normalizeProjectName(
+      projectNamesById.get(engagement.projectId),
+    );
+    const isCurrent = ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status);
+
+    return {
+      assignmentId: assignment.id,
+      memberId: assignment.memberId,
+      memberHandle: assignment.memberHandle,
+      projectId: engagement.projectId,
+      ...(projectName ? { projectName } : {}),
+      engagementId: engagement.id,
+      engagementTitle: engagement.title,
+      status: assignment.status,
+      displayStatusLabel: this.getAssignmentDisplayStatusLabel(
+        assignment.status,
+      ),
+      isCurrent,
+      skills: this.buildFlexiSkillReferences(
+        engagement.requiredSkills,
+        skillNamesById,
+      ),
+      startDate: assignment.startDate,
+      endDate: assignment.endDate,
+      ...this.resolveFlexiTiming(assignment),
+      completedAt: isCurrent
+        ? null
+        : this.resolveFlexiCompletionTimestamp(assignment),
+      ...this.resolveFlexiDuration(assignment, engagement),
+    };
+  }
+
+  /**
+   * Compares Flexi member history rows with current rows first.
+   *
+   * @param left Left history item.
+   * @param right Right history item.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareFlexiMemberHistoryRows(
+    left: FlexiMemberHistoryItemDto,
+    right: FlexiMemberHistoryItemDto,
+  ): number {
+    if (left.isCurrent !== right.isCurrent) {
+      return left.isCurrent ? -1 : 1;
+    }
+
+    if (left.isCurrent && right.isCurrent) {
+      const endComparison = this.compareNullableDatesAsc(
+        left.resolvedEndDate,
+        right.resolvedEndDate,
+      );
+
+      if (endComparison !== 0) {
+        return endComparison;
+      }
+    } else {
+      const completedComparison = this.compareNullableDatesDesc(
+        left.completedAt,
+        right.completedAt,
+      );
+
+      if (completedComparison !== 0) {
+        return completedComparison;
+      }
+    }
+
+    const titleComparison = left.engagementTitle.localeCompare(
+      right.engagementTitle,
+    );
+    if (titleComparison !== 0) {
+      return titleComparison;
+    }
+
+    const handleComparison = left.memberHandle.localeCompare(
+      right.memberHandle,
+    );
+    if (handleComparison !== 0) {
+      return handleComparison;
+    }
+
+    return left.assignmentId.localeCompare(right.assignmentId);
+  }
+
+  /**
+   * Maps raw assignment status to the Flexi UI display label.
+   *
+   * @param status Raw assignment status.
+   * @returns Human-readable display label.
+   */
+  private getAssignmentDisplayStatusLabel(status: AssignmentStatus): string {
+    switch (status) {
+      case AssignmentStatus.SELECTED:
+        return "Selected";
+      case AssignmentStatus.OFFER_REJECTED:
+        return "Offer Rejected";
+      case AssignmentStatus.ASSIGNED:
+        return "Assigned";
+      case AssignmentStatus.COMPLETED:
+        return "Completed";
+      case AssignmentStatus.TERMINATED:
+        return "Terminated";
+      default:
+        return status;
+    }
+  }
+
+  /**
+   * Resolves normalized duration fields for Flexi rows.
+   *
+   * Assignment durationMonths takes precedence. When absent, the linked
+   * engagement duration fields are used so the UI can render duration text
+   * without another lookup.
+   *
+   * @param assignment Optional assignment row.
+   * @param engagement Linked engagement.
+   * @returns Duration fields and display label.
+   */
+  private resolveFlexiDuration(
+    assignment: EngagementAssignment | undefined,
+    engagement: Engagement,
+  ): FlexiDurationFields {
+    const durationMonths =
+      assignment?.durationMonths ?? engagement.durationMonths ?? null;
+    const durationWeeks =
+      durationMonths === null ? (engagement.durationWeeks ?? null) : null;
+    const durationStartDate = engagement.durationStartDate ?? null;
+    const durationEndDate = engagement.durationEndDate ?? null;
+
+    if (durationMonths !== null) {
+      return {
+        durationMonths,
+        durationWeeks: null,
+        durationStartDate,
+        durationEndDate,
+        durationLabel: this.formatFlexiDurationLabel(durationMonths, "month"),
+      };
+    }
+
+    if (durationWeeks !== null) {
+      return {
+        durationMonths: null,
+        durationWeeks,
+        durationStartDate,
+        durationEndDate,
+        durationLabel: this.formatFlexiDurationLabel(durationWeeks, "week"),
+      };
+    }
+
+    if (durationStartDate && durationEndDate) {
+      return {
+        durationMonths: null,
+        durationWeeks: null,
+        durationStartDate,
+        durationEndDate,
+        durationLabel: `${this.formatDateOnly(durationStartDate)} to ${this.formatDateOnly(durationEndDate)}`,
+      };
+    }
+
+    return {
+      durationMonths: null,
+      durationWeeks: null,
+      durationStartDate,
+      durationEndDate,
+      durationLabel: null,
+    };
+  }
+
+  /**
+   * Resolves assignment timing fields for Flexi payloads.
+   *
+   * @param assignment Assignment row.
+   * @returns Resolved end date, whole days remaining, and overdue flag.
+   */
+  private resolveFlexiTiming(
+    assignment: EngagementAssignment,
+  ): FlexiTimingFields {
+    const resolvedEndDate = this.resolveFlexiEndDate(assignment);
+    const timeLeftDays = resolvedEndDate
+      ? this.calculateFlexiTimeLeftDays(resolvedEndDate)
+      : null;
+
+    return {
+      resolvedEndDate,
+      timeLeftDays,
+      isOverdue: timeLeftDays !== null && timeLeftDays < 0,
+    };
+  }
+
+  /**
+   * Resolves assignment end date for Flexi timing.
+   *
+   * Explicit assignment endDate wins. Otherwise, startDate plus assignment
+   * durationMonths is used.
+   *
+   * @param assignment Assignment row.
+   * @returns Resolved end date or null.
+   */
+  private resolveFlexiEndDate(assignment: EngagementAssignment): Date | null {
+    if (assignment.endDate) {
+      return assignment.endDate;
+    }
+
+    const durationMonths = assignment.durationMonths ?? null;
+
+    if (!assignment.startDate || durationMonths === null) {
+      return null;
+    }
+
+    const resolvedEndDate = new Date(assignment.startDate.getTime());
+    resolvedEndDate.setUTCMonth(resolvedEndDate.getUTCMonth() + durationMonths);
+
+    return resolvedEndDate;
+  }
+
+  /**
+   * Resolves completion timestamp for past Flexi assignments.
+   *
+   * @param assignment Assignment row.
+   * @returns Explicit or derived end date, otherwise updatedAt.
+   */
+  private resolveFlexiCompletionTimestamp(
+    assignment: EngagementAssignment,
+  ): Date {
+    return this.resolveFlexiEndDate(assignment) ?? assignment.updatedAt;
+  }
+
+  /**
+   * Calculates whole days left from today to a resolved end date.
+   *
+   * @param resolvedEndDate End date to compare against today's UTC date.
+   * @returns Whole-day integer that may be negative.
+   */
+  private calculateFlexiTimeLeftDays(resolvedEndDate: Date): number {
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+    return Math.round(
+      (this.getUtcDateOnlyTime(resolvedEndDate) -
+        this.getUtcDateOnlyTime(new Date())) /
+        millisecondsPerDay,
+    );
+  }
+
+  /**
+   * Converts a date to a UTC date-only timestamp.
+   *
+   * @param date Date to normalize.
+   * @returns Milliseconds at UTC midnight for the same calendar date.
+   */
+  private getUtcDateOnlyTime(date: Date): number {
+    return Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+    );
+  }
+
+  /**
+   * Formats a plural duration label.
+   *
+   * @param value Duration number.
+   * @param unit Singular unit name.
+   * @returns Display label such as `1 month` or `3 months`.
+   */
+  private formatFlexiDurationLabel(value: number, unit: string): string {
+    return `${value} ${unit}${value === 1 ? "" : "s"}`;
+  }
+
+  /**
+   * Formats date-only values for duration labels.
+   *
+   * @param date Date to format.
+   * @returns ISO date string without time.
+   */
+  private formatDateOnly(date: Date): string {
+    return date.toISOString().slice(0, 10);
+  }
+
+  /**
+   * Compares nullable day counts ascending with nulls last.
+   *
+   * @param left Left numeric value.
+   * @param right Right numeric value.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareNullableNumbersAsc(
+    left?: number | null,
+    right?: number | null,
+  ): number {
+    if (left === null || left === undefined) {
+      return right === null || right === undefined ? 0 : 1;
+    }
+    if (right === null || right === undefined) {
+      return -1;
+    }
+
+    return left - right;
+  }
+
+  /**
+   * Compares nullable day counts descending with nulls last.
+   *
+   * @param left Left numeric value.
+   * @param right Right numeric value.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareNullableNumbersDesc(
+    left?: number | null,
+    right?: number | null,
+  ): number {
+    if (left === null || left === undefined) {
+      return right === null || right === undefined ? 0 : 1;
+    }
+    if (right === null || right === undefined) {
+      return -1;
+    }
+
+    return right - left;
+  }
+
+  /**
+   * Compares nullable dates ascending with nulls last.
+   *
+   * @param left Left date.
+   * @param right Right date.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareNullableDatesAsc(
+    left?: Date | null,
+    right?: Date | null,
+  ): number {
+    if (!left) {
+      return right ? 1 : 0;
+    }
+    if (!right) {
+      return -1;
+    }
+
+    return left.getTime() - right.getTime();
+  }
+
+  /**
+   * Compares nullable dates descending with nulls last.
+   *
+   * @param left Left date.
+   * @param right Right date.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareNullableDatesDesc(
+    left?: Date | null,
+    right?: Date | null,
+  ): number {
+    if (!left) {
+      return right ? 1 : 0;
+    }
+    if (!right) {
+      return -1;
+    }
+
+    return right.getTime() - left.getTime();
   }
 
   private applyAssignmentFields<

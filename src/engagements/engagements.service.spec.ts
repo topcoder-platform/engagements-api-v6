@@ -1,15 +1,52 @@
 import { BadRequestException } from "@nestjs/common";
 import { AssignmentStatus, EngagementStatus } from "@prisma/client";
 import { ERROR_MESSAGES } from "../common/constants";
+import {
+  FlexiEngagementBucket,
+  FlexiEngagementListQueryDto,
+  FlexiEngagementSortBy,
+  FlexiMemberBucket,
+  FlexiMemberListQueryDto,
+  FlexiMemberSortBy,
+} from "./dto";
 import { EngagementsService } from "./engagements.service";
 
 jest.mock("nanoid", () => ({
   nanoid: () => "test-id",
 }));
 
+type CapturedSqlQuery = {
+  sql?: string;
+  text?: string;
+  strings?: readonly string[];
+  values?: unknown[];
+};
+
+/**
+ * Normalizes Prisma SQL templates captured by database mocks.
+ *
+ * @param query Prisma SQL object passed to `$queryRaw`.
+ * @returns Single-line SQL text suitable for stable assertions.
+ */
+const normalizeSql = (query: CapturedSqlQuery): string =>
+  (query.sql ?? query.text ?? query.strings?.join("?") ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Extracts bound values from Prisma SQL templates captured by database mocks.
+ *
+ * @param query Prisma SQL object passed to `$queryRaw`.
+ * @returns Bound parameter values in execution order.
+ */
+const getSqlValues = (query: CapturedSqlQuery): unknown[] => [
+  ...(query.values ?? []),
+];
+
 describe("EngagementsService", () => {
   let service: EngagementsService;
   let db: {
+    $queryRaw: jest.Mock;
     $transaction: jest.Mock;
     engagement: {
       create: jest.Mock;
@@ -21,6 +58,7 @@ describe("EngagementsService", () => {
     };
     engagementAssignment: {
       count: jest.Mock;
+      findMany: jest.Mock;
       findUnique: jest.Mock;
     };
   };
@@ -29,9 +67,13 @@ describe("EngagementsService", () => {
     getProjectBillingAccountId: jest.Mock;
     getProjectNamesByIds: jest.Mock;
     hasBillingAccountAssigned: jest.Mock;
+    searchFlexiProjectIdsByName: jest.Mock;
     validateProjectExists: jest.Mock;
   };
-  let skillsService: { validateSkillsExist: jest.Mock };
+  let skillsService: {
+    getSkillNamesByIds: jest.Mock;
+    validateSkillsExist: jest.Mock;
+  };
   let memberService: {
     getMemberHandleByUserId: jest.Mock;
     getMemberUserIdByHandle: jest.Mock;
@@ -54,9 +96,79 @@ describe("EngagementsService", () => {
     requiredSkills: ["skill-1"],
     anticipatedStart: "IMMEDIATE",
   };
+  const buildFlexiEngagement = (overrides: Record<string, any> = {}) => ({
+    id: "eng-1",
+    projectId: "project-1",
+    title: "Flexi Engagement",
+    description: "Flexi description",
+    durationStartDate: null,
+    durationEndDate: null,
+    durationWeeks: null,
+    durationMonths: null,
+    timeZones: ["UTC"],
+    countries: ["US"],
+    requiredSkills: [],
+    anticipatedStart: "IMMEDIATE",
+    status: EngagementStatus.ACTIVE,
+    isPrivate: true,
+    requiredMemberCount: 1,
+    role: null,
+    workload: null,
+    compensationRange: null,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    createdBy: "manager-1",
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    updatedBy: null,
+    ...overrides,
+  });
+  const buildFlexiAssignment = (overrides: Record<string, any> = {}) => {
+    const engagement = overrides.engagement ?? buildFlexiEngagement();
+
+    return {
+      id: "assignment-1",
+      engagementId: engagement.id,
+      memberId: "member-1",
+      memberHandle: "member1",
+      status: AssignmentStatus.ASSIGNED,
+      agreementRate: null,
+      ratePerHour: null,
+      paymentCycle: "WEEKLY",
+      standardHoursPerDay: null,
+      standardHoursPerWeek: null,
+      durationMonths: null,
+      otherRemarks: null,
+      terminationReason: null,
+      startDate: null,
+      endDate: null,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      engagement,
+      ...overrides,
+    };
+  };
+  /**
+   * Builds a raw SQL row shaped for the Flexi member list mapper.
+   *
+   * @param overrides Field overrides for the list row.
+   * @returns Raw member-list SQL row consumed by `getFlexiMemberList()`.
+   */
+  const buildFlexiMemberSqlRow = (overrides: Record<string, any> = {}) => ({
+    assignmentId: "assignment-1",
+    engagementId: "eng-1",
+    memberId: "member-1",
+    memberHandle: "member1",
+    status: AssignmentStatus.ASSIGNED,
+    engagementProjectId: "project-1",
+    engagementTitle: "Flexi Engagement",
+    isCurrentlyAssigned: true,
+    daysRemaining: 10,
+    latestCompletedAt: null,
+    ...overrides,
+  });
 
   beforeEach(() => {
     db = {
+      $queryRaw: jest.fn(),
       $transaction: jest.fn(),
       engagement: {
         create: jest.fn(),
@@ -68,6 +180,7 @@ describe("EngagementsService", () => {
       },
       engagementAssignment: {
         count: jest.fn(),
+        findMany: jest.fn(),
         findUnique: jest.fn(),
       },
     };
@@ -76,9 +189,11 @@ describe("EngagementsService", () => {
       getProjectBillingAccountId: jest.fn().mockResolvedValue(null),
       getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
       hasBillingAccountAssigned: jest.fn().mockResolvedValue(false),
+      searchFlexiProjectIdsByName: jest.fn().mockResolvedValue([]),
       validateProjectExists: jest.fn().mockResolvedValue(true),
     };
     skillsService = {
+      getSkillNamesByIds: jest.fn().mockResolvedValue(new Map()),
       validateSkillsExist: jest.fn().mockResolvedValue({ invalid: [] }),
     };
     memberService = {
@@ -1441,5 +1556,519 @@ describe("EngagementsService", () => {
         endDate: now,
       },
     });
+  });
+
+  it("lists Flexi engagements by name with bucket, project search, and top-level pagination", async () => {
+    const query = {
+      bucket: FlexiEngagementBucket.Active,
+      searchText: "  platform  ",
+      sortBy: FlexiEngagementSortBy.Name,
+      sortOrder: "desc",
+      page: 2,
+      perPage: 2,
+    } as FlexiEngagementListQueryDto;
+    const expectedWhere = {
+      AND: [
+        { status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] } },
+        {
+          OR: [
+            {
+              title: {
+                contains: "platform",
+                mode: "insensitive",
+              },
+            },
+            { projectId: { in: ["project-platform"] } },
+          ],
+        },
+      ],
+    };
+
+    projectService.searchFlexiProjectIdsByName.mockResolvedValue([
+      "project-platform",
+    ]);
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([
+        ["project-platform", "Platform Modernization"],
+        ["project-title", "Platform API"],
+      ]),
+    );
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-zeta",
+        projectId: "project-platform",
+        title: "Zeta Engagement",
+        status: EngagementStatus.ACTIVE,
+        requiredMemberCount: 3,
+        _count: { assignments: 2 },
+      },
+      {
+        id: "eng-open",
+        projectId: "project-title",
+        title: "Platform API",
+        status: EngagementStatus.OPEN,
+        requiredMemberCount: 1,
+        _count: { assignments: 1 },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(5);
+
+    const result = await service.getFlexiEngagementList(query);
+
+    expect(projectService.searchFlexiProjectIdsByName).toHaveBeenCalledWith(
+      "platform",
+    );
+    expect(db.engagement.findMany).toHaveBeenCalledWith({
+      where: expectedWhere,
+      select: {
+        id: true,
+        projectId: true,
+        title: true,
+        status: true,
+        requiredMemberCount: true,
+        _count: {
+          select: {
+            assignments: {
+              where: {
+                status: {
+                  in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ title: "desc" }, { id: "asc" }],
+      skip: 2,
+      take: 2,
+    });
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: expectedWhere,
+    });
+    expect(result).toEqual({
+      data: [
+        {
+          engagementId: "eng-zeta",
+          projectId: "project-platform",
+          projectName: "Platform Modernization",
+          engagementTitle: "Zeta Engagement",
+          status: EngagementStatus.ACTIVE,
+          assignedMemberCount: 2,
+          requiredMemberCount: 3,
+        },
+        {
+          engagementId: "eng-open",
+          projectId: "project-title",
+          projectName: "Platform API",
+          engagementTitle: "Platform API",
+          status: EngagementStatus.OPEN,
+          assignedMemberCount: 1,
+          requiredMemberCount: 1,
+        },
+      ],
+      page: 2,
+      perPage: 2,
+      total: 5,
+      totalPages: 3,
+    });
+  });
+
+  it("omits the Flexi engagement project-name search clause when no project IDs match", async () => {
+    const query = {
+      bucket: FlexiEngagementBucket.Total,
+      searchText: "ui",
+      sortBy: FlexiEngagementSortBy.Name,
+      sortOrder: "asc",
+      page: 1,
+      perPage: 20,
+    } as FlexiEngagementListQueryDto;
+
+    projectService.searchFlexiProjectIdsByName.mockResolvedValue([]);
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.getFlexiEngagementList(query);
+
+    expect(projectService.searchFlexiProjectIdsByName).toHaveBeenCalledWith(
+      "ui",
+    );
+    expect(db.engagement.findMany.mock.calls[0][0].where).toEqual({
+      AND: [
+        {
+          OR: [
+            {
+              title: {
+                contains: "ui",
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("lists Flexi engagements by member count through raw paging", async () => {
+    const query = {
+      bucket: FlexiEngagementBucket.Closed,
+      searchText: "Cloud",
+      sortBy: FlexiEngagementSortBy.MemberCount,
+      sortOrder: "desc",
+      page: 2,
+      perPage: 1,
+    } as FlexiEngagementListQueryDto;
+
+    projectService.searchFlexiProjectIdsByName.mockResolvedValue([
+      "project-cloud",
+    ]);
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([["project-cloud", "Cloud Operations"]]),
+    );
+    db.$queryRaw.mockResolvedValueOnce([{ total: "3" }]).mockResolvedValueOnce([
+      {
+        id: "eng-cloud",
+        projectId: "project-cloud",
+        title: "Cloud Migration",
+        status: EngagementStatus.CLOSED,
+        requiredMemberCount: 4,
+        assignedMemberCount: "7",
+      },
+    ]);
+
+    const result = await service.getFlexiEngagementList(query);
+
+    expect(db.engagement.findMany).not.toHaveBeenCalled();
+    expect(db.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(projectService.searchFlexiProjectIdsByName).toHaveBeenCalledWith(
+      "Cloud",
+    );
+
+    const countQuery = db.$queryRaw.mock.calls[0][0];
+    const pageQuery = db.$queryRaw.mock.calls[1][0];
+    const countSql = normalizeSql(countQuery);
+    const pageSql = normalizeSql(pageQuery);
+
+    expect(countSql).toContain('FROM "Engagement" e WHERE e."status" IN');
+    expect(pageSql).toContain('COUNT(a."id")::int AS "assignedMemberCount"');
+    expect(pageSql).toContain('e."status" IN');
+    expect(pageSql).toContain('e."title" ILIKE');
+    expect(pageSql).toContain('e."projectId" IN');
+    expect(pageSql).toContain(
+      'ORDER BY "assignedMemberCount" DESC, e."title" ASC, e."id" ASC',
+    );
+    expect(getSqlValues(pageQuery)).toEqual(
+      expect.arrayContaining([
+        AssignmentStatus.SELECTED,
+        AssignmentStatus.ASSIGNED,
+        EngagementStatus.CLOSED,
+        EngagementStatus.CANCELLED,
+        "%Cloud%",
+        "project-cloud",
+        1,
+        1,
+      ]),
+    );
+    expect(result).toEqual({
+      data: [
+        {
+          engagementId: "eng-cloud",
+          projectId: "project-cloud",
+          projectName: "Cloud Operations",
+          engagementTitle: "Cloud Migration",
+          status: EngagementStatus.CLOSED,
+          assignedMemberCount: 7,
+          requiredMemberCount: 4,
+        },
+      ],
+      page: 2,
+      perPage: 1,
+      total: 3,
+      totalPages: 3,
+    });
+  });
+
+  it("defaults Flexi member list requests to handle ascending", async () => {
+    const query = new FlexiMemberListQueryDto();
+
+    expect(query).toMatchObject({
+      bucket: FlexiMemberBucket.Total,
+      sortBy: FlexiMemberSortBy.Handle,
+      sortOrder: "asc",
+      page: 1,
+      perPage: 20,
+    });
+
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([
+        ["project-alpha", "Alpha Project"],
+        ["project-beta", "Beta Project"],
+      ]),
+    );
+    db.$queryRaw.mockResolvedValueOnce([{ total: 2n }]).mockResolvedValueOnce([
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-alpha",
+        engagementId: "eng-alpha",
+        memberId: "member-alpha",
+        memberHandle: "alpha",
+        engagementProjectId: "project-alpha",
+        engagementTitle: "Alpha Engagement",
+        daysRemaining: "84",
+      }),
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-beta",
+        engagementId: "eng-beta",
+        memberId: "member-beta",
+        memberHandle: "beta",
+        engagementProjectId: "project-beta",
+        engagementTitle: "Beta Engagement",
+        daysRemaining: 24n,
+      }),
+    ]);
+
+    const result = await service.getFlexiMemberList(query);
+
+    const pageQuery = db.$queryRaw.mock.calls[1][0];
+    const pageSql = normalizeSql(pageQuery);
+
+    expect(db.engagementAssignment.findMany).not.toHaveBeenCalled();
+    expect(db.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(pageSql).toContain(
+      'HAVING BOOL_OR("isCurrent") OR BOOL_OR("isCompletion")',
+    );
+    expect(pageSql).toContain(
+      'ORDER BY "memberHandle" ASC, "engagementTitle" ASC, "memberHandle" ASC',
+    );
+    expect(getSqlValues(pageQuery)).toEqual(expect.arrayContaining([0, 20]));
+    expect(projectService.getProjectNamesByIds).toHaveBeenCalledWith([
+      "project-alpha",
+      "project-beta",
+    ]);
+    expect(result).toMatchObject({
+      page: 1,
+      perPage: 20,
+      total: 2,
+      totalPages: 1,
+    });
+    expect(result.data.map((row) => row.handle)).toEqual(["alpha", "beta"]);
+    expect(result.data.map((row) => row.primaryProjectName)).toEqual([
+      "Alpha Project",
+      "Beta Project",
+    ]);
+    expect(result.data.map((row) => row.daysRemaining)).toEqual([84, 24]);
+  });
+
+  it("keeps current Flexi members first when total time sorting descends", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+    db.$queryRaw.mockResolvedValueOnce([{ total: 4n }]).mockResolvedValueOnce([
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-active-long",
+        engagementId: "eng-active-long",
+        memberId: "member-active-long",
+        memberHandle: "active-long",
+        engagementTitle: "Active Long",
+        daysRemaining: 84,
+      }),
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-active-short",
+        engagementId: "eng-active-short",
+        memberId: "member-active-short",
+        memberHandle: "active-short",
+        engagementTitle: "Active Short",
+        daysRemaining: 24,
+      }),
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-completed-old",
+        engagementId: "eng-completed-old",
+        memberId: "member-completed-old",
+        memberHandle: "completed-old",
+        status: AssignmentStatus.COMPLETED,
+        engagementTitle: "Completed Old",
+        isCurrentlyAssigned: false,
+        daysRemaining: null,
+        latestCompletedAt: new Date("2026-01-01T00:00:00.000Z"),
+      }),
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-completed-recent",
+        engagementId: "eng-completed-recent",
+        memberId: "member-completed-recent",
+        memberHandle: "completed-recent",
+        status: AssignmentStatus.COMPLETED,
+        engagementTitle: "Completed Recent",
+        isCurrentlyAssigned: false,
+        daysRemaining: null,
+        latestCompletedAt: new Date("2026-06-01T00:00:00.000Z"),
+      }),
+    ]);
+
+    const result = await service.getFlexiMemberList({
+      bucket: FlexiMemberBucket.Total,
+      sortBy: FlexiMemberSortBy.Time,
+      sortOrder: "desc",
+      page: 1,
+      perPage: 20,
+    });
+
+    const pageSql = normalizeSql(db.$queryRaw.mock.calls[1][0]);
+
+    expect(pageSql).toContain(
+      'CASE WHEN "isCurrentlyAssigned" THEN 0 ELSE 1 END ASC',
+    );
+    expect(pageSql).toContain(
+      'CASE WHEN "isCurrentlyAssigned" THEN "daysRemaining" ELSE NULL END DESC',
+    );
+    expect(pageSql).toContain(
+      'CASE WHEN NOT "isCurrentlyAssigned" THEN "latestCompletedAt" ELSE NULL END ASC',
+    );
+    expect(result.data.map((row) => row.handle)).toEqual([
+      "active-long",
+      "active-short",
+      "completed-old",
+      "completed-recent",
+    ]);
+    expect(result).toMatchObject({
+      page: 1,
+      perPage: 20,
+      total: 4,
+      totalPages: 1,
+    });
+  });
+
+  it("applies Flexi member completed bucket, handle search, and raw page bounds", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+    db.$queryRaw.mockResolvedValueOnce([{ total: 5n }]).mockResolvedValueOnce([
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-match",
+        engagementId: "eng-match",
+        memberId: "member-match",
+        memberHandle: "zeta-match",
+        status: AssignmentStatus.TERMINATED,
+        engagementProjectId: "project-match",
+        engagementTitle: "Matched Engagement",
+        isCurrentlyAssigned: false,
+        daysRemaining: null,
+        latestCompletedAt: new Date("2026-05-01T00:00:00.000Z"),
+      }),
+    ]);
+
+    const result = await service.getFlexiMemberList({
+      bucket: FlexiMemberBucket.Completed,
+      searchText: " match ",
+      sortBy: FlexiMemberSortBy.Handle,
+      sortOrder: "desc",
+      page: 2,
+      perPage: 2,
+    });
+
+    const countQuery = db.$queryRaw.mock.calls[0][0];
+    const pageQuery = db.$queryRaw.mock.calls[1][0];
+    const countSql = normalizeSql(countQuery);
+    const pageSql = normalizeSql(pageQuery);
+
+    expect(countSql).toContain('a."memberHandle" ILIKE');
+    expect(pageSql).toContain(
+      'HAVING BOOL_OR("isCompletion") AND NOT BOOL_OR("isCurrent")',
+    );
+    expect(pageSql).toContain(
+      'ORDER BY "memberHandle" DESC, "engagementTitle" ASC',
+    );
+    expect(getSqlValues(countQuery)).toEqual(
+      expect.arrayContaining(["%match%"]),
+    );
+    expect(getSqlValues(pageQuery)).toEqual(
+      expect.arrayContaining(["%match%", 2, 2]),
+    );
+    expect(result).toMatchObject({
+      page: 2,
+      perPage: 2,
+      total: 5,
+      totalPages: 3,
+    });
+    expect(result.data.map((row) => row.handle)).toEqual(["zeta-match"]);
+  });
+
+  it("does not derive Flexi timing from engagement duration fallback", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+
+    const assignment = buildFlexiAssignment({
+      id: "assignment-missing-duration",
+      memberId: "member-missing-duration",
+      memberHandle: "missingDuration",
+      startDate: new Date("2026-01-01T00:00:00.000Z"),
+      durationMonths: null,
+      engagement: buildFlexiEngagement({
+        id: "eng-missing-duration",
+        projectId: "project-missing-duration",
+        title: "Missing Assignment Duration",
+        durationMonths: 1,
+        requiredSkills: ["skill-1"],
+      }),
+    });
+    db.engagementAssignment.findMany.mockResolvedValue([assignment]);
+    skillsService.getSkillNamesByIds.mockResolvedValue(
+      new Map([["skill-1", "Skill One"]]),
+    );
+
+    const detail = await service.getFlexiMemberDetail(
+      "member-missing-duration",
+    );
+    const history = await service.getFlexiMemberHistory(
+      "member-missing-duration",
+    );
+
+    expect(detail).toMatchObject({
+      resolvedEndDate: null,
+      timeLeftDays: null,
+      isOverdue: false,
+      durationMonths: 1,
+      durationLabel: "1 month",
+    });
+    expect(history.data[0]).toMatchObject({
+      resolvedEndDate: null,
+      timeLeftDays: null,
+      isOverdue: false,
+      completedAt: null,
+      durationMonths: 1,
+      durationLabel: "1 month",
+    });
+  });
+
+  it("keeps member time sorting stable when assignment duration is missing", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+    db.$queryRaw.mockResolvedValueOnce([{ total: 2n }]).mockResolvedValueOnce([
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-alpha",
+        engagementId: "eng-alpha",
+        memberId: "member-alpha",
+        memberHandle: "alpha",
+        engagementTitle: "A Engagement",
+        daysRemaining: null,
+      }),
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-beta",
+        engagementId: "eng-beta",
+        memberId: "member-beta",
+        memberHandle: "beta",
+        engagementTitle: "B Engagement",
+        daysRemaining: null,
+      }),
+    ]);
+
+    const result = await service.getFlexiMemberList({
+      bucket: FlexiMemberBucket.Assigned,
+      sortBy: FlexiMemberSortBy.Time,
+      sortOrder: "asc",
+      page: 1,
+      perPage: 20,
+    });
+    const pageSql = normalizeSql(db.$queryRaw.mock.calls[1][0]);
+
+    expect(db.engagementAssignment.findMany).not.toHaveBeenCalled();
+    expect(pageSql).toContain('HAVING BOOL_OR("isCurrent")');
+    expect(pageSql).toContain(
+      'CASE WHEN "isCurrentlyAssigned" THEN "daysRemaining" ELSE NULL END ASC',
+    );
+    expect(result.data.map((row) => row.handle)).toEqual(["alpha", "beta"]);
+    expect(result.data.map((row) => row.daysRemaining)).toEqual([null, null]);
   });
 });

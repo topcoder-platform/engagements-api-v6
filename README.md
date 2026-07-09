@@ -87,6 +87,7 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 - Assigned members can view the details of their own private engagements.
 - Project Managers can view and update application statuses for engagements they created, while Task Managers and Talent Managers can do so across engagements.
 - Talent Managers are server-scoped to engagements from projects where they are members when listing engagements.
+- Flexi Talent read endpoints are stricter for human tokens: only Administrators and Talent Managers are allowed. M2M callers must include `read:engagements`.
 
 ## Response Notes
 
@@ -94,3 +95,28 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
   - `projectName` (if available)
   - `project` object with `id` and optional `name`
 - `PUT /engagements/:id` rejects project reassignment when the engagement's current project already has a `billingAccountId`.
+- Flexi Talent list endpoints return pagination at the top level of the response body instead of the legacy nested `meta` shape:
+
+```json
+{
+  "data": [],
+  "page": 1,
+  "perPage": 20,
+  "total": 0,
+  "totalPages": 0
+}
+```
+
+## Flexi Talent Read Endpoints
+
+All Flexi Talent routes live under `/engagements/flexi-talent`, require bearer authentication, and use `read:engagements` for M2M callers. Human callers must be Administrators or Talent Managers.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/engagements/flexi-talent/engagements/summary` | Engagement bucket counts: total, active (`OPEN`/`ACTIVE`), closed (`CLOSED`/`CANCELLED`). |
+| `GET` | `/engagements/flexi-talent/engagements` | Flat-paginated engagement list with bucket, title/project-name search, and current assigned-member counts. |
+| `GET` | `/engagements/flexi-talent/engagements/:engagementId` | Engagement detail with project name, skill names, and all assignment rows. |
+| `GET` | `/engagements/flexi-talent/members/summary` | Assignment-centric unique member counts. |
+| `GET` | `/engagements/flexi-talent/members` | Flat-paginated member list grouped by `memberId`, with primary assignment context. |
+| `GET` | `/engagements/flexi-talent/members/:memberId` | Member right-rail detail using the same primary-assignment selection as the list. |
+| `GET` | `/engagements/flexi-talent/members/:memberId/history` | Full unpaginated member assignment history with current rows first. |
