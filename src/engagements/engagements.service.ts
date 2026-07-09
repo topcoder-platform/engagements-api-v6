@@ -3087,9 +3087,10 @@ export class EngagementsService {
   /**
    * Builds the final ORDER BY clause for Flexi member list pages.
    *
-   * Handle sorting respects the requested direction; time sorting preserves
-   * current-first total grouping, nullable day/date ordering, and the same final
-   * stable ties as compareFlexiMemberListRows.
+   * Handle sorting respects the requested direction; time sorting uses the
+   * source hasCurrent flag to preserve current-first total grouping, nullable
+   * day/date ordering, and the same final stable ties as
+   * compareFlexiMemberListRows.
    *
    * @param query Flexi member list sort query.
    * @returns SQL ORDER BY fragment without the leading ORDER BY keyword.
@@ -3118,26 +3119,26 @@ export class EngagementsService {
     const totalGroupingSql =
       query.bucket === FlexiMemberBucket.Total
         ? Prisma.sql`
-          CASE WHEN "isCurrentlyAssigned" THEN 0 ELSE 1 END ASC,
+          CASE WHEN "hasCurrent" THEN 0 ELSE 1 END ASC,
         `
         : Prisma.empty;
 
     return Prisma.sql`
       ${totalGroupingSql}
       CASE
-        WHEN "isCurrentlyAssigned" AND "daysRemaining" IS NULL THEN 1
+        WHEN "hasCurrent" AND "daysRemaining" IS NULL THEN 1
         ELSE 0
       END ASC,
       CASE
-        WHEN "isCurrentlyAssigned" THEN "daysRemaining"
+        WHEN "hasCurrent" THEN "daysRemaining"
         ELSE NULL
       END ${currentTimeDirectionSql},
       CASE
-        WHEN NOT "isCurrentlyAssigned" AND "latestCompletedAt" IS NULL THEN 1
+        WHEN NOT "hasCurrent" AND "latestCompletedAt" IS NULL THEN 1
         ELSE 0
       END ASC,
       CASE
-        WHEN NOT "isCurrentlyAssigned" THEN "latestCompletedAt"
+        WHEN NOT "hasCurrent" THEN "latestCompletedAt"
         ELSE NULL
       END ${completedTimeDirectionSql},
       ${tieSql}
