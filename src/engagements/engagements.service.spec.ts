@@ -42,8 +42,11 @@ const normalizeSql = (query: CapturedSqlQuery): string =>
 const getSqlValues = (query: CapturedSqlQuery): unknown[] => [
   ...(query.values ?? []),
 ];
+const FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV = "FLEXI_TALENT_IGNORED_PROJECT_IDS";
 
 describe("EngagementsService", () => {
+  const originalFlexiTalentIgnoredProjectIds =
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV];
   let service: EngagementsService;
   let db: {
     $queryRaw: jest.Mock;
@@ -86,6 +89,25 @@ describe("EngagementsService", () => {
   let assignmentOfferResponseEmailService: {
     sendAssignmentOfferResponseEmails: jest.Mock;
   };
+
+  /**
+   * Creates the service with the current mocks and environment.
+   *
+   * Tests that change environment configuration call this after setting the env
+   * value so the service constructor reads the intended Flexi ignore list.
+   *
+   * @returns Service instance under test.
+   */
+  const createService = (): EngagementsService =>
+    new EngagementsService(
+      db as any,
+      projectService as any,
+      skillsService as any,
+      memberService as any,
+      eventBusService as any,
+      assignmentOfferEmailService as any,
+      assignmentOfferResponseEmailService as any,
+    );
 
   const createDto = {
     projectId: "project-1",
@@ -167,6 +189,7 @@ describe("EngagementsService", () => {
   });
 
   beforeEach(() => {
+    delete process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV];
     db = {
       $queryRaw: jest.fn(),
       $transaction: jest.fn(),
@@ -210,18 +233,16 @@ describe("EngagementsService", () => {
     assignmentOfferResponseEmailService = {
       sendAssignmentOfferResponseEmails: jest.fn().mockResolvedValue(undefined),
     };
-    service = new EngagementsService(
-      db as any,
-      projectService as any,
-      skillsService as any,
-      memberService as any,
-      eventBusService as any,
-      assignmentOfferEmailService as any,
-      assignmentOfferResponseEmailService as any,
-    );
+    service = createService();
   });
 
   afterEach(() => {
+    if (originalFlexiTalentIgnoredProjectIds === undefined) {
+      delete process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV];
+    } else {
+      process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] =
+        originalFlexiTalentIgnoredProjectIds;
+    }
     jest.restoreAllMocks();
     jest.useRealTimers();
   });
@@ -1558,6 +1579,126 @@ describe("EngagementsService", () => {
     });
   });
 
+  it("excludes configured ignored projects from Flexi engagement summaries", async () => {
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] =
+      "38965, 1001006, 38965, ";
+    service = createService();
+    db.engagement.count
+      .mockResolvedValueOnce(12)
+      .mockResolvedValueOnce(7)
+      .mockResolvedValueOnce(5);
+
+    const result = await service.getFlexiEngagementSummary();
+
+    expect(db.engagement.count).toHaveBeenNthCalledWith(1, {
+      where: {
+        projectId: { notIn: ["38965", "1001006"] },
+      },
+    });
+    expect(db.engagement.count).toHaveBeenNthCalledWith(2, {
+      where: {
+        projectId: { notIn: ["38965", "1001006"] },
+        AND: [
+          { status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] } },
+        ],
+      },
+    });
+    expect(db.engagement.count).toHaveBeenNthCalledWith(3, {
+      where: {
+        projectId: { notIn: ["38965", "1001006"] },
+        AND: [
+          {
+            status: {
+              in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
+            },
+          },
+        ],
+      },
+    });
+    expect(result).toEqual({ total: 12, active: 7, closed: 5 });
+  });
+
+  it("filters ignored projects from Flexi engagement name lists and project search matches", async () => {
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
+    service = createService();
+    projectService.searchFlexiProjectIdsByName.mockResolvedValue([
+      "38965",
+      "project-platform",
+      "1001006",
+    ]);
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.getFlexiEngagementList({
+      bucket: FlexiEngagementBucket.Total,
+      searchText: "platform",
+      sortBy: FlexiEngagementSortBy.Name,
+      sortOrder: "asc",
+      page: 1,
+      perPage: 20,
+    } as FlexiEngagementListQueryDto);
+
+    expect(db.engagement.findMany.mock.calls[0][0].where).toEqual({
+      projectId: { notIn: ["38965", "1001006"] },
+      AND: [
+        {
+          OR: [
+            {
+              title: {
+                contains: "platform",
+                mode: "insensitive",
+              },
+            },
+            { projectId: { in: ["project-platform"] } },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("filters ignored projects from Flexi engagement member-count SQL", async () => {
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
+    service = createService();
+    db.$queryRaw
+      .mockResolvedValueOnce([{ total: "0" }])
+      .mockResolvedValueOnce([]);
+
+    await service.getFlexiEngagementList({
+      bucket: FlexiEngagementBucket.Total,
+      sortBy: FlexiEngagementSortBy.MemberCount,
+      sortOrder: "desc",
+      page: 1,
+      perPage: 20,
+    } as FlexiEngagementListQueryDto);
+
+    const countQuery = db.$queryRaw.mock.calls[0][0];
+    const pageQuery = db.$queryRaw.mock.calls[1][0];
+
+    expect(normalizeSql(countQuery)).toContain('e."projectId" NOT IN');
+    expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
+    expect(getSqlValues(countQuery)).toEqual(
+      expect.arrayContaining(["38965", "1001006"]),
+    );
+    expect(getSqlValues(pageQuery)).toEqual(
+      expect.arrayContaining(["38965", "1001006"]),
+    );
+  });
+
+  it("returns not found for ignored Flexi engagement details", async () => {
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
+    service = createService();
+    db.engagement.findUnique.mockResolvedValue({
+      ...buildFlexiEngagement({ projectId: "38965" }),
+      assignments: [],
+    });
+
+    await expect(
+      service.getFlexiEngagementDetail("eng-ignored"),
+    ).rejects.toThrow("Engagement not found.");
+    expect(projectService.getProjectNamesByIds).not.toHaveBeenCalled();
+    expect(skillsService.getSkillNamesByIds).not.toHaveBeenCalled();
+  });
+
   it("lists Flexi engagements by name with bucket, project search, and top-level pagination", async () => {
     const query = {
       bucket: FlexiEngagementBucket.Active,
@@ -1784,6 +1925,96 @@ describe("EngagementsService", () => {
       perPage: 1,
       total: 3,
       totalPages: 3,
+    });
+  });
+
+  it("excludes ignored project assignments from Flexi member summaries", async () => {
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
+    service = createService();
+    db.engagementAssignment.findMany.mockResolvedValue([]);
+
+    const result = await service.getFlexiMemberSummary();
+
+    expect(db.engagementAssignment.findMany).toHaveBeenCalledWith({
+      where: {
+        status: {
+          in: [
+            AssignmentStatus.SELECTED,
+            AssignmentStatus.ASSIGNED,
+            AssignmentStatus.OFFER_REJECTED,
+            AssignmentStatus.COMPLETED,
+            AssignmentStatus.TERMINATED,
+          ],
+        },
+        engagement: {
+          projectId: {
+            notIn: ["38965", "1001006"],
+          },
+        },
+      },
+      select: {
+        memberId: true,
+        status: true,
+      },
+    });
+    expect(result).toEqual({
+      totalUniqueMembers: 0,
+      assignedMembers: 0,
+      completedMembers: 0,
+    });
+  });
+
+  it("excludes ignored project assignments from Flexi member list SQL", async () => {
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
+    service = createService();
+    db.$queryRaw
+      .mockResolvedValueOnce([{ total: 0n }])
+      .mockResolvedValueOnce([]);
+
+    await service.getFlexiMemberList(new FlexiMemberListQueryDto());
+
+    const countQuery = db.$queryRaw.mock.calls[0][0];
+    const pageQuery = db.$queryRaw.mock.calls[1][0];
+
+    expect(normalizeSql(countQuery)).toContain('e."projectId" NOT IN');
+    expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
+    expect(getSqlValues(countQuery)).toEqual(
+      expect.arrayContaining(["38965", "1001006"]),
+    );
+    expect(getSqlValues(pageQuery)).toEqual(
+      expect.arrayContaining(["38965", "1001006"]),
+    );
+  });
+
+  it("excludes ignored project assignments from Flexi member detail lookups", async () => {
+    process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
+    service = createService();
+    db.engagementAssignment.findMany.mockResolvedValue([]);
+
+    await expect(
+      service.getFlexiMemberDetail("member-ignored"),
+    ).rejects.toThrow("Member assignment history not found.");
+    expect(db.engagementAssignment.findMany).toHaveBeenCalledWith({
+      where: {
+        status: {
+          in: [
+            AssignmentStatus.SELECTED,
+            AssignmentStatus.ASSIGNED,
+            AssignmentStatus.OFFER_REJECTED,
+            AssignmentStatus.COMPLETED,
+            AssignmentStatus.TERMINATED,
+          ],
+        },
+        engagement: {
+          projectId: {
+            notIn: ["38965", "1001006"],
+          },
+        },
+        memberId: "member-ignored",
+      },
+      include: {
+        engagement: true,
+      },
     });
   });
 
