@@ -3091,7 +3091,10 @@ export class EngagementsService {
             WHEN "resolvedEndDate" IS NULL THEN NULL
             ELSE ("resolvedEndDate"::date - ${todayUtcDate}::date)::int
           END AS "daysRemaining",
-          COALESCE("resolvedEndDate", "updatedAt") AS "latestCompletedAt"
+          CASE
+            WHEN "status" = ${AssignmentStatus.OFFER_REJECTED}::"AssignmentStatus" THEN "updatedAt"
+            ELSE COALESCE("resolvedEndDate", "updatedAt")
+          END AS "latestCompletedAt"
         FROM filtered_assignments
       ),
       member_flags AS (
@@ -3923,14 +3926,22 @@ export class EngagementsService {
   }
 
   /**
-   * Resolves completion timestamp for past Flexi assignments.
+   * Resolves the terminal timestamp for past Flexi assignments.
+   *
+   * Offer rejections do not write endDate, so updatedAt is the rejection time.
+   * Completed and terminated rows prefer the explicit or derived end date before
+   * falling back to updatedAt.
    *
    * @param assignment Assignment row.
-   * @returns Explicit or derived end date, otherwise updatedAt.
+   * @returns Rejection time, explicit or derived end date, otherwise updatedAt.
    */
   private resolveFlexiCompletionTimestamp(
     assignment: EngagementAssignment,
   ): Date {
+    if (assignment.status === AssignmentStatus.OFFER_REJECTED) {
+      return assignment.updatedAt;
+    }
+
     return this.resolveFlexiEndDate(assignment) ?? assignment.updatedAt;
   }
 

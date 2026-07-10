@@ -2216,6 +2216,45 @@ describe("EngagementsService", () => {
     expect(result.data.map((row) => row.handle)).toEqual(["zeta-match"]);
   });
 
+  it("uses offer rejection time in Flexi member list terminal timestamps", async () => {
+    const rejectedAt = new Date("2026-04-21T12:00:00.000Z");
+    db.$queryRaw.mockResolvedValueOnce([{ total: 1n }]).mockResolvedValueOnce([
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-rejected",
+        engagementId: "eng-rejected",
+        memberId: "member-rejected",
+        memberHandle: "rejected-member",
+        status: AssignmentStatus.OFFER_REJECTED,
+        engagementTitle: "Rejected Offer",
+        isCurrentlyAssigned: false,
+        daysRemaining: null,
+        latestCompletedAt: rejectedAt,
+      }),
+    ]);
+
+    const result = await service.getFlexiMemberList({
+      bucket: FlexiMemberBucket.Completed,
+      sortBy: FlexiMemberSortBy.Time,
+      sortOrder: "asc",
+      page: 1,
+      perPage: 20,
+    });
+
+    const pageSql = normalizeSql(db.$queryRaw.mock.calls[1][0]);
+
+    expect(pageSql).toMatch(
+      /WHEN "status" = .*::"AssignmentStatus" THEN "updatedAt"/,
+    );
+    expect(pageSql).toContain(
+      'ELSE COALESCE("resolvedEndDate", "updatedAt") END AS "latestCompletedAt"',
+    );
+    expect(result.data[0]).toMatchObject({
+      handle: "rejected-member",
+      latestCompletedAt: rejectedAt,
+      status: AssignmentStatus.OFFER_REJECTED,
+    });
+  });
+
   it("does not derive Flexi timing from engagement duration fallback", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
 
@@ -2260,6 +2299,57 @@ describe("EngagementsService", () => {
       durationMonths: 1,
       durationLabel: "1 month",
     });
+  });
+
+  it("selects past Flexi assignments using offer rejection time", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+
+    const rejectedAt = new Date("2026-04-21T12:00:00.000Z");
+    const completedAt = new Date("2026-06-01T00:00:00.000Z");
+    const rejectedAssignment = buildFlexiAssignment({
+      id: "assignment-rejected",
+      memberId: "member-terminal",
+      memberHandle: "terminalMember",
+      status: AssignmentStatus.OFFER_REJECTED,
+      startDate: new Date("2026-04-21T00:00:00.000Z"),
+      durationMonths: 12,
+      updatedAt: rejectedAt,
+      engagement: buildFlexiEngagement({
+        id: "eng-rejected",
+        title: "Rejected Offer",
+      }),
+    });
+    const completedAssignment = buildFlexiAssignment({
+      id: "assignment-completed",
+      memberId: "member-terminal",
+      memberHandle: "terminalMember",
+      status: AssignmentStatus.COMPLETED,
+      endDate: completedAt,
+      updatedAt: completedAt,
+      engagement: buildFlexiEngagement({
+        id: "eng-completed",
+        title: "Completed Engagement",
+      }),
+    });
+    db.engagementAssignment.findMany.mockResolvedValue([
+      rejectedAssignment,
+      completedAssignment,
+    ]);
+
+    const detail = await service.getFlexiMemberDetail("member-terminal");
+    const history = await service.getFlexiMemberHistory("member-terminal");
+
+    expect(detail.assignmentId).toBe("assignment-completed");
+    expect(history.data.map((row) => row.assignmentId)).toEqual([
+      "assignment-completed",
+      "assignment-rejected",
+    ]);
+    expect(history.data[1].completedAt?.toISOString()).toBe(
+      rejectedAt.toISOString(),
+    );
+    expect(history.data[1].resolvedEndDate?.toISOString()).toBe(
+      "2027-04-21T00:00:00.000Z",
+    );
   });
 
   it("keeps member time sorting stable when assignment duration is missing", async () => {

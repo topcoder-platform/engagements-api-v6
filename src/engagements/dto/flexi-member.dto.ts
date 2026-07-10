@@ -180,7 +180,8 @@ export class FlexiMemberListItemDto {
   daysRemaining?: number | null;
 
   @ApiPropertyOptional({
-    description: "Latest completion timestamp for completed-only members.",
+    description:
+      "Latest terminal timestamp for completed-only members, including offer rejection time.",
     example: "2026-03-31T00:00:00.000Z",
   })
   latestCompletedAt?: Date | null;
@@ -491,7 +492,8 @@ export class FlexiMemberHistoryItemDto {
   isOverdue: boolean;
 
   @ApiPropertyOptional({
-    description: "Resolved completion timestamp for past-assignment sorting.",
+    description:
+      "Resolved terminal timestamp for past-assignment sorting, including offer rejection time.",
     example: "2026-03-31T00:00:00.000Z",
   })
   completedAt?: Date | null;
