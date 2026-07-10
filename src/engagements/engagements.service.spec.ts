@@ -1660,12 +1660,11 @@ describe("EngagementsService", () => {
     });
   });
 
-  it("filters ignored projects from Flexi engagement member-count SQL", async () => {
+  it("uses shared count filters and ignored-project SQL for Flexi engagement member-count lists", async () => {
     process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
     service = createService();
-    db.$queryRaw
-      .mockResolvedValueOnce([{ total: "0" }])
-      .mockResolvedValueOnce([]);
+    db.engagement.count.mockResolvedValue(0);
+    db.$queryRaw.mockResolvedValueOnce([]);
 
     await service.getFlexiEngagementList({
       bucket: FlexiEngagementBucket.Total,
@@ -1675,10 +1674,13 @@ describe("EngagementsService", () => {
       perPage: 20,
     } as FlexiEngagementListQueryDto);
 
-    const countQuery = db.$queryRaw.mock.calls[0][0];
-    const pageQuery = db.$queryRaw.mock.calls[1][0];
+    const pageQuery = db.$queryRaw.mock.calls[0][0];
 
-    expect(normalizeSql(countQuery)).toContain('e."projectId" NOT IN');
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: {
+        projectId: { notIn: ["38965", "1001006"] },
+      },
+    });
     expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
     expect(normalizeSql(countQuery)).toContain('e."status" IN');
     expect(normalizeSql(pageQuery)).toContain('e."status" IN');
@@ -1899,7 +1901,8 @@ describe("EngagementsService", () => {
     projectService.getProjectNamesByIds.mockResolvedValue(
       new Map([["project-cloud", "Cloud Operations"]]),
     );
-    db.$queryRaw.mockResolvedValueOnce([{ total: "3" }]).mockResolvedValueOnce([
+    db.engagement.count.mockResolvedValue(3);
+    db.$queryRaw.mockResolvedValueOnce([
       {
         id: "eng-cloud",
         projectId: "project-cloud",
@@ -1913,17 +1916,36 @@ describe("EngagementsService", () => {
     const result = await service.getFlexiEngagementList(query);
 
     expect(db.engagement.findMany).not.toHaveBeenCalled();
-    expect(db.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: {
+        AND: [
+          {
+            status: {
+              in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
+            },
+          },
+          {
+            OR: [
+              {
+                title: {
+                  contains: "Cloud",
+                  mode: "insensitive",
+                },
+              },
+              { projectId: { in: ["project-cloud"] } },
+            ],
+          },
+        ],
+      },
+    });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     expect(projectService.searchFlexiProjectIdsByName).toHaveBeenCalledWith(
       "Cloud",
     );
 
-    const countQuery = db.$queryRaw.mock.calls[0][0];
-    const pageQuery = db.$queryRaw.mock.calls[1][0];
-    const countSql = normalizeSql(countQuery);
+    const pageQuery = db.$queryRaw.mock.calls[0][0];
     const pageSql = normalizeSql(pageQuery);
 
-    expect(countSql).toContain('FROM "Engagement" e WHERE e."status" IN');
     expect(pageSql).toContain('COUNT(a."id")::int AS "assignedMemberCount"');
     expect(pageSql).toContain('e."status" IN');
     expect(pageSql).toContain('e."title" ILIKE');
