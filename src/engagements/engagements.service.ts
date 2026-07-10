@@ -2638,10 +2638,9 @@ export class EngagementsService {
   /**
    * Fetches a database-paged Flexi engagement page for member-count sorting.
    *
-   * This hot-path SQL is intentionally isolated because Prisma cannot express
-   * the exact aggregate ordering without loading every candidate engagement; it
-   * preserves active assignment counting, requested count direction, title asc
-   * ties, and id asc ties.
+   * The total uses the shared Prisma where builder so bucket counts stay aligned
+   * with the summary endpoint. Raw SQL is limited to aggregate page ordering,
+   * which Prisma cannot express without loading every candidate engagement.
    *
    * @param filters Normalized Flexi engagement filters.
    * @param sortOrder Requested member-count sort direction.
@@ -2655,16 +2654,11 @@ export class EngagementsService {
     skip: number,
     take: number,
   ): Promise<FlexiListPage<FlexiEngagementListRow>> {
+    const where = this.buildFlexiEngagementWhere(filters);
     const whereSql = this.buildFlexiEngagementWhereSql(filters);
     const sortDirectionSql = this.buildSqlSortDirection(sortOrder);
-    const [countRows, rows] = await Promise.all([
-      this.db.$queryRaw<Array<{ total: bigint | number | string }>>(
-        Prisma.sql`
-          SELECT COUNT(*)::bigint AS "total"
-          FROM "Engagement" e
-          ${whereSql}
-        `,
-      ),
+    const [total, rows] = await Promise.all([
+      this.db.engagement.count({ where }),
       this.db.$queryRaw<FlexiEngagementListSqlRow[]>(
         Prisma.sql`
           SELECT
@@ -2706,7 +2700,7 @@ export class EngagementsService {
         requiredMemberCount: row.requiredMemberCount,
         assignedMemberCount: this.coerceSqlNumber(row.assignedMemberCount),
       })),
-      total: this.coerceSqlNumber(countRows[0]?.total),
+      total,
     };
   }
 
