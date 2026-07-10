@@ -232,19 +232,19 @@ export class FlexiEngagementAssignmentRowDto {
  */
 export class FlexiEngagementSummaryDto {
   @ApiProperty({
-    description: "Total number of engagements.",
+    description: "Total number of ACTIVE or CLOSED engagements.",
     example: 120,
   })
   total: number;
 
   @ApiProperty({
-    description: "Number of OPEN or ACTIVE engagements.",
+    description: "Number of ACTIVE engagements.",
     example: 84,
   })
   active: number;
 
   @ApiProperty({
-    description: "Number of CLOSED or CANCELLED engagements.",
+    description: "Number of CLOSED engagements.",
     example: 31,
   })
   closed: number;

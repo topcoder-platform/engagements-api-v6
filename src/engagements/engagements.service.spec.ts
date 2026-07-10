@@ -1593,26 +1593,25 @@ describe("EngagementsService", () => {
     expect(db.engagement.count).toHaveBeenNthCalledWith(1, {
       where: {
         projectId: { notIn: ["38965", "1001006"] },
+        AND: [
+          {
+            status: {
+              in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+            },
+          },
+        ],
       },
     });
     expect(db.engagement.count).toHaveBeenNthCalledWith(2, {
       where: {
         projectId: { notIn: ["38965", "1001006"] },
-        AND: [
-          { status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] } },
-        ],
+        AND: [{ status: { in: [EngagementStatus.ACTIVE] } }],
       },
     });
     expect(db.engagement.count).toHaveBeenNthCalledWith(3, {
       where: {
         projectId: { notIn: ["38965", "1001006"] },
-        AND: [
-          {
-            status: {
-              in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
-            },
-          },
-        ],
+        AND: [{ status: { in: [EngagementStatus.CLOSED] } }],
       },
     });
     expect(result).toEqual({ total: 12, active: 7, closed: 5 });
@@ -1642,6 +1641,11 @@ describe("EngagementsService", () => {
       projectId: { notIn: ["38965", "1001006"] },
       AND: [
         {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
+        },
+        {
           OR: [
             {
               title: {
@@ -1656,12 +1660,11 @@ describe("EngagementsService", () => {
     });
   });
 
-  it("filters ignored projects from Flexi engagement member-count SQL", async () => {
+  it("uses shared count filters and ignored-project SQL for Flexi engagement member-count lists", async () => {
     process.env[FLEXI_TALENT_IGNORED_PROJECT_IDS_ENV] = "38965,1001006";
     service = createService();
-    db.$queryRaw
-      .mockResolvedValueOnce([{ total: "0" }])
-      .mockResolvedValueOnce([]);
+    db.engagement.count.mockResolvedValue(0);
+    db.$queryRaw.mockResolvedValueOnce([]);
 
     await service.getFlexiEngagementList({
       bucket: FlexiEngagementBucket.Total,
@@ -1671,16 +1674,31 @@ describe("EngagementsService", () => {
       perPage: 20,
     } as FlexiEngagementListQueryDto);
 
-    const countQuery = db.$queryRaw.mock.calls[0][0];
-    const pageQuery = db.$queryRaw.mock.calls[1][0];
+    const pageQuery = db.$queryRaw.mock.calls[0][0];
 
-    expect(normalizeSql(countQuery)).toContain('e."projectId" NOT IN');
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: {
+        projectId: { notIn: ["38965", "1001006"] },
+      },
+    });
     expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
+    expect(normalizeSql(countQuery)).toContain('e."status" IN');
+    expect(normalizeSql(pageQuery)).toContain('e."status" IN');
     expect(getSqlValues(countQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
     expect(getSqlValues(pageQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
   });
 
@@ -1699,6 +1717,19 @@ describe("EngagementsService", () => {
     expect(skillsService.getSkillNamesByIds).not.toHaveBeenCalled();
   });
 
+  it("returns not found for non-active and non-closed Flexi engagement details", async () => {
+    db.engagement.findUnique.mockResolvedValue({
+      ...buildFlexiEngagement({ status: EngagementStatus.ON_HOLD }),
+      assignments: [],
+    });
+
+    await expect(
+      service.getFlexiEngagementDetail("eng-on-hold"),
+    ).rejects.toThrow("Engagement not found.");
+    expect(projectService.getProjectNamesByIds).not.toHaveBeenCalled();
+    expect(skillsService.getSkillNamesByIds).not.toHaveBeenCalled();
+  });
+
   it("lists Flexi engagements by name with bucket, project search, and top-level pagination", async () => {
     const query = {
       bucket: FlexiEngagementBucket.Active,
@@ -1710,7 +1741,7 @@ describe("EngagementsService", () => {
     } as FlexiEngagementListQueryDto;
     const expectedWhere = {
       AND: [
-        { status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] } },
+        { status: { in: [EngagementStatus.ACTIVE] } },
         {
           OR: [
             {
@@ -1744,10 +1775,10 @@ describe("EngagementsService", () => {
         _count: { assignments: 2 },
       },
       {
-        id: "eng-open",
+        id: "eng-active",
         projectId: "project-title",
         title: "Platform API",
-        status: EngagementStatus.OPEN,
+        status: EngagementStatus.ACTIVE,
         requiredMemberCount: 1,
         _count: { assignments: 1 },
       },
@@ -1798,11 +1829,11 @@ describe("EngagementsService", () => {
           requiredMemberCount: 3,
         },
         {
-          engagementId: "eng-open",
+          engagementId: "eng-active",
           projectId: "project-title",
           projectName: "Platform API",
           engagementTitle: "Platform API",
-          status: EngagementStatus.OPEN,
+          status: EngagementStatus.ACTIVE,
           assignedMemberCount: 1,
           requiredMemberCount: 1,
         },
@@ -1836,6 +1867,11 @@ describe("EngagementsService", () => {
     expect(db.engagement.findMany.mock.calls[0][0].where).toEqual({
       AND: [
         {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
+        },
+        {
           OR: [
             {
               title: {
@@ -1865,7 +1901,8 @@ describe("EngagementsService", () => {
     projectService.getProjectNamesByIds.mockResolvedValue(
       new Map([["project-cloud", "Cloud Operations"]]),
     );
-    db.$queryRaw.mockResolvedValueOnce([{ total: "3" }]).mockResolvedValueOnce([
+    db.engagement.count.mockResolvedValue(3);
+    db.$queryRaw.mockResolvedValueOnce([
       {
         id: "eng-cloud",
         projectId: "project-cloud",
@@ -1879,17 +1916,36 @@ describe("EngagementsService", () => {
     const result = await service.getFlexiEngagementList(query);
 
     expect(db.engagement.findMany).not.toHaveBeenCalled();
-    expect(db.$queryRaw).toHaveBeenCalledTimes(2);
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: {
+        AND: [
+          {
+            status: {
+              in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
+            },
+          },
+          {
+            OR: [
+              {
+                title: {
+                  contains: "Cloud",
+                  mode: "insensitive",
+                },
+              },
+              { projectId: { in: ["project-cloud"] } },
+            ],
+          },
+        ],
+      },
+    });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     expect(projectService.searchFlexiProjectIdsByName).toHaveBeenCalledWith(
       "Cloud",
     );
 
-    const countQuery = db.$queryRaw.mock.calls[0][0];
-    const pageQuery = db.$queryRaw.mock.calls[1][0];
-    const countSql = normalizeSql(countQuery);
+    const pageQuery = db.$queryRaw.mock.calls[0][0];
     const pageSql = normalizeSql(pageQuery);
 
-    expect(countSql).toContain('FROM "Engagement" e WHERE e."status" IN');
     expect(pageSql).toContain('COUNT(a."id")::int AS "assignedMemberCount"');
     expect(pageSql).toContain('e."status" IN');
     expect(pageSql).toContain('e."title" ILIKE');
@@ -1902,7 +1958,6 @@ describe("EngagementsService", () => {
         AssignmentStatus.SELECTED,
         AssignmentStatus.ASSIGNED,
         EngagementStatus.CLOSED,
-        EngagementStatus.CANCELLED,
         "%Cloud%",
         "project-cloud",
         1,
@@ -1947,6 +2002,9 @@ describe("EngagementsService", () => {
           ],
         },
         engagement: {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
           projectId: {
             notIn: ["38965", "1001006"],
           },
@@ -1978,11 +2036,23 @@ describe("EngagementsService", () => {
 
     expect(normalizeSql(countQuery)).toContain('e."projectId" NOT IN');
     expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
+    expect(normalizeSql(countQuery)).toContain('e."status" IN');
+    expect(normalizeSql(pageQuery)).toContain('e."status" IN');
     expect(getSqlValues(countQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
     expect(getSqlValues(pageQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
   });
 
@@ -2006,6 +2076,9 @@ describe("EngagementsService", () => {
           ],
         },
         engagement: {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
           projectId: {
             notIn: ["38965", "1001006"],
           },
@@ -2216,43 +2289,85 @@ describe("EngagementsService", () => {
     expect(result.data.map((row) => row.handle)).toEqual(["zeta-match"]);
   });
 
-  it("uses offer rejection time in Flexi member list terminal timestamps", async () => {
-    const rejectedAt = new Date("2026-04-21T12:00:00.000Z");
+  it("prioritizes assigned Flexi member assignments over selected assignments", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+
+    const selectedAssignment = buildFlexiAssignment({
+      id: "assignment-selected",
+      memberId: "member-priority",
+      memberHandle: "priorityMember",
+      status: AssignmentStatus.SELECTED,
+      startDate: new Date("2026-01-01T00:00:00.000Z"),
+      durationMonths: 3,
+      engagement: buildFlexiEngagement({
+        id: "eng-selected",
+        projectId: "project-selected",
+        title: "Selected Engagement",
+      }),
+    });
+    const assignedAssignment = buildFlexiAssignment({
+      id: "assignment-assigned",
+      memberId: "member-priority",
+      memberHandle: "priorityMember",
+      status: AssignmentStatus.ASSIGNED,
+      startDate: new Date("2026-06-07T00:00:00.000Z"),
+      durationMonths: 12,
+      engagement: buildFlexiEngagement({
+        id: "eng-assigned",
+        projectId: "project-assigned",
+        title: "Assigned Engagement",
+      }),
+    });
+    db.engagementAssignment.findMany.mockResolvedValue([
+      selectedAssignment,
+      assignedAssignment,
+    ]);
+
+    const detail = await service.getFlexiMemberDetail("member-priority");
+    const history = await service.getFlexiMemberHistory("member-priority");
+
+    expect(detail).toMatchObject({
+      assignmentId: "assignment-assigned",
+      status: AssignmentStatus.ASSIGNED,
+      displayStatusLabel: "Assigned",
+      engagementTitle: "Assigned Engagement",
+    });
+    expect(history.data.map((row) => row.assignmentId)).toEqual([
+      "assignment-assigned",
+      "assignment-selected",
+    ]);
+    expect(history.data.map((row) => row.displayStatusLabel)).toEqual([
+      "Assigned",
+      "Selected",
+    ]);
+  });
+
+  it("ranks assigned before selected assignments in Flexi member list SQL", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
     db.$queryRaw.mockResolvedValueOnce([{ total: 1n }]).mockResolvedValueOnce([
       buildFlexiMemberSqlRow({
-        assignmentId: "assignment-rejected",
-        engagementId: "eng-rejected",
-        memberId: "member-rejected",
-        memberHandle: "rejected-member",
-        status: AssignmentStatus.OFFER_REJECTED,
-        engagementTitle: "Rejected Offer",
-        isCurrentlyAssigned: false,
-        daysRemaining: null,
-        latestCompletedAt: rejectedAt,
+        assignmentId: "assignment-assigned",
+        status: AssignmentStatus.ASSIGNED,
       }),
     ]);
 
-    const result = await service.getFlexiMemberList({
-      bucket: FlexiMemberBucket.Completed,
-      sortBy: FlexiMemberSortBy.Time,
+    await service.getFlexiMemberList({
+      bucket: FlexiMemberBucket.Total,
+      sortBy: FlexiMemberSortBy.Handle,
       sortOrder: "asc",
       page: 1,
       perPage: 20,
     });
 
-    const pageSql = normalizeSql(db.$queryRaw.mock.calls[1][0]);
+    const pageQuery = db.$queryRaw.mock.calls[1][0];
+    const pageSql = normalizeSql(pageQuery);
 
-    expect(pageSql).toMatch(
-      /WHEN "status" = .*::"AssignmentStatus" THEN "updatedAt"/,
-    );
-    expect(pageSql).toContain(
-      'ELSE COALESCE("resolvedEndDate", "updatedAt") END AS "latestCompletedAt"',
-    );
-    expect(result.data[0]).toMatchObject({
-      handle: "rejected-member",
-      latestCompletedAt: rejectedAt,
-      status: AssignmentStatus.OFFER_REJECTED,
-    });
+    expect(pageSql).toContain('s."status" = ?::"AssignmentStatus" THEN 0');
+    expect(pageSql).toContain('s."status" = ?::"AssignmentStatus" THEN 1');
+    expect(getSqlValues(pageQuery).slice(-4, -2)).toEqual([
+      AssignmentStatus.ASSIGNED,
+      AssignmentStatus.SELECTED,
+    ]);
   });
 
   it("does not derive Flexi timing from engagement duration fallback", async () => {
