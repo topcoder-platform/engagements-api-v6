@@ -1593,26 +1593,25 @@ describe("EngagementsService", () => {
     expect(db.engagement.count).toHaveBeenNthCalledWith(1, {
       where: {
         projectId: { notIn: ["38965", "1001006"] },
+        AND: [
+          {
+            status: {
+              in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+            },
+          },
+        ],
       },
     });
     expect(db.engagement.count).toHaveBeenNthCalledWith(2, {
       where: {
         projectId: { notIn: ["38965", "1001006"] },
-        AND: [
-          { status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] } },
-        ],
+        AND: [{ status: { in: [EngagementStatus.ACTIVE] } }],
       },
     });
     expect(db.engagement.count).toHaveBeenNthCalledWith(3, {
       where: {
         projectId: { notIn: ["38965", "1001006"] },
-        AND: [
-          {
-            status: {
-              in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
-            },
-          },
-        ],
+        AND: [{ status: { in: [EngagementStatus.CLOSED] } }],
       },
     });
     expect(result).toEqual({ total: 12, active: 7, closed: 5 });
@@ -1641,6 +1640,11 @@ describe("EngagementsService", () => {
     expect(db.engagement.findMany.mock.calls[0][0].where).toEqual({
       projectId: { notIn: ["38965", "1001006"] },
       AND: [
+        {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
+        },
         {
           OR: [
             {
@@ -1676,11 +1680,23 @@ describe("EngagementsService", () => {
 
     expect(normalizeSql(countQuery)).toContain('e."projectId" NOT IN');
     expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
+    expect(normalizeSql(countQuery)).toContain('e."status" IN');
+    expect(normalizeSql(pageQuery)).toContain('e."status" IN');
     expect(getSqlValues(countQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
     expect(getSqlValues(pageQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
   });
 
@@ -1699,6 +1715,19 @@ describe("EngagementsService", () => {
     expect(skillsService.getSkillNamesByIds).not.toHaveBeenCalled();
   });
 
+  it("returns not found for non-active and non-closed Flexi engagement details", async () => {
+    db.engagement.findUnique.mockResolvedValue({
+      ...buildFlexiEngagement({ status: EngagementStatus.ON_HOLD }),
+      assignments: [],
+    });
+
+    await expect(
+      service.getFlexiEngagementDetail("eng-on-hold"),
+    ).rejects.toThrow("Engagement not found.");
+    expect(projectService.getProjectNamesByIds).not.toHaveBeenCalled();
+    expect(skillsService.getSkillNamesByIds).not.toHaveBeenCalled();
+  });
+
   it("lists Flexi engagements by name with bucket, project search, and top-level pagination", async () => {
     const query = {
       bucket: FlexiEngagementBucket.Active,
@@ -1710,7 +1739,7 @@ describe("EngagementsService", () => {
     } as FlexiEngagementListQueryDto;
     const expectedWhere = {
       AND: [
-        { status: { in: [EngagementStatus.OPEN, EngagementStatus.ACTIVE] } },
+        { status: { in: [EngagementStatus.ACTIVE] } },
         {
           OR: [
             {
@@ -1744,10 +1773,10 @@ describe("EngagementsService", () => {
         _count: { assignments: 2 },
       },
       {
-        id: "eng-open",
+        id: "eng-active",
         projectId: "project-title",
         title: "Platform API",
-        status: EngagementStatus.OPEN,
+        status: EngagementStatus.ACTIVE,
         requiredMemberCount: 1,
         _count: { assignments: 1 },
       },
@@ -1798,11 +1827,11 @@ describe("EngagementsService", () => {
           requiredMemberCount: 3,
         },
         {
-          engagementId: "eng-open",
+          engagementId: "eng-active",
           projectId: "project-title",
           projectName: "Platform API",
           engagementTitle: "Platform API",
-          status: EngagementStatus.OPEN,
+          status: EngagementStatus.ACTIVE,
           assignedMemberCount: 1,
           requiredMemberCount: 1,
         },
@@ -1835,6 +1864,11 @@ describe("EngagementsService", () => {
     );
     expect(db.engagement.findMany.mock.calls[0][0].where).toEqual({
       AND: [
+        {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
+        },
         {
           OR: [
             {
@@ -1902,7 +1936,6 @@ describe("EngagementsService", () => {
         AssignmentStatus.SELECTED,
         AssignmentStatus.ASSIGNED,
         EngagementStatus.CLOSED,
-        EngagementStatus.CANCELLED,
         "%Cloud%",
         "project-cloud",
         1,
@@ -1947,6 +1980,9 @@ describe("EngagementsService", () => {
           ],
         },
         engagement: {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
           projectId: {
             notIn: ["38965", "1001006"],
           },
@@ -1978,11 +2014,23 @@ describe("EngagementsService", () => {
 
     expect(normalizeSql(countQuery)).toContain('e."projectId" NOT IN');
     expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
+    expect(normalizeSql(countQuery)).toContain('e."status" IN');
+    expect(normalizeSql(pageQuery)).toContain('e."status" IN');
     expect(getSqlValues(countQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
     expect(getSqlValues(pageQuery)).toEqual(
-      expect.arrayContaining(["38965", "1001006"]),
+      expect.arrayContaining([
+        EngagementStatus.ACTIVE,
+        EngagementStatus.CLOSED,
+        "38965",
+        "1001006",
+      ]),
     );
   });
 
@@ -2006,6 +2054,9 @@ describe("EngagementsService", () => {
           ],
         },
         engagement: {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
           projectId: {
             notIn: ["38965", "1001006"],
           },
