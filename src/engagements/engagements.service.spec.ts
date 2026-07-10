@@ -2216,6 +2216,87 @@ describe("EngagementsService", () => {
     expect(result.data.map((row) => row.handle)).toEqual(["zeta-match"]);
   });
 
+  it("prioritizes assigned Flexi member assignments over selected assignments", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+
+    const selectedAssignment = buildFlexiAssignment({
+      id: "assignment-selected",
+      memberId: "member-priority",
+      memberHandle: "priorityMember",
+      status: AssignmentStatus.SELECTED,
+      startDate: new Date("2026-01-01T00:00:00.000Z"),
+      durationMonths: 3,
+      engagement: buildFlexiEngagement({
+        id: "eng-selected",
+        projectId: "project-selected",
+        title: "Selected Engagement",
+      }),
+    });
+    const assignedAssignment = buildFlexiAssignment({
+      id: "assignment-assigned",
+      memberId: "member-priority",
+      memberHandle: "priorityMember",
+      status: AssignmentStatus.ASSIGNED,
+      startDate: new Date("2026-06-07T00:00:00.000Z"),
+      durationMonths: 12,
+      engagement: buildFlexiEngagement({
+        id: "eng-assigned",
+        projectId: "project-assigned",
+        title: "Assigned Engagement",
+      }),
+    });
+    db.engagementAssignment.findMany.mockResolvedValue([
+      selectedAssignment,
+      assignedAssignment,
+    ]);
+
+    const detail = await service.getFlexiMemberDetail("member-priority");
+    const history = await service.getFlexiMemberHistory("member-priority");
+
+    expect(detail).toMatchObject({
+      assignmentId: "assignment-assigned",
+      status: AssignmentStatus.ASSIGNED,
+      displayStatusLabel: "Assigned",
+      engagementTitle: "Assigned Engagement",
+    });
+    expect(history.data.map((row) => row.assignmentId)).toEqual([
+      "assignment-assigned",
+      "assignment-selected",
+    ]);
+    expect(history.data.map((row) => row.displayStatusLabel)).toEqual([
+      "Assigned",
+      "Selected",
+    ]);
+  });
+
+  it("ranks assigned before selected assignments in Flexi member list SQL", async () => {
+    jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
+    db.$queryRaw.mockResolvedValueOnce([{ total: 1n }]).mockResolvedValueOnce([
+      buildFlexiMemberSqlRow({
+        assignmentId: "assignment-assigned",
+        status: AssignmentStatus.ASSIGNED,
+      }),
+    ]);
+
+    await service.getFlexiMemberList({
+      bucket: FlexiMemberBucket.Total,
+      sortBy: FlexiMemberSortBy.Handle,
+      sortOrder: "asc",
+      page: 1,
+      perPage: 20,
+    });
+
+    const pageQuery = db.$queryRaw.mock.calls[1][0];
+    const pageSql = normalizeSql(pageQuery);
+
+    expect(pageSql).toContain('s."status" = ?::"AssignmentStatus" THEN 0');
+    expect(pageSql).toContain('s."status" = ?::"AssignmentStatus" THEN 1');
+    expect(getSqlValues(pageQuery).slice(-4, -2)).toEqual([
+      AssignmentStatus.ASSIGNED,
+      AssignmentStatus.SELECTED,
+    ]);
+  });
+
   it("does not derive Flexi timing from engagement duration fallback", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
 
