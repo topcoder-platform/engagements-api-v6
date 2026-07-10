@@ -2987,6 +2987,15 @@ export class EngagementsService {
                   CASE
                     WHEN mf."hasCurrent"
                      AND s."isCurrent"
+                     AND s."status" = ${AssignmentStatus.ASSIGNED}::"AssignmentStatus" THEN 0
+                    WHEN mf."hasCurrent"
+                     AND s."isCurrent"
+                     AND s."status" = ${AssignmentStatus.SELECTED}::"AssignmentStatus" THEN 1
+                    ELSE 2
+                  END ASC,
+                  CASE
+                    WHEN mf."hasCurrent"
+                     AND s."isCurrent"
                      AND s."resolvedEndDate" IS NULL THEN 1
                     ELSE 0
                   END ASC,
@@ -3473,8 +3482,9 @@ export class EngagementsService {
   /**
    * Selects the primary assignment for a Flexi member row or detail view.
    *
-   * Current members choose the current assignment ending soonest. Completed-only
-   * members choose the latest completion-status assignment.
+   * Current members choose assigned assignments before selected assignments,
+   * then the current assignment ending soonest. Completed-only members choose
+   * the latest completion-status assignment.
    *
    * @param assignments Assignment history for one member.
    * @returns Primary assignment selection, or undefined when none qualify.
@@ -3525,7 +3535,7 @@ export class EngagementsService {
   }
 
   /**
-   * Compares current assignments by soonest resolved end date.
+   * Compares current assignments by status priority, then soonest resolved end date.
    *
    * @param left Left assignment with engagement.
    * @param right Right assignment with engagement.
@@ -3535,6 +3545,15 @@ export class EngagementsService {
     left: FlexiAssignmentWithEngagement,
     right: FlexiAssignmentWithEngagement,
   ): number {
+    const statusComparison = this.compareFlexiCurrentAssignmentStatus(
+      left.status,
+      right.status,
+    );
+
+    if (statusComparison !== 0) {
+      return statusComparison;
+    }
+
     const leftEndTime =
       this.resolveFlexiEndDate(left)?.getTime() ?? Number.MAX_SAFE_INTEGER;
     const rightEndTime =
@@ -3545,6 +3564,40 @@ export class EngagementsService {
     }
 
     return this.compareFlexiAssignmentTies(left, right);
+  }
+
+  /**
+   * Returns the Flexi priority for active assignment statuses.
+   *
+   * @param status Assignment status to rank.
+   * @returns Lower value for statuses that should appear first.
+   */
+  private getFlexiCurrentStatusPriority(status: AssignmentStatus): number {
+    switch (status) {
+      case AssignmentStatus.ASSIGNED:
+        return 0;
+      case AssignmentStatus.SELECTED:
+        return 1;
+      default:
+        return 2;
+    }
+  }
+
+  /**
+   * Compares active assignment statuses using Flexi primary-assignment priority.
+   *
+   * @param left Left assignment status.
+   * @param right Right assignment status.
+   * @returns Negative, positive, or zero comparison result.
+   */
+  private compareFlexiCurrentAssignmentStatus(
+    left: AssignmentStatus,
+    right: AssignmentStatus,
+  ): number {
+    return (
+      this.getFlexiCurrentStatusPriority(left) -
+      this.getFlexiCurrentStatusPriority(right)
+    );
   }
 
   /**
@@ -3783,6 +3836,15 @@ export class EngagementsService {
     }
 
     if (left.isCurrent && right.isCurrent) {
+      const statusComparison = this.compareFlexiCurrentAssignmentStatus(
+        left.status,
+        right.status,
+      );
+
+      if (statusComparison !== 0) {
+        return statusComparison;
+      }
+
       const endComparison = this.compareNullableDatesAsc(
         left.resolvedEndDate,
         right.resolvedEndDate,
