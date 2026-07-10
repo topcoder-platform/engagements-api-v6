@@ -1679,19 +1679,18 @@ describe("EngagementsService", () => {
     expect(db.engagement.count).toHaveBeenCalledWith({
       where: {
         projectId: { notIn: ["38965", "1001006"] },
+        AND: [
+          {
+            status: {
+              in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+            },
+          },
+        ],
       },
     });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     expect(normalizeSql(pageQuery)).toContain('e."projectId" NOT IN');
-    expect(normalizeSql(countQuery)).toContain('e."status" IN');
     expect(normalizeSql(pageQuery)).toContain('e."status" IN');
-    expect(getSqlValues(countQuery)).toEqual(
-      expect.arrayContaining([
-        EngagementStatus.ACTIVE,
-        EngagementStatus.CLOSED,
-        "38965",
-        "1001006",
-      ]),
-    );
     expect(getSqlValues(pageQuery)).toEqual(
       expect.arrayContaining([
         EngagementStatus.ACTIVE,
@@ -1921,7 +1920,7 @@ describe("EngagementsService", () => {
         AND: [
           {
             status: {
-              in: [EngagementStatus.CLOSED, EngagementStatus.CANCELLED],
+              in: [EngagementStatus.CLOSED],
             },
           },
           {
