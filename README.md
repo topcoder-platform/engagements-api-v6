@@ -115,7 +115,7 @@ All Flexi Talent routes live under `/engagements/flexi-talent`, require bearer a
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| `GET` | `/engagements/flexi-talent/engagements/summary` | Engagement bucket counts: total, active (`OPEN`/`ACTIVE`), closed (`CLOSED`/`CANCELLED`). |
+| `GET` | `/engagements/flexi-talent/engagements/summary` | Engagement bucket counts: total (`ACTIVE`/`CLOSED`), active (`ACTIVE`), closed (`CLOSED`). |
 | `GET` | `/engagements/flexi-talent/engagements` | Flat-paginated engagement list with bucket, title/project-name search, and current assigned-member counts. |
 | `GET` | `/engagements/flexi-talent/engagements/:engagementId` | Engagement detail with project name, skill names, and all assignment rows. |
 | `GET` | `/engagements/flexi-talent/members/summary` | Assignment-centric unique member counts. |
