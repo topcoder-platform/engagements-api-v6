@@ -54,7 +54,6 @@ import {
 } from "./dto";
 import {
   ACTIVE_ASSIGNMENT_STATUSES,
-  ASSIGNMENT_COMPLETION_STATUSES,
   ERROR_MESSAGES,
   MY_ASSIGNMENTS_STATUSES,
 } from "../common/constants";
@@ -74,6 +73,16 @@ const FLEXI_CLOSED_ENGAGEMENT_STATUSES: EngagementStatus[] = [
 const FLEXI_QUALIFYING_ENGAGEMENT_STATUSES: EngagementStatus[] = [
   ...FLEXI_ACTIVE_ENGAGEMENT_STATUSES,
   ...FLEXI_CLOSED_ENGAGEMENT_STATUSES,
+];
+const FLEXI_ASSIGNED_MEMBER_STATUSES: AssignmentStatus[] = [
+  AssignmentStatus.ASSIGNED,
+];
+const FLEXI_COMPLETED_MEMBER_STATUSES: AssignmentStatus[] = [
+  AssignmentStatus.COMPLETED,
+];
+const FLEXI_QUALIFYING_MEMBER_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
+  ...FLEXI_ASSIGNED_MEMBER_STATUSES,
+  ...FLEXI_COMPLETED_MEMBER_STATUSES,
 ];
 
 const hasAtMostDecimalPlaces = (
@@ -1135,9 +1144,8 @@ export class EngagementsService {
   /**
    * Returns assignment-centric Flexi Talent member bucket counts.
    *
-   * Members are keyed by memberId across current and completion assignment
-   * statuses. Completed members have completion-status assignments and no
-   * current assignment.
+   * Members are keyed by memberId across ASSIGNED and COMPLETED assignments.
+   * Completed members have a COMPLETED assignment and no ASSIGNED assignment.
    *
    * @returns Unique member counts for total, assigned, and completed buckets.
    */
@@ -1146,7 +1154,7 @@ export class EngagementsService {
 
     const assignments = await this.db.engagementAssignment.findMany({
       where: {
-        status: { in: this.getFlexiQualifyingAssignmentStatuses() },
+        status: { in: FLEXI_QUALIFYING_MEMBER_ASSIGNMENT_STATUSES },
         ...this.buildFlexiTalentAssignmentEngagementWhere(),
       },
       select: {
@@ -1165,10 +1173,10 @@ export class EngagementsService {
         hasCompletion: false,
       };
 
-      if (ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status)) {
+      if (FLEXI_ASSIGNED_MEMBER_STATUSES.includes(assignment.status)) {
         state.hasCurrent = true;
       }
-      if (ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status)) {
+      if (FLEXI_COMPLETED_MEMBER_STATUSES.includes(assignment.status)) {
         state.hasCompletion = true;
       }
 
@@ -1198,9 +1206,10 @@ export class EngagementsService {
   /**
    * Lists Flexi Talent members with database-ranked primary assignments.
    *
-   * The method searches member handles, applies assignment-centric buckets, and
-   * delegates primary-row selection, sorting, counting, and paging to a
-   * list-specific SQL helper that mirrors the existing comparator semantics.
+   * The method searches ASSIGNED and COMPLETED member assignments on ACTIVE or
+   * CLOSED engagements, applies assignment-centric buckets, and delegates
+   * primary-row selection, sorting, counting, and paging to a list-specific SQL
+   * helper that mirrors the existing comparator semantics.
    *
    * @param query Flexi member list filters, sorting, and pagination.
    * @returns Flat body-paginated member list response.
@@ -1238,9 +1247,10 @@ export class EngagementsService {
   /**
    * Gets the Flexi Talent member right-rail detail payload.
    *
-   * The method fetches all qualifying assignment history for a member, reuses
-   * the member-list primary assignment selection, and enriches the chosen
-   * assignment with project and skill names plus duration/timing derivations.
+   * The method fetches qualifying ASSIGNED and COMPLETED assignment history for
+   * a member, reuses the member-list primary assignment selection, and enriches
+   * the chosen assignment with project and skill names plus duration/timing
+   * derivations.
    *
    * @param memberId Member id whose detail should be returned.
    * @returns Flexi member detail read model.
@@ -1296,11 +1306,11 @@ export class EngagementsService {
   }
 
   /**
-   * Gets the full unpaginated Flexi Talent assignment history for a member.
+   * Gets unpaginated qualifying Flexi Talent assignment history for a member.
    *
-   * Current assignments are ordered first by soonest ending assignment. Past
-   * assignments follow newest first by resolved completion timestamp, with
-   * project and skill names hydrated tolerantly.
+   * ASSIGNED rows are ordered first by soonest ending assignment. COMPLETED rows
+   * follow newest first by resolved completion timestamp, with project and skill
+   * names hydrated tolerantly.
    *
    * @param memberId Member id whose history should be returned.
    * @returns Flexi member history response.
@@ -2897,21 +2907,6 @@ export class EngagementsService {
   }
 
   /**
-   * Returns the shared current and completion statuses used by Flexi members.
-   *
-   * @returns Unique assignment statuses that qualify for member summary, list,
-   * detail, and history payloads.
-   */
-  private getFlexiQualifyingAssignmentStatuses(): AssignmentStatus[] {
-    return Array.from(
-      new Set([
-        ...ACTIVE_ASSIGNMENT_STATUSES,
-        ...ASSIGNMENT_COMPLETION_STATUSES,
-      ]),
-    );
-  }
-
-  /**
    * Returns the engagement statuses that qualify for a Flexi engagement bucket.
    *
    * @param bucket Engagement bucket requested by a Flexi summary or list path.
@@ -2977,15 +2972,6 @@ export class EngagementsService {
                     WHEN mf."hasCurrent" AND s."isCurrent" THEN 0
                     WHEN NOT mf."hasCurrent" AND s."isCompletion" THEN 0
                     ELSE 1
-                  END ASC,
-                  CASE
-                    WHEN mf."hasCurrent"
-                     AND s."isCurrent"
-                     AND s."status" = ${AssignmentStatus.ASSIGNED}::"AssignmentStatus" THEN 0
-                    WHEN mf."hasCurrent"
-                     AND s."isCurrent"
-                     AND s."status" = ${AssignmentStatus.SELECTED}::"AssignmentStatus" THEN 1
-                    ELSE 2
                   END ASC,
                   CASE
                     WHEN mf."hasCurrent"
@@ -3090,12 +3076,12 @@ export class EngagementsService {
           e."title" AS "engagementTitle",
           (
             a."status" IN (${this.buildAssignmentStatusListSql(
-              ACTIVE_ASSIGNMENT_STATUSES,
+              FLEXI_ASSIGNED_MEMBER_STATUSES,
             )})
           ) AS "isCurrent",
           (
             a."status" IN (${this.buildAssignmentStatusListSql(
-              ASSIGNMENT_COMPLETION_STATUSES,
+              FLEXI_COMPLETED_MEMBER_STATUSES,
             )})
           ) AS "isCompletion",
           ${this.buildFlexiResolvedEndDateSql()} AS "resolvedEndDate"
@@ -3103,7 +3089,7 @@ export class EngagementsService {
         JOIN "Engagement" e
           ON e."id" = a."engagementId"
         WHERE a."status" IN (${this.buildAssignmentStatusListSql(
-          this.getFlexiQualifyingAssignmentStatuses(),
+          FLEXI_QUALIFYING_MEMBER_ASSIGNMENT_STATUSES,
         )})
         ${engagementStatusSql}
         ${ignoredProjectSql}
@@ -3116,10 +3102,7 @@ export class EngagementsService {
             WHEN "resolvedEndDate" IS NULL THEN NULL
             ELSE ("resolvedEndDate"::date - ${todayUtcDate}::date)::int
           END AS "daysRemaining",
-          CASE
-            WHEN "status" = ${AssignmentStatus.OFFER_REJECTED}::"AssignmentStatus" THEN "updatedAt"
-            ELSE COALESCE("resolvedEndDate", "updatedAt")
-          END AS "latestCompletedAt"
+          COALESCE("resolvedEndDate", "updatedAt") AS "latestCompletedAt"
         FROM filtered_assignments
       ),
       member_flags AS (
@@ -3333,7 +3316,7 @@ export class EngagementsService {
     searchText?: string;
   }): Promise<FlexiAssignmentWithEngagement[]> {
     const where: Prisma.EngagementAssignmentWhereInput = {
-      status: { in: this.getFlexiQualifyingAssignmentStatuses() },
+      status: { in: FLEXI_QUALIFYING_MEMBER_ASSIGNMENT_STATUSES },
       ...this.buildFlexiTalentAssignmentEngagementWhere(),
     };
     const searchText = options.searchText?.trim();
@@ -3458,10 +3441,10 @@ export class EngagementsService {
   ): FlexiMemberAssignmentGroup[] {
     return groups.filter((group) => {
       const hasCurrent = group.assignments.some((assignment) =>
-        ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
+        FLEXI_ASSIGNED_MEMBER_STATUSES.includes(assignment.status),
       );
       const hasCompletion = group.assignments.some((assignment) =>
-        ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status),
+        FLEXI_COMPLETED_MEMBER_STATUSES.includes(assignment.status),
       );
 
       if (bucket === FlexiMemberBucket.Assigned) {
@@ -3479,9 +3462,8 @@ export class EngagementsService {
   /**
    * Selects the primary assignment for a Flexi member row or detail view.
    *
-   * Current members choose assigned assignments before selected assignments,
-   * then the current assignment ending soonest. Completed-only members choose
-   * the latest completion-status assignment.
+   * Assigned members choose the assignment ending soonest. Completed-only
+   * members choose the latest completed assignment.
    *
    * @param assignments Assignment history for one member.
    * @returns Primary assignment selection, or undefined when none qualify.
@@ -3491,7 +3473,7 @@ export class EngagementsService {
   ): FlexiPrimaryAssignment | undefined {
     const currentAssignments = assignments
       .filter((assignment) =>
-        ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status),
+        FLEXI_ASSIGNED_MEMBER_STATUSES.includes(assignment.status),
       )
       .sort((left, right) =>
         this.compareFlexiAssignmentsEndingSoonest(left, right),
@@ -3511,7 +3493,7 @@ export class EngagementsService {
 
     const completedAssignments = assignments
       .filter((assignment) =>
-        ASSIGNMENT_COMPLETION_STATUSES.includes(assignment.status),
+        FLEXI_COMPLETED_MEMBER_STATUSES.includes(assignment.status),
       )
       .sort((left, right) =>
         this.compareFlexiAssignmentsByCompletionDesc(left, right),
@@ -3532,7 +3514,7 @@ export class EngagementsService {
   }
 
   /**
-   * Compares current assignments by status priority, then soonest resolved end date.
+   * Compares assigned assignments by soonest resolved end date.
    *
    * @param left Left assignment with engagement.
    * @param right Right assignment with engagement.
@@ -3542,15 +3524,6 @@ export class EngagementsService {
     left: FlexiAssignmentWithEngagement,
     right: FlexiAssignmentWithEngagement,
   ): number {
-    const statusComparison = this.compareFlexiCurrentAssignmentStatus(
-      left.status,
-      right.status,
-    );
-
-    if (statusComparison !== 0) {
-      return statusComparison;
-    }
-
     const leftEndTime =
       this.resolveFlexiEndDate(left)?.getTime() ?? Number.MAX_SAFE_INTEGER;
     const rightEndTime =
@@ -3561,40 +3534,6 @@ export class EngagementsService {
     }
 
     return this.compareFlexiAssignmentTies(left, right);
-  }
-
-  /**
-   * Returns the Flexi priority for active assignment statuses.
-   *
-   * @param status Assignment status to rank.
-   * @returns Lower value for statuses that should appear first.
-   */
-  private getFlexiCurrentStatusPriority(status: AssignmentStatus): number {
-    switch (status) {
-      case AssignmentStatus.ASSIGNED:
-        return 0;
-      case AssignmentStatus.SELECTED:
-        return 1;
-      default:
-        return 2;
-    }
-  }
-
-  /**
-   * Compares active assignment statuses using Flexi primary-assignment priority.
-   *
-   * @param left Left assignment status.
-   * @param right Right assignment status.
-   * @returns Negative, positive, or zero comparison result.
-   */
-  private compareFlexiCurrentAssignmentStatus(
-    left: AssignmentStatus,
-    right: AssignmentStatus,
-  ): number {
-    return (
-      this.getFlexiCurrentStatusPriority(left) -
-      this.getFlexiCurrentStatusPriority(right)
-    );
   }
 
   /**
@@ -3788,7 +3727,9 @@ export class EngagementsService {
     const projectName = this.normalizeProjectName(
       projectNamesById.get(engagement.projectId),
     );
-    const isCurrent = ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status);
+    const isCurrent = FLEXI_ASSIGNED_MEMBER_STATUSES.includes(
+      assignment.status,
+    );
 
     return {
       assignmentId: assignment.id,
@@ -3833,15 +3774,6 @@ export class EngagementsService {
     }
 
     if (left.isCurrent && right.isCurrent) {
-      const statusComparison = this.compareFlexiCurrentAssignmentStatus(
-        left.status,
-        right.status,
-      );
-
-      if (statusComparison !== 0) {
-        return statusComparison;
-      }
-
       const endComparison = this.compareNullableDatesAsc(
         left.resolvedEndDate,
         right.resolvedEndDate,

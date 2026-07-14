@@ -118,7 +118,7 @@ All Flexi Talent routes live under `/engagements/flexi-talent`, require bearer a
 | `GET` | `/engagements/flexi-talent/engagements/summary` | Engagement bucket counts: total (`ACTIVE`/`CLOSED`), active (`ACTIVE`), closed (`CLOSED`). |
 | `GET` | `/engagements/flexi-talent/engagements` | Flat-paginated engagement list with bucket, title/project-name search, and current assigned-member counts. |
 | `GET` | `/engagements/flexi-talent/engagements/:engagementId` | Engagement detail with project name, skill names, and all assignment rows. |
-| `GET` | `/engagements/flexi-talent/members/summary` | Assignment-centric unique member counts. |
-| `GET` | `/engagements/flexi-talent/members` | Flat-paginated member list grouped by `memberId`, with primary assignment context. |
-| `GET` | `/engagements/flexi-talent/members/:memberId` | Member right-rail detail using the same primary-assignment selection as the list. |
-| `GET` | `/engagements/flexi-talent/members/:memberId/history` | Full unpaginated member assignment history with current rows first. |
+| `GET` | `/engagements/flexi-talent/members/summary` | Unique member counts from `ASSIGNED` and `COMPLETED` assignments on `ACTIVE`/`CLOSED` engagements. |
+| `GET` | `/engagements/flexi-talent/members` | Flat-paginated `ASSIGNED`/`COMPLETED` member list grouped by `memberId`, with primary assignment context. |
+| `GET` | `/engagements/flexi-talent/members/:memberId` | Member right-rail detail restricted to qualifying `ASSIGNED`/`COMPLETED` assignments. |
+| `GET` | `/engagements/flexi-talent/members/:memberId/history` | Full unpaginated `ASSIGNED`/`COMPLETED` assignment history with current rows first. |

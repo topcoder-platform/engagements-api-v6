@@ -98,21 +98,20 @@ export class FlexiMemberListQueryDto {
  */
 export class FlexiMemberSummaryDto {
   @ApiProperty({
-    description:
-      "Unique members with any current or completion-status assignment.",
+    description: "Unique members with an ASSIGNED or COMPLETED assignment.",
     example: 58,
   })
   totalUniqueMembers: number;
 
   @ApiProperty({
-    description: "Unique members with at least one current assignment.",
+    description: "Unique members with at least one ASSIGNED assignment.",
     example: 41,
   })
   assignedMembers: number;
 
   @ApiProperty({
     description:
-      "Unique members with completion-status assignments and no current assignment.",
+      "Unique members with a COMPLETED assignment and no ASSIGNED assignment.",
     example: 17,
   })
   completedMembers: number;
@@ -180,8 +179,7 @@ export class FlexiMemberListItemDto {
   daysRemaining?: number | null;
 
   @ApiPropertyOptional({
-    description:
-      "Latest terminal timestamp for completed-only members, including offer rejection time.",
+    description: "Latest completion timestamp for completed-only members.",
     example: "2026-03-31T00:00:00.000Z",
   })
   latestCompletedAt?: Date | null;
@@ -189,13 +187,13 @@ export class FlexiMemberListItemDto {
   @ApiProperty({
     description: "Raw primary assignment status.",
     enum: AssignmentStatus,
-    example: AssignmentStatus.SELECTED,
+    example: AssignmentStatus.ASSIGNED,
   })
   status: AssignmentStatus;
 
   @ApiProperty({
     description: "UI-facing assignment status label.",
-    example: "Selected",
+    example: "Assigned",
   })
   displayStatusLabel: string;
 }
@@ -492,8 +490,7 @@ export class FlexiMemberHistoryItemDto {
   isOverdue: boolean;
 
   @ApiPropertyOptional({
-    description:
-      "Resolved terminal timestamp for past-assignment sorting, including offer rejection time.",
+    description: "Resolved completion timestamp for past-assignment sorting.",
     example: "2026-03-31T00:00:00.000Z",
   })
   completedAt?: Date | null;

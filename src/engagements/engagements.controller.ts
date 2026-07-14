@@ -351,7 +351,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Get Flexi Talent member summary",
     description:
-      "Returns Flexi Talent member bucket counts. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+      "Returns member bucket counts from ASSIGNED and COMPLETED assignments on ACTIVE or CLOSED engagements. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
   })
   @ApiResponse({
     status: 200,
@@ -388,7 +388,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "List Flexi Talent members",
     description:
-      "Returns Flexi Talent member rows with flat body pagination. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+      "Returns ASSIGNED and COMPLETED member rows from ACTIVE or CLOSED engagements with flat body pagination. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
   })
   @ApiResponse({
     status: 200,
@@ -427,7 +427,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Get Flexi Talent member history",
     description:
-      "Returns the full Flexi Talent assignment history for one member. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+      "Returns ASSIGNED and COMPLETED assignment history from ACTIVE or CLOSED engagements for one member. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
   })
   @ApiResponse({
     status: 200,
@@ -467,7 +467,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "Get Flexi Talent member detail",
     description:
-      "Returns the Flexi Talent right-rail detail for one member. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
+      "Returns Flexi Talent right-rail detail from a qualifying ASSIGNED or COMPLETED assignment for one member. Human callers must be Administrators or Talent Managers. M2M callers require read:engagements.",
   })
   @ApiResponse({
     status: 200,

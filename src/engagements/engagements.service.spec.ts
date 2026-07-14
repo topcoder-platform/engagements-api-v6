@@ -1992,13 +1992,7 @@ describe("EngagementsService", () => {
     expect(db.engagementAssignment.findMany).toHaveBeenCalledWith({
       where: {
         status: {
-          in: [
-            AssignmentStatus.SELECTED,
-            AssignmentStatus.ASSIGNED,
-            AssignmentStatus.OFFER_REJECTED,
-            AssignmentStatus.COMPLETED,
-            AssignmentStatus.TERMINATED,
-          ],
+          in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
         },
         engagement: {
           status: {
@@ -2018,6 +2012,39 @@ describe("EngagementsService", () => {
       totalUniqueMembers: 0,
       assignedMembers: 0,
       completedMembers: 0,
+    });
+  });
+
+  it("counts only assigned and completed Flexi members", async () => {
+    db.engagementAssignment.findMany.mockResolvedValue([
+      { memberId: "member-assigned", status: AssignmentStatus.ASSIGNED },
+      { memberId: "member-completed", status: AssignmentStatus.COMPLETED },
+      { memberId: "member-both", status: AssignmentStatus.ASSIGNED },
+      { memberId: "member-both", status: AssignmentStatus.COMPLETED },
+    ]);
+
+    const result = await service.getFlexiMemberSummary();
+
+    expect(db.engagementAssignment.findMany).toHaveBeenCalledWith({
+      where: {
+        status: {
+          in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
+        },
+        engagement: {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
+        },
+      },
+      select: {
+        memberId: true,
+        status: true,
+      },
+    });
+    expect(result).toEqual({
+      totalUniqueMembers: 3,
+      assignedMembers: 2,
+      completedMembers: 1,
     });
   });
 
@@ -2053,6 +2080,26 @@ describe("EngagementsService", () => {
         "1001006",
       ]),
     );
+    expect(getSqlValues(countQuery)).toEqual(
+      expect.arrayContaining([
+        AssignmentStatus.ASSIGNED,
+        AssignmentStatus.COMPLETED,
+      ]),
+    );
+    expect(getSqlValues(pageQuery)).toEqual(
+      expect.arrayContaining([
+        AssignmentStatus.ASSIGNED,
+        AssignmentStatus.COMPLETED,
+      ]),
+    );
+    [
+      AssignmentStatus.SELECTED,
+      AssignmentStatus.OFFER_REJECTED,
+      AssignmentStatus.TERMINATED,
+    ].forEach((status) => {
+      expect(getSqlValues(countQuery)).not.toContain(status);
+      expect(getSqlValues(pageQuery)).not.toContain(status);
+    });
   });
 
   it("excludes ignored project assignments from Flexi member detail lookups", async () => {
@@ -2066,13 +2113,7 @@ describe("EngagementsService", () => {
     expect(db.engagementAssignment.findMany).toHaveBeenCalledWith({
       where: {
         status: {
-          in: [
-            AssignmentStatus.SELECTED,
-            AssignmentStatus.ASSIGNED,
-            AssignmentStatus.OFFER_REJECTED,
-            AssignmentStatus.COMPLETED,
-            AssignmentStatus.TERMINATED,
-          ],
+          in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
         },
         engagement: {
           status: {
@@ -2243,7 +2284,7 @@ describe("EngagementsService", () => {
         engagementId: "eng-match",
         memberId: "member-match",
         memberHandle: "zeta-match",
-        status: AssignmentStatus.TERMINATED,
+        status: AssignmentStatus.COMPLETED,
         engagementProjectId: "project-match",
         engagementTitle: "Matched Engagement",
         isCurrentlyAssigned: false,
@@ -2288,20 +2329,21 @@ describe("EngagementsService", () => {
     expect(result.data.map((row) => row.handle)).toEqual(["zeta-match"]);
   });
 
-  it("prioritizes assigned Flexi member assignments over selected assignments", async () => {
+  it("uses assigned and completed assignments for Flexi member detail and history", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
 
-    const selectedAssignment = buildFlexiAssignment({
-      id: "assignment-selected",
+    const completedAssignment = buildFlexiAssignment({
+      id: "assignment-completed",
       memberId: "member-priority",
       memberHandle: "priorityMember",
-      status: AssignmentStatus.SELECTED,
+      status: AssignmentStatus.COMPLETED,
       startDate: new Date("2026-01-01T00:00:00.000Z"),
+      endDate: new Date("2026-04-01T00:00:00.000Z"),
       durationMonths: 3,
       engagement: buildFlexiEngagement({
-        id: "eng-selected",
-        projectId: "project-selected",
-        title: "Selected Engagement",
+        id: "eng-completed",
+        projectId: "project-completed",
+        title: "Completed Engagement",
       }),
     });
     const assignedAssignment = buildFlexiAssignment({
@@ -2318,7 +2360,7 @@ describe("EngagementsService", () => {
       }),
     });
     db.engagementAssignment.findMany.mockResolvedValue([
-      selectedAssignment,
+      completedAssignment,
       assignedAssignment,
     ]);
 
@@ -2333,15 +2375,31 @@ describe("EngagementsService", () => {
     });
     expect(history.data.map((row) => row.assignmentId)).toEqual([
       "assignment-assigned",
-      "assignment-selected",
+      "assignment-completed",
     ]);
     expect(history.data.map((row) => row.displayStatusLabel)).toEqual([
       "Assigned",
-      "Selected",
+      "Completed",
     ]);
+    expect(db.engagementAssignment.findMany).toHaveBeenLastCalledWith({
+      where: {
+        status: {
+          in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
+        },
+        engagement: {
+          status: {
+            in: [EngagementStatus.ACTIVE, EngagementStatus.CLOSED],
+          },
+        },
+        memberId: "member-priority",
+      },
+      include: {
+        engagement: true,
+      },
+    });
   });
 
-  it("ranks assigned before selected assignments in Flexi member list SQL", async () => {
+  it("restricts Flexi member list SQL to assigned and completed statuses", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
     db.$queryRaw.mockResolvedValueOnce([{ total: 1n }]).mockResolvedValueOnce([
       buildFlexiMemberSqlRow({
@@ -2359,14 +2417,21 @@ describe("EngagementsService", () => {
     });
 
     const pageQuery = db.$queryRaw.mock.calls[1][0];
-    const pageSql = normalizeSql(pageQuery);
+    const values = getSqlValues(pageQuery);
 
-    expect(pageSql).toContain('s."status" = ?::"AssignmentStatus" THEN 0');
-    expect(pageSql).toContain('s."status" = ?::"AssignmentStatus" THEN 1');
-    expect(getSqlValues(pageQuery).slice(-4, -2)).toEqual([
-      AssignmentStatus.ASSIGNED,
+    expect(values).toEqual(
+      expect.arrayContaining([
+        AssignmentStatus.ASSIGNED,
+        AssignmentStatus.COMPLETED,
+      ]),
+    );
+    [
       AssignmentStatus.SELECTED,
-    ]);
+      AssignmentStatus.OFFER_REJECTED,
+      AssignmentStatus.TERMINATED,
+    ].forEach((status) => {
+      expect(values).not.toContain(status);
+    });
   });
 
   it("does not derive Flexi timing from engagement duration fallback", async () => {
@@ -2415,22 +2480,23 @@ describe("EngagementsService", () => {
     });
   });
 
-  it("selects past Flexi assignments using offer rejection time", async () => {
+  it("selects the latest completed Flexi assignment", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2026-07-08T00:00:00.000Z"));
 
-    const rejectedAt = new Date("2026-04-21T12:00:00.000Z");
+    const olderCompletedAt = new Date("2026-04-21T12:00:00.000Z");
     const completedAt = new Date("2026-06-01T00:00:00.000Z");
-    const rejectedAssignment = buildFlexiAssignment({
-      id: "assignment-rejected",
+    const olderCompletedAssignment = buildFlexiAssignment({
+      id: "assignment-completed-older",
       memberId: "member-terminal",
       memberHandle: "terminalMember",
-      status: AssignmentStatus.OFFER_REJECTED,
+      status: AssignmentStatus.COMPLETED,
       startDate: new Date("2026-04-21T00:00:00.000Z"),
+      endDate: olderCompletedAt,
       durationMonths: 12,
-      updatedAt: rejectedAt,
+      updatedAt: olderCompletedAt,
       engagement: buildFlexiEngagement({
-        id: "eng-rejected",
-        title: "Rejected Offer",
+        id: "eng-completed-older",
+        title: "Older Completed Engagement",
       }),
     });
     const completedAssignment = buildFlexiAssignment({
@@ -2446,7 +2512,7 @@ describe("EngagementsService", () => {
       }),
     });
     db.engagementAssignment.findMany.mockResolvedValue([
-      rejectedAssignment,
+      olderCompletedAssignment,
       completedAssignment,
     ]);
 
@@ -2456,13 +2522,13 @@ describe("EngagementsService", () => {
     expect(detail.assignmentId).toBe("assignment-completed");
     expect(history.data.map((row) => row.assignmentId)).toEqual([
       "assignment-completed",
-      "assignment-rejected",
+      "assignment-completed-older",
     ]);
     expect(history.data[1].completedAt?.toISOString()).toBe(
-      rejectedAt.toISOString(),
+      olderCompletedAt.toISOString(),
     );
     expect(history.data[1].resolvedEndDate?.toISOString()).toBe(
-      "2027-04-21T00:00:00.000Z",
+      olderCompletedAt.toISOString(),
     );
   });
 
