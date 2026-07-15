@@ -98,21 +98,20 @@ export class FlexiMemberListQueryDto {
  */
 export class FlexiMemberSummaryDto {
   @ApiProperty({
-    description:
-      "Unique members with any current or completion-status assignment.",
+    description: "Unique members with an ASSIGNED or COMPLETED assignment.",
     example: 58,
   })
   totalUniqueMembers: number;
 
   @ApiProperty({
-    description: "Unique members with at least one current assignment.",
+    description: "Unique members with at least one ASSIGNED assignment.",
     example: 41,
   })
   assignedMembers: number;
 
   @ApiProperty({
     description:
-      "Unique members with completion-status assignments and no current assignment.",
+      "Unique members with a COMPLETED assignment and no ASSIGNED assignment.",
     example: 17,
   })
   completedMembers: number;
@@ -188,13 +187,13 @@ export class FlexiMemberListItemDto {
   @ApiProperty({
     description: "Raw primary assignment status.",
     enum: AssignmentStatus,
-    example: AssignmentStatus.SELECTED,
+    example: AssignmentStatus.ASSIGNED,
   })
   status: AssignmentStatus;
 
   @ApiProperty({
     description: "UI-facing assignment status label.",
-    example: "Selected",
+    example: "Assigned",
   })
   displayStatusLabel: string;
 }
