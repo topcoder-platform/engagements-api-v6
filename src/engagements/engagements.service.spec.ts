@@ -337,6 +337,61 @@ describe("EngagementsService", () => {
     );
   });
 
+  it("emits a skills event when an update adds the first assignment", async () => {
+    const existingEngagement = {
+      id: "eng-1",
+      isPrivate: true,
+      requiredMemberCount: 1,
+      requiredSkills: ["skill-1", "skill-2"],
+      assignments: [],
+    };
+    const newAssignment = {
+      id: "assignment-1",
+      engagementId: "eng-1",
+      memberId: "100000218",
+      memberHandle: "testmfa1",
+      status: AssignmentStatus.SELECTED,
+      createdAt: new Date("2026-07-14T05:17:36.826Z"),
+      updatedAt: new Date("2026-07-14T05:17:36.826Z"),
+    };
+    jest.spyOn(service, "findOne").mockResolvedValue(existingEngagement as any);
+    memberService.getMemberUserIdByHandle.mockResolvedValue("100000218");
+
+    const tx = {
+      engagementAssignment: {
+        create: jest.fn().mockResolvedValue(newAssignment),
+        update: jest.fn(),
+        updateMany: jest.fn(),
+      },
+      engagement: {
+        update: jest.fn().mockResolvedValue({
+          ...existingEngagement,
+          assignments: [newAssignment],
+        }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+
+    await service.update(
+      "eng-1",
+      {
+        assignmentDetails: [{ memberHandle: "testmfa1" }],
+      } as any,
+      { sub: "manager-1" },
+    );
+
+    expect(eventBusService.postEvent).toHaveBeenCalledWith(
+      "engagement.member.assigned",
+      {
+        engagementId: "eng-1",
+        assignmentId: "assignment-1",
+        memberId: 100000218,
+        memberHandle: "testmfa1",
+        skills: [{ id: "skill-1" }, { id: "skill-2" }],
+      },
+    );
+  });
+
   it("marks a private engagement completed after all assignments are completed", async () => {
     const completedAssignment = {
       id: "assign-1",
@@ -469,6 +524,7 @@ describe("EngagementsService", () => {
       title: "Original engagement",
       isPrivate: true,
       requiredMemberCount: 1,
+      requiredSkills: ["skill-1", "skill-2"],
       assignments: [
         {
           id: "assignment-completed",
@@ -546,6 +602,16 @@ describe("EngagementsService", () => {
       }),
     });
     expect(tx.engagementAssignment.updateMany).not.toHaveBeenCalled();
+    expect(eventBusService.postEvent).toHaveBeenCalledWith(
+      "engagement.member.assigned",
+      {
+        engagementId: "eng-1",
+        assignmentId: "assignment-selected",
+        memberId: 123456,
+        memberHandle: "testaws1",
+        skills: [{ id: "skill-1" }, { id: "skill-2" }],
+      },
+    );
     expect(
       assignmentOfferEmailService.sendAssignmentOfferEmails,
     ).toHaveBeenCalledWith([
@@ -581,6 +647,7 @@ describe("EngagementsService", () => {
         title: "Original engagement",
         isPrivate: true,
         requiredMemberCount: 1,
+        requiredSkills: ["skill-1"],
         assignments: [existingAssignment],
       };
       const newAssignment = {
