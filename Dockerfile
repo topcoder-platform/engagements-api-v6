@@ -2,12 +2,15 @@
 FROM node:22-alpine AS base
 WORKDIR /usr/src/app
 
+# ---- Tooling Stage ----
+FROM base AS tooling
+# Pin pnpm so a new major version cannot change install behaviour unexpectedly
+RUN npm install -g pnpm@11.15.0
+
 # ---- Dependencies Stage ----
-FROM base AS deps
-# Install pnpm
-RUN npm install -g pnpm
+FROM tooling AS deps
 # Copy dependency-defining files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 COPY prisma ./prisma
@@ -15,8 +18,7 @@ COPY prisma.config.ts ./
 RUN DATABASE_URL="postgresql://user:pass@localhost:5432/db?schema=public" pnpm prisma:generate
 
 # ---- Build Stage ----
-FROM base AS build
-RUN npm install -g pnpm
+FROM tooling AS build
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
 # Build the application
