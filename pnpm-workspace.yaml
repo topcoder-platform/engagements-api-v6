@@ -1,6 +1,35 @@
+packages:
+  - '.'
+
+# The existing bus wrapper intentionally consumes tc-core-library-js from GitHub.
+blockExoticSubdeps: false
+# Prisma is a build-time peer of @prisma/client; do not auto-install it in the
+# production-only dependency stage.
+autoInstallPeers: false
+
+overrides:
+  '@topcoder-platform/topcoder-bus-api-wrapper>tc-core-library-js': '$tc-core-library-js'
+  '@hono/node-server': 1.19.13
+  '@prisma/streams-local>ajv': 8.18.0
+  axios: 1.18.1
+  'brace-expansion@<1.1.13': 1.1.13
+  defu: 6.1.7
+  effect: 3.22.0
+  fast-uri: 3.1.2
+  follow-redirects: 1.16.0
+  form-data: 4.0.6
+  hono: 4.12.31
+  joi: 18.2.3
+  jws: 4.0.1
+  lodash: 4.18.1
+  'minimatch@<3.1.4': 3.1.4
+  multer: 2.2.0
+  path-to-regexp: 8.4.2
+  qs: 6.15.3
+
 allowBuilds:
-  '@nestjs/core@11.1.11': false
-  '@prisma/engines@7.2.0': true
+  '@nestjs/core@11.1.28': false
+  '@prisma/engines@7.8.0': true
   '@scarf/scarf@1.4.0': false
   'dtrace-provider@0.8.8': false
-  'prisma@7.2.0': true
+  'prisma@7.8.0': true
