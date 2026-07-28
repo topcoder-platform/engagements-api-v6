@@ -1733,6 +1733,10 @@ export class EngagementsService {
         );
       },
     );
+    await this.emitMemberAssignedEvents({
+      ...updatedEngagement,
+      assignments: newAssignments,
+    });
     await this.sendAssignmentOfferEmails(updatedEngagement, newAssignments);
     await this.sendAssignmentUpdatedEmails(
       updatedEngagement,
