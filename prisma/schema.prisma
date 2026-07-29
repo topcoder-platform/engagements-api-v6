@@ -60,29 +60,40 @@ enum AnticipatedStart {
   FEW_WEEKS
 }
 
+enum RoleLevel {
+  JUNIOR
+  MID
+  SENIOR
+}
+
 model Engagement {
-  id                  String                  @id @default(uuid())
-  projectId           String
-  title               String
-  description         String
-  durationStartDate   DateTime?
-  durationEndDate     DateTime?
-  durationWeeks       Int?
-  durationMonths      Int?
-  timeZones           String[]
-  countries           String[]
-  requiredSkills      String[]
-  anticipatedStart    AnticipatedStart
-  status              EngagementStatus        @default(OPEN)
-  isPrivate           Boolean                 @default(false)
-  requiredMemberCount Int?
-  role                Role?
-  workload            Workload?
-  compensationRange   String?
-  createdAt           DateTime                @default(now())
-  createdBy           String
-  updatedAt           DateTime                @updatedAt
-  updatedBy           String?
+  id                        String                  @id @default(uuid())
+  projectId                 String
+  title                     String
+  description               String
+  durationStartDate         DateTime?
+  durationEndDate           DateTime?
+  durationWeeks             Int?
+  durationMonths            Int?
+  timeZones                 String[]
+  countries                 String[]
+  requiredSkills            String[]
+  anticipatedStart          AnticipatedStart
+  status                    EngagementStatus        @default(OPEN)
+  isPrivate                 Boolean                 @default(false)
+  requiredMemberCount       Int?
+  role                      Role?
+  roleLevel                 RoleLevel?
+  workload                  Workload?
+  compensationRange         String?
+  receivedDateFromAccount   DateTime?
+  account                   String?
+  smu                       String?
+  spoc                      String?
+  createdAt                 DateTime                @default(now())
+  createdBy                 String
+  updatedAt                 DateTime                @updatedAt
+  updatedBy                 String?
 
   applications        EngagementApplication[]
   assignments         EngagementAssignment[]

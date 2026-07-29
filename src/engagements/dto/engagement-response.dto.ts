@@ -3,6 +3,7 @@ import {
   AnticipatedStart,
   EngagementStatus,
   Role,
+  RoleLevel,
   Workload,
 } from "@prisma/client";
 import { Transform } from "class-transformer";
@@ -228,6 +229,38 @@ export class EngagementResponseDto {
     example: "$600-$700 USD",
   })
   compensationRange?: string;
+
+  @ApiPropertyOptional({
+    description: "Internal: date the request was received from the account",
+    example: "2026-07-15T00:00:00.000Z",
+  })
+  receivedDateFromAccount?: Date | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: account name",
+    example: "Acme Corp",
+  })
+  account?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: SMU",
+    example: "North America",
+  })
+  smu?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: SPOC",
+    example: "Jane Doe",
+  })
+  spoc?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: role level for the engagement",
+    enum: RoleLevel,
+    example: RoleLevel.SENIOR,
+  })
+  @Transform(({ value }) => value?.toString())
+  roleLevel?: RoleLevel | null;
 
   @ApiPropertyOptional({
     description: "Number of applications for the engagement",

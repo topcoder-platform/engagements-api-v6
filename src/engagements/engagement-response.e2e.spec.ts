@@ -93,6 +93,11 @@ describe("Engagement Response (e2e)", () => {
       role: Role.SOFTWARE_DEVELOPER,
       workload: Workload.FULL_TIME,
       compensationRange: null,
+      receivedDateFromAccount: null,
+      account: null,
+      smu: null,
+      spoc: null,
+      roleLevel: null,
       assignments: [],
     });
   });
@@ -110,11 +115,21 @@ describe("Engagement Response (e2e)", () => {
     expect(response.body).toHaveProperty("role");
     expect(response.body).toHaveProperty("workload");
     expect(response.body).toHaveProperty("compensationRange");
+    expect(response.body).toHaveProperty("receivedDateFromAccount");
+    expect(response.body).toHaveProperty("account");
+    expect(response.body).toHaveProperty("smu");
+    expect(response.body).toHaveProperty("spoc");
+    expect(response.body).toHaveProperty("roleLevel");
     expect(typeof response.body.role).toBe("string");
     expect(typeof response.body.workload).toBe("string");
     expect(response.body.role).toBe(Role.SOFTWARE_DEVELOPER);
     expect(response.body.workload).toBe(Workload.FULL_TIME);
     expect(response.body.compensationRange).toBeNull();
+    expect(response.body.receivedDateFromAccount).toBeNull();
+    expect(response.body.account).toBeNull();
+    expect(response.body.smu).toBeNull();
+    expect(response.body.spoc).toBeNull();
+    expect(response.body.roleLevel).toBeNull();
   });
 
   it("allows an assigned member to view a private engagement", async () => {

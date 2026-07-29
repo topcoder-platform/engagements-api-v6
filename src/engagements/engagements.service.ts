@@ -12,6 +12,7 @@ import {
   EngagementStatus,
   PaymentCycle,
   Role,
+  RoleLevel,
   Prisma,
   Workload,
 } from "@prisma/client";
@@ -333,6 +334,9 @@ export class EngagementsService {
           ...payload,
           durationStartDate: this.normalizeDate(payload.durationStartDate),
           durationEndDate: this.normalizeDate(payload.durationEndDate),
+          receivedDateFromAccount: this.normalizeDate(
+            payload.receivedDateFromAccount ?? undefined,
+          ),
           createdBy: userIdentifier,
         },
       });
@@ -915,10 +919,18 @@ export class EngagementsService {
       role: engagementWithFields.role
         ? (engagementWithFields.role.toString() as Role)
         : null,
+      roleLevel: engagementWithFields.roleLevel
+        ? (engagementWithFields.roleLevel.toString() as RoleLevel)
+        : null,
       workload: engagementWithFields.workload
         ? (engagementWithFields.workload.toString() as Workload)
         : null,
       compensationRange: engagementWithFields.compensationRange ?? null,
+      receivedDateFromAccount:
+        engagementWithFields.receivedDateFromAccount ?? null,
+      account: engagementWithFields.account ?? null,
+      smu: engagementWithFields.smu ?? null,
+      spoc: engagementWithFields.spoc ?? null,
     };
 
     if (!options.includeCreatorEmail) {
@@ -1530,6 +1542,23 @@ export class EngagementsService {
     }
     if (payload.compensationRange !== undefined) {
       data.compensationRange = payload.compensationRange;
+    }
+    if (payload.receivedDateFromAccount !== undefined) {
+      data.receivedDateFromAccount = payload.receivedDateFromAccount
+        ? this.normalizeDate(payload.receivedDateFromAccount)
+        : null;
+    }
+    if (payload.account !== undefined) {
+      data.account = payload.account;
+    }
+    if (payload.smu !== undefined) {
+      data.smu = payload.smu;
+    }
+    if (payload.spoc !== undefined) {
+      data.spoc = payload.spoc;
+    }
+    if (payload.roleLevel !== undefined) {
+      data.roleLevel = payload.roleLevel;
     }
     if (payload.isPrivate !== undefined) {
       data.isPrivate = payload.isPrivate;
