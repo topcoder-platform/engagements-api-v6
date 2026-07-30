@@ -250,6 +250,7 @@ exports.Workload = exports.$Enums.Workload = {
 exports.ApplicationStatus = exports.$Enums.ApplicationStatus = {
   SUBMITTED: 'SUBMITTED',
   UNDER_REVIEW: 'UNDER_REVIEW',
+  SHORTLISTED: 'SHORTLISTED',
   SELECTED: 'SELECTED',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'

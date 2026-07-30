@@ -23,6 +23,7 @@ enum EngagementStatus {
 enum ApplicationStatus {
   SUBMITTED
   UNDER_REVIEW
+  SHORTLISTED
   SELECTED
   ACCEPTED
   REJECTED

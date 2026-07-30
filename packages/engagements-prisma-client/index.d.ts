@@ -57,6 +57,7 @@ export type EngagementStatus = (typeof EngagementStatus)[keyof typeof Engagement
 export const ApplicationStatus: {
   SUBMITTED: 'SUBMITTED',
   UNDER_REVIEW: 'UNDER_REVIEW',
+  SHORTLISTED: 'SHORTLISTED',
   SELECTED: 'SELECTED',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'
