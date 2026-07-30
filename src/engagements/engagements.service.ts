@@ -273,8 +273,10 @@ export class EngagementsService {
 
     this.assertNonBlankField(createDto.title, "title");
     this.assertNonBlankField(createDto.description, "description");
-    this.assertNonEmptyArrayField(createDto.timeZones, "timeZones");
-    this.assertNonEmptyArrayField(createDto.countries, "countries");
+    if (!createDto.isPrivate) {
+      this.assertNonEmptyArrayField(createDto.timeZones, "timeZones");
+      this.assertNonEmptyArrayField(createDto.countries, "countries");
+    }
     this.assertNonEmptyArrayField(createDto.requiredSkills, "requiredSkills");
 
     await this.assertProjectExists(createDto.projectId);
@@ -1387,17 +1389,21 @@ export class EngagementsService {
     if (updateDto.description !== undefined) {
       this.assertNonBlankField(updateDto.description, "description");
     }
-    if (updateDto.timeZones !== undefined) {
+
+    const existingEngagement = await this.findOne(id);
+    const isPrivateEngagement =
+      updateDto.isPrivate === true ||
+      (updateDto.isPrivate !== false && existingEngagement.isPrivate === true);
+
+    if (updateDto.timeZones !== undefined && !isPrivateEngagement) {
       this.assertNonEmptyArrayField(updateDto.timeZones, "timeZones");
     }
-    if (updateDto.countries !== undefined) {
+    if (updateDto.countries !== undefined && !isPrivateEngagement) {
       this.assertNonEmptyArrayField(updateDto.countries, "countries");
     }
     if (updateDto.requiredSkills !== undefined) {
       this.assertNonEmptyArrayField(updateDto.requiredSkills, "requiredSkills");
     }
-
-    const existingEngagement = await this.findOne(id);
 
     if (updateDto.projectId) {
       const normalizedCurrentProjectId = this.normalizeProjectId(
