@@ -60,7 +60,14 @@ export function HasDuration(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(_value: unknown, args: ValidationArguments) {
-          return hasValidDuration(args.object as Record<string, unknown>);
+          const dto = args.object as Record<string, unknown>;
+
+          // Private engagements do not collect public duration fields.
+          if (dto.isPrivate === true) {
+            return true;
+          }
+
+          return hasValidDuration(dto);
         },
         defaultMessage() {
           return ERROR_MESSAGES.MissingDuration;

@@ -17,6 +17,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  ValidateIf,
   ValidateNested,
   MaxLength,
   Min,
@@ -223,23 +224,27 @@ export class CreateEngagementDto {
   @Min(1)
   durationMonths?: number;
 
-  @ApiProperty({
-    description: "Accepted time zones. Must contain at least one timezone.",
+  @ApiPropertyOptional({
+    description:
+      "Accepted time zones. Required for public engagements; optional for private engagements.",
     example: ["UTC", "America/New_York"],
   })
+  @ValidateIf((dto: { isPrivate?: boolean }) => dto.isPrivate !== true)
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
-  timeZones: string[];
+  timeZones?: string[];
 
-  @ApiProperty({
-    description: "Accepted countries. Must contain at least one country.",
+  @ApiPropertyOptional({
+    description:
+      "Accepted countries. Required for public engagements; optional for private engagements.",
     example: ["US", "CA"],
   })
+  @ValidateIf((dto: { isPrivate?: boolean }) => dto.isPrivate !== true)
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
-  countries: string[];
+  countries?: string[];
 
   @ApiProperty({
     description: "Required skill IDs. Must contain at least one skill ID.",
@@ -321,14 +326,16 @@ export class CreateEngagementDto {
   @IsEnum(RoleLevel)
   roleLevel?: RoleLevel | null;
 
-  @ApiProperty({
-    description: "Anticipated start timeframe",
+  @ApiPropertyOptional({
+    description:
+      "Anticipated start timeframe. Required for public engagements; optional for private engagements.",
     enum: AnticipatedStart,
     example: AnticipatedStart.IMMEDIATE,
   })
+  @ValidateIf((dto: { isPrivate?: boolean }) => dto.isPrivate !== true)
   @IsEnum(AnticipatedStart)
   @IsNotEmpty()
-  anticipatedStart: AnticipatedStart;
+  anticipatedStart?: AnticipatedStart;
 
   @ApiPropertyOptional({
     description: "Engagement status, including ON_HOLD when applicable",

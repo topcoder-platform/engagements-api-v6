@@ -9,6 +9,7 @@ import {
   Engagement,
   EngagementAssignment,
   AssignmentStatus,
+  AnticipatedStart,
   EngagementStatus,
   PaymentCycle,
   Role,
@@ -332,6 +333,10 @@ export class EngagementsService {
         data: {
           id: nanoid(),
           ...payload,
+          anticipatedStart:
+            payload.anticipatedStart ?? AnticipatedStart.IMMEDIATE,
+          countries: payload.countries ?? [],
+          timeZones: payload.timeZones ?? [],
           durationStartDate: this.normalizeDate(payload.durationStartDate),
           durationEndDate: this.normalizeDate(payload.durationEndDate),
           receivedDateFromAccount: this.normalizeDate(
