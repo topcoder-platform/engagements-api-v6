@@ -26,6 +26,7 @@ import {
   EngagementStatus,
   PaymentCycle,
   Role,
+  RoleLevel,
   Workload,
 } from "@prisma/client";
 import { HasDuration, IsNotWhitespace } from "../../common/validation.util";
@@ -275,6 +276,50 @@ export class CreateEngagementDto {
   @IsString()
   @MaxLength(100)
   compensationRange?: string;
+
+  @ApiPropertyOptional({
+    description: "Internal: date the request was received from the account",
+    example: "2026-07-15T00:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  receivedDateFromAccount?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: account name",
+    example: "Acme Corp",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  account?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: SMU",
+    example: "North America",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  smu?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: SPOC",
+    example: "Jane Doe",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  spoc?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: role level for the engagement",
+    enum: RoleLevel,
+    example: RoleLevel.SENIOR,
+  })
+  @IsOptional()
+  @IsEnum(RoleLevel)
+  roleLevel?: RoleLevel | null;
 
   @ApiProperty({
     description: "Anticipated start timeframe",
