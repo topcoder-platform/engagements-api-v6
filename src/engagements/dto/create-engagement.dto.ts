@@ -203,11 +203,12 @@ export class CreateEngagementDto {
   @IsDateString()
   durationEndDate?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      "Duration in weeks. Required if durationMonths and durationStartDate/durationEndDate are not provided.",
+      "Duration in weeks. Required for public engagements when durationMonths and durationStartDate/durationEndDate are not provided. Optional for private engagements.",
     example: 8,
   })
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
