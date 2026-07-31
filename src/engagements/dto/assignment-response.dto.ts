@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { AssignmentStatus, PaymentCycle } from "@prisma/client";
+import {
+  AssignmentSource,
+  AssignmentStatus,
+  PaymentCycle,
+} from "@prisma/client";
 
 export class AssignmentResponseDto {
   @ApiProperty({
@@ -82,6 +86,25 @@ export class AssignmentResponseDto {
     example: "2025-03-01T00:00:00.000Z",
   })
   endDate?: Date | null;
+
+  @ApiPropertyOptional({
+    description: "Wipro ID end date",
+    example: "2026-12-31T12:00:00.000Z",
+  })
+  wiproIdEndDate?: Date | null;
+
+  @ApiPropertyOptional({
+    description: "Candidate Wipro ID",
+    example: "WIPRO-12345",
+  })
+  candidateWiproId?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Assignment candidate source",
+    enum: AssignmentSource,
+    example: AssignmentSource.DIRECT,
+  })
+  source?: AssignmentSource | null;
 
   @ApiProperty({
     description: "Reason for terminating the assignment",
