@@ -86,6 +86,17 @@ export const PaymentCycle: {
 export type PaymentCycle = (typeof PaymentCycle)[keyof typeof PaymentCycle]
 
 
+export const AssignmentSource: {
+  DIRECT: 'DIRECT',
+  VENDOR: 'VENDOR',
+  WIPRO_REFERRAL: 'WIPRO_REFERRAL',
+  CUSTOMER_REFERRAL: 'CUSTOMER_REFERRAL',
+  TOPCODER_COMMUNITY: 'TOPCODER_COMMUNITY'
+};
+
+export type AssignmentSource = (typeof AssignmentSource)[keyof typeof AssignmentSource]
+
+
 export const Role: {
   DESIGNER: 'DESIGNER',
   SOFTWARE_DEVELOPER: 'SOFTWARE_DEVELOPER',

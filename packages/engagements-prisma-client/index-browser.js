@@ -270,6 +270,14 @@ exports.PaymentCycle = exports.$Enums.PaymentCycle = {
   MONTHLY: 'MONTHLY'
 };
 
+exports.AssignmentSource = exports.$Enums.AssignmentSource = {
+  DIRECT: 'DIRECT',
+  VENDOR: 'VENDOR',
+  WIPRO_REFERRAL: 'WIPRO_REFERRAL',
+  CUSTOMER_REFERRAL: 'CUSTOMER_REFERRAL',
+  TOPCODER_COMMUNITY: 'TOPCODER_COMMUNITY'
+};
+
 exports.Prisma.ModelName = {
   Engagement: 'Engagement',
   EngagementApplication: 'EngagementApplication',

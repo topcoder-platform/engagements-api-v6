@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { PaymentCycle } from "@prisma/client";
+import { AssignmentSource, PaymentCycle } from "@prisma/client";
 import { Transform, Type } from "class-transformer";
 import {
   IsEnum,
@@ -115,4 +115,37 @@ export class ApproveApplicationDto {
   @IsString()
   @MaxLength(2000)
   otherRemarks?: string;
+
+  @ApiPropertyOptional({
+    description: "Wipro ID end date",
+    example: "2026-12-31T12:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  wiproIdEndDate?: string;
+
+  @ApiPropertyOptional({
+    description: "Candidate Wipro ID",
+    example: "WIPRO-12345",
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    const normalized = String(value).trim();
+    return normalized.length > 0 ? normalized : undefined;
+  })
+  @IsString()
+  @MaxLength(255)
+  candidateWiproId?: string;
+
+  @ApiPropertyOptional({
+    description: "Assignment candidate source",
+    enum: AssignmentSource,
+    example: AssignmentSource.DIRECT,
+  })
+  @IsOptional()
+  @IsEnum(AssignmentSource)
+  source?: AssignmentSource;
 }

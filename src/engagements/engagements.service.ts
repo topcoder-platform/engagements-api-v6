@@ -8,6 +8,7 @@ import {
 import {
   Engagement,
   EngagementAssignment,
+  AssignmentSource,
   AssignmentStatus,
   AnticipatedStart,
   EngagementStatus,
@@ -110,6 +111,9 @@ type ResolvedAssignmentDetails = {
   standardHoursPerDay?: number;
   agreementRate?: string;
   otherRemarks?: string;
+  wiproIdEndDate?: Date;
+  candidateWiproId?: string;
+  source?: AssignmentSource;
 };
 
 type PlannedAssignmentMutation = {
@@ -377,6 +381,15 @@ export class EngagementsService {
             }
             if (details.otherRemarks !== undefined) {
               assignmentData.otherRemarks = details.otherRemarks;
+            }
+            if (details.wiproIdEndDate !== undefined) {
+              assignmentData.wiproIdEndDate = details.wiproIdEndDate;
+            }
+            if (details.candidateWiproId !== undefined) {
+              assignmentData.candidateWiproId = details.candidateWiproId;
+            }
+            if (details.source !== undefined) {
+              assignmentData.source = details.source;
             }
             return tx.engagementAssignment.create({
               data: assignmentData,
@@ -1003,6 +1016,9 @@ export class EngagementsService {
       otherRemarks: assignment.otherRemarks,
       startDate: assignment.startDate,
       endDate: assignment.endDate,
+      wiproIdEndDate: assignment.wiproIdEndDate,
+      candidateWiproId: assignment.candidateWiproId,
+      source: assignment.source,
     };
   }
 
@@ -1619,6 +1635,16 @@ export class EngagementsService {
               if (details.otherRemarks !== undefined) {
                 assignmentUpdateData.otherRemarks = details.otherRemarks;
               }
+              if (details.wiproIdEndDate !== undefined) {
+                assignmentUpdateData.wiproIdEndDate = details.wiproIdEndDate;
+              }
+              if (details.candidateWiproId !== undefined) {
+                assignmentUpdateData.candidateWiproId =
+                  details.candidateWiproId;
+              }
+              if (details.source !== undefined) {
+                assignmentUpdateData.source = details.source;
+              }
 
               return tx.engagementAssignment.update({
                 where: {
@@ -1660,6 +1686,15 @@ export class EngagementsService {
             }
             if (details.otherRemarks !== undefined) {
               assignmentCreateData.otherRemarks = details.otherRemarks;
+            }
+            if (details.wiproIdEndDate !== undefined) {
+              assignmentCreateData.wiproIdEndDate = details.wiproIdEndDate;
+            }
+            if (details.candidateWiproId !== undefined) {
+              assignmentCreateData.candidateWiproId = details.candidateWiproId;
+            }
+            if (details.source !== undefined) {
+              assignmentCreateData.source = details.source;
             }
 
             return tx.engagementAssignment.create({
@@ -2109,6 +2144,9 @@ export class EngagementsService {
     standardHoursPerDay?: number;
     agreementRate?: string;
     otherRemarks?: string;
+    wiproIdEndDate?: Date;
+    candidateWiproId?: string;
+    source?: AssignmentSource;
   } {
     const parseDate = (value?: string) => {
       if (value === undefined || value === null || value === "") {
@@ -2122,6 +2160,7 @@ export class EngagementsService {
     };
 
     const startDate = parseDate(details?.startDate);
+    const wiproIdEndDate = parseDate(details?.wiproIdEndDate);
     const durationMonths = details?.durationMonths;
     const paymentCycle = details?.paymentCycle ?? DEFAULT_PAYMENT_CYCLE;
     const ratePerHour =
@@ -2140,6 +2179,10 @@ export class EngagementsService {
       details?.otherRemarks !== undefined
         ? String(details.otherRemarks).trim()
         : undefined;
+    const candidateWiproId =
+      details?.candidateWiproId !== undefined
+        ? String(details.candidateWiproId).trim()
+        : undefined;
 
     return {
       startDate,
@@ -2149,6 +2192,9 @@ export class EngagementsService {
       standardHoursPerDay,
       agreementRate: agreementRate ? agreementRate : undefined,
       otherRemarks: otherRemarks ? otherRemarks : undefined,
+      wiproIdEndDate,
+      candidateWiproId: candidateWiproId ? candidateWiproId : undefined,
+      source: details?.source,
     };
   }
 
