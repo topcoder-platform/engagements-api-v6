@@ -149,6 +149,9 @@ type AssignmentContextDetail = {
   otherRemarks?: string | null;
   startDate?: Date | null;
   endDate?: Date | null;
+  wiproIdEndDate?: Date | null;
+  candidateWiproId?: string | null;
+  source?: AssignmentSource | null;
 };
 
 type EngagementDetail = Engagement & {
