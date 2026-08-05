@@ -23,6 +23,7 @@ enum EngagementStatus {
 enum ApplicationStatus {
   SUBMITTED
   UNDER_REVIEW
+  SHORTLISTED
   SELECTED
   ACCEPTED
   REJECTED
@@ -40,6 +41,14 @@ enum PaymentCycle {
   WEEKLY
   FORTNIGHTLY
   MONTHLY
+}
+
+enum AssignmentSource {
+  DIRECT
+  VENDOR
+  WIPRO_REFERRAL
+  CUSTOMER_REFERRAL
+  TOPCODER_COMMUNITY
 }
 
 enum Role {
@@ -60,29 +69,40 @@ enum AnticipatedStart {
   FEW_WEEKS
 }
 
+enum RoleLevel {
+  JUNIOR
+  MID
+  SENIOR
+}
+
 model Engagement {
-  id                  String                  @id @default(uuid())
-  projectId           String
-  title               String
-  description         String
-  durationStartDate   DateTime?
-  durationEndDate     DateTime?
-  durationWeeks       Int?
-  durationMonths      Int?
-  timeZones           String[]
-  countries           String[]
-  requiredSkills      String[]
-  anticipatedStart    AnticipatedStart
-  status              EngagementStatus        @default(OPEN)
-  isPrivate           Boolean                 @default(false)
-  requiredMemberCount Int?
-  role                Role?
-  workload            Workload?
-  compensationRange   String?
-  createdAt           DateTime                @default(now())
-  createdBy           String
-  updatedAt           DateTime                @updatedAt
-  updatedBy           String?
+  id                        String                  @id @default(uuid())
+  projectId                 String
+  title                     String
+  description               String
+  durationStartDate         DateTime?
+  durationEndDate           DateTime?
+  durationWeeks             Int?
+  durationMonths            Int?
+  timeZones                 String[]
+  countries                 String[]
+  requiredSkills            String[]
+  anticipatedStart          AnticipatedStart
+  status                    EngagementStatus        @default(OPEN)
+  isPrivate                 Boolean                 @default(false)
+  requiredMemberCount       Int?
+  role                      Role?
+  roleLevel                 RoleLevel?
+  workload                  Workload?
+  compensationRange         String?
+  receivedDateFromAccount   DateTime?
+  account                   String?
+  smu                       String?
+  spoc                      String?
+  createdAt                 DateTime                @default(now())
+  createdBy                 String
+  updatedAt                 DateTime                @updatedAt
+  updatedBy                 String?
 
   applications        EngagementApplication[]
   assignments         EngagementAssignment[]
@@ -121,14 +141,14 @@ model EngagementApplication {
 }
 
 model EngagementAssignment {
-  id                   String           @id @default(uuid())
+  id                   String            @id @default(uuid())
   engagementId         String
   memberId             String
   memberHandle         String
-  status               AssignmentStatus @default(SELECTED)
+  status               AssignmentStatus  @default(SELECTED)
   agreementRate        String?
   ratePerHour          String?
-  paymentCycle         PaymentCycle     @default(WEEKLY)
+  paymentCycle         PaymentCycle      @default(WEEKLY)
   standardHoursPerDay  Float?
   /// @deprecated Use standardHoursPerDay instead.
   standardHoursPerWeek Float?
@@ -137,8 +157,11 @@ model EngagementAssignment {
   terminationReason    String?
   startDate            DateTime?
   endDate              DateTime?
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  wiproIdEndDate       DateTime?
+  candidateWiproId     String?
+  source               AssignmentSource?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   engagement     Engagement         @relation(fields: [engagementId], references: [id], onDelete: Restrict)
   feedback       EngagementFeedback[]

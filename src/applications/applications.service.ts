@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import {
   ApplicationStatus,
+  AssignmentSource,
   AssignmentStatus,
   EngagementApplication,
   EngagementStatus,
@@ -390,6 +391,9 @@ export class ApplicationsService {
     standardHoursPerDay?: number;
     agreementRate?: string;
     otherRemarks?: string | null;
+    wiproIdEndDate?: Date;
+    candidateWiproId?: string;
+    source?: AssignmentSource;
     hasAny: boolean;
   } {
     const parseDate = (value?: string) => {
@@ -404,6 +408,7 @@ export class ApplicationsService {
     };
 
     const startDate = parseDate(details?.startDate);
+    const wiproIdEndDate = parseDate(details?.wiproIdEndDate);
     const durationMonths = details?.durationMonths;
     const paymentCycle = details?.paymentCycle;
     const ratePerHour = details?.ratePerHour;
@@ -415,6 +420,11 @@ export class ApplicationsService {
     );
     const otherRemarks =
       details?.otherRemarks !== undefined ? details.otherRemarks : undefined;
+    const candidateWiproId =
+      details?.candidateWiproId !== undefined
+        ? String(details.candidateWiproId).trim() || undefined
+        : undefined;
+    const source = details?.source;
 
     return {
       startDate,
@@ -424,6 +434,9 @@ export class ApplicationsService {
       standardHoursPerDay,
       agreementRate,
       otherRemarks,
+      wiproIdEndDate,
+      candidateWiproId,
+      source,
       hasAny:
         startDate !== undefined ||
         durationMonths !== undefined ||
@@ -431,7 +444,10 @@ export class ApplicationsService {
         ratePerHour !== undefined ||
         standardHoursPerDay !== undefined ||
         agreementRate !== undefined ||
-        otherRemarks !== undefined,
+        otherRemarks !== undefined ||
+        wiproIdEndDate !== undefined ||
+        candidateWiproId !== undefined ||
+        source !== undefined,
     };
   }
 
@@ -502,6 +518,16 @@ export class ApplicationsService {
           }
           if (normalizedAssignment.otherRemarks !== undefined) {
             updateData.otherRemarks = normalizedAssignment.otherRemarks;
+          }
+          if (normalizedAssignment.wiproIdEndDate !== undefined) {
+            updateData.wiproIdEndDate = normalizedAssignment.wiproIdEndDate;
+          }
+          if (normalizedAssignment.candidateWiproId !== undefined) {
+            updateData.candidateWiproId =
+              normalizedAssignment.candidateWiproId;
+          }
+          if (normalizedAssignment.source !== undefined) {
+            updateData.source = normalizedAssignment.source;
           }
           updatedAssignment = await tx.engagementAssignment.update({
             where: { id: existingAssignment.id },
@@ -575,6 +601,15 @@ export class ApplicationsService {
           }),
           ...(normalizedAssignment.otherRemarks !== undefined && {
             otherRemarks: normalizedAssignment.otherRemarks,
+          }),
+          ...(normalizedAssignment.wiproIdEndDate !== undefined && {
+            wiproIdEndDate: normalizedAssignment.wiproIdEndDate,
+          }),
+          ...(normalizedAssignment.candidateWiproId !== undefined && {
+            candidateWiproId: normalizedAssignment.candidateWiproId,
+          }),
+          ...(normalizedAssignment.source !== undefined && {
+            source: normalizedAssignment.source,
           }),
         },
       });
@@ -778,6 +813,9 @@ export class ApplicationsService {
       standardHoursPerDay: number | null;
       agreementRate: string | null;
       otherRemarks: string | null;
+      wiproIdEndDate: Date | null;
+      candidateWiproId: string | null;
+      source: AssignmentSource | null;
     },
     normalizedAssignment: {
       startDate?: Date;
@@ -787,6 +825,9 @@ export class ApplicationsService {
       standardHoursPerDay?: number;
       agreementRate?: string;
       otherRemarks?: string | null;
+      wiproIdEndDate?: Date;
+      candidateWiproId?: string;
+      source?: AssignmentSource;
     },
   ): boolean {
     if (
@@ -829,6 +870,29 @@ export class ApplicationsService {
     if (
       normalizedAssignment.agreementRate !== undefined &&
       normalizedAssignment.agreementRate !== existingAssignment.agreementRate
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedAssignment.wiproIdEndDate !== undefined &&
+      normalizedAssignment.wiproIdEndDate.getTime() !==
+        existingAssignment.wiproIdEndDate?.getTime()
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedAssignment.candidateWiproId !== undefined &&
+      normalizedAssignment.candidateWiproId !==
+        existingAssignment.candidateWiproId
+    ) {
+      return true;
+    }
+
+    if (
+      normalizedAssignment.source !== undefined &&
+      normalizedAssignment.source !== existingAssignment.source
     ) {
       return true;
     }

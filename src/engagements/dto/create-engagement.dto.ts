@@ -17,15 +17,18 @@ import {
   IsOptional,
   IsString,
   Matches,
+  ValidateIf,
   ValidateNested,
   MaxLength,
   Min,
 } from "class-validator";
 import {
   AnticipatedStart,
+  AssignmentSource,
   EngagementStatus,
   PaymentCycle,
   Role,
+  RoleLevel,
   Workload,
 } from "@prisma/client";
 import { HasDuration, IsNotWhitespace } from "../../common/validation.util";
@@ -151,6 +154,39 @@ export class AssignmentDetailsDto {
   @IsString()
   @MaxLength(2000)
   otherRemarks?: string;
+
+  @ApiPropertyOptional({
+    description: "Wipro ID end date",
+    example: "2026-12-31T12:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  wiproIdEndDate?: string;
+
+  @ApiPropertyOptional({
+    description: "Candidate Wipro ID",
+    example: "WIPRO-12345",
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+    const normalized = String(value).trim();
+    return normalized.length > 0 ? normalized : undefined;
+  })
+  @IsString()
+  @MaxLength(255)
+  candidateWiproId?: string;
+
+  @ApiPropertyOptional({
+    description: "Assignment candidate source",
+    enum: AssignmentSource,
+    example: AssignmentSource.DIRECT,
+  })
+  @IsOptional()
+  @IsEnum(AssignmentSource)
+  source?: AssignmentSource;
 }
 
 export class CreateEngagementDto {
@@ -201,11 +237,12 @@ export class CreateEngagementDto {
   @IsDateString()
   durationEndDate?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      "Duration in weeks. Required if durationMonths and durationStartDate/durationEndDate are not provided.",
+      "Duration in weeks. Required for public engagements when durationMonths and durationStartDate/durationEndDate are not provided. Optional for private engagements.",
     example: 8,
   })
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -222,23 +259,27 @@ export class CreateEngagementDto {
   @Min(1)
   durationMonths?: number;
 
-  @ApiProperty({
-    description: "Accepted time zones. Must contain at least one timezone.",
+  @ApiPropertyOptional({
+    description:
+      "Accepted time zones. Required for public engagements; optional for private engagements.",
     example: ["UTC", "America/New_York"],
   })
+  @ValidateIf((dto: { isPrivate?: boolean }) => dto.isPrivate !== true)
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
-  timeZones: string[];
+  timeZones?: string[];
 
-  @ApiProperty({
-    description: "Accepted countries. Must contain at least one country.",
+  @ApiPropertyOptional({
+    description:
+      "Accepted countries. Required for public engagements; optional for private engagements.",
     example: ["US", "CA"],
   })
+  @ValidateIf((dto: { isPrivate?: boolean }) => dto.isPrivate !== true)
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
-  countries: string[];
+  countries?: string[];
 
   @ApiProperty({
     description: "Required skill IDs. Must contain at least one skill ID.",
@@ -276,14 +317,60 @@ export class CreateEngagementDto {
   @MaxLength(100)
   compensationRange?: string;
 
-  @ApiProperty({
-    description: "Anticipated start timeframe",
+  @ApiPropertyOptional({
+    description: "Internal: date the request was received from the account",
+    example: "2026-07-15T00:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  receivedDateFromAccount?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: account name",
+    example: "Acme Corp",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  account?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: SMU",
+    example: "North America",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  smu?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: SPOC",
+    example: "Jane Doe",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  spoc?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Internal: role level for the engagement",
+    enum: RoleLevel,
+    example: RoleLevel.SENIOR,
+  })
+  @IsOptional()
+  @IsEnum(RoleLevel)
+  roleLevel?: RoleLevel | null;
+
+  @ApiPropertyOptional({
+    description:
+      "Anticipated start timeframe. Required for public engagements; optional for private engagements.",
     enum: AnticipatedStart,
     example: AnticipatedStart.IMMEDIATE,
   })
+  @ValidateIf((dto: { isPrivate?: boolean }) => dto.isPrivate !== true)
   @IsEnum(AnticipatedStart)
   @IsNotEmpty()
-  anticipatedStart: AnticipatedStart;
+  anticipatedStart?: AnticipatedStart;
 
   @ApiPropertyOptional({
     description: "Engagement status, including ON_HOLD when applicable",

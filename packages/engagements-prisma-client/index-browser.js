@@ -250,6 +250,7 @@ exports.Workload = exports.$Enums.Workload = {
 exports.ApplicationStatus = exports.$Enums.ApplicationStatus = {
   SUBMITTED: 'SUBMITTED',
   UNDER_REVIEW: 'UNDER_REVIEW',
+  SHORTLISTED: 'SHORTLISTED',
   SELECTED: 'SELECTED',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'
@@ -267,6 +268,14 @@ exports.PaymentCycle = exports.$Enums.PaymentCycle = {
   WEEKLY: 'WEEKLY',
   FORTNIGHTLY: 'FORTNIGHTLY',
   MONTHLY: 'MONTHLY'
+};
+
+exports.AssignmentSource = exports.$Enums.AssignmentSource = {
+  DIRECT: 'DIRECT',
+  VENDOR: 'VENDOR',
+  WIPRO_REFERRAL: 'WIPRO_REFERRAL',
+  CUSTOMER_REFERRAL: 'CUSTOMER_REFERRAL',
+  TOPCODER_COMMUNITY: 'TOPCODER_COMMUNITY'
 };
 
 exports.Prisma.ModelName = {

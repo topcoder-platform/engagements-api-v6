@@ -57,6 +57,7 @@ export type EngagementStatus = (typeof EngagementStatus)[keyof typeof Engagement
 export const ApplicationStatus: {
   SUBMITTED: 'SUBMITTED',
   UNDER_REVIEW: 'UNDER_REVIEW',
+  SHORTLISTED: 'SHORTLISTED',
   SELECTED: 'SELECTED',
   ACCEPTED: 'ACCEPTED',
   REJECTED: 'REJECTED'
@@ -83,6 +84,17 @@ export const PaymentCycle: {
 };
 
 export type PaymentCycle = (typeof PaymentCycle)[keyof typeof PaymentCycle]
+
+
+export const AssignmentSource: {
+  DIRECT: 'DIRECT',
+  VENDOR: 'VENDOR',
+  WIPRO_REFERRAL: 'WIPRO_REFERRAL',
+  CUSTOMER_REFERRAL: 'CUSTOMER_REFERRAL',
+  TOPCODER_COMMUNITY: 'TOPCODER_COMMUNITY'
+};
+
+export type AssignmentSource = (typeof AssignmentSource)[keyof typeof AssignmentSource]
 
 
 export const Role: {

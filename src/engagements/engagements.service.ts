@@ -8,10 +8,13 @@ import {
 import {
   Engagement,
   EngagementAssignment,
+  AssignmentSource,
   AssignmentStatus,
+  AnticipatedStart,
   EngagementStatus,
   PaymentCycle,
   Role,
+  RoleLevel,
   Prisma,
   Workload,
 } from "@prisma/client";
@@ -108,6 +111,9 @@ type ResolvedAssignmentDetails = {
   standardHoursPerDay?: number;
   agreementRate?: string;
   otherRemarks?: string;
+  wiproIdEndDate?: Date;
+  candidateWiproId?: string;
+  source?: AssignmentSource;
 };
 
 type PlannedAssignmentMutation = {
@@ -143,6 +149,9 @@ type AssignmentContextDetail = {
   otherRemarks?: string | null;
   startDate?: Date | null;
   endDate?: Date | null;
+  wiproIdEndDate?: Date | null;
+  candidateWiproId?: string | null;
+  source?: AssignmentSource | null;
 };
 
 type EngagementDetail = Engagement & {
@@ -271,8 +280,10 @@ export class EngagementsService {
 
     this.assertNonBlankField(createDto.title, "title");
     this.assertNonBlankField(createDto.description, "description");
-    this.assertNonEmptyArrayField(createDto.timeZones, "timeZones");
-    this.assertNonEmptyArrayField(createDto.countries, "countries");
+    if (!createDto.isPrivate) {
+      this.assertNonEmptyArrayField(createDto.timeZones, "timeZones");
+      this.assertNonEmptyArrayField(createDto.countries, "countries");
+    }
     this.assertNonEmptyArrayField(createDto.requiredSkills, "requiredSkills");
 
     await this.assertProjectExists(createDto.projectId);
@@ -331,8 +342,15 @@ export class EngagementsService {
         data: {
           id: nanoid(),
           ...payload,
+          anticipatedStart:
+            payload.anticipatedStart ?? AnticipatedStart.IMMEDIATE,
+          countries: payload.countries ?? [],
+          timeZones: payload.timeZones ?? [],
           durationStartDate: this.normalizeDate(payload.durationStartDate),
           durationEndDate: this.normalizeDate(payload.durationEndDate),
+          receivedDateFromAccount: this.normalizeDate(
+            payload.receivedDateFromAccount ?? undefined,
+          ),
           createdBy: userIdentifier,
         },
       });
@@ -366,6 +384,15 @@ export class EngagementsService {
             }
             if (details.otherRemarks !== undefined) {
               assignmentData.otherRemarks = details.otherRemarks;
+            }
+            if (details.wiproIdEndDate !== undefined) {
+              assignmentData.wiproIdEndDate = details.wiproIdEndDate;
+            }
+            if (details.candidateWiproId !== undefined) {
+              assignmentData.candidateWiproId = details.candidateWiproId;
+            }
+            if (details.source !== undefined) {
+              assignmentData.source = details.source;
             }
             return tx.engagementAssignment.create({
               data: assignmentData,
@@ -915,10 +942,18 @@ export class EngagementsService {
       role: engagementWithFields.role
         ? (engagementWithFields.role.toString() as Role)
         : null,
+      roleLevel: engagementWithFields.roleLevel
+        ? (engagementWithFields.roleLevel.toString() as RoleLevel)
+        : null,
       workload: engagementWithFields.workload
         ? (engagementWithFields.workload.toString() as Workload)
         : null,
       compensationRange: engagementWithFields.compensationRange ?? null,
+      receivedDateFromAccount:
+        engagementWithFields.receivedDateFromAccount ?? null,
+      account: engagementWithFields.account ?? null,
+      smu: engagementWithFields.smu ?? null,
+      spoc: engagementWithFields.spoc ?? null,
     };
 
     if (!options.includeCreatorEmail) {
@@ -984,6 +1019,9 @@ export class EngagementsService {
       otherRemarks: assignment.otherRemarks,
       startDate: assignment.startDate,
       endDate: assignment.endDate,
+      wiproIdEndDate: assignment.wiproIdEndDate,
+      candidateWiproId: assignment.candidateWiproId,
+      source: assignment.source,
     };
   }
 
@@ -1370,17 +1408,21 @@ export class EngagementsService {
     if (updateDto.description !== undefined) {
       this.assertNonBlankField(updateDto.description, "description");
     }
-    if (updateDto.timeZones !== undefined) {
+
+    const existingEngagement = await this.findOne(id);
+    const isPrivateEngagement =
+      updateDto.isPrivate === true ||
+      (updateDto.isPrivate !== false && existingEngagement.isPrivate === true);
+
+    if (updateDto.timeZones !== undefined && !isPrivateEngagement) {
       this.assertNonEmptyArrayField(updateDto.timeZones, "timeZones");
     }
-    if (updateDto.countries !== undefined) {
+    if (updateDto.countries !== undefined && !isPrivateEngagement) {
       this.assertNonEmptyArrayField(updateDto.countries, "countries");
     }
     if (updateDto.requiredSkills !== undefined) {
       this.assertNonEmptyArrayField(updateDto.requiredSkills, "requiredSkills");
     }
-
-    const existingEngagement = await this.findOne(id);
 
     if (updateDto.projectId) {
       const normalizedCurrentProjectId = this.normalizeProjectId(
@@ -1531,6 +1573,23 @@ export class EngagementsService {
     if (payload.compensationRange !== undefined) {
       data.compensationRange = payload.compensationRange;
     }
+    if (payload.receivedDateFromAccount !== undefined) {
+      data.receivedDateFromAccount = payload.receivedDateFromAccount
+        ? this.normalizeDate(payload.receivedDateFromAccount)
+        : null;
+    }
+    if (payload.account !== undefined) {
+      data.account = payload.account;
+    }
+    if (payload.smu !== undefined) {
+      data.smu = payload.smu;
+    }
+    if (payload.spoc !== undefined) {
+      data.spoc = payload.spoc;
+    }
+    if (payload.roleLevel !== undefined) {
+      data.roleLevel = payload.roleLevel;
+    }
     if (payload.isPrivate !== undefined) {
       data.isPrivate = payload.isPrivate;
     }
@@ -1579,6 +1638,16 @@ export class EngagementsService {
               if (details.otherRemarks !== undefined) {
                 assignmentUpdateData.otherRemarks = details.otherRemarks;
               }
+              if (details.wiproIdEndDate !== undefined) {
+                assignmentUpdateData.wiproIdEndDate = details.wiproIdEndDate;
+              }
+              if (details.candidateWiproId !== undefined) {
+                assignmentUpdateData.candidateWiproId =
+                  details.candidateWiproId;
+              }
+              if (details.source !== undefined) {
+                assignmentUpdateData.source = details.source;
+              }
 
               return tx.engagementAssignment.update({
                 where: {
@@ -1620,6 +1689,15 @@ export class EngagementsService {
             }
             if (details.otherRemarks !== undefined) {
               assignmentCreateData.otherRemarks = details.otherRemarks;
+            }
+            if (details.wiproIdEndDate !== undefined) {
+              assignmentCreateData.wiproIdEndDate = details.wiproIdEndDate;
+            }
+            if (details.candidateWiproId !== undefined) {
+              assignmentCreateData.candidateWiproId = details.candidateWiproId;
+            }
+            if (details.source !== undefined) {
+              assignmentCreateData.source = details.source;
             }
 
             return tx.engagementAssignment.create({
@@ -2069,6 +2147,9 @@ export class EngagementsService {
     standardHoursPerDay?: number;
     agreementRate?: string;
     otherRemarks?: string;
+    wiproIdEndDate?: Date;
+    candidateWiproId?: string;
+    source?: AssignmentSource;
   } {
     const parseDate = (value?: string) => {
       if (value === undefined || value === null || value === "") {
@@ -2082,6 +2163,7 @@ export class EngagementsService {
     };
 
     const startDate = parseDate(details?.startDate);
+    const wiproIdEndDate = parseDate(details?.wiproIdEndDate);
     const durationMonths = details?.durationMonths;
     const paymentCycle = details?.paymentCycle ?? DEFAULT_PAYMENT_CYCLE;
     const ratePerHour =
@@ -2100,6 +2182,10 @@ export class EngagementsService {
       details?.otherRemarks !== undefined
         ? String(details.otherRemarks).trim()
         : undefined;
+    const candidateWiproId =
+      details?.candidateWiproId !== undefined
+        ? String(details.candidateWiproId).trim()
+        : undefined;
 
     return {
       startDate,
@@ -2109,6 +2195,9 @@ export class EngagementsService {
       standardHoursPerDay,
       agreementRate: agreementRate ? agreementRate : undefined,
       otherRemarks: otherRemarks ? otherRemarks : undefined,
+      wiproIdEndDate,
+      candidateWiproId: candidateWiproId ? candidateWiproId : undefined,
+      source: details?.source,
     };
   }
 

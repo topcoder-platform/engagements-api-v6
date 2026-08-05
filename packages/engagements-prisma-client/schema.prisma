@@ -23,6 +23,7 @@ enum EngagementStatus {
 enum ApplicationStatus {
   SUBMITTED
   UNDER_REVIEW
+  SHORTLISTED
   SELECTED
   ACCEPTED
   REJECTED
@@ -40,6 +41,14 @@ enum PaymentCycle {
   WEEKLY
   FORTNIGHTLY
   MONTHLY
+}
+
+enum AssignmentSource {
+  DIRECT
+  VENDOR
+  WIPRO_REFERRAL
+  CUSTOMER_REFERRAL
+  TOPCODER_COMMUNITY
 }
 
 enum Role {
@@ -121,14 +130,14 @@ model EngagementApplication {
 }
 
 model EngagementAssignment {
-  id                   String           @id @default(uuid())
+  id                   String            @id @default(uuid())
   engagementId         String
   memberId             String
   memberHandle         String
-  status               AssignmentStatus @default(SELECTED)
+  status               AssignmentStatus  @default(SELECTED)
   agreementRate        String?
   ratePerHour          String?
-  paymentCycle         PaymentCycle     @default(WEEKLY)
+  paymentCycle         PaymentCycle      @default(WEEKLY)
   standardHoursPerDay  Float?
   /// @deprecated Use standardHoursPerDay instead.
   standardHoursPerWeek Float?
@@ -137,8 +146,11 @@ model EngagementAssignment {
   terminationReason    String?
   startDate            DateTime?
   endDate              DateTime?
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  wiproIdEndDate       DateTime?
+  candidateWiproId     String?
+  source               AssignmentSource?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   engagement        Engagement           @relation(fields: [engagementId], references: [id], onDelete: Restrict)
   feedback          EngagementFeedback[]
