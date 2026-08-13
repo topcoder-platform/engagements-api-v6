@@ -159,6 +159,37 @@ type EngagementDetail = Engagement & {
   assignments?: EngagementAssignment[];
 };
 
+type PublicEngagementRecord = Pick<
+  Engagement,
+  | "id"
+  | "projectId"
+  | "title"
+  | "description"
+  | "durationStartDate"
+  | "durationEndDate"
+  | "durationWeeks"
+  | "durationMonths"
+  | "timeZones"
+  | "countries"
+  | "requiredSkills"
+  | "anticipatedStart"
+  | "status"
+  | "isPrivate"
+  | "requiredMemberCount"
+  | "role"
+  | "roleLevel"
+  | "workload"
+  | "compensationRange"
+  | "createdAt"
+  | "createdBy"
+  | "updatedAt"
+  | "updatedBy"
+> & {
+  applicationsCount?: number;
+  project?: EngagementProjectReference;
+  projectName?: string;
+};
+
 type FlexiAssignmentWithEngagement = EngagementAssignment & {
   engagement: Engagement;
 };
@@ -783,12 +814,18 @@ export class EngagementsService {
         ? this.applyAssignmentFields(engagementWithCount)
         : engagementWithCount;
     });
-    const hydratedEngagements = await this.hydrateCreatorEmails(engagements);
+    const responseEngagements = includeAssignments
+      ? await this.hydrateCreatorEmails(engagements)
+      : engagements;
     const hydratedEngagementsWithProjectDetails =
-      await this.hydrateProjectDetails(hydratedEngagements);
+      await this.hydrateProjectDetails(responseEngagements);
 
     return {
-      data: hydratedEngagementsWithProjectDetails,
+      data: includeAssignments
+        ? hydratedEngagementsWithProjectDetails
+        : hydratedEngagementsWithProjectDetails.map((engagement) =>
+            this.serializePublicEngagement(engagement),
+          ),
       meta: {
         page,
         perPage,
@@ -938,6 +975,7 @@ export class EngagementsService {
     options: {
       includeCreatorEmail?: boolean;
       includeAssignments?: boolean;
+      includeSensitiveFields?: boolean;
       assignmentMemberId?: string;
     } = {},
   ): Promise<EngagementDetail> {
@@ -987,6 +1025,10 @@ export class EngagementsService {
       smu: engagementWithFields.smu ?? null,
       spoc: engagementWithFields.spoc ?? null,
     };
+
+    if (options.includeSensitiveFields === false) {
+      return this.serializePublicEngagement(normalizedEngagement);
+    }
 
     if (!options.includeCreatorEmail) {
       return normalizedEngagement;
@@ -2166,9 +2208,71 @@ export class EngagementsService {
       },
       orderBy: { createdAt: "desc" },
     });
-    const engagementsWithCreatorEmails =
-      await this.hydrateCreatorEmails(engagements);
-    return this.hydrateProjectDetails(engagementsWithCreatorEmails);
+    const hydratedEngagements = await this.hydrateProjectDetails(engagements);
+    return hydratedEngagements.map((engagement) =>
+      this.serializePublicEngagement(engagement),
+    );
+  }
+
+  /**
+   * Builds the allow-listed engagement shape returned by anonymous and ordinary
+   * member discovery routes. Internal account metadata, creator email, and
+   * assignment details are intentionally absent even if a database query or
+   * future hydration step adds them to the source object.
+   *
+   * Privileged `includePrivate` listings, M2M/manager detail reads, assigned
+   * private-engagement reads, and the authenticated my-assignments route bypass
+   * this serializer and retain their protected response contract.
+   *
+   * @param engagement Hydrated database record to make public-safe.
+   * @returns A new allow-listed public engagement object.
+   * @throws Does not throw.
+   */
+  private serializePublicEngagement<
+    T extends Engagement & {
+      applicationsCount?: number;
+      project?: EngagementProjectReference;
+      projectName?: string;
+    },
+  >(
+    engagement: T,
+  ): T {
+    const publicEngagement: PublicEngagementRecord = {
+      id: engagement.id,
+      projectId: engagement.projectId,
+      title: engagement.title,
+      description: engagement.description,
+      durationStartDate: engagement.durationStartDate,
+      durationEndDate: engagement.durationEndDate,
+      durationWeeks: engagement.durationWeeks,
+      durationMonths: engagement.durationMonths,
+      timeZones: engagement.timeZones,
+      countries: engagement.countries,
+      requiredSkills: engagement.requiredSkills,
+      anticipatedStart: engagement.anticipatedStart,
+      status: engagement.status,
+      isPrivate: engagement.isPrivate,
+      requiredMemberCount: engagement.requiredMemberCount,
+      role: engagement.role,
+      roleLevel: engagement.roleLevel,
+      workload: engagement.workload,
+      compensationRange: engagement.compensationRange,
+      createdAt: engagement.createdAt,
+      createdBy: engagement.createdBy,
+      updatedAt: engagement.updatedAt,
+      updatedBy: engagement.updatedBy,
+      ...(engagement.applicationsCount !== undefined
+        ? { applicationsCount: engagement.applicationsCount }
+        : {}),
+      ...(engagement.projectName !== undefined
+        ? { projectName: engagement.projectName }
+        : {}),
+      ...(engagement.project !== undefined
+        ? { project: engagement.project }
+        : {}),
+    };
+
+    return publicEngagement as T;
   }
 
   private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {

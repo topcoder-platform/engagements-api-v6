@@ -164,7 +164,7 @@ export class EngagementsController {
     description:
       "Returns a paginated list of engagements. Authentication is optional unless appliedByMe=true; " +
       "that filter accepts a human-user token and limits results to engagements with an application from that user. " +
-      "appliedByMe=false or omission preserves the anonymous public list.",
+      "appliedByMe=false or omission preserves the anonymous public list. Public rows omit internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
   })
   @ApiResponse({
     status: 200,
@@ -195,7 +195,8 @@ export class EngagementsController {
   @Get("active")
   @ApiOperation({
     summary: "List active engagements",
-    description: "Returns active engagements only. Authentication is optional.",
+    description:
+      "Returns public active engagements only. Authentication is optional, and internal account metadata and creator email are omitted.",
   })
   @ApiResponse({
     status: 200,
@@ -539,7 +540,8 @@ export class EngagementsController {
     summary: "Get engagement by ID",
     description:
       "Retrieves a single engagement by ID. Authentication is optional for public engagements. " +
-      "Private engagements are limited to privileged users, M2M clients, and assigned members.",
+      "Private engagements are limited to privileged users, M2M clients, and assigned members. " +
+      "Public responses omit internal account metadata and creator email; authorized protected/private responses retain them.",
   })
   @ApiResponse({
     status: 200,
@@ -562,8 +564,9 @@ export class EngagementsController {
         : undefined;
 
     let engagement = await this.engagementsService.findOne(id, {
-      includeCreatorEmail: true,
+      includeCreatorEmail: canViewAllAssignments,
       includeAssignments: canViewAllAssignments,
+      includeSensitiveFields: canViewAllAssignments,
     });
 
     if (engagement.isPrivate && !canViewAllAssignments) {
@@ -576,6 +579,7 @@ export class EngagementsController {
       engagement = await this.engagementsService.findOne(id, {
         includeCreatorEmail: true,
         includeAssignments: true,
+        includeSensitiveFields: true,
         assignmentMemberId: viewerId,
       });
 

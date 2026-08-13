@@ -167,6 +167,14 @@ the companion route for retrieving the current user's paginated application
 records. The engagement-list filter performs its relation check in the same
 database query and does not expose another member's application details.
 
+Anonymous and ordinary-member responses from `GET /engagements`,
+`GET /engagements/active`, and public `GET /engagements/:id` reads are produced
+from an explicit public allow-list. They never include `account`, `smu`, `spoc`,
+`receivedDateFromAccount`, `createdByEmail`, or assignment details. Privileged
+`includePrivate=true` listings, authorized manager/M2M detail reads, assigned
+members reading their own private engagement, and `GET /engagements/my-assignments`
+retain the protected fields needed by those workflows.
+
 - `GET /engagements`, `GET /engagements/active`, and `GET /engagements/my-assignments` include project metadata on each engagement record:
   - `projectName` (if available)
   - `project` object with `id` and optional `name`

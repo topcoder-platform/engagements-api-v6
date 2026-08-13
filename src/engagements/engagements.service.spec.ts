@@ -842,8 +842,13 @@ describe("EngagementsService", () => {
         createdAt: new Date("2026-02-11T10:00:00.000Z"),
         updatedAt: new Date("2026-02-11T10:00:00.000Z"),
         createdBy: "123456",
+        createdByEmail: "creator@example.com",
         isPrivate: false,
         requiredMemberCount: 2,
+        receivedDateFromAccount: new Date("2026-02-10T00:00:00.000Z"),
+        account: "Internal account",
+        smu: "Internal SMU",
+        spoc: "Internal SPOC",
         _count: {
           applications: 3,
         },
@@ -875,6 +880,12 @@ describe("EngagementsService", () => {
     expect(result.data[0]).not.toHaveProperty("assignedMemberHandle");
     expect(result.data[0]).not.toHaveProperty("assignedMembers");
     expect(result.data[0]).not.toHaveProperty("assignedMemberHandles");
+    expect(result.data[0]).not.toHaveProperty("receivedDateFromAccount");
+    expect(result.data[0]).not.toHaveProperty("account");
+    expect(result.data[0]).not.toHaveProperty("smu");
+    expect(result.data[0]).not.toHaveProperty("spoc");
+    expect(result.data[0]).not.toHaveProperty("createdByEmail");
+    expect(memberService.getMemberEmailsByUserIds).not.toHaveBeenCalled();
   });
 
   it("filters assignments when loading an engagement for an assigned member", async () => {
@@ -1164,6 +1175,10 @@ describe("EngagementsService", () => {
         updatedAt: new Date("2026-02-11T10:00:00.000Z"),
         createdBy: "123456",
         isPrivate: true,
+        receivedDateFromAccount: new Date("2026-02-10T00:00:00.000Z"),
+        account: "Internal account",
+        smu: "Internal SMU",
+        spoc: "Internal SPOC",
         assignments: [
           {
             id: "assignment-1",
@@ -1186,6 +1201,9 @@ describe("EngagementsService", () => {
       },
     ]);
     db.engagement.count.mockResolvedValue(1);
+    memberService.getMemberEmailsByUserIds.mockResolvedValue(
+      new Map([["123456", "creator@example.com"]]),
+    );
 
     const result = await service.findAll({
       includePrivate: true,
@@ -1213,6 +1231,14 @@ describe("EngagementsService", () => {
     expect(result.data[0]).toHaveProperty("assignedMemberHandle", "member1");
     expect(result.data[0]).toHaveProperty("assignedMembers", ["100000"]);
     expect(result.data[0]).toHaveProperty("assignedMemberHandles", ["member1"]);
+    expect(result.data[0]).toHaveProperty("receivedDateFromAccount");
+    expect(result.data[0]).toHaveProperty("account", "Internal account");
+    expect(result.data[0]).toHaveProperty("smu", "Internal SMU");
+    expect(result.data[0]).toHaveProperty("spoc", "Internal SPOC");
+    expect(result.data[0]).toHaveProperty(
+      "createdByEmail",
+      "creator@example.com",
+    );
   });
 
   it("does not scope Talent Manager listings to member projects", async () => {
