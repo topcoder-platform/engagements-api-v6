@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { AssignmentStatus, EngagementStatus } from "@prisma/client";
 import { ERROR_MESSAGES } from "../common/constants";
 import {
@@ -1325,6 +1325,71 @@ describe("EngagementsService", () => {
         }),
       }),
     );
+  });
+
+  it("filters public engagement listings by the authenticated applicant", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll(
+      {
+        appliedByMe: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      " 654321 ",
+    );
+
+    const findManyArg = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyArg.where).toMatchObject({ isPrivate: false });
+    expect(findManyArg.where.AND).toEqual(
+      expect.arrayContaining([
+        {
+          applications: {
+            some: { userId: "654321" },
+          },
+        },
+      ]),
+    );
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: findManyArg.where,
+    });
+  });
+
+  it("does not apply a current-user relation filter for appliedByMe=false", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      appliedByMe: false,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    const filters = db.engagement.findMany.mock.calls[0][0].where.AND;
+    expect(filters).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ applications: expect.anything() }),
+      ]),
+    );
+  });
+
+  it("rejects appliedByMe=true when no current-user id is supplied", async () => {
+    await expect(
+      service.findAll({
+        appliedByMe: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(db.engagement.findMany).not.toHaveBeenCalled();
   });
 
   it("does not allow public status=ON_HOLD listings to return ON_HOLD engagements", async () => {

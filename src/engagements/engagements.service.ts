@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import {
   Engagement,
@@ -608,13 +609,34 @@ export class EngagementsService {
 
   /**
    * Lists engagements with pagination and filters.
+   *
    * Public/non-includePrivate feeds always exclude ON_HOLD, including explicit status filters.
    * Supports `projectId` and `projectIds` project filtering.
    * When both are provided, `projectIds` takes precedence.
+   * `appliedByMe=true` adds a database relation filter for the supplied current
+   * user id; false or omission leaves the existing list behavior unchanged.
+   *
+   * @param query Pagination, visibility, search, location, and current-user
+   * application filters.
+   * @param appliedByUserId Authenticated human user id resolved by the
+   * controller when `appliedByMe=true`.
+   * @returns Paginated engagement rows with application counts and project
+   * details.
+   * @throws UnauthorizedException When `appliedByMe=true` has no usable
+   * current-user id.
+   * @throws Prisma errors when the engagement query fails.
    */
   async findAll(
     query: EngagementQueryDto,
+    appliedByUserId?: string,
   ): Promise<PaginatedResponse<Engagement>> {
+    const normalizedAppliedByUserId = appliedByUserId?.trim();
+    if (query.appliedByMe === true && !normalizedAppliedByUserId) {
+      throw new UnauthorizedException(
+        "Authentication is required to filter engagements applied to by the current user.",
+      );
+    }
+
     const projectScope = this.resolveProjectScope(query);
 
     this.logger.debug("Listing engagements", {
@@ -624,6 +646,8 @@ export class EngagementsService {
       scopedProjectIds: projectScope.projectIds,
       status: query.status,
       search: query.search,
+      appliedByMe: query.appliedByMe,
+      appliedByUserId: normalizedAppliedByUserId,
     });
 
     if (projectScope.isEmpty) {
@@ -671,6 +695,14 @@ export class EngagementsService {
 
     if (query.requiredSkills?.length) {
       andFilters.push({ requiredSkills: { hasSome: query.requiredSkills } });
+    }
+
+    if (query.appliedByMe === true && normalizedAppliedByUserId) {
+      andFilters.push({
+        applications: {
+          some: { userId: normalizedAppliedByUserId },
+        },
+      });
     }
 
     const locationFilters: Prisma.EngagementWhereInput[] = [];

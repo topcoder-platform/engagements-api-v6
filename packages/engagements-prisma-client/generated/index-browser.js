@@ -137,8 +137,13 @@ exports.Prisma.EngagementScalarFieldEnum = {
   isPrivate: 'isPrivate',
   requiredMemberCount: 'requiredMemberCount',
   role: 'role',
+  roleLevel: 'roleLevel',
   workload: 'workload',
   compensationRange: 'compensationRange',
+  receivedDateFromAccount: 'receivedDateFromAccount',
+  account: 'account',
+  smu: 'smu',
+  spoc: 'spoc',
   createdAt: 'createdAt',
   createdBy: 'createdBy',
   updatedAt: 'updatedAt',
@@ -181,6 +186,9 @@ exports.Prisma.EngagementAssignmentScalarFieldEnum = {
   terminationReason: 'terminationReason',
   startDate: 'startDate',
   endDate: 'endDate',
+  wiproIdEndDate: 'wiproIdEndDate',
+  candidateWiproId: 'candidateWiproId',
+  source: 'source',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -240,6 +248,12 @@ exports.Role = exports.$Enums.Role = {
   SOFTWARE_DEVELOPER: 'SOFTWARE_DEVELOPER',
   DATA_SCIENTIST: 'DATA_SCIENTIST',
   DATA_ENGINEER: 'DATA_ENGINEER'
+};
+
+exports.RoleLevel = exports.$Enums.RoleLevel = {
+  JUNIOR: 'JUNIOR',
+  MID: 'MID',
+  SENIOR: 'SENIOR'
 };
 
 exports.Workload = exports.$Enums.Workload = {

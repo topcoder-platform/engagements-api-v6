@@ -4,6 +4,7 @@
   "private": true,
   "packageManager": "pnpm@11.15.1",
   "scripts": {
+    "prebuild": "pnpm run prisma:generate",
     "build": "nest build",
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
@@ -12,6 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "test": "jest",
+    "test:external-client": "node --test packages/engagements-prisma-client/factory.test.js",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"

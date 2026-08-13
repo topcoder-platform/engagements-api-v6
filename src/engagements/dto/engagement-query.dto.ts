@@ -9,7 +9,10 @@ import {
   IsString,
 } from "class-validator";
 import { EngagementStatus } from "@prisma/client";
-import { transformArray } from "../../common/validation.util";
+import {
+  transformArray,
+  transformBoolean,
+} from "../../common/validation.util";
 import { PaginationDto } from "./pagination.dto";
 
 export enum EngagementSortBy {
@@ -109,25 +112,19 @@ export class EngagementQueryDto extends PaginationDto {
   })
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === undefined || value === null || value === "") {
-      return undefined;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.toLowerCase();
-      if (normalized === "true") {
-        return true;
-      }
-      if (normalized === "false") {
-        return false;
-      }
-    }
-    return value;
-  })
+  @Transform(transformBoolean)
   includePrivate?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      "When true, return only engagements to which the authenticated current user has applied. False or omitted leaves the public list unfiltered. M2M tokens cannot use the true filter.",
+    default: false,
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(transformBoolean)
+  appliedByMe?: boolean;
 
   @ApiPropertyOptional({
     description: "Sort field",

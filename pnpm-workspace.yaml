@@ -1,5 +1,6 @@
 packages:
   - '.'
+  - 'packages/engagements-prisma-client'
 
 # The existing bus wrapper intentionally consumes tc-core-library-js from GitHub.
 blockExoticSubdeps: false

@@ -60,7 +60,11 @@ import {
 } from "./dto";
 import { EngagementsService } from "./engagements.service";
 import { Engagement, EngagementStatus } from "@prisma/client";
-import { getUserIdentifier, getUserRoles } from "../common/user.util";
+import {
+  getUserIdentifier,
+  getUserRoles,
+  normalizeUserId,
+} from "../common/user.util";
 
 @ApiTags("Engagements")
 @ApiExtraModels(
@@ -138,15 +142,41 @@ export class EngagementsController {
     return this.engagementsService.create(createDto, req.authUser ?? {});
   }
 
+  /**
+   * Lists engagement opportunities using public and optional current-user
+   * filters.
+   *
+   * @param query Pagination and engagement filters. `appliedByMe=true`
+   * requires an authenticated human user; false or omission keeps the public
+   * list behavior.
+   * @param req Request containing optional authentication claims populated by
+   * the authentication middleware.
+   * @returns A paginated engagement response with the existing public row
+   * shape and pagination metadata.
+   * @throws UnauthorizedException When `appliedByMe=true` is requested without
+   * a usable authenticated user id.
+   * @throws ForbiddenException When an M2M caller requests
+   * `appliedByMe=true`, or when private data is requested without permission.
+   */
   @Get()
   @ApiOperation({
     summary: "List engagements",
     description:
-      "Returns a paginated list of engagements. Authentication is optional.",
+      "Returns a paginated list of engagements. Authentication is optional unless appliedByMe=true; " +
+      "that filter accepts a human-user token and limits results to engagements with an application from that user. " +
+      "appliedByMe=false or omission preserves the anonymous public list.",
   })
   @ApiResponse({
     status: 200,
     description: "Paginated engagements retrieved.",
+  })
+  @ApiUnauthorizedResponse({
+    description:
+      "appliedByMe=true was requested without an authenticated user id.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "M2M tokens cannot use appliedByMe=true, or the caller cannot include private engagements.",
   })
   async findAll(
     @Query() query: EngagementQueryDto,
@@ -155,7 +185,11 @@ export class EngagementsController {
     if (query.includePrivate || query.status === EngagementStatus.ON_HOLD) {
       this.assertCanIncludePrivate(req.authUser);
     }
-    return this.engagementsService.findAll(query);
+    const appliedByUserId = this.resolveAppliedByUserId(
+      query.appliedByMe,
+      req.authUser,
+    );
+    return this.engagementsService.findAll(query, appliedByUserId);
   }
 
   @Get("active")
@@ -825,6 +859,51 @@ export class EngagementsController {
         "You do not have the required permissions to access this resource.",
       );
     }
+  }
+
+  /**
+   * Resolves the human member id used by the `appliedByMe` list filter.
+   *
+   * The endpoint remains anonymous when the filter is false or omitted. A true
+   * value requires a human token containing a usable user id; machine tokens
+   * cannot represent a current member.
+   *
+   * @param appliedByMe Whether the current-user application filter is enabled.
+   * @param authUser Optional authentication claims attached to the request.
+   * @returns The normalized current-user id when filtering, otherwise
+   * `undefined`.
+   * @throws UnauthorizedException When filtering is requested without a human
+   * user id.
+   * @throws ForbiddenException When an M2M token requests the member filter.
+   */
+  private resolveAppliedByUserId(
+    appliedByMe: boolean | undefined,
+    authUser?: Record<string, any>,
+  ): string | undefined {
+    if (appliedByMe !== true) {
+      return undefined;
+    }
+
+    if (!authUser) {
+      throw new UnauthorizedException(
+        "Authentication is required to filter engagements applied to by the current user.",
+      );
+    }
+
+    if (authUser.isMachine) {
+      throw new ForbiddenException(
+        "M2M tokens cannot filter engagements applied to by a current user.",
+      );
+    }
+
+    const userId = normalizeUserId(authUser.userId)?.trim();
+    if (!userId) {
+      throw new UnauthorizedException(
+        "An authenticated user ID is required to filter engagements applied to by the current user.",
+      );
+    }
+
+    return userId;
   }
 
   /**
