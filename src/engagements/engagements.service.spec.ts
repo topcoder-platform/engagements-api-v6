@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { AssignmentStatus, EngagementStatus } from "@prisma/client";
 import { ERROR_MESSAGES } from "../common/constants";
 import {
@@ -75,6 +75,7 @@ describe("EngagementsService", () => {
   };
   let skillsService: {
     getSkillNamesByIds: jest.Mock;
+    resolveSkillFilterValues: jest.Mock;
     validateSkillsExist: jest.Mock;
   };
   let memberService: {
@@ -222,6 +223,11 @@ describe("EngagementsService", () => {
     };
     skillsService = {
       getSkillNamesByIds: jest.fn().mockResolvedValue(new Map()),
+      resolveSkillFilterValues: jest.fn().mockResolvedValue({
+        skillIds: [],
+        skillNamesById: new Map(),
+        unresolvedNames: [],
+      }),
       validateSkillsExist: jest.fn().mockResolvedValue({ invalid: [] }),
     };
     memberService = {
@@ -827,6 +833,66 @@ describe("EngagementsService", () => {
     expect(tx.engagement.update).toHaveBeenCalled();
   });
 
+  it("resolves required skill names before filtering the globally paginated list", async () => {
+    const reactSkillId = "11111111-1111-4111-8111-111111111111";
+    skillsService.resolveSkillFilterValues.mockResolvedValue({
+      skillIds: [reactSkillId],
+      skillNamesById: new Map([[reactSkillId, "React"]]),
+      unresolvedNames: [],
+    });
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      requiredSkills: ["react"],
+      page: 2,
+      perPage: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(skillsService.resolveSkillFilterValues).toHaveBeenCalledWith([
+      "react",
+    ]);
+    const findManyQuery = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyQuery).toMatchObject({
+      skip: 10,
+      take: 10,
+      where: {
+        isPrivate: false,
+        AND: expect.arrayContaining([
+          { requiredSkills: { hasSome: [reactSkillId] } },
+        ]),
+      },
+    });
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: findManyQuery.where,
+    });
+  });
+
+  it("returns an empty page without a database scan for unresolved skill names", async () => {
+    skillsService.resolveSkillFilterValues.mockResolvedValue({
+      skillIds: [],
+      skillNamesById: new Map(),
+      unresolvedNames: ["not a standardized skill"],
+    });
+
+    const result = await service.findAll({
+      requiredSkills: ["not a standardized skill"],
+      page: 3,
+      perPage: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(result).toEqual({
+      data: [],
+      meta: { page: 3, perPage: 10, totalCount: 0, totalPages: 0 },
+    });
+    expect(db.engagement.findMany).not.toHaveBeenCalled();
+    expect(db.engagement.count).not.toHaveBeenCalled();
+  });
+
   it("does not include assignment details for public engagement listings", async () => {
     db.engagement.findMany.mockResolvedValue([
       {
@@ -842,14 +908,22 @@ describe("EngagementsService", () => {
         createdAt: new Date("2026-02-11T10:00:00.000Z"),
         updatedAt: new Date("2026-02-11T10:00:00.000Z"),
         createdBy: "123456",
+        createdByEmail: "creator@example.com",
         isPrivate: false,
         requiredMemberCount: 2,
+        receivedDateFromAccount: new Date("2026-02-10T00:00:00.000Z"),
+        account: "Internal account",
+        smu: "Internal SMU",
+        spoc: "Internal SPOC",
         _count: {
           applications: 3,
         },
       },
     ]);
     db.engagement.count.mockResolvedValue(1);
+    skillsService.getSkillNamesByIds.mockResolvedValue(
+      new Map([["skill-1", "React"]]),
+    );
 
     const result = await service.findAll({
       page: 1,
@@ -875,6 +949,48 @@ describe("EngagementsService", () => {
     expect(result.data[0]).not.toHaveProperty("assignedMemberHandle");
     expect(result.data[0]).not.toHaveProperty("assignedMembers");
     expect(result.data[0]).not.toHaveProperty("assignedMemberHandles");
+    expect(result.data[0]).not.toHaveProperty("receivedDateFromAccount");
+    expect(result.data[0]).not.toHaveProperty("account");
+    expect(result.data[0]).not.toHaveProperty("smu");
+    expect(result.data[0]).not.toHaveProperty("spoc");
+    expect(result.data[0]).not.toHaveProperty("createdByEmail");
+    expect(result.data[0]).toHaveProperty("skills", [
+      { id: "skill-1", name: "React" },
+    ]);
+    expect(memberService.getMemberEmailsByUserIds).not.toHaveBeenCalled();
+  });
+
+  it("hydrates safe skill display names for public engagement detail", async () => {
+    db.engagement.findUnique.mockResolvedValue({
+      id: "eng-public",
+      projectId: "project-1",
+      title: "Public engagement",
+      description: "Public description",
+      timeZones: ["UTC"],
+      countries: ["US"],
+      requiredSkills: ["skill-1"],
+      anticipatedStart: "IMMEDIATE",
+      status: EngagementStatus.OPEN,
+      createdAt: new Date("2026-02-11T10:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+      createdBy: "123456",
+      isPrivate: false,
+      assignments: [],
+    });
+    skillsService.getSkillNamesByIds.mockResolvedValue(
+      new Map([["skill-1", "React"]]),
+    );
+
+    const result = await service.findOne("eng-public", {
+      includeAssignments: false,
+      includeSensitiveFields: false,
+    });
+
+    expect(result).toHaveProperty("requiredSkills", ["skill-1"]);
+    expect(result).toHaveProperty("skills", [
+      { id: "skill-1", name: "React" },
+    ]);
+    expect(result).not.toHaveProperty("assignments");
   });
 
   it("filters assignments when loading an engagement for an assigned member", async () => {
@@ -1164,6 +1280,10 @@ describe("EngagementsService", () => {
         updatedAt: new Date("2026-02-11T10:00:00.000Z"),
         createdBy: "123456",
         isPrivate: true,
+        receivedDateFromAccount: new Date("2026-02-10T00:00:00.000Z"),
+        account: "Internal account",
+        smu: "Internal SMU",
+        spoc: "Internal SPOC",
         assignments: [
           {
             id: "assignment-1",
@@ -1186,6 +1306,9 @@ describe("EngagementsService", () => {
       },
     ]);
     db.engagement.count.mockResolvedValue(1);
+    memberService.getMemberEmailsByUserIds.mockResolvedValue(
+      new Map([["123456", "creator@example.com"]]),
+    );
 
     const result = await service.findAll({
       includePrivate: true,
@@ -1213,6 +1336,14 @@ describe("EngagementsService", () => {
     expect(result.data[0]).toHaveProperty("assignedMemberHandle", "member1");
     expect(result.data[0]).toHaveProperty("assignedMembers", ["100000"]);
     expect(result.data[0]).toHaveProperty("assignedMemberHandles", ["member1"]);
+    expect(result.data[0]).toHaveProperty("receivedDateFromAccount");
+    expect(result.data[0]).toHaveProperty("account", "Internal account");
+    expect(result.data[0]).toHaveProperty("smu", "Internal SMU");
+    expect(result.data[0]).toHaveProperty("spoc", "Internal SPOC");
+    expect(result.data[0]).toHaveProperty(
+      "createdByEmail",
+      "creator@example.com",
+    );
   });
 
   it("does not scope Talent Manager listings to member projects", async () => {
@@ -1325,6 +1456,71 @@ describe("EngagementsService", () => {
         }),
       }),
     );
+  });
+
+  it("filters public engagement listings by the authenticated applicant", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll(
+      {
+        appliedByMe: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      " 654321 ",
+    );
+
+    const findManyArg = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyArg.where).toMatchObject({ isPrivate: false });
+    expect(findManyArg.where.AND).toEqual(
+      expect.arrayContaining([
+        {
+          applications: {
+            some: { userId: "654321" },
+          },
+        },
+      ]),
+    );
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: findManyArg.where,
+    });
+  });
+
+  it("does not apply a current-user relation filter for appliedByMe=false", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      appliedByMe: false,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    const filters = db.engagement.findMany.mock.calls[0][0].where.AND;
+    expect(filters).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ applications: expect.anything() }),
+      ]),
+    );
+  });
+
+  it("rejects appliedByMe=true when no current-user id is supplied", async () => {
+    await expect(
+      service.findAll({
+        appliedByMe: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(db.engagement.findMany).not.toHaveBeenCalled();
   });
 
   it("does not allow public status=ON_HOLD listings to return ON_HOLD engagements", async () => {

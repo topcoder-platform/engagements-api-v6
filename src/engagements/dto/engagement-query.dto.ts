@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -9,8 +10,13 @@ import {
   IsString,
 } from "class-validator";
 import { EngagementStatus } from "@prisma/client";
-import { transformArray } from "../../common/validation.util";
+import {
+  transformArray,
+  transformBoolean,
+} from "../../common/validation.util";
 import { PaginationDto } from "./pagination.dto";
+
+export const MAX_ENGAGEMENT_SKILL_FILTER_VALUES = 20;
 
 export enum EngagementSortBy {
   CreatedAt = "createdAt",
@@ -76,11 +82,14 @@ export class EngagementQueryDto extends PaginationDto {
   search?: string;
 
   @ApiPropertyOptional({
-    description: "Filter by required skill IDs",
-    example: ["c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
+    description:
+      "Filter by up to 20 required standardized skill UUIDs or exact skill names (case-insensitive). Values are ORed. Names are resolved server-side with M2M authentication; unknown names match no engagement.",
+    example: ["React", "c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
   })
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(MAX_ENGAGEMENT_SKILL_FILTER_VALUES)
+  @IsString({ each: true })
   @Transform(transformArray)
   requiredSkills?: string[];
 
@@ -109,25 +118,19 @@ export class EngagementQueryDto extends PaginationDto {
   })
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => {
-    if (value === undefined || value === null || value === "") {
-      return undefined;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.toLowerCase();
-      if (normalized === "true") {
-        return true;
-      }
-      if (normalized === "false") {
-        return false;
-      }
-    }
-    return value;
-  })
+  @Transform(transformBoolean)
   includePrivate?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      "When true, return only engagements to which the authenticated current user has applied. False or omitted leaves the public list unfiltered. M2M tokens cannot use the true filter.",
+    default: false,
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(transformBoolean)
+  appliedByMe?: boolean;
 
   @ApiPropertyOptional({
     description: "Sort field",

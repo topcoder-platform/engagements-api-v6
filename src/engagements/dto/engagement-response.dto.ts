@@ -23,6 +23,28 @@ class EngagementProjectResponseDto {
   name?: string;
 }
 
+/**
+ * Safe standardized-skill reference exposed by public engagement reads.
+ *
+ * The engagement record continues to carry `requiredSkills` as ids for
+ * compatibility, while this reference gives discovery clients the canonical
+ * display name resolved by standardized-skills.
+ */
+export class EngagementSkillResponseDto {
+  @ApiProperty({
+    description: "Standardized skill ID",
+    example: "c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f",
+  })
+  id: string;
+
+  @ApiProperty({
+    description:
+      "Canonical standardized skill name, or the ID as a non-fatal hydration fallback",
+    example: "React",
+  })
+  name: string;
+}
+
 export class EngagementResponseDto {
   @ApiProperty({
     description: "Engagement ID",
@@ -101,6 +123,14 @@ export class EngagementResponseDto {
     example: ["c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
   })
   requiredSkills: string[];
+
+  @ApiPropertyOptional({
+    description:
+      "Hydrated required skills returned by public engagement list, active-list, and detail reads",
+    type: EngagementSkillResponseDto,
+    isArray: true,
+  })
+  skills?: EngagementSkillResponseDto[];
 
   @ApiProperty({
     description: "Anticipated start timeframe",

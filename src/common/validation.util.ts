@@ -25,6 +25,37 @@ export const transformArray = ({ value }: TransformFnParams) => {
   return value;
 };
 
+/**
+ * Converts query-string boolean literals to booleans for DTO validation.
+ *
+ * Empty values become `undefined`, existing booleans pass through, and the
+ * case-insensitive strings `true` and `false` are converted. Other values are
+ * returned unchanged so `@IsBoolean()` can report a validation error.
+ *
+ * @param params Class-transformer callback parameters containing the raw query
+ * value.
+ * @returns A boolean, `undefined`, or the original unsupported value.
+ * @throws This transformer does not throw.
+ */
+export const transformBoolean = ({ value }: TransformFnParams): unknown => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+    if (normalized === "true") {
+      return true;
+    }
+    if (normalized === "false") {
+      return false;
+    }
+  }
+  return value;
+};
+
 export const trimTransformer = ({
   value,
 }: {

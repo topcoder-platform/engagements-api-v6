@@ -4,7 +4,7 @@ generator client {
 
 generator externalClient {
   provider = "prisma-client-js"
-  output   = "../packages/engagements-prisma-client"
+  output   = "../packages/engagements-prisma-client/generated"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
