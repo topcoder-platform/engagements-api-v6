@@ -22,3 +22,7 @@ The client connects lazily. Applications own its lifecycle and must disconnect
 it during shutdown. An empty or non-string connection URL raises `TypeError`;
 Prisma reports its normal configuration and database errors during creation or
 query execution.
+
+The package supports Node.js 22.23.1 and newer so it can be consumed by newer
+v6 services. The Engagements API itself continues to use the exact Node.js
+version pinned in its root `.nvmrc`.
