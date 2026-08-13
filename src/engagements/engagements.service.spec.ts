@@ -75,6 +75,7 @@ describe("EngagementsService", () => {
   };
   let skillsService: {
     getSkillNamesByIds: jest.Mock;
+    resolveSkillFilterValues: jest.Mock;
     validateSkillsExist: jest.Mock;
   };
   let memberService: {
@@ -222,6 +223,11 @@ describe("EngagementsService", () => {
     };
     skillsService = {
       getSkillNamesByIds: jest.fn().mockResolvedValue(new Map()),
+      resolveSkillFilterValues: jest.fn().mockResolvedValue({
+        skillIds: [],
+        skillNamesById: new Map(),
+        unresolvedNames: [],
+      }),
       validateSkillsExist: jest.fn().mockResolvedValue({ invalid: [] }),
     };
     memberService = {
@@ -827,6 +833,66 @@ describe("EngagementsService", () => {
     expect(tx.engagement.update).toHaveBeenCalled();
   });
 
+  it("resolves required skill names before filtering the globally paginated list", async () => {
+    const reactSkillId = "11111111-1111-4111-8111-111111111111";
+    skillsService.resolveSkillFilterValues.mockResolvedValue({
+      skillIds: [reactSkillId],
+      skillNamesById: new Map([[reactSkillId, "React"]]),
+      unresolvedNames: [],
+    });
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      requiredSkills: ["react"],
+      page: 2,
+      perPage: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(skillsService.resolveSkillFilterValues).toHaveBeenCalledWith([
+      "react",
+    ]);
+    const findManyQuery = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyQuery).toMatchObject({
+      skip: 10,
+      take: 10,
+      where: {
+        isPrivate: false,
+        AND: expect.arrayContaining([
+          { requiredSkills: { hasSome: [reactSkillId] } },
+        ]),
+      },
+    });
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: findManyQuery.where,
+    });
+  });
+
+  it("returns an empty page without a database scan for unresolved skill names", async () => {
+    skillsService.resolveSkillFilterValues.mockResolvedValue({
+      skillIds: [],
+      skillNamesById: new Map(),
+      unresolvedNames: ["not a standardized skill"],
+    });
+
+    const result = await service.findAll({
+      requiredSkills: ["not a standardized skill"],
+      page: 3,
+      perPage: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(result).toEqual({
+      data: [],
+      meta: { page: 3, perPage: 10, totalCount: 0, totalPages: 0 },
+    });
+    expect(db.engagement.findMany).not.toHaveBeenCalled();
+    expect(db.engagement.count).not.toHaveBeenCalled();
+  });
+
   it("does not include assignment details for public engagement listings", async () => {
     db.engagement.findMany.mockResolvedValue([
       {
@@ -855,6 +921,9 @@ describe("EngagementsService", () => {
       },
     ]);
     db.engagement.count.mockResolvedValue(1);
+    skillsService.getSkillNamesByIds.mockResolvedValue(
+      new Map([["skill-1", "React"]]),
+    );
 
     const result = await service.findAll({
       page: 1,
@@ -885,7 +954,43 @@ describe("EngagementsService", () => {
     expect(result.data[0]).not.toHaveProperty("smu");
     expect(result.data[0]).not.toHaveProperty("spoc");
     expect(result.data[0]).not.toHaveProperty("createdByEmail");
+    expect(result.data[0]).toHaveProperty("skills", [
+      { id: "skill-1", name: "React" },
+    ]);
     expect(memberService.getMemberEmailsByUserIds).not.toHaveBeenCalled();
+  });
+
+  it("hydrates safe skill display names for public engagement detail", async () => {
+    db.engagement.findUnique.mockResolvedValue({
+      id: "eng-public",
+      projectId: "project-1",
+      title: "Public engagement",
+      description: "Public description",
+      timeZones: ["UTC"],
+      countries: ["US"],
+      requiredSkills: ["skill-1"],
+      anticipatedStart: "IMMEDIATE",
+      status: EngagementStatus.OPEN,
+      createdAt: new Date("2026-02-11T10:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+      createdBy: "123456",
+      isPrivate: false,
+      assignments: [],
+    });
+    skillsService.getSkillNamesByIds.mockResolvedValue(
+      new Map([["skill-1", "React"]]),
+    );
+
+    const result = await service.findOne("eng-public", {
+      includeAssignments: false,
+      includeSensitiveFields: false,
+    });
+
+    expect(result).toHaveProperty("requiredSkills", ["skill-1"]);
+    expect(result).toHaveProperty("skills", [
+      { id: "skill-1", name: "React" },
+    ]);
+    expect(result).not.toHaveProperty("assignments");
   });
 
   it("filters assignments when loading an engagement for an assigned member", async () => {

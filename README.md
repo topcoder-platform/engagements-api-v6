@@ -125,6 +125,33 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 
 ## Response Notes
 
+### Public skill filtering and display names
+
+The public opportunities list accepts standardized skill UUIDs, human-readable
+skill names, or a mixture of both:
+
+```http
+GET /v6/engagements/engagements?requiredSkills=React,11111111-1111-4111-8111-111111111111&page=1&perPage=20
+```
+
+- Supply `requiredSkills` as a comma-separated value or repeated query
+  parameter. Up to 20 values are accepted; larger requests receive HTTP 400.
+- Values use OR semantics. UUIDs are applied directly. Names must equal a
+  standardized skill name after trimming and case normalization; partial and
+  fuzzy suggestions are never accepted as filters.
+- Name resolution uses server-side M2M credentials and does not require or
+  forward a member token. The exact-name request is batched; bounded
+  case-insensitive fallback lookups are used only for names not returned by the
+  case-sensitive standardized-skills list seam.
+- Unknown names and dependency/authentication failures fail closed. An
+  all-name request with no resolved IDs returns an empty page without querying
+  engagements; in a mixed request, valid UUIDs/resolved names still participate
+  in the OR filter.
+- Public list, active-list, and detail rows keep `requiredSkills` as the
+  backward-compatible ID array and add `skills: [{ "id", "name" }]`. Display
+  hydration is batched across a page and is non-fatal; a missing display name
+  falls back to its ID. Protected/private response behavior is unchanged.
+
 ### Current-user application filter
 
 The public opportunity list supports an optional current-user filter:

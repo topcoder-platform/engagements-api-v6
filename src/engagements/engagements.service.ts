@@ -25,7 +25,10 @@ import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
 import { ProjectService } from "../integrations/project.service";
-import { SkillsService } from "../integrations/skills.service";
+import {
+  SkillsService,
+  type SkillFilterResolution,
+} from "../integrations/skills.service";
 import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
 import { AssignmentOfferResponseEmailService } from "../integrations/assignment-offer-response-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
@@ -132,6 +135,11 @@ type EngagementProjectReference = {
   name?: string;
 };
 
+type EngagementSkillReference = {
+  id: string;
+  name: string;
+};
+
 type AssignmentContextDetail = {
   assignmentId: string;
   engagementId: string;
@@ -188,6 +196,7 @@ type PublicEngagementRecord = Pick<
   applicationsCount?: number;
   project?: EngagementProjectReference;
   projectName?: string;
+  skills?: EngagementSkillReference[];
 };
 
 type FlexiAssignmentWithEngagement = EngagementAssignment & {
@@ -646,13 +655,16 @@ export class EngagementsService {
    * When both are provided, `projectIds` takes precedence.
    * `appliedByMe=true` adds a database relation filter for the supplied current
    * user id; false or omission leaves the existing list behavior unchanged.
+   * `requiredSkills` accepts ids or case-insensitive exact names. Names are
+   * resolved through standardized-skills before the database filter; an input
+   * set containing no resolvable values returns an empty page.
    *
    * @param query Pagination, visibility, search, location, and current-user
    * application filters.
    * @param appliedByUserId Authenticated human user id resolved by the
    * controller when `appliedByMe=true`.
-   * @returns Paginated engagement rows with application counts and project
-   * details.
+   * @returns Paginated engagement rows with application counts, project
+   * details, and hydrated public skill references.
    * @throws UnauthorizedException When `appliedByMe=true` has no usable
    * current-user id.
    * @throws Prisma errors when the engagement query fails.
@@ -683,6 +695,17 @@ export class EngagementsService {
 
     if (projectScope.isEmpty) {
       return this.emptyPaginatedResponse(query.page, query.perPage);
+    }
+
+    let skillFilterResolution: SkillFilterResolution | undefined;
+    if (query.requiredSkills?.length) {
+      skillFilterResolution =
+        await this.skillsService.resolveSkillFilterValues(
+          query.requiredSkills,
+        );
+      if (!skillFilterResolution.skillIds.length) {
+        return this.emptyPaginatedResponse(query.page, query.perPage);
+      }
     }
 
     const isPublicFeed = query.includePrivate !== true;
@@ -724,8 +747,10 @@ export class EngagementsService {
       });
     }
 
-    if (query.requiredSkills?.length) {
-      andFilters.push({ requiredSkills: { hasSome: query.requiredSkills } });
+    if (skillFilterResolution?.skillIds.length) {
+      andFilters.push({
+        requiredSkills: { hasSome: skillFilterResolution.skillIds },
+      });
     }
 
     if (query.appliedByMe === true && normalizedAppliedByUserId) {
@@ -819,11 +844,17 @@ export class EngagementsService {
       : engagements;
     const hydratedEngagementsWithProjectDetails =
       await this.hydrateProjectDetails(responseEngagements);
+    const publicEngagements = includeAssignments
+      ? []
+      : await this.hydratePublicSkillReferences(
+          hydratedEngagementsWithProjectDetails,
+          skillFilterResolution?.skillNamesById,
+        );
 
     return {
       data: includeAssignments
         ? hydratedEngagementsWithProjectDetails
-        : hydratedEngagementsWithProjectDetails.map((engagement) =>
+        : publicEngagements.map((engagement) =>
             this.serializePublicEngagement(engagement),
           ),
       meta: {
@@ -1027,7 +1058,10 @@ export class EngagementsService {
     };
 
     if (options.includeSensitiveFields === false) {
-      return this.serializePublicEngagement(normalizedEngagement);
+      const [publicEngagement] = await this.hydratePublicSkillReferences([
+        normalizedEngagement,
+      ]);
+      return this.serializePublicEngagement(publicEngagement);
     }
 
     if (!options.includeCreatorEmail) {
@@ -2198,6 +2232,11 @@ export class EngagementsService {
 
   /**
    * Lists public engagements that are currently OPEN.
+   *
+   * @returns Public-safe engagement rows with project and standardized-skill
+   * display metadata.
+   * @throws Prisma errors when the engagement query fails; skill and project
+   * hydration failures are non-fatal and use documented fallbacks.
    */
   async findAllActive(): Promise<Engagement[]> {
     this.logger.debug("Listing active engagements");
@@ -2209,7 +2248,9 @@ export class EngagementsService {
       orderBy: { createdAt: "desc" },
     });
     const hydratedEngagements = await this.hydrateProjectDetails(engagements);
-    return hydratedEngagements.map((engagement) =>
+    const engagementsWithSkills =
+      await this.hydratePublicSkillReferences(hydratedEngagements);
+    return engagementsWithSkills.map((engagement) =>
       this.serializePublicEngagement(engagement),
     );
   }
@@ -2233,6 +2274,7 @@ export class EngagementsService {
       applicationsCount?: number;
       project?: EngagementProjectReference;
       projectName?: string;
+      skills?: EngagementSkillReference[];
     },
   >(
     engagement: T,
@@ -2249,6 +2291,9 @@ export class EngagementsService {
       timeZones: engagement.timeZones,
       countries: engagement.countries,
       requiredSkills: engagement.requiredSkills,
+      ...(engagement.skills !== undefined
+        ? { skills: engagement.skills }
+        : {}),
       anticipatedStart: engagement.anticipatedStart,
       status: engagement.status,
       isPrivate: engagement.isPrivate,
@@ -2273,6 +2318,57 @@ export class EngagementsService {
     };
 
     return publicEngagement as T;
+  }
+
+  /**
+   * Adds safe standardized-skill display references to public engagement rows.
+   *
+   * All missing ids across the supplied page are hydrated in one
+   * standardized-skills request. Names already resolved while interpreting a
+   * list filter are reused request-locally. Hydration is non-fatal: an
+   * unavailable or incomplete dependency falls back to the raw id as `name` so
+   * public discovery remains available without changing `requiredSkills`.
+   *
+   * @param engagements Public engagement rows whose required skill ids should
+   * be hydrated.
+   * @param seedSkillNamesById Optional request-local canonical names already
+   * resolved while building the database filter.
+   * @returns New engagement rows with ordered, deduplicated `skills` entries.
+   * @throws Does not throw for standardized-skills failures; the database row
+   * data is preserved and raw-id display fallbacks are used.
+   */
+  private async hydratePublicSkillReferences<
+    T extends { requiredSkills: string[] },
+  >(
+    engagements: T[],
+    seedSkillNamesById: Map<string, string> = new Map(),
+  ): Promise<Array<T & { skills: EngagementSkillReference[] }>> {
+    const skillNamesById = new Map(seedSkillNamesById);
+    const missingSkillIds = Array.from(
+      new Set(engagements.flatMap((engagement) => engagement.requiredSkills)),
+    ).filter((skillId) => !skillNamesById.has(skillId));
+
+    if (missingSkillIds.length) {
+      try {
+        const hydratedSkillNames =
+          await this.skillsService.getSkillNamesByIds(missingSkillIds);
+        hydratedSkillNames.forEach((name, skillId) => {
+          skillNamesById.set(skillId, name);
+        });
+      } catch (error) {
+        this.logger.warn("Failed to hydrate public engagement skill names.", {
+          error: error instanceof Error ? error.message : error,
+        });
+      }
+    }
+
+    return engagements.map((engagement) => ({
+      ...engagement,
+      skills: this.buildFlexiSkillReferences(
+        engagement.requiredSkills,
+        skillNamesById,
+      ),
+    }));
   }
 
   private normalizeAssignmentOfferDetails(details?: AssignmentDetailsDto): {

@@ -1,7 +1,10 @@
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
-import { EngagementQueryDto } from "./engagement-query.dto";
+import {
+  EngagementQueryDto,
+  MAX_ENGAGEMENT_SKILL_FILTER_VALUES,
+} from "./engagement-query.dto";
 
 describe("EngagementQueryDto validation", () => {
   it.each([
@@ -43,5 +46,36 @@ describe("EngagementQueryDto validation", () => {
 
     expect(errors).toHaveLength(0);
     expect(dto.includePrivate).toBe(false);
+  });
+
+  it("accepts comma-separated skill ids and names within the public lookup bound", async () => {
+    const dto = plainToInstance(EngagementQueryDto, {
+      requiredSkills: "React,11111111-1111-4111-8111-111111111111",
+    });
+
+    const errors = await validate(dto);
+
+    expect(errors).toHaveLength(0);
+    expect(dto.requiredSkills).toEqual([
+      "React",
+      "11111111-1111-4111-8111-111111111111",
+    ]);
+  });
+
+  it("rejects more than 20 required skill filter values", async () => {
+    const dto = plainToInstance(EngagementQueryDto, {
+      requiredSkills: Array.from(
+        { length: MAX_ENGAGEMENT_SKILL_FILTER_VALUES + 1 },
+        (_, index) => `Skill ${index}`,
+      ),
+    });
+
+    const errors = await validate(dto);
+
+    expect(errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ property: "requiredSkills" }),
+      ]),
+    );
   });
 });

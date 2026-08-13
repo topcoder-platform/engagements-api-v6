@@ -148,7 +148,8 @@ export class EngagementsController {
    *
    * @param query Pagination and engagement filters. `appliedByMe=true`
    * requires an authenticated human user; false or omission keeps the public
-   * list behavior.
+   * list behavior. `requiredSkills` accepts at most 20 standardized skill UUIDs
+   * or case-insensitive exact names.
    * @param req Request containing optional authentication claims populated by
    * the authentication middleware.
    * @returns A paginated engagement response with the existing public row
@@ -164,11 +165,15 @@ export class EngagementsController {
     description:
       "Returns a paginated list of engagements. Authentication is optional unless appliedByMe=true; " +
       "that filter accepts a human-user token and limits results to engagements with an application from that user. " +
-      "appliedByMe=false or omission preserves the anonymous public list. Public rows omit internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
+      "appliedByMe=false or omission preserves the anonymous public list. requiredSkills accepts at most 20 UUIDs or case-insensitive exact standardized-skill names. Public rows add safe skill display names while omitting internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
   })
   @ApiResponse({
     status: 200,
     description: "Paginated engagements retrieved.",
+  })
+  @ApiBadRequestResponse({
+    description:
+      "Invalid query, including more than 20 requiredSkills filter values.",
   })
   @ApiUnauthorizedResponse({
     description:
@@ -196,7 +201,7 @@ export class EngagementsController {
   @ApiOperation({
     summary: "List active engagements",
     description:
-      "Returns public active engagements only. Authentication is optional, and internal account metadata and creator email are omitted.",
+      "Returns public active engagements with safe skill display names. Authentication is optional, and internal account metadata and creator email are omitted.",
   })
   @ApiResponse({
     status: 200,
@@ -541,7 +546,7 @@ export class EngagementsController {
     description:
       "Retrieves a single engagement by ID. Authentication is optional for public engagements. " +
       "Private engagements are limited to privileged users, M2M clients, and assigned members. " +
-      "Public responses omit internal account metadata and creator email; authorized protected/private responses retain them.",
+      "Public responses add safe skill display names while omitting internal account metadata and creator email; authorized protected/private responses retain their existing contract.",
   })
   @ApiResponse({
     status: 200,

@@ -11,6 +11,15 @@ type SkillResponse = {
   name?: string | null;
 };
 
+export type SkillFilterResolution = {
+  skillIds: string[];
+  skillNamesById: Map<string, string>;
+  unresolvedNames: string[];
+};
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 @Injectable()
 export class SkillsService {
   private readonly logger = new Logger(SkillsService.name);
@@ -93,6 +102,201 @@ export class SkillsService {
     });
 
     return { valid, invalid };
+  }
+
+  /**
+   * Resolves engagement skill-filter values to standardized skill ids.
+   *
+   * UUID inputs pass through without a remote lookup. Remaining values are
+   * sent together as repeated exact `name` parameters to standardized-skills.
+   * Names not returned by that case-sensitive seam use bounded fuzzy-match
+   * requests, whose results are accepted only when their normalized name is an
+   * exact case-insensitive match. A failed lookup or an unknown name is
+   * reported as unresolved instead of broadening the engagement query; callers
+   * can return an empty page when no ids resolve. Requests use this service's
+   * M2M credentials and never forward the public caller's credentials.
+   *
+   * @param filterValues UUIDs or human-readable standardized skill names from
+   * an engagement list query.
+   * @returns Resolved ids in input order, canonical names keyed by resolved id,
+   * and normalized names that could not be resolved.
+   * @throws Does not throw for authentication or standardized-skills failures;
+   * those failures leave all name inputs unresolved while UUIDs pass through.
+   */
+  async resolveSkillFilterValues(
+    filterValues: string[],
+  ): Promise<SkillFilterResolution> {
+    const normalizedValues = Array.from(
+      new Set(
+        (filterValues ?? [])
+          .map((value) => (typeof value === "string" ? value.trim() : ""))
+          .filter((value) => value.length > 0),
+      ),
+    );
+    const nameByNormalizedName = new Map<string, string>();
+
+    normalizedValues.forEach((value) => {
+      if (!UUID_PATTERN.test(value)) {
+        const normalizedName = value.toLowerCase();
+        if (!nameByNormalizedName.has(normalizedName)) {
+          nameByNormalizedName.set(normalizedName, value);
+        }
+      }
+    });
+
+    const requestedNames = Array.from(nameByNormalizedName.values());
+    const resolvedSkillByName = new Map<
+      string,
+      { id: string; name: string }
+    >();
+
+    if (requestedNames.length) {
+      try {
+        const apiBaseUrl = this.configService.get<string>(
+          "TOPCODER_API_URL_BASE",
+          "https://api.topcoder-dev.com",
+        );
+        const token = await this.getM2MToken();
+        const normalizedBaseUrl = apiBaseUrl.replace(/\/$/, "");
+        const skillsBaseUrl = `${normalizedBaseUrl}/v5/standardized-skills`;
+        const query = new URLSearchParams({ disablePagination: "true" });
+        requestedNames.forEach((name) => query.append("name", name));
+
+        const response = await firstValueFrom(
+          this.httpService.get(`${skillsBaseUrl}/skills?${query.toString()}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        );
+
+        this.mergeExactSkillMatches(
+          this.extractSkillList(response.data),
+          nameByNormalizedName,
+          resolvedSkillByName,
+        );
+
+        const unresolvedRequestedNames = requestedNames.filter(
+          (name) => !resolvedSkillByName.has(name.toLowerCase()),
+        );
+        const fuzzyMatchResults = await Promise.allSettled(
+          unresolvedRequestedNames.map(async (name) => {
+            const fuzzyQuery = new URLSearchParams({
+              term: name,
+              size: "20",
+            });
+            const fuzzyResponse = await firstValueFrom(
+              this.httpService.get(
+                `${skillsBaseUrl}/skills/fuzzymatch?${fuzzyQuery.toString()}`,
+                { headers: { Authorization: `Bearer ${token}` } },
+              ),
+            );
+            return this.extractSkillList(fuzzyResponse.data);
+          }),
+        );
+
+        fuzzyMatchResults.forEach((result) => {
+          if (result.status === "fulfilled") {
+            this.mergeExactSkillMatches(
+              result.value,
+              nameByNormalizedName,
+              resolvedSkillByName,
+            );
+          }
+        });
+
+        const failedFuzzyLookups = fuzzyMatchResults.filter(
+          (result) => result.status === "rejected",
+        ).length;
+        if (failedFuzzyLookups) {
+          this.logger.warn("Some skill-filter fuzzy lookups failed.", {
+            failedLookups: failedFuzzyLookups,
+            attemptedLookups: fuzzyMatchResults.length,
+          });
+        }
+      } catch (error) {
+        if (isAxiosError(error)) {
+          this.logger.warn("Skill-filter name resolution failed.", {
+            status: error.response?.status,
+            data: error.response?.data,
+          });
+        } else {
+          this.logger.warn("Skill-filter name resolution failed.", {
+            error: error instanceof Error ? error.message : error,
+          });
+        }
+      }
+    }
+
+    const skillIds: string[] = [];
+    const seenSkillIds = new Set<string>();
+    const skillNamesById = new Map<string, string>();
+    const unresolvedNames: string[] = [];
+    const seenUnresolvedNames = new Set<string>();
+
+    normalizedValues.forEach((value) => {
+      if (UUID_PATTERN.test(value)) {
+        const normalizedId = value.toLowerCase();
+        if (!seenSkillIds.has(normalizedId)) {
+          seenSkillIds.add(normalizedId);
+          skillIds.push(normalizedId);
+        }
+        return;
+      }
+
+      const normalizedName = value.toLowerCase();
+      const resolvedSkill = resolvedSkillByName.get(normalizedName);
+      if (resolvedSkill) {
+        const normalizedId = resolvedSkill.id.toLowerCase();
+        if (!seenSkillIds.has(normalizedId)) {
+          seenSkillIds.add(normalizedId);
+          skillIds.push(normalizedId);
+        }
+        skillNamesById.set(normalizedId, resolvedSkill.name);
+        return;
+      }
+
+      if (!seenUnresolvedNames.has(normalizedName)) {
+        seenUnresolvedNames.add(normalizedName);
+        unresolvedNames.push(value);
+      }
+    });
+
+    return { skillIds, skillNamesById, unresolvedNames };
+  }
+
+  /**
+   * Adds only exact normalized-name matches from a standardized-skills payload.
+   *
+   * This guard ensures fuzzy-match results cannot turn a partial or approximate
+   * suggestion into a broader engagement filter.
+   *
+   * @param skills Standardized-skills response rows to inspect.
+   * @param requestedNameByNormalizedName Requested names keyed in lowercase.
+   * @param resolvedSkillByName Mutable result map keyed in lowercase.
+   * @returns Nothing; matching result rows are added to the supplied map.
+   * @throws Does not throw; malformed response rows are skipped.
+   */
+  private mergeExactSkillMatches(
+    skills: SkillResponse[],
+    requestedNameByNormalizedName: Map<string, string>,
+    resolvedSkillByName: Map<string, { id: string; name: string }>,
+  ): void {
+    skills.forEach((skill) => {
+      const skillId = this.normalizeSkillId(skill.id ?? skill.skillId);
+      const skillName = this.normalizeSkillName(skill.name);
+      const normalizedName = skillName?.toLowerCase();
+
+      if (
+        skillId &&
+        skillName &&
+        normalizedName &&
+        requestedNameByNormalizedName.has(normalizedName)
+      ) {
+        resolvedSkillByName.set(normalizedName, {
+          id: skillId,
+          name: skillName,
+        });
+      }
+    });
   }
 
   /**
