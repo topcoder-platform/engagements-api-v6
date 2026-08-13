@@ -37,3 +37,32 @@ test('rejects an empty Engagements database connection string', () => {
     /Engagements database connection string is required/,
   );
 });
+
+/**
+ * Verifies driver timeout options reach the factory-owned PostgreSQL adapter
+ * without being forwarded as invalid generated PrismaClient options.
+ *
+ * @returns {Promise<void>} Resolves after the client is disconnected.
+ * @throws AssertionError when the adapter does not retain the driver options.
+ */
+test('passes bounded driver options to the PostgreSQL adapter', async () => {
+  const client = createEngagementsPrismaClient(
+    'postgresql://user:password@localhost:5432/engagements?schema=public',
+    {
+      driverOptions: {
+        connectionTimeoutMillis: 2500,
+        query_timeout: 4000,
+        statement_timeout: 4000,
+      },
+    },
+  );
+
+  assert.deepEqual(client._engineConfig.adapter.config, {
+    connectionString:
+      'postgresql://user:password@localhost:5432/engagements?schema=public',
+    connectionTimeoutMillis: 2500,
+    query_timeout: 4000,
+    statement_timeout: 4000,
+  });
+  await client.$disconnect();
+});
