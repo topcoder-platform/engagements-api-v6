@@ -1,5 +1,5 @@
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
-import { AssignmentStatus, EngagementStatus } from "@prisma/client";
+import { AssignmentStatus, EngagementStatus, Role } from "@prisma/client";
 import { ERROR_MESSAGES } from "../common/constants";
 import {
   FlexiEngagementBucket,
@@ -1483,6 +1483,33 @@ describe("EngagementsService", () => {
           },
         },
       ]),
+    );
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: findManyArg.where,
+    });
+  });
+
+  it("filters role before applying count and pagination", async () => {
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      page: 3,
+      perPage: 20,
+      role: Role.SOFTWARE_DEVELOPER,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    const findManyArg = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyArg).toEqual(
+      expect.objectContaining({
+        skip: 40,
+        take: 20,
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([{ role: Role.SOFTWARE_DEVELOPER }]),
+        }),
+      }),
     );
     expect(db.engagement.count).toHaveBeenCalledWith({
       where: findManyArg.where,

@@ -9,11 +9,8 @@ import {
   IsOptional,
   IsString,
 } from "class-validator";
-import { EngagementStatus } from "@prisma/client";
-import {
-  transformArray,
-  transformBoolean,
-} from "../../common/validation.util";
+import { EngagementStatus, Role } from "@prisma/client";
+import { transformArray, transformBoolean } from "../../common/validation.util";
 import { PaginationDto } from "./pagination.dto";
 
 export const MAX_ENGAGEMENT_SKILL_FILTER_VALUES = 20;
@@ -40,6 +37,7 @@ export const ENGAGEMENT_SORT_FIELDS: EngagementSortBy[] = [
  * `projectId` filters by a single project.
  * `projectIds` filters by multiple projects using an `IN` query.
  * When both are provided, `projectIds` takes precedence.
+ * `role` applies an exact persisted engagement-role filter before pagination.
  */
 export class EngagementQueryDto extends PaginationDto {
   @ApiPropertyOptional({
@@ -92,6 +90,15 @@ export class EngagementQueryDto extends PaginationDto {
   @IsString({ each: true })
   @Transform(transformArray)
   requiredSkills?: string[];
+
+  @ApiPropertyOptional({
+    description: "Filter by engagement role",
+    enum: Role,
+    example: Role.SOFTWARE_DEVELOPER,
+  })
+  @IsOptional()
+  @IsEnum(Role)
+  role?: Role;
 
   @ApiPropertyOptional({
     description: "Filter by countries",

@@ -1,3 +1,4 @@
+import { Role } from "@prisma/client";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
@@ -76,6 +77,20 @@ describe("EngagementQueryDto validation", () => {
       expect.arrayContaining([
         expect.objectContaining({ property: "requiredSkills" }),
       ]),
+    );
+  });
+
+  it("accepts a canonical engagement role and rejects unknown roles", async () => {
+    const accepted = plainToInstance(EngagementQueryDto, {
+      role: Role.SOFTWARE_DEVELOPER,
+    });
+    const rejected = plainToInstance(EngagementQueryDto, {
+      role: "SOFTWARE_ENGINEER",
+    });
+
+    await expect(validate(accepted)).resolves.toHaveLength(0);
+    await expect(validate(rejected)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: "role" })]),
     );
   });
 });
