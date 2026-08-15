@@ -658,9 +658,10 @@ export class EngagementsService {
    * `requiredSkills` accepts ids or case-insensitive exact names. Names are
    * resolved through standardized-skills before the database filter; an input
    * set containing no resolvable values returns an empty page.
+   * `role` applies an exact database filter before total-count and pagination.
    *
-   * @param query Pagination, visibility, search, location, and current-user
-   * application filters.
+   * @param query Pagination, visibility, search, location, role, skill, and
+   * current-user application filters.
    * @param appliedByUserId Authenticated human user id resolved by the
    * controller when `appliedByMe=true`.
    * @returns Paginated engagement rows with application counts, project
@@ -689,6 +690,7 @@ export class EngagementsService {
       scopedProjectIds: projectScope.projectIds,
       status: query.status,
       search: query.search,
+      role: query.role,
       appliedByMe: query.appliedByMe,
       appliedByUserId: normalizedAppliedByUserId,
     });
@@ -751,6 +753,10 @@ export class EngagementsService {
       andFilters.push({
         requiredSkills: { hasSome: skillFilterResolution.skillIds },
       });
+    }
+
+    if (query.role) {
+      andFilters.push({ role: query.role });
     }
 
     if (query.appliedByMe === true && normalizedAppliedByUserId) {
