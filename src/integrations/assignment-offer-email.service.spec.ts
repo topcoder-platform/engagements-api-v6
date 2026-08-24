@@ -111,4 +111,134 @@ describe("AssignmentOfferEmailService", () => {
       version: "v3",
     });
   });
+
+  it("CCs the engagement creator on offer emails", async () => {
+    memberService.getMemberByUserId.mockImplementation(
+      async (userId: string) => {
+        if (userId === "99999") {
+          return {
+            email: "creator@example.com",
+            firstName: "Chris",
+            lastName: "Creator",
+          };
+        }
+
+        return {
+          email: "member@example.com",
+          firstName: "Jane",
+          lastName: "Doe",
+        };
+      },
+    );
+
+    await service.sendAssignmentOfferEmail({
+      memberId: "12345",
+      createdBy: "99999",
+      engagementTitle: "Senior Designer",
+    });
+
+    expect(memberService.getMemberByUserId).toHaveBeenCalledWith("99999");
+    expect(eventBusService.postEvent).toHaveBeenCalledWith(
+      "external.action.email",
+      expect.objectContaining({
+        recipients: ["member@example.com"],
+        cc: ["creator@example.com"],
+        sendgrid_template_id: "offer-template",
+      }),
+    );
+  });
+
+  it("does not CC the engagement creator on assignment update emails", async () => {
+    memberService.getMemberByUserId.mockImplementation(
+      async (userId: string) => {
+        if (userId === "99999") {
+          return {
+            email: "creator@example.com",
+            firstName: "Chris",
+            lastName: "Creator",
+          };
+        }
+
+        return {
+          email: "member@example.com",
+          firstName: "Jane",
+          lastName: "Doe",
+        };
+      },
+    );
+
+    await service.sendAssignmentUpdatedEmail({
+      memberId: "12345",
+      createdBy: "99999",
+      engagementTitle: "Senior Designer",
+    });
+
+    const payload = eventBusService.postEvent.mock.calls[0][1];
+    expect(payload.cc).toBeUndefined();
+    expect(memberService.getMemberByUserId).toHaveBeenCalledTimes(1);
+    expect(memberService.getMemberByUserId).toHaveBeenCalledWith("12345");
+  });
+
+  it("omits CC when the creator user ID is not numeric", async () => {
+    await service.sendAssignmentOfferEmail({
+      memberId: "12345",
+      createdBy: "system",
+      engagementTitle: "Senior Designer",
+    });
+
+    const payload = eventBusService.postEvent.mock.calls[0][1];
+    expect(payload.cc).toBeUndefined();
+    expect(memberService.getMemberByUserId).toHaveBeenCalledTimes(1);
+    expect(memberService.getMemberByUserId).toHaveBeenCalledWith("12345");
+  });
+
+  it("omits CC when the creator email matches the member email", async () => {
+    memberService.getMemberByUserId.mockResolvedValue({
+      email: "member@example.com",
+      firstName: "Jane",
+      lastName: "Doe",
+    });
+
+    await service.sendAssignmentOfferEmail({
+      memberId: "12345",
+      createdBy: "99999",
+      engagementTitle: "Senior Designer",
+    });
+
+    const payload = eventBusService.postEvent.mock.calls[0][1];
+    expect(payload.recipients).toEqual(["member@example.com"]);
+    expect(payload.cc).toBeUndefined();
+  });
+
+  it("still sends the offer email when creator lookup fails", async () => {
+    memberService.getMemberByUserId.mockImplementation(
+      async (userId: string) => {
+        if (userId === "99999") {
+          throw new Error("member api unavailable");
+        }
+
+        return {
+          email: "member@example.com",
+          firstName: "Jane",
+          lastName: "Doe",
+        };
+      },
+    );
+
+    await service.sendAssignmentOfferEmail({
+      memberId: "12345",
+      createdBy: "99999",
+      engagementTitle: "Senior Designer",
+    });
+
+    expect(eventBusService.postEvent).toHaveBeenCalledWith(
+      "external.action.email",
+      expect.objectContaining({
+        recipients: ["member@example.com"],
+        sendgrid_template_id: "offer-template",
+      }),
+    );
+    const payload = eventBusService.postEvent.mock.calls[0][1];
+    expect(payload.cc).toBeUndefined();
+  });
 });

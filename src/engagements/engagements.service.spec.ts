@@ -534,6 +534,7 @@ describe("EngagementsService", () => {
       id: "eng-1",
       title: "Original engagement",
       isPrivate: true,
+      createdBy: "654321",
       requiredMemberCount: 1,
       requiredSkills: ["skill-1", "skill-2"],
       assignments: [
@@ -628,6 +629,7 @@ describe("EngagementsService", () => {
     ).toHaveBeenCalledWith([
       expect.objectContaining({
         assignmentId: "assignment-selected",
+        createdBy: "654321",
         memberId: "123456",
       }),
     ]);
@@ -657,6 +659,7 @@ describe("EngagementsService", () => {
         id: "eng-1",
         title: "Original engagement",
         isPrivate: true,
+        createdBy: "654321",
         requiredMemberCount: 1,
         requiredSkills: ["skill-1"],
         assignments: [existingAssignment],
@@ -734,6 +737,7 @@ describe("EngagementsService", () => {
       ).toHaveBeenCalledWith([
         expect.objectContaining({
           assignmentId: "assignment-selected",
+          createdBy: "654321",
           memberId: "123456",
         }),
       ]);
