@@ -10,6 +10,7 @@ export type AssignmentOfferRecipient = {
   assignmentId?: string | null;
   engagementId?: string | null;
   engagementTitle?: string | null;
+  createdBy?: string | null;
   assignmentStartDate?: Date | string | null;
   assignmentEndDate?: Date | string | null;
   durationMonths?: number | null;
@@ -177,6 +178,11 @@ export class AssignmentOfferEmailService {
       }
     }
 
+    const cc =
+      payloadType === "offer"
+        ? await this.resolveCreatorCcEmails(recipient.createdBy, email)
+        : [];
+
     const payload = {
       data:
         payloadType === "offer"
@@ -188,6 +194,7 @@ export class AssignmentOfferEmailService {
               handle,
             ),
       recipients: [email],
+      ...(cc.length ? { cc } : {}),
       sendgrid_template_id: templateId,
       version: "v3",
     };
@@ -202,6 +209,52 @@ export class AssignmentOfferEmailService {
       this.logger.error(
         `Failed to publish ${logLabel} email for member ${memberId}: ${message}`,
       );
+    }
+  }
+
+  /**
+   * Resolves the engagement creator's email for the offer-email CC field.
+   *
+   * @param createdBy - Engagement creator user ID stored on the engagement.
+   * @param memberEmail - Member recipient email, used to avoid duplicating the
+   *   To address in CC.
+   * @returns A one-item CC list when the creator email can be resolved,
+   *   otherwise an empty list.
+   */
+  private async resolveCreatorCcEmails(
+    createdBy?: string | null,
+    memberEmail?: string | null,
+  ): Promise<string[]> {
+    const creatorUserId = String(createdBy ?? "").trim();
+    if (!creatorUserId || !/^\d+$/.test(creatorUserId)) {
+      return [];
+    }
+
+    try {
+      const creatorDetails =
+        await this.memberService.getMemberByUserId(creatorUserId);
+      const creatorEmail = creatorDetails?.email?.trim() ?? "";
+      if (!creatorEmail) {
+        this.logger.warn(
+          `Engagement creator CC skipped: no email found for user ${creatorUserId}.`,
+        );
+        return [];
+      }
+
+      if (
+        memberEmail &&
+        creatorEmail.toLowerCase() === memberEmail.trim().toLowerCase()
+      ) {
+        return [];
+      }
+
+      return [creatorEmail];
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      this.logger.error(
+        `Failed to resolve engagement creator email for offer CC (createdBy=${creatorUserId}): ${message}`,
+      );
+      return [];
     }
   }
 

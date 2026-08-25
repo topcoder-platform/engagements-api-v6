@@ -560,6 +560,7 @@ export class EngagementsService {
         assignmentId: assignment.id,
         engagementId: assignment.engagementId,
         engagementTitle: engagement.title,
+        createdBy: engagement.createdBy,
         assignmentStartDate: assignment.startDate ?? null,
         durationMonths: assignment.durationMonths ?? null,
         paymentCycle: assignment.paymentCycle ?? DEFAULT_PAYMENT_CYCLE,

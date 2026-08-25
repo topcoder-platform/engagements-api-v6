@@ -293,6 +293,7 @@ describe("ApplicationsService", () => {
     };
     const engagement = {
       id: "eng-1",
+      createdBy: "654321",
       requiredMemberCount: 3,
       requiredSkills: ["skill-1"],
     };
@@ -336,6 +337,15 @@ describe("ApplicationsService", () => {
         memberHandle: "member-handle",
         skills: [{ id: "skill-1" }],
       },
+    );
+    expect(
+      assignmentOfferEmailService.sendAssignmentOfferEmail,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assignmentId: "assign-1",
+        createdBy: "654321",
+        memberId: "123",
+      }),
     );
   });
 
