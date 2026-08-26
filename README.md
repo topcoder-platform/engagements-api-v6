@@ -12,8 +12,8 @@ Engagements API for managing temporary contract work opportunities.
 
 ## Prerequisites
 
-- Node.js 22+
-- pnpm
+- Node.js 22.23.1 (use the version in `.nvmrc`)
+- pnpm 11.15.1
 
 ## Getting Started
 
@@ -35,6 +35,39 @@ pnpm prisma:migrate
 
 ```bash
 pnpm start:dev
+```
+
+## External Prisma client
+
+Services that aggregate engagement data directly can install the
+`packages/engagements-prisma-client` Git subdirectory as
+`@topcoder/engagements-api-v6`. Generated Prisma files are isolated in its
+`generated` directory, so regeneration does not overwrite the public package
+contract. The package re-exports all engagement models, enums, Prisma helpers,
+and `PrismaClient`, together with the supported factory:
+
+```ts
+import { createEngagementsPrismaClient } from '@topcoder/engagements-api-v6';
+
+const engagements = createEngagementsPrismaClient(
+  process.env.ENGAGEMENTS_DATABASE_URL,
+  { log: ['warn', 'error'] },
+);
+```
+
+`createEngagementsPrismaClient(connectionString, options?)` creates the Prisma
+7 PostgreSQL driver adapter, preserves the optional `schema` query parameter in
+the connection URL, and returns a disconnected client that connects lazily on
+its first query. Call `$disconnect()` during application shutdown. The factory
+throws `TypeError` when `connectionString` is empty or not a string; Prisma may
+raise its normal configuration and database errors while creating or using the
+client. Connection-defining `adapter` and `accelerateUrl` options are owned by
+the factory and intentionally excluded from its options type.
+
+Run the package smoke test without connecting to a database with:
+
+```bash
+pnpm test:external-client
 ```
 
 ## Configuration
@@ -91,6 +124,83 @@ M2M access uses Auth0 client credentials. Ensure the client is configured with t
 - Flexi Talent read endpoints are stricter for human tokens: only Administrators and Talent Managers are allowed. M2M callers must include `read:engagements`.
 
 ## Response Notes
+
+### Public skill filtering and display names
+
+The public opportunities list accepts standardized skill UUIDs, human-readable
+skill names, or a mixture of both:
+
+```http
+GET /v6/engagements/engagements?requiredSkills=React,11111111-1111-4111-8111-111111111111&page=1&perPage=20
+```
+
+- Supply `requiredSkills` as a comma-separated value or repeated query
+  parameter. Up to 20 values are accepted; larger requests receive HTTP 400.
+- Values use OR semantics. UUIDs are applied directly. Names must equal a
+  standardized skill name after trimming and case normalization; partial and
+  fuzzy suggestions are never accepted as filters.
+- Name resolution uses server-side M2M credentials and does not require or
+  forward a member token. The exact-name request is batched; bounded
+  case-insensitive fallback lookups are used only for names not returned by the
+  case-sensitive standardized-skills list seam.
+- Unknown names and dependency/authentication failures fail closed. An
+  all-name request with no resolved IDs returns an empty page without querying
+  engagements; in a mixed request, valid UUIDs/resolved names still participate
+  in the OR filter.
+- Public list, active-list, and detail rows keep `requiredSkills` as the
+  backward-compatible ID array and add `skills: [{ "id", "name" }]`. Display
+  hydration is batched across a page and is non-fatal; a missing display name
+  falls back to its ID. Protected/private response behavior is unchanged.
+
+### Current-user application filter
+
+The public opportunity list supports an optional current-user filter:
+
+```http
+GET /v6/engagements/engagements?appliedByMe=true&page=1&perPage=20
+Authorization: Bearer <member JWT>
+```
+
+- `appliedByMe=true` requires an authenticated human-user JWT with a user id and
+  returns only engagements having an application from that user. Anonymous
+  requests receive HTTP 401 and M2M tokens receive HTTP 403.
+- `appliedByMe=false`, or omitting the parameter, applies no current-user
+  filter. Authentication remains optional and the existing public-list privacy,
+  status, search, sorting, and pagination behavior is unchanged.
+- The response contract remains the normal engagement list shape:
+
+```json
+{
+  "data": [
+    {
+      "id": "engagement-id",
+      "title": "Frontend developer",
+      "applicationsCount": 3,
+      "project": { "id": "project-id", "name": "Example project" },
+      "projectName": "Example project"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "perPage": 20,
+    "totalCount": 1,
+    "totalPages": 1
+  }
+}
+```
+
+The existing authenticated `GET /v6/engagements/applications` endpoint remains
+the companion route for retrieving the current user's paginated application
+records. The engagement-list filter performs its relation check in the same
+database query and does not expose another member's application details.
+
+Anonymous and ordinary-member responses from `GET /engagements`,
+`GET /engagements/active`, and public `GET /engagements/:id` reads are produced
+from an explicit public allow-list. They never include `account`, `smu`, `spoc`,
+`receivedDateFromAccount`, `createdByEmail`, or assignment details. Privileged
+`includePrivate=true` listings, authorized manager/M2M detail reads, assigned
+members reading their own private engagement, and `GET /engagements/my-assignments`
+retain the protected fields needed by those workflows.
 
 - `GET /engagements`, `GET /engagements/active`, and `GET /engagements/my-assignments` include project metadata on each engagement record:
   - `projectName` (if available)

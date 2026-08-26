@@ -689,6 +689,7 @@ export class ApplicationsService {
         assignmentId,
         engagementId: engagement.id,
         engagementTitle: engagement.title,
+        createdBy: engagement.createdBy,
         assignmentStartDate: assignmentResult.assignment?.startDate ?? null,
         durationMonths: assignmentResult.assignment?.durationMonths ?? null,
         paymentCycle: assignmentResult.assignment?.paymentCycle ?? null,

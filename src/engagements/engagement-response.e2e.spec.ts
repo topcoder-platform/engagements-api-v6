@@ -132,6 +132,24 @@ describe("Engagement Response (e2e)", () => {
     expect(response.body.roleLevel).toBeNull();
   });
 
+  it("omits protected engagement fields from anonymous public detail", async () => {
+    const response = await request(app.getHttpServer())
+      .get("/v6/engagements/engagements/eng-1")
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      id: "eng-1",
+      role: Role.SOFTWARE_DEVELOPER,
+      workload: Workload.FULL_TIME,
+    });
+    expect(response.body).not.toHaveProperty("receivedDateFromAccount");
+    expect(response.body).not.toHaveProperty("account");
+    expect(response.body).not.toHaveProperty("smu");
+    expect(response.body).not.toHaveProperty("spoc");
+    expect(response.body).not.toHaveProperty("createdByEmail");
+    expect(response.body).not.toHaveProperty("assignments");
+  });
+
   it("allows an assigned member to view a private engagement", async () => {
     const privateEngagement = {
       id: "eng-private",

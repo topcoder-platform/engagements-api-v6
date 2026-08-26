@@ -1,0 +1,41 @@
+# `@topcoder/engagements-api-v6`
+
+This package is the supported external Prisma client for the Engagements API v6
+schema. It re-exports the generated Prisma surface and provides
+`createEngagementsPrismaClient(connectionString, options?)`, which configures
+the Prisma 7 PostgreSQL driver adapter and honors the connection URL's optional
+`schema` query parameter.
+
+```ts
+import { createEngagementsPrismaClient } from '@topcoder/engagements-api-v6';
+
+const client = createEngagementsPrismaClient(
+  process.env.ENGAGEMENTS_DATABASE_URL,
+);
+const openCount = await client.engagement.count({
+  where: { status: 'OPEN', isPrivate: false },
+});
+await client.$disconnect();
+```
+
+Callers that need bounded database work can pass PostgreSQL pool settings
+without constructing the Prisma 7 adapter themselves:
+
+```ts
+const client = createEngagementsPrismaClient(databaseUrl, {
+  driverOptions: {
+    connectionTimeoutMillis: 5000,
+    query_timeout: 5000,
+    statement_timeout: 5000,
+  },
+});
+```
+
+The client connects lazily. Applications own its lifecycle and must disconnect
+it during shutdown. An empty or non-string connection URL raises `TypeError`;
+Prisma reports its normal configuration and database errors during creation or
+query execution.
+
+The package supports Node.js 22.23.1 and newer so it can be consumed by newer
+v6 services. The Engagements API itself continues to use the exact Node.js
+version pinned in its root `.nvmrc`.

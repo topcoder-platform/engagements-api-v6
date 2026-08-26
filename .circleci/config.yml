@@ -65,7 +65,7 @@ workflows:
             only:
               - develop
               - PM-4669_payment-cycles
-              - v9-engagements
+              - PM-5906
 
     # Production builds are exectuted only on tagged commits to the
     # master branch.
