@@ -12,7 +12,7 @@ Engagements API for managing temporary contract work opportunities.
 
 ## Prerequisites
 
-- Node.js 22.23.1 (use the version in `.nvmrc`)
+- Node.js 26.5.1 (use the version in `.nvmrc`)
 - pnpm 11.15.1
 
 ## Getting Started
