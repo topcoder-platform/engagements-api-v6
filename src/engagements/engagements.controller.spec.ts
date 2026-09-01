@@ -64,6 +64,22 @@ describe("EngagementsController appliedByMe filter", () => {
     expect(findAll).toHaveBeenCalledWith(query, "654321");
   });
 
+  it("allows includePrivate=true when appliedByMe=true resolves a human user id", async () => {
+    const query = {
+      appliedByMe: true,
+      includePrivate: true,
+      page: 1,
+      perPage: 20,
+    } as any;
+
+    await controller.findAll(
+      query,
+      buildRequest({ isMachine: false, role: "Member", userId: "654321" }),
+    );
+
+    expect(findAll).toHaveBeenCalledWith(query, "654321");
+  });
+
   it("rejects anonymous appliedByMe=true requests", async () => {
     await expect(
       controller.findAll(

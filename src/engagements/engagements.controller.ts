@@ -189,13 +189,16 @@ export class EngagementsController {
     @Query() query: EngagementQueryDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<PaginatedResponse<Engagement>> {
-    if (query.includePrivate || query.status === EngagementStatus.ON_HOLD) {
-      this.assertCanIncludePrivate(req.authUser);
-    }
     const appliedByUserId = this.resolveAppliedByUserId(
       query.appliedByMe,
       req.authUser,
     );
+    if (
+      (query.includePrivate || query.status === EngagementStatus.ON_HOLD) &&
+      !appliedByUserId
+    ) {
+      this.assertCanIncludePrivate(req.authUser);
+    }
     return this.engagementsService.findAll(query, appliedByUserId);
   }
 

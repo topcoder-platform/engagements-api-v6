@@ -521,6 +521,19 @@ describe("Authentication & Authorization (e2e)", () => {
         .get("/engagements?includePrivate=true")
         .expect(401);
     });
+
+    it("allows member user to request includePrivate=true when appliedByMe=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true&appliedByMe=true")
+        .set("Authorization", "Bearer member-user")
+        .expect(200);
+    });
+
+    it("returns 401 for anonymous request with includePrivate=true and appliedByMe=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?includePrivate=true&appliedByMe=true")
+        .expect(401);
+    });
   });
 
   describe("Role-Based Access", () => {
