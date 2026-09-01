@@ -1574,6 +1574,218 @@ describe("EngagementsService", () => {
     expect(result.data[0]).not.toHaveProperty("applications");
   });
 
+  it("returns member-scoped private assignments and application status for includePrivate appliedByMe listings", async () => {
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Private engagement",
+        description: "Private description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: EngagementStatus.OPEN,
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "123456",
+        createdByEmail: "manager@example.com",
+        isPrivate: true,
+        account: "Internal account",
+        smu: "NA",
+        spoc: "Manager",
+        assignments: [
+          {
+            id: "assignment-1",
+            engagementId: "eng-1",
+            memberId: "654321",
+            memberHandle: "member1",
+            status: AssignmentStatus.COMPLETED,
+            createdAt: new Date("2026-02-11T11:00:00.000Z"),
+            updatedAt: new Date("2026-02-12T11:00:00.000Z"),
+          },
+        ],
+        applications: [{ status: ApplicationStatus.ACCEPTED }],
+        _count: { applications: 1 },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([["project-1", "Platform UI Refresh"]]),
+    );
+    skillsService.getSkillNamesByIds.mockResolvedValue(
+      new Map([["skill-1", "React"]]),
+    );
+
+    const result = await service.findAll(
+      {
+        appliedByMe: true,
+        includePrivate: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      } as any,
+      "654321",
+    );
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: {
+          _count: {
+            select: {
+              applications: true,
+            },
+          },
+          applications: {
+            where: { userId: "654321" },
+            select: { status: true },
+            take: 1,
+          },
+          assignments: {
+            where: { memberId: "654321" },
+          },
+        },
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            {
+              OR: [
+                { applications: { some: { userId: "654321" } } },
+                { assignments: { some: { memberId: "654321" } } },
+              ],
+            },
+          ]),
+        }),
+      }),
+    );
+    expect(result.data[0]).toMatchObject({
+      applicationStatus: ApplicationStatus.ACCEPTED,
+      assignments: [
+        expect.objectContaining({
+          memberId: "654321",
+          status: AssignmentStatus.COMPLETED,
+        }),
+      ],
+      project: {
+        id: "project-1",
+        name: "Platform UI Refresh",
+      },
+      projectName: "Platform UI Refresh",
+      skills: [{ id: "skill-1", name: "React" }],
+    });
+    expect(result.data[0]).not.toHaveProperty("createdByEmail");
+    expect(result.data[0]).not.toHaveProperty("account");
+    expect(result.data[0]).not.toHaveProperty("smu");
+    expect(result.data[0]).not.toHaveProperty("spoc");
+    expect(result.data[0]).not.toHaveProperty("applications");
+  });
+
+  it("allows member-scoped private ON_HOLD appliedByMe listings while keeping results scoped to the caller", async () => {
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "On hold private engagement",
+        description: "Private description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: ["skill-1"],
+        anticipatedStart: "IMMEDIATE",
+        status: EngagementStatus.ON_HOLD,
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "123456",
+        isPrivate: true,
+        account: "Internal account",
+        smu: "NA",
+        spoc: "Manager",
+        assignments: [
+          {
+            id: "assignment-1",
+            engagementId: "eng-1",
+            memberId: "654321",
+            memberHandle: "member1",
+            status: AssignmentStatus.SELECTED,
+            createdAt: new Date("2026-02-11T11:00:00.000Z"),
+            updatedAt: new Date("2026-02-12T11:00:00.000Z"),
+          },
+        ],
+        applications: [],
+        _count: { applications: 0 },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
+    projectService.getProjectNamesByIds.mockResolvedValue(
+      new Map([["project-1", "Platform UI Refresh"]]),
+    );
+    skillsService.getSkillNamesByIds.mockResolvedValue(
+      new Map([["skill-1", "React"]]),
+    );
+
+    const result = await service.findAll(
+      {
+        appliedByMe: true,
+        includePrivate: true,
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        status: EngagementStatus.ON_HOLD,
+      } as any,
+      "654321",
+    );
+
+    expect(db.engagement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: {
+          _count: {
+            select: {
+              applications: true,
+            },
+          },
+          applications: {
+            where: { userId: "654321" },
+            select: { status: true },
+            take: 1,
+          },
+          assignments: {
+            where: { memberId: "654321" },
+          },
+        },
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            { status: EngagementStatus.ON_HOLD },
+            {
+              OR: [
+                { applications: { some: { userId: "654321" } } },
+                { assignments: { some: { memberId: "654321" } } },
+              ],
+            },
+          ]),
+        }),
+      }),
+    );
+    expect(result.data[0]).toMatchObject({
+      assignments: [
+        expect.objectContaining({
+          memberId: "654321",
+          status: AssignmentStatus.SELECTED,
+        }),
+      ],
+      project: {
+        id: "project-1",
+        name: "Platform UI Refresh",
+      },
+      projectName: "Platform UI Refresh",
+      skills: [{ id: "skill-1", name: "React" }],
+      status: EngagementStatus.ON_HOLD,
+    });
+    expect(result.data[0]).not.toHaveProperty("createdByEmail");
+    expect(result.data[0]).not.toHaveProperty("account");
+    expect(result.data[0]).not.toHaveProperty("smu");
+    expect(result.data[0]).not.toHaveProperty("spoc");
+  });
+
   it("filters role before applying count and pagination", async () => {
     db.engagement.findMany.mockResolvedValue([]);
     db.engagement.count.mockResolvedValue(0);
