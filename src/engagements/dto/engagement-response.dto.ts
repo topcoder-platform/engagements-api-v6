@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
   AnticipatedStart,
+  ApplicationStatus,
   EngagementStatus,
   Role,
   RoleLevel,
@@ -145,6 +146,14 @@ export class EngagementResponseDto {
     example: EngagementStatus.OPEN,
   })
   status: EngagementStatus;
+
+  @ApiPropertyOptional({
+    description:
+      "Current member's application status. Returned only for authenticated appliedByMe=true listings.",
+    enum: ApplicationStatus,
+    example: ApplicationStatus.ACCEPTED,
+  })
+  applicationStatus?: ApplicationStatus;
 
   @ApiProperty({
     description: "Created timestamp",

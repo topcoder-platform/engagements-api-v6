@@ -9,6 +9,7 @@ import {
 import {
   Engagement,
   EngagementAssignment,
+  ApplicationStatus,
   AssignmentSource,
   AssignmentStatus,
   AnticipatedStart,
@@ -193,6 +194,7 @@ type PublicEngagementRecord = Pick<
   | "updatedAt"
   | "updatedBy"
 > & {
+  applicationStatus?: ApplicationStatus;
   applicationsCount?: number;
   project?: EngagementProjectReference;
   projectName?: string;
@@ -655,7 +657,8 @@ export class EngagementsService {
    * Supports `projectId` and `projectIds` project filtering.
    * When both are provided, `projectIds` takes precedence.
    * `appliedByMe=true` adds a database relation filter for the supplied current
-   * user id; false or omission leaves the existing list behavior unchanged.
+   * user id and returns only that user's safe application status; false or
+   * omission leaves the existing list behavior unchanged.
    * `requiredSkills` accepts ids or case-insensitive exact names. Names are
    * resolved through standardized-skills before the database filter; an input
    * set containing no resolvable values returns an empty page.
@@ -666,7 +669,8 @@ export class EngagementsService {
    * @param appliedByUserId Authenticated human user id resolved by the
    * controller when `appliedByMe=true`.
    * @returns Paginated engagement rows with application counts, project
-   * details, and hydrated public skill references.
+   * details, hydrated public skill references, and the caller's application
+   * status on `appliedByMe=true` rows.
    * @throws UnauthorizedException When `appliedByMe=true` has no usable
    * current-user id.
    * @throws Prisma errors when the engagement query fails.
@@ -805,6 +809,8 @@ export class EngagementsService {
       [sortBy]: query.sortOrder,
     };
     const includeAssignments = query.includePrivate === true;
+    const includeApplicantStatus =
+      query.appliedByMe === true && Boolean(normalizedAppliedByUserId);
 
     const [data, totalCount] = await Promise.all([
       this.db.engagement.findMany({
@@ -827,17 +833,33 @@ export class EngagementsService {
                   applications: true,
                 },
               },
+              ...(includeApplicantStatus
+                ? {
+                    applications: {
+                      where: { userId: normalizedAppliedByUserId },
+                      select: { status: true },
+                      take: 1,
+                    },
+                  }
+                : {}),
             },
       }),
       this.db.engagement.count({ where }),
     ]);
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
-    const engagements = data.map(({ _count, ...engagement }) => {
+    const engagements = data.map((row) => {
+      const listRow = row as typeof row & {
+        applications?: Array<{ status: ApplicationStatus }>;
+      };
+      const { _count, applications, ...engagement } = listRow;
+      const applicationStatus = applications?.[0]?.status;
       const engagementWithCount = {
         ...engagement,
         applicationsCount: _count.applications,
+        ...(applicationStatus ? { applicationStatus } : {}),
       } as Engagement & {
+        applicationStatus?: ApplicationStatus;
         assignments?: EngagementAssignment[];
         applicationsCount: number;
       };
@@ -2278,6 +2300,7 @@ export class EngagementsService {
    */
   private serializePublicEngagement<
     T extends Engagement & {
+      applicationStatus?: ApplicationStatus;
       applicationsCount?: number;
       project?: EngagementProjectReference;
       projectName?: string;
@@ -2313,6 +2336,9 @@ export class EngagementsService {
       createdBy: engagement.createdBy,
       updatedAt: engagement.updatedAt,
       updatedBy: engagement.updatedBy,
+      ...(engagement.applicationStatus !== undefined
+        ? { applicationStatus: engagement.applicationStatus }
+        : {}),
       ...(engagement.applicationsCount !== undefined
         ? { applicationsCount: engagement.applicationsCount }
         : {}),

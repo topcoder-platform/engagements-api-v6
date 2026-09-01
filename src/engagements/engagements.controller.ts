@@ -153,7 +153,8 @@ export class EngagementsController {
    * @param req Request containing optional authentication claims populated by
    * the authentication middleware.
    * @returns A paginated engagement response with the existing public row
-   * shape and pagination metadata.
+   * shape and pagination metadata. Rows requested with `appliedByMe=true` also
+   * expose the current member's application status.
    * @throws UnauthorizedException When `appliedByMe=true` is requested without
    * a usable authenticated user id.
    * @throws ForbiddenException When an M2M caller requests
@@ -164,7 +165,7 @@ export class EngagementsController {
     summary: "List engagements",
     description:
       "Returns a paginated list of engagements. Authentication is optional unless appliedByMe=true; " +
-      "that filter accepts a human-user token and limits results to engagements with an application from that user. " +
+      "that filter accepts a human-user token, limits results to engagements with an application from that user, and returns that member's applicationStatus. " +
       "appliedByMe=false or omission preserves the anonymous public list. requiredSkills accepts at most 20 UUIDs or case-insensitive exact standardized-skill names. Public rows add safe skill display names while omitting internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
   })
   @ApiResponse({

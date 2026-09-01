@@ -1,5 +1,10 @@
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
-import { AssignmentStatus, EngagementStatus, Role } from "@prisma/client";
+import {
+  ApplicationStatus,
+  AssignmentStatus,
+  EngagementStatus,
+  Role,
+} from "@prisma/client";
 import { ERROR_MESSAGES } from "../common/constants";
 import {
   FlexiEngagementBucket,
@@ -1463,10 +1468,28 @@ describe("EngagementsService", () => {
   });
 
   it("filters public engagement listings by the authenticated applicant", async () => {
-    db.engagement.findMany.mockResolvedValue([]);
-    db.engagement.count.mockResolvedValue(0);
+    db.engagement.findMany.mockResolvedValue([
+      {
+        id: "eng-1",
+        projectId: "project-1",
+        title: "Accepted engagement",
+        description: "Public description",
+        timeZones: ["UTC"],
+        countries: ["US"],
+        requiredSkills: [],
+        anticipatedStart: "IMMEDIATE",
+        status: EngagementStatus.OPEN,
+        createdAt: new Date("2026-02-11T10:00:00.000Z"),
+        updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+        createdBy: "123456",
+        isPrivate: false,
+        applications: [{ status: ApplicationStatus.ACCEPTED }],
+        _count: { applications: 1 },
+      },
+    ]);
+    db.engagement.count.mockResolvedValue(1);
 
-    await service.findAll(
+    const result = await service.findAll(
       {
         appliedByMe: true,
         page: 1,
@@ -1491,6 +1514,18 @@ describe("EngagementsService", () => {
     expect(db.engagement.count).toHaveBeenCalledWith({
       where: findManyArg.where,
     });
+    expect(findManyArg.include).toMatchObject({
+      applications: {
+        where: { userId: "654321" },
+        select: { status: true },
+        take: 1,
+      },
+    });
+    expect(result.data[0]).toHaveProperty(
+      "applicationStatus",
+      ApplicationStatus.ACCEPTED,
+    );
+    expect(result.data[0]).not.toHaveProperty("applications");
   });
 
   it("filters role before applying count and pagination", async () => {
