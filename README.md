@@ -151,6 +151,9 @@ GET /v6/engagements/engagements?requiredSkills=React,11111111-1111-4111-8111-111
   backward-compatible ID array and add `skills: [{ "id", "name" }]`. Display
   hydration is batched across a page and is non-fatal; a missing display name
   falls back to its ID. Protected/private response behavior is unchanged.
+- Free-text `search` uses OR semantics across title, description, and an exact
+  standardized skill name. Role, status, location, and explicit
+  `requiredSkills` facets remain independent AND filters.
 
 ### Current-user application filter
 
@@ -162,8 +165,10 @@ Authorization: Bearer <member JWT>
 ```
 
 - `appliedByMe=true` requires an authenticated human-user JWT with a user id and
-  returns only engagements having an application from that user. Anonymous
-  requests receive HTTP 401 and M2M tokens receive HTTP 403.
+  returns only engagements having an application from that user. Each row adds
+  that member's `applicationStatus` without exposing application contact or
+  profile data. Anonymous requests receive HTTP 401 and M2M tokens receive
+  HTTP 403.
 - `appliedByMe=false`, or omitting the parameter, applies no current-user
   filter. Authentication remains optional and the existing public-list privacy,
   status, search, sorting, and pagination behavior is unchanged.
@@ -175,6 +180,7 @@ Authorization: Bearer <member JWT>
     {
       "id": "engagement-id",
       "title": "Frontend developer",
+      "applicationStatus": "ACCEPTED",
       "applicationsCount": 3,
       "project": { "id": "project-id", "name": "Example project" },
       "projectName": "Example project"

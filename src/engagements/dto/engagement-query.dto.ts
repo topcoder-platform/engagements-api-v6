@@ -72,7 +72,8 @@ export class EngagementQueryDto extends PaginationDto {
   status?: EngagementStatus;
 
   @ApiPropertyOptional({
-    description: "Search in title and description",
+    description:
+      "Case-insensitive search across title and description, plus exact standardized skill-name matches",
     example: "frontend",
   })
   @IsOptional()
