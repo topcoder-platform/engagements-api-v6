@@ -879,6 +879,52 @@ describe("EngagementsService", () => {
     });
   });
 
+  it("searches title, description, and exact skills before applying the role facet", async () => {
+    const javaSkillId = "22222222-2222-4222-8222-222222222222";
+    skillsService.resolveSkillFilterValues.mockResolvedValue({
+      skillIds: [javaSkillId],
+      skillNamesById: new Map([[javaSkillId, "Java"]]),
+      unresolvedNames: [],
+    });
+    db.engagement.findMany.mockResolvedValue([]);
+    db.engagement.count.mockResolvedValue(0);
+
+    await service.findAll({
+      search: "  Java  ",
+      role: Role.DATA_ENGINEER,
+      page: 1,
+      perPage: 20,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    } as any);
+
+    expect(skillsService.resolveSkillFilterValues).toHaveBeenCalledWith([
+      "Java",
+    ]);
+    const findManyQuery = db.engagement.findMany.mock.calls[0][0];
+    expect(findManyQuery.where.AND).toEqual(
+      expect.arrayContaining([
+        {
+          OR: [
+            {
+              title: { contains: "Java", mode: "insensitive" },
+            },
+            {
+              description: { contains: "Java", mode: "insensitive" },
+            },
+            {
+              requiredSkills: { hasSome: [javaSkillId] },
+            },
+          ],
+        },
+        { role: Role.DATA_ENGINEER },
+      ]),
+    );
+    expect(db.engagement.count).toHaveBeenCalledWith({
+      where: findManyQuery.where,
+    });
+  });
+
   it("returns an empty page without a database scan for unresolved skill names", async () => {
     skillsService.resolveSkillFilterValues.mockResolvedValue({
       skillIds: [],

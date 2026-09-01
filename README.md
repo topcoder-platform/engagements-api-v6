@@ -151,6 +151,9 @@ GET /v6/engagements/engagements?requiredSkills=React,11111111-1111-4111-8111-111
   backward-compatible ID array and add `skills: [{ "id", "name" }]`. Display
   hydration is batched across a page and is non-fatal; a missing display name
   falls back to its ID. Protected/private response behavior is unchanged.
+- Free-text `search` uses OR semantics across title, description, and an exact
+  standardized skill name. Role, status, location, and explicit
+  `requiredSkills` facets remain independent AND filters.
 
 ### Current-user application filter
 

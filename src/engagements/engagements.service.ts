@@ -26,10 +26,7 @@ import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
 import { ProjectService } from "../integrations/project.service";
-import {
-  SkillsService,
-  type SkillFilterResolution,
-} from "../integrations/skills.service";
+import { SkillsService } from "../integrations/skills.service";
 import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
 import { AssignmentOfferResponseEmailService } from "../integrations/assignment-offer-response-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
@@ -662,6 +659,8 @@ export class EngagementsService {
    * `requiredSkills` accepts ids or case-insensitive exact names. Names are
    * resolved through standardized-skills before the database filter; an input
    * set containing no resolvable values returns an empty page.
+   * Free-text `search` matches title, description, or an exact standardized
+   * skill name, while all other facets remain independent AND filters.
    * `role` applies an exact database filter before total-count and pagination.
    *
    * @param query Pagination, visibility, search, location, role, skill, and
@@ -704,16 +703,27 @@ export class EngagementsService {
       return this.emptyPaginatedResponse(query.page, query.perPage);
     }
 
-    let skillFilterResolution: SkillFilterResolution | undefined;
-    if (query.requiredSkills?.length) {
-      skillFilterResolution =
-        await this.skillsService.resolveSkillFilterValues(
-          query.requiredSkills,
-        );
-      if (!skillFilterResolution.skillIds.length) {
-        return this.emptyPaginatedResponse(query.page, query.perPage);
-      }
+    const normalizedSearch = query.search?.trim();
+    const [skillFilterResolution, searchSkillResolution] = await Promise.all([
+      query.requiredSkills?.length
+        ? this.skillsService.resolveSkillFilterValues(query.requiredSkills)
+        : undefined,
+      normalizedSearch
+        ? this.skillsService.resolveSkillFilterValues([normalizedSearch])
+        : undefined,
+    ]);
+    if (
+      query.requiredSkills?.length &&
+      !skillFilterResolution?.skillIds.length
+    ) {
+      return this.emptyPaginatedResponse(query.page, query.perPage);
     }
+    const resolvedSkillNamesById = new Map<string, string>(
+      skillFilterResolution?.skillNamesById ?? [],
+    );
+    searchSkillResolution?.skillNamesById.forEach((name, id) =>
+      resolvedSkillNamesById.set(id, name),
+    );
 
     const isPublicFeed = query.includePrivate !== true;
     const where: Prisma.EngagementWhereInput = query.includePrivate
@@ -735,22 +745,28 @@ export class EngagementsService {
       andFilters.push({ status: { notIn: [EngagementStatus.ON_HOLD] } });
     }
 
-    if (query.search) {
+    if (normalizedSearch) {
+      const searchFilters: Prisma.EngagementWhereInput[] = [
+        {
+          title: {
+            contains: normalizedSearch,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: normalizedSearch,
+            mode: "insensitive",
+          },
+        },
+      ];
+      if (searchSkillResolution?.skillIds.length) {
+        searchFilters.push({
+          requiredSkills: { hasSome: searchSkillResolution.skillIds },
+        });
+      }
       andFilters.push({
-        OR: [
-          {
-            title: {
-              contains: query.search,
-              mode: "insensitive",
-            },
-          },
-          {
-            description: {
-              contains: query.search,
-              mode: "insensitive",
-            },
-          },
-        ],
+        OR: searchFilters,
       });
     }
 
@@ -877,7 +893,7 @@ export class EngagementsService {
       ? []
       : await this.hydratePublicSkillReferences(
           hydratedEngagementsWithProjectDetails,
-          skillFilterResolution?.skillNamesById,
+          resolvedSkillNamesById.size ? resolvedSkillNamesById : undefined,
         );
 
     return {

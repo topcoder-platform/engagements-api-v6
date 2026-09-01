@@ -148,8 +148,9 @@ export class EngagementsController {
    *
    * @param query Pagination and engagement filters. `appliedByMe=true`
    * requires an authenticated human user; false or omission keeps the public
-   * list behavior. `requiredSkills` accepts at most 20 standardized skill UUIDs
-   * or case-insensitive exact names.
+   * list behavior. `search` matches title, description, or an exact standardized
+   * skill name. `requiredSkills` accepts at most 20 standardized skill UUIDs or
+   * case-insensitive exact names.
    * @param req Request containing optional authentication claims populated by
    * the authentication middleware.
    * @returns A paginated engagement response with the existing public row
@@ -166,7 +167,7 @@ export class EngagementsController {
     description:
       "Returns a paginated list of engagements. Authentication is optional unless appliedByMe=true; " +
       "that filter accepts a human-user token, limits results to engagements with an application from that user, and returns that member's applicationStatus. " +
-      "appliedByMe=false or omission preserves the anonymous public list. requiredSkills accepts at most 20 UUIDs or case-insensitive exact standardized-skill names. Public rows add safe skill display names while omitting internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
+      "appliedByMe=false or omission preserves the anonymous public list. search matches title, description, or an exact standardized skill name. requiredSkills accepts at most 20 UUIDs or case-insensitive exact standardized-skill names. Public rows add safe skill display names while omitting internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
   })
   @ApiResponse({
     status: 200,
