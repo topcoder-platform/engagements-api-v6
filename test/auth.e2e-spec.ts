@@ -529,6 +529,13 @@ describe("Authentication & Authorization (e2e)", () => {
         .expect(200);
     });
 
+    it("returns 401 for member user requesting status=ON_HOLD with appliedByMe=true", async () => {
+      await request(app.getHttpServer())
+        .get("/engagements?status=ON_HOLD&appliedByMe=true")
+        .set("Authorization", "Bearer member-user")
+        .expect(401);
+    });
+
     it("returns 401 for anonymous request with includePrivate=true and appliedByMe=true", async () => {
       await request(app.getHttpServer())
         .get("/engagements?includePrivate=true&appliedByMe=true")

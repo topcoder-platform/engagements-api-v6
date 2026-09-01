@@ -80,6 +80,21 @@ describe("EngagementsController appliedByMe filter", () => {
     expect(findAll).toHaveBeenCalledWith(query, "654321");
   });
 
+  it("still rejects status=ON_HOLD for an ordinary member using appliedByMe=true without includePrivate=true", async () => {
+    await expect(
+      controller.findAll(
+        {
+          appliedByMe: true,
+          page: 1,
+          perPage: 20,
+          status: "ON_HOLD",
+        } as any,
+        buildRequest({ isMachine: false, role: "Member", userId: "654321" }),
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(findAll).not.toHaveBeenCalled();
+  });
+
   it("rejects anonymous appliedByMe=true requests", async () => {
     await expect(
       controller.findAll(
