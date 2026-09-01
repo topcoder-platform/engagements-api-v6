@@ -784,20 +784,34 @@ export class EngagementsService {
       andFilters.push({ role: query.role });
     }
 
+    const includeAssignments = query.includePrivate === true;
+    const includeApplicantStatus =
+      query.appliedByMe === true && Boolean(normalizedAppliedByUserId);
+    const includeAssignmentScopedAppliedByMe =
+      includeAssignments && includeApplicantStatus;
+
     if (query.appliedByMe === true && normalizedAppliedByUserId) {
       andFilters.push({
-        OR: [
-          {
-            applications: {
-              some: { userId: normalizedAppliedByUserId },
-            },
-          },
-          {
-            assignments: {
-              some: { memberId: normalizedAppliedByUserId },
-            },
-          },
-        ],
+        ...(includeAssignmentScopedAppliedByMe
+          ? {
+              OR: [
+                {
+                  applications: {
+                    some: { userId: normalizedAppliedByUserId },
+                  },
+                },
+                {
+                  assignments: {
+                    some: { memberId: normalizedAppliedByUserId },
+                  },
+                },
+              ],
+            }
+          : {
+              applications: {
+                some: { userId: normalizedAppliedByUserId },
+              },
+            }),
       });
     }
 
@@ -837,9 +851,6 @@ export class EngagementsService {
     const orderBy: Prisma.EngagementOrderByWithRelationInput = {
       [sortBy]: query.sortOrder,
     };
-    const includeAssignments = query.includePrivate === true;
-    const includeApplicantStatus =
-      query.appliedByMe === true && Boolean(normalizedAppliedByUserId);
     const includeMemberAssignments = includeApplicantStatus
       ? {
           assignments: {
@@ -915,7 +926,7 @@ export class EngagementsService {
         ? this.applyAssignmentFields(engagementWithCount)
         : engagementWithCount;
     });
-    const isMemberScopedPrivateFeed = includeAssignments && includeApplicantStatus;
+    const isMemberScopedPrivateFeed = includeAssignmentScopedAppliedByMe;
     const engagementsWithProjectDetails = await this.hydrateProjectDetails(
       isMemberScopedPrivateFeed
         ? engagements

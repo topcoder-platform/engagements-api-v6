@@ -155,9 +155,11 @@ export class EngagementsController {
    * the authentication middleware.
    * @returns A paginated engagement response with the existing public row
    * shape and pagination metadata. Rows requested with `appliedByMe=true` also
-   * expose the current member's application status. When
-   * `includePrivate=true&appliedByMe=true`, ordinary members may read only
-   * their own private engagements and receive only their own assignments.
+   * expose the current member's application status. Public appliedByMe reads
+   * stay limited to engagements the member applied to. When
+   * `includePrivate=true&appliedByMe=true`, ordinary members may additionally
+   * read their own assigned private engagements and receive only their own
+   * assignments.
    * @throws UnauthorizedException When `appliedByMe=true` is requested without
    * a usable authenticated user id.
    * @throws ForbiddenException When an M2M caller requests
@@ -168,8 +170,8 @@ export class EngagementsController {
     summary: "List engagements",
     description:
       "Returns a paginated list of engagements. Authentication is optional unless appliedByMe=true; " +
-      "that filter accepts a human-user token, limits results to engagements the member applied to or is assigned to, and returns that member's applicationStatus. " +
-      "When paired with includePrivate=true, ordinary members may read only their own private engagements and only their own assignments. " +
+      "that filter accepts a human-user token, limits public results to engagements the member applied to, and returns that member's applicationStatus. " +
+      "When paired with includePrivate=true, ordinary members may additionally read their own assigned private engagements, including ON_HOLD rows, and only their own assignments. " +
       "appliedByMe=false or omission preserves the anonymous public list. search matches title, description, or an exact standardized skill name. requiredSkills accepts at most 20 UUIDs or case-insensitive exact standardized-skill names. Public rows add safe skill display names while omitting internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
   })
   @ApiResponse({

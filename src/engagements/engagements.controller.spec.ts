@@ -80,6 +80,23 @@ describe("EngagementsController appliedByMe filter", () => {
     expect(findAll).toHaveBeenCalledWith(query, "654321");
   });
 
+  it("allows status=ON_HOLD when includePrivate=true and appliedByMe=true resolve a human user id", async () => {
+    const query = {
+      appliedByMe: true,
+      includePrivate: true,
+      page: 1,
+      perPage: 20,
+      status: "ON_HOLD",
+    } as any;
+
+    await controller.findAll(
+      query,
+      buildRequest({ isMachine: false, role: "Member", userId: "654321" }),
+    );
+
+    expect(findAll).toHaveBeenCalledWith(query, "654321");
+  });
+
   it("still rejects status=ON_HOLD for an ordinary member using appliedByMe=true without includePrivate=true", async () => {
     await expect(
       controller.findAll(

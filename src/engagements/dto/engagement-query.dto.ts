@@ -63,7 +63,7 @@ export class EngagementQueryDto extends PaginationDto {
 
   @ApiPropertyOptional({
     description:
-      "Filter by status. ON_HOLD requires the same authorization as includePrivate=true (admin, talent manager, or M2M token), even when appliedByMe=true.",
+      "Filter by status. ON_HOLD requires the same authorization as includePrivate=true (admin, talent manager, or M2M token), except for member-scoped includePrivate=true&appliedByMe=true reads that remain limited to the caller's own private engagements and assignments.",
     enum: EngagementStatus,
     example: EngagementStatus.OPEN,
   })
@@ -131,7 +131,7 @@ export class EngagementQueryDto extends PaginationDto {
 
   @ApiPropertyOptional({
     description:
-      "When true, return only engagements the authenticated current user applied to or is assigned to. False or omitted leaves the public list unfiltered. M2M tokens cannot use the true filter. When paired with includePrivate=true, ordinary members may read only their own private engagements and only their own assignments.",
+      "When true, return only engagements the authenticated current user applied to. False or omitted leaves the public list unfiltered. M2M tokens cannot use the true filter. When paired with includePrivate=true, ordinary members may also receive their own assigned private engagements, and the response remains limited to their own assignments.",
     default: false,
     example: true,
   })
