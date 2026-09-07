@@ -8,6 +8,7 @@ import { ApplicationsModule } from "./applications/applications.module";
 import { IntegrationsModule } from "./integrations/integrations.module";
 import { FeedbackModule } from "./feedback/feedback.module";
 import { MemberExperienceModule } from "./member-experience/member-experience.module";
+import { EngagementLeadsModule } from "./engagement-leads/engagement-leads.module";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MemberExperienceModule } from "./member-experience/member-experience.mo
     ApplicationsModule,
     FeedbackModule,
     MemberExperienceModule,
+    EngagementLeadsModule,
     HealthModule,
   ],
 })

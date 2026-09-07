@@ -75,6 +75,33 @@ enum RoleLevel {
   SENIOR
 }
 
+enum EngagementLeadStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  QUALIFIED
+  CONVERTED
+  REJECTED
+}
+
+enum EngagementModel {
+  TIME_AND_MATERIAL
+  FIXED_PRICE
+}
+
+enum ExperienceLevel {
+  JUNIOR
+  MID
+  SENIOR
+  LEAD_ARCHITECT
+}
+
+enum LeadPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
 model Engagement {
   id                        String                  @id @default(uuid())
   projectId                 String
@@ -201,4 +228,39 @@ model MemberExperience {
   assignment             EngagementAssignment @relation(fields: [engagementAssignmentId], references: [id], onDelete: Cascade)
 
   @@index([engagementAssignmentId])
+}
+
+model EngagementLead {
+  id                       String               @id @default(uuid())
+  workEmail                String
+  accountName              String
+  smu                      String
+  engagementModel          EngagementModel
+  roleTitle                String
+  jobDescription           String
+  requiredSkills           String[]
+  experienceLevel          ExperienceLevel
+  minYearsExperience       Int
+  industryDomain           String?
+  resourcesRequired        Int
+  preferredStartDate       DateTime
+  engagementDuration       String
+  workingHoursPerDay       Float
+  timeZoneRequirement      String
+  remoteWorkAccepted       Boolean
+  workLocationRestrictions String?
+  billRateCurrency         String
+  billRateAmount           String
+  priority                 LeadPriority
+  additionalRequirements   String?
+  status                   EngagementLeadStatus @default(SUBMITTED)
+  convertedEngagementId    String?
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+  updatedBy                String?
+
+  @@index([status])
+  @@index([workEmail])
+  @@index([accountName])
+  @@index([createdAt])
 }
