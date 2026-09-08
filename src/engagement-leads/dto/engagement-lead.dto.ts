@@ -1,9 +1,73 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { EngagementLeadStatus, LeadPriority } from "@prisma/client";
+import {
+  IsEnum,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from "class-validator";
+import {
+  EngagementLeadStatus,
+  EngagementModel,
+  ExperienceLevel,
+  LeadPriority,
+} from "@prisma/client";
 import { PaginationDto } from "../../engagements/dto";
 
+export enum EngagementLeadStatusGroup {
+  NEW = "NEW",
+  CONVERTED = "CONVERTED",
+  DECLINED = "DECLINED",
+}
+
+export enum EngagementLeadSortField {
+  PREFERRED_START_DATE = "preferredStartDate",
+  PRIORITY = "priority",
+  CREATED_AT = "createdAt",
+}
+
 export class EngagementLeadQueryDto extends PaginationDto {
+  @ApiPropertyOptional({
+    description: "Filter by account or customer name",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  accountName?: string;
+
+  @ApiPropertyOptional({
+    description: "Filter by strategic market unit",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  smu?: string;
+
+  @ApiPropertyOptional({
+    description: "Filter by engagement model",
+    enum: EngagementModel,
+  })
+  @IsOptional()
+  @IsEnum(EngagementModel)
+  engagementModel?: EngagementModel;
+
+  @ApiPropertyOptional({
+    description: "Filter by role title",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  roleTitle?: string;
+
+  @ApiPropertyOptional({
+    description: "Filter by experience level",
+    enum: ExperienceLevel,
+  })
+  @IsOptional()
+  @IsEnum(ExperienceLevel)
+  experienceLevel?: ExperienceLevel;
+
   @ApiPropertyOptional({
     description: "Filter by lead status",
     enum: EngagementLeadStatus,
@@ -13,12 +77,36 @@ export class EngagementLeadQueryDto extends PaginationDto {
   status?: EngagementLeadStatus;
 
   @ApiPropertyOptional({
+    description: "Filter by simplified status group",
+    enum: EngagementLeadStatusGroup,
+  })
+  @IsOptional()
+  @IsEnum(EngagementLeadStatusGroup)
+  statusGroup?: EngagementLeadStatusGroup;
+
+  @ApiPropertyOptional({
     description: "Filter by priority",
     enum: LeadPriority,
   })
   @IsOptional()
   @IsEnum(LeadPriority)
   priority?: LeadPriority;
+
+  @ApiPropertyOptional({
+    description: "Sort field",
+    enum: EngagementLeadSortField,
+  })
+  @IsOptional()
+  @IsEnum(EngagementLeadSortField)
+  sortBy?: EngagementLeadSortField;
+
+  @ApiPropertyOptional({
+    description: "Sort order",
+    enum: ["asc", "desc"],
+  })
+  @IsOptional()
+  @IsIn(["asc", "desc"])
+  sortOrder?: "asc" | "desc";
 }
 
 export class UpdateEngagementLeadStatusDto {

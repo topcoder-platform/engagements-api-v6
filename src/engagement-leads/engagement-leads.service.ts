@@ -18,6 +18,8 @@ import {
   EngagementLeadPrefillDto,
   EngagementLeadQueryDto,
   EngagementLeadResponseDto,
+  EngagementLeadSortField,
+  EngagementLeadStatusGroup,
   UpdateEngagementLeadStatusDto,
 } from "./dto";
 
@@ -108,7 +110,50 @@ export class EngagementLeadsService {
 
     const where: Prisma.EngagementLeadWhereInput = {};
 
-    if (query.status) {
+    if (query.accountName?.trim()) {
+      where.accountName = {
+        contains: query.accountName.trim(),
+        mode: "insensitive",
+      };
+    }
+
+    if (query.smu?.trim()) {
+      where.smu = {
+        contains: query.smu.trim(),
+        mode: "insensitive",
+      };
+    }
+
+    if (query.engagementModel) {
+      where.engagementModel = query.engagementModel;
+    }
+
+    if (query.roleTitle?.trim()) {
+      where.roleTitle = {
+        contains: query.roleTitle.trim(),
+        mode: "insensitive",
+      };
+    }
+
+    if (query.experienceLevel) {
+      where.experienceLevel = query.experienceLevel;
+    }
+
+    if (query.statusGroup) {
+      if (query.statusGroup === EngagementLeadStatusGroup.NEW) {
+        where.status = {
+          in: [
+            EngagementLeadStatus.SUBMITTED,
+            EngagementLeadStatus.UNDER_REVIEW,
+            EngagementLeadStatus.QUALIFIED,
+          ],
+        };
+      } else if (query.statusGroup === EngagementLeadStatusGroup.CONVERTED) {
+        where.status = EngagementLeadStatus.CONVERTED;
+      } else if (query.statusGroup === EngagementLeadStatusGroup.DECLINED) {
+        where.status = EngagementLeadStatus.REJECTED;
+      }
+    } else if (query.status) {
       where.status = query.status;
     }
 
@@ -116,10 +161,19 @@ export class EngagementLeadsService {
       where.priority = query.priority as Prisma.EnumLeadPriorityFilter["equals"];
     }
 
+    const sortBy = query.sortBy ?? EngagementLeadSortField.CREATED_AT;
+    const sortOrder = query.sortOrder ?? "desc";
+    const orderBy: Prisma.EngagementLeadOrderByWithRelationInput =
+      sortBy === EngagementLeadSortField.PRIORITY
+        ? { priority: sortOrder }
+        : sortBy === EngagementLeadSortField.PREFERRED_START_DATE
+          ? { preferredStartDate: sortOrder }
+          : { createdAt: sortOrder };
+
     const [leads, totalCount] = await Promise.all([
       this.db.engagementLead.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip,
         take: perPage,
       }),
