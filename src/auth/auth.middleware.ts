@@ -81,7 +81,10 @@ export class AuthMiddleware implements NestMiddleware {
 
   use(req: any, res: Response, next: NextFunction) {
     const requestPath = req?.originalUrl ?? req?.path ?? "";
-    if (requestPath.startsWith("/feedback/anonymous")) {
+    if (
+      requestPath.startsWith("/feedback/anonymous")
+      || requestPath.startsWith("/engagement-leads/intake")
+    ) {
       return next();
     }
 

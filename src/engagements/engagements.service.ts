@@ -9,6 +9,7 @@ import {
 import {
   Engagement,
   EngagementAssignment,
+  ApplicationStatus,
   AssignmentSource,
   AssignmentStatus,
   AnticipatedStart,
@@ -25,10 +26,7 @@ import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
 import { ProjectService } from "../integrations/project.service";
-import {
-  SkillsService,
-  type SkillFilterResolution,
-} from "../integrations/skills.service";
+import { SkillsService } from "../integrations/skills.service";
 import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
 import { AssignmentOfferResponseEmailService } from "../integrations/assignment-offer-response-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
@@ -193,10 +191,15 @@ type PublicEngagementRecord = Pick<
   | "updatedAt"
   | "updatedBy"
 > & {
+  applicationStatus?: ApplicationStatus;
   applicationsCount?: number;
   project?: EngagementProjectReference;
   projectName?: string;
   skills?: EngagementSkillReference[];
+};
+
+type AppliedByMeEngagementRecord = PublicEngagementRecord & {
+  assignments?: EngagementAssignment[];
 };
 
 type FlexiAssignmentWithEngagement = EngagementAssignment & {
@@ -655,10 +658,13 @@ export class EngagementsService {
    * Supports `projectId` and `projectIds` project filtering.
    * When both are provided, `projectIds` takes precedence.
    * `appliedByMe=true` adds a database relation filter for the supplied current
-   * user id; false or omission leaves the existing list behavior unchanged.
+   * user id and returns only that user's safe application status and
+   * assignments; false or omission leaves the existing list behavior unchanged.
    * `requiredSkills` accepts ids or case-insensitive exact names. Names are
    * resolved through standardized-skills before the database filter; an input
    * set containing no resolvable values returns an empty page.
+   * Free-text `search` matches title, description, or an exact standardized
+   * skill name, while all other facets remain independent AND filters.
    * `role` applies an exact database filter before total-count and pagination.
    *
    * @param query Pagination, visibility, search, location, role, skill, and
@@ -666,7 +672,8 @@ export class EngagementsService {
    * @param appliedByUserId Authenticated human user id resolved by the
    * controller when `appliedByMe=true`.
    * @returns Paginated engagement rows with application counts, project
-   * details, and hydrated public skill references.
+   * details, hydrated public skill references, and the caller's application
+   * status on `appliedByMe=true` rows.
    * @throws UnauthorizedException When `appliedByMe=true` has no usable
    * current-user id.
    * @throws Prisma errors when the engagement query fails.
@@ -700,16 +707,27 @@ export class EngagementsService {
       return this.emptyPaginatedResponse(query.page, query.perPage);
     }
 
-    let skillFilterResolution: SkillFilterResolution | undefined;
-    if (query.requiredSkills?.length) {
-      skillFilterResolution =
-        await this.skillsService.resolveSkillFilterValues(
-          query.requiredSkills,
-        );
-      if (!skillFilterResolution.skillIds.length) {
-        return this.emptyPaginatedResponse(query.page, query.perPage);
-      }
+    const normalizedSearch = query.search?.trim();
+    const [skillFilterResolution, searchSkillResolution] = await Promise.all([
+      query.requiredSkills?.length
+        ? this.skillsService.resolveSkillFilterValues(query.requiredSkills)
+        : undefined,
+      normalizedSearch
+        ? this.skillsService.resolveSkillFilterValues([normalizedSearch])
+        : undefined,
+    ]);
+    if (
+      query.requiredSkills?.length &&
+      !skillFilterResolution?.skillIds.length
+    ) {
+      return this.emptyPaginatedResponse(query.page, query.perPage);
     }
+    const resolvedSkillNamesById = new Map<string, string>(
+      skillFilterResolution?.skillNamesById ?? [],
+    );
+    searchSkillResolution?.skillNamesById.forEach((name, id) =>
+      resolvedSkillNamesById.set(id, name),
+    );
 
     const isPublicFeed = query.includePrivate !== true;
     const where: Prisma.EngagementWhereInput = query.includePrivate
@@ -731,22 +749,28 @@ export class EngagementsService {
       andFilters.push({ status: { notIn: [EngagementStatus.ON_HOLD] } });
     }
 
-    if (query.search) {
+    if (normalizedSearch) {
+      const searchFilters: Prisma.EngagementWhereInput[] = [
+        {
+          title: {
+            contains: normalizedSearch,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: normalizedSearch,
+            mode: "insensitive",
+          },
+        },
+      ];
+      if (searchSkillResolution?.skillIds.length) {
+        searchFilters.push({
+          requiredSkills: { hasSome: searchSkillResolution.skillIds },
+        });
+      }
       andFilters.push({
-        OR: [
-          {
-            title: {
-              contains: query.search,
-              mode: "insensitive",
-            },
-          },
-          {
-            description: {
-              contains: query.search,
-              mode: "insensitive",
-            },
-          },
-        ],
+        OR: searchFilters,
       });
     }
 
@@ -760,11 +784,34 @@ export class EngagementsService {
       andFilters.push({ role: query.role });
     }
 
+    const includeAssignments = query.includePrivate === true;
+    const includeApplicantStatus =
+      query.appliedByMe === true && Boolean(normalizedAppliedByUserId);
+    const includeAssignmentScopedAppliedByMe =
+      includeAssignments && includeApplicantStatus;
+
     if (query.appliedByMe === true && normalizedAppliedByUserId) {
       andFilters.push({
-        applications: {
-          some: { userId: normalizedAppliedByUserId },
-        },
+        ...(includeAssignmentScopedAppliedByMe
+          ? {
+              OR: [
+                {
+                  applications: {
+                    some: { userId: normalizedAppliedByUserId },
+                  },
+                },
+                {
+                  assignments: {
+                    some: { memberId: normalizedAppliedByUserId },
+                  },
+                },
+              ],
+            }
+          : {
+              applications: {
+                some: { userId: normalizedAppliedByUserId },
+              },
+            }),
       });
     }
 
@@ -804,7 +851,13 @@ export class EngagementsService {
     const orderBy: Prisma.EngagementOrderByWithRelationInput = {
       [sortBy]: query.sortOrder,
     };
-    const includeAssignments = query.includePrivate === true;
+    const includeMemberAssignments = includeApplicantStatus
+      ? {
+          assignments: {
+            where: { memberId: normalizedAppliedByUserId },
+          },
+        }
+      : {};
 
     const [data, totalCount] = await Promise.all([
       this.db.engagement.findMany({
@@ -819,7 +872,18 @@ export class EngagementsService {
                   applications: true,
                 },
               },
-              assignments: true,
+              ...(includeApplicantStatus
+                ? includeMemberAssignments
+                : { assignments: true }),
+              ...(includeApplicantStatus
+                ? {
+                    applications: {
+                      where: { userId: normalizedAppliedByUserId },
+                      select: { status: true },
+                      take: 1,
+                    },
+                  }
+                : {}),
             }
           : {
               _count: {
@@ -827,17 +891,33 @@ export class EngagementsService {
                   applications: true,
                 },
               },
+              ...(includeApplicantStatus
+                ? {
+                    applications: {
+                      where: { userId: normalizedAppliedByUserId },
+                      select: { status: true },
+                      take: 1,
+                    },
+                  }
+                : {}),
             },
       }),
       this.db.engagement.count({ where }),
     ]);
 
     const totalPages = totalCount ? Math.ceil(totalCount / perPage) : 0;
-    const engagements = data.map(({ _count, ...engagement }) => {
+    const engagements = data.map((row) => {
+      const listRow = row as typeof row & {
+        applications?: Array<{ status: ApplicationStatus }>;
+      };
+      const { _count, applications, ...engagement } = listRow;
+      const applicationStatus = applications?.[0]?.status;
       const engagementWithCount = {
         ...engagement,
         applicationsCount: _count.applications,
+        ...(applicationStatus ? { applicationStatus } : {}),
       } as Engagement & {
+        applicationStatus?: ApplicationStatus;
         assignments?: EngagementAssignment[];
         applicationsCount: number;
       };
@@ -846,24 +926,36 @@ export class EngagementsService {
         ? this.applyAssignmentFields(engagementWithCount)
         : engagementWithCount;
     });
-    const responseEngagements = includeAssignments
-      ? await this.hydrateCreatorEmails(engagements)
-      : engagements;
-    const hydratedEngagementsWithProjectDetails =
-      await this.hydrateProjectDetails(responseEngagements);
-    const publicEngagements = includeAssignments
-      ? []
-      : await this.hydratePublicSkillReferences(
-          hydratedEngagementsWithProjectDetails,
-          skillFilterResolution?.skillNamesById,
-        );
+    const isMemberScopedPrivateFeed = includeAssignmentScopedAppliedByMe;
+    const engagementsWithProjectDetails = await this.hydrateProjectDetails(
+      isMemberScopedPrivateFeed
+        ? engagements
+        : includeAssignments
+          ? await this.hydrateCreatorEmails(engagements)
+          : engagements,
+    );
+    const engagementsWithSkills =
+      isMemberScopedPrivateFeed || !includeAssignments
+        ? await this.hydratePublicSkillReferences(
+            engagementsWithProjectDetails,
+            resolvedSkillNamesById.size ? resolvedSkillNamesById : undefined,
+          )
+        : [];
+
+    const responseData = (
+      isMemberScopedPrivateFeed
+        ? engagementsWithSkills.map((engagement) =>
+            this.serializeAppliedByMeEngagement(engagement),
+          )
+        : includeAssignments
+          ? engagementsWithProjectDetails
+          : engagementsWithSkills.map((engagement) =>
+              this.serializePublicEngagement(engagement),
+            )
+    ) as unknown as Engagement[];
 
     return {
-      data: includeAssignments
-        ? hydratedEngagementsWithProjectDetails
-        : publicEngagements.map((engagement) =>
-            this.serializePublicEngagement(engagement),
-          ),
+      data: responseData,
       meta: {
         page,
         perPage,
@@ -2278,6 +2370,7 @@ export class EngagementsService {
    */
   private serializePublicEngagement<
     T extends Engagement & {
+      applicationStatus?: ApplicationStatus;
       applicationsCount?: number;
       project?: EngagementProjectReference;
       projectName?: string;
@@ -2313,6 +2406,9 @@ export class EngagementsService {
       createdBy: engagement.createdBy,
       updatedAt: engagement.updatedAt,
       updatedBy: engagement.updatedBy,
+      ...(engagement.applicationStatus !== undefined
+        ? { applicationStatus: engagement.applicationStatus }
+        : {}),
       ...(engagement.applicationsCount !== undefined
         ? { applicationsCount: engagement.applicationsCount }
         : {}),
@@ -2325,6 +2421,35 @@ export class EngagementsService {
     };
 
     return publicEngagement as T;
+  }
+
+  /**
+   * Builds the allow-listed member-scoped engagement shape returned by
+   * `appliedByMe=true` list requests, including only the caller's assignments
+   * and application status while omitting creator email and internal account
+   * metadata.
+   *
+   * @param engagement Hydrated database record to narrow for current-user
+   * discovery.
+   * @returns A new allow-listed member-scoped engagement object.
+   * @throws Does not throw.
+   */
+  private serializeAppliedByMeEngagement(
+    engagement: Engagement & {
+      applicationStatus?: ApplicationStatus;
+      applicationsCount?: number;
+      assignments?: EngagementAssignment[];
+      project?: EngagementProjectReference;
+      projectName?: string;
+      skills?: EngagementSkillReference[];
+    },
+  ): AppliedByMeEngagementRecord {
+    return {
+      ...this.serializePublicEngagement(engagement),
+      ...(engagement.assignments !== undefined
+        ? { assignments: engagement.assignments }
+        : {}),
+    };
   }
 
   /**
