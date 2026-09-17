@@ -79,7 +79,7 @@ export class EngagementManagersController {
   @ApiOperation({
     summary: "Assign an engagement manager",
     description:
-      "Grants a member timesheet approval authority on this engagement. Administrators only. The handle must belong to an active Topcoder member. Re-assigning a previously removed manager reactivates the existing record rather than creating a second one.",
+      "Grants a member timesheet approval authority on this engagement, keyed on the member's Topcoder user id. Administrators only. Send handle and name alongside the user id when they are already known - both front ends pick the manager from a member search - and no member-API lookup is needed. Re-assigning a previously removed manager reactivates the existing record rather than creating a second one.",
   })
   @ApiResponse({
     status: 201,
@@ -88,7 +88,7 @@ export class EngagementManagersController {
   })
   @ApiBadRequestResponse({
     description:
-      "Handle is missing, unknown, or belongs to an inactive account.",
+      "userId is missing, or no handle was supplied and none could be resolved for that user id.",
   })
   @ApiUnauthorizedResponse({ description: "Caller is not authenticated." })
   @ApiForbiddenResponse({ description: "Caller is not an administrator." })
@@ -101,7 +101,7 @@ export class EngagementManagersController {
     @Body() body: AssignEngagementManagerDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementManagerResponseDto> {
-    return this.managersService.assign(engagementId, body.handle, req.authUser);
+    return this.managersService.assign(engagementId, body, req.authUser);
   }
 
   @Delete(":managerUserId")

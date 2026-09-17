@@ -38,10 +38,9 @@ export const ERROR_MESSAGES = {
   AssignmentNotFound: "Engagement assignment not found",
   TimesheetNotFound: "Timesheet not found",
   EngagementNotFound: "Engagement not found",
-  ManagerHandleRequired: "A Topcoder handle is required.",
-  ManagerHandleNotFound: "No Topcoder member was found with that handle.",
-  ManagerAccountInactive:
-    "That Topcoder account is not active and cannot be assigned as a manager.",
+  ManagerUserIdRequired: "A Topcoder user id is required.",
+  ManagerHandleUnresolved:
+    "No Topcoder member was found for that user id. Send the manager's handle alongside the user id, or check the id.",
   DuplicateEngagementManager:
     "That member is already assigned as a manager on this engagement.",
   EngagementManagerNotFound:

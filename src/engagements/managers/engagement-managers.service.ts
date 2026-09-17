@@ -54,41 +54,31 @@ export class EngagementManagersService {
   /**
    * Grants a member timesheet approval authority on the engagement.
    *
-   * Handle validation lives here rather than in the callers: the Engagements Portal and the Work App
-   * both write through this endpoint, and validating in two front ends would mean two places to keep
-   * in step.
+   * Keyed on the user id, which is what authority is actually checked against. The handle and name
+   * are denormalized display fields: callers that already resolved the member - both front ends pick
+   * from a member search - send them, and nothing has to be looked up. A caller that has only a user
+   * id gets the handle resolved here, because the stored handle cannot be empty.
    */
   async assign(
     engagementId: string,
-    handle: string,
+    input: { userId: string; handle?: string; name?: string },
     authUser?: Record<string, any>,
   ): Promise<EngagementManagerResponseDto> {
     await this.assertEngagementExists(engagementId);
     this.assertCanChange(authUser);
 
-    const normalizedHandle = handle?.trim();
-    if (!normalizedHandle) {
-      throw new BadRequestException(ERROR_MESSAGES.ManagerHandleRequired);
+    const managerUserId = normalizeUserId(input.userId?.trim());
+    if (!managerUserId) {
+      throw new BadRequestException(ERROR_MESSAGES.ManagerUserIdRequired);
     }
 
-    const member = await this.memberService.getMemberByHandle(normalizedHandle);
-    if (!member) {
-      throw new BadRequestException(
-        `${ERROR_MESSAGES.ManagerHandleNotFound} (${normalizedHandle})`,
-      );
-    }
-
-    if (!member.isActive) {
-      throw new BadRequestException(
-        `${ERROR_MESSAGES.ManagerAccountInactive} (${member.handle})`,
-      );
-    }
+    const member = await this.resolveManagerIdentity(managerUserId, input);
 
     const existing = await this.db.engagementManager.findUnique({
       where: {
         engagementId_managerUserId: {
           engagementId,
-          managerUserId: member.userId,
+          managerUserId,
         },
       },
     });
@@ -118,7 +108,7 @@ export class EngagementManagersService {
             data: {
               id: nanoid(),
               engagementId,
-              managerUserId: member.userId,
+              managerUserId,
               managerHandle: member.handle,
               managerName: member.name,
               createdBy: actorUserId,
@@ -255,6 +245,38 @@ export class EngagementManagersService {
       userId: manager.managerUserId,
       handle: manager.managerHandle,
       name: manager.managerName ?? null,
+    };
+  }
+
+  /**
+   * Settles the handle and name to store for a manager.
+   *
+   * A supplied handle is taken as-is: it is a display field, and the front ends only ever send one
+   * they picked out of a member search. Only a caller that omits it pays for a member-API lookup.
+   */
+  private async resolveManagerIdentity(
+    managerUserId: string,
+    input: { handle?: string; name?: string },
+  ): Promise<{ handle: string; name: string | null }> {
+    const suppliedHandle = input.handle?.trim();
+    if (suppliedHandle) {
+      return {
+        handle: suppliedHandle,
+        name: input.name?.trim() || null,
+      };
+    }
+
+    const resolvedHandle =
+      await this.memberService.getMemberHandleByUserId(managerUserId);
+    if (!resolvedHandle) {
+      throw new BadRequestException(
+        `${ERROR_MESSAGES.ManagerHandleUnresolved} (${managerUserId})`,
+      );
+    }
+
+    return {
+      handle: resolvedHandle,
+      name: input.name?.trim() || null,
     };
   }
 

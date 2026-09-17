@@ -32,7 +32,7 @@ describe("EngagementManagersService", () => {
     };
     $transaction: jest.Mock;
   };
-  let memberService: { getMemberByHandle: jest.Mock };
+  let memberService: { getMemberHandleByUserId: jest.Mock };
   let audit: { record: jest.Mock };
 
   const admin = {
@@ -72,12 +72,7 @@ describe("EngagementManagersService", () => {
       ),
     };
     memberService = {
-      getMemberByHandle: jest.fn().mockResolvedValue({
-        userId: "2002",
-        handle: "maryj",
-        name: "Mary Jones",
-        isActive: true,
-      }),
+      getMemberHandleByUserId: jest.fn().mockResolvedValue("maryj"),
     };
     audit = { record: jest.fn().mockResolvedValue(undefined) };
 
@@ -90,10 +85,12 @@ describe("EngagementManagersService", () => {
   });
 
   describe("assign", () => {
-    it("assigns a manager by handle and records the audit inside the transaction", async () => {
+    const selection = { userId: "2002", handle: "maryj", name: "Mary Jones" };
+
+    it("assigns a manager by user id and records the audit inside the transaction", async () => {
       db.engagementManager.create.mockResolvedValue(activeManagerRow);
 
-      const result = await service.assign("eng1", "maryj", admin);
+      const result = await service.assign("eng1", selection, admin);
 
       expect(result).toEqual({
         userId: "2002",
@@ -121,66 +118,69 @@ describe("EngagementManagersService", () => {
       );
     });
 
-    it("trims the submitted handle", async () => {
+    it("does not call the member API when the caller already resolved the member", async () => {
       db.engagementManager.create.mockResolvedValue(activeManagerRow);
 
-      await service.assign("eng1", "  maryj  ", admin);
+      await service.assign("eng1", selection, admin);
 
-      expect(memberService.getMemberByHandle).toHaveBeenCalledWith("maryj");
+      expect(memberService.getMemberHandleByUserId).not.toHaveBeenCalled();
     });
 
-    it("stores the canonical handle casing returned by the member API", async () => {
-      memberService.getMemberByHandle.mockResolvedValue({
-        userId: "2002",
-        handle: "MaryJ",
-        name: "Mary Jones",
-        isActive: true,
-      });
-      db.engagementManager.create.mockResolvedValue({
-        ...activeManagerRow,
-        managerHandle: "MaryJ",
-      });
+    it("trims the submitted values", async () => {
+      db.engagementManager.create.mockResolvedValue(activeManagerRow);
 
-      const result = await service.assign("eng1", "maryj", admin);
-
-      expect(result.handle).toBe("MaryJ");
-    });
-
-    it("rejects an empty handle", async () => {
-      await expect(service.assign("eng1", "   ", admin)).rejects.toBeInstanceOf(
-        BadRequestException,
+      await service.assign(
+        "eng1",
+        { userId: " 2002 ", handle: "  maryj  ", name: "  Mary Jones  " },
+        admin,
       );
-      expect(memberService.getMemberByHandle).not.toHaveBeenCalled();
+
+      expect(db.engagementManager.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          managerUserId: "2002",
+          managerHandle: "maryj",
+          managerName: "Mary Jones",
+        }),
+      });
     });
 
-    it("rejects an unknown handle and names it", async () => {
-      memberService.getMemberByHandle.mockResolvedValue(null);
+    it("resolves the handle when the caller sends only a user id", async () => {
+      db.engagementManager.create.mockResolvedValue(activeManagerRow);
 
-      await expect(service.assign("eng1", "nobody", admin)).rejects.toThrow(
-        /nobody/,
+      await service.assign("eng1", { userId: "2002" }, admin);
+
+      expect(memberService.getMemberHandleByUserId).toHaveBeenCalledWith(
+        "2002",
       );
+      expect(db.engagementManager.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          managerHandle: "maryj",
+          managerName: null,
+        }),
+      });
+    });
+
+    it("rejects a user id with no resolvable handle", async () => {
+      memberService.getMemberHandleByUserId.mockResolvedValue(null);
+
+      await expect(
+        service.assign("eng1", { userId: "404404" }, admin),
+      ).rejects.toThrow(/404404/);
       expect(db.engagementManager.create).not.toHaveBeenCalled();
     });
 
-    it("rejects an inactive account", async () => {
-      memberService.getMemberByHandle.mockResolvedValue({
-        userId: "2002",
-        handle: "maryj",
-        name: "Mary Jones",
-        isActive: false,
-      });
-
-      await expect(service.assign("eng1", "maryj", admin)).rejects.toThrow(
-        /not active/,
-      );
-      expect(db.engagementManager.create).not.toHaveBeenCalled();
+    it("rejects a missing user id without calling the member API", async () => {
+      await expect(
+        service.assign("eng1", { userId: "   " }, admin),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(memberService.getMemberHandleByUserId).not.toHaveBeenCalled();
     });
 
     it("rejects a duplicate assignment without creating a second row", async () => {
       db.engagementManager.findUnique.mockResolvedValue(activeManagerRow);
 
       await expect(
-        service.assign("eng1", "maryj", admin),
+        service.assign("eng1", selection, admin),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(db.engagementManager.create).not.toHaveBeenCalled();
       expect(db.engagementManager.update).not.toHaveBeenCalled();
@@ -194,7 +194,7 @@ describe("EngagementManagersService", () => {
       });
       db.engagementManager.update.mockResolvedValue(activeManagerRow);
 
-      const result = await service.assign("eng1", "maryj", admin);
+      const result = await service.assign("eng1", selection, admin);
 
       expect(result.handle).toBe("maryj");
       expect(db.engagementManager.create).not.toHaveBeenCalled();
@@ -206,16 +206,16 @@ describe("EngagementManagersService", () => {
 
     it("refuses a non-administrator", async () => {
       await expect(
-        service.assign("eng1", "maryj", member),
+        service.assign("eng1", selection, member),
       ).rejects.toBeInstanceOf(ForbiddenException);
-      expect(memberService.getMemberByHandle).not.toHaveBeenCalled();
+      expect(memberService.getMemberHandleByUserId).not.toHaveBeenCalled();
     });
 
     it("404s for an unknown engagement", async () => {
       db.engagement.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.assign("missing", "maryj", admin),
+        service.assign("missing", selection, admin),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });

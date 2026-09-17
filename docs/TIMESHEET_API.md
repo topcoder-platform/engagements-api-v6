@@ -218,9 +218,24 @@ removed ones. Readable by an administrator, by a manager of that engagement, and
 
 ### `POST /engagements/:id/managers`
 
-`{ "handle": "maryj" }`. Administrators only. Validates that the handle resolves to a real, active member.
-Unknown or inactive handle → `400`. A duplicate assignment → `409` with no second row. Re-adding a previously
-removed manager clears `removedAt` on the existing row rather than inserting. Audit `MANAGER_ASSIGNED`.
+```json
+{ "userId": "2002", "handle": "maryj", "name": "Mary Jones" }
+```
+
+Administrators only. `userId` is required and is what approval authority is keyed on; `handle` and `name` are
+denormalized display values.
+
+Both front ends pick the manager from the platform member autocomplete, so they hold the resolved member and
+send all three fields — the server then does **no member-API lookup**. A caller that sends `userId` alone has
+the handle resolved server-side by id (the stored handle cannot be empty); an id with no resolvable handle →
+`400`.
+
+A duplicate assignment → `409` with no second row. Re-adding a previously removed manager clears `removedAt`
+on the existing row rather than inserting. Audit `MANAGER_ASSIGNED`.
+
+A supplied handle is trusted as-is. Authority is keyed on `userId`, so a fabricated id grants nobody anything
+and a wrong handle is only a mislabelled row; the endpoint is administrator-only, and the duplicate rule is a
+database constraint rather than a consequence of the lookup.
 
 ### `DELETE /engagements/:id/managers/:managerUserId`
 
@@ -262,9 +277,13 @@ Error bodies follow the repo's existing shape (`statusCode`, `message`, `error`)
 
 ## Audit trail
 
-Every mutation writes an `EngagementTimesheetEntryAudit` record **inside the same transaction as the change**.
+Every mutation writes an `EngagementTimesheetAudit` record **inside the same transaction as the change**.
 Each record carries the action, previous and updated values, previous and updated statuses, the actor's user
 id, handle, and role (`MEMBER` | `MANAGER` | `ADMINISTRATOR` | `MACHINE`), the timestamp, and the approval
 comment or override reason.
+
+One table holds the whole domain's trail. Entry-scoped rows carry `timesheetEntryId`; manager assignment and
+removal are engagement-scoped and carry `engagementId` instead. Exactly one of the two is set on every row,
+enforced by a database check constraint.
 
 Decimal values are recorded as exact strings, not floats.
