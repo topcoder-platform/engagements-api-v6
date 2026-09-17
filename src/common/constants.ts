@@ -37,6 +37,19 @@ export const ERROR_MESSAGES = {
     "Cannot add feedback to an engagement that is not assigned to a member",
   AssignmentNotFound: "Engagement assignment not found",
   TimesheetNotFound: "Timesheet not found",
+  EngagementNotFound: "Engagement not found",
+  ManagerHandleRequired: "A Topcoder handle is required.",
+  ManagerHandleNotFound: "No Topcoder member was found with that handle.",
+  ManagerAccountInactive:
+    "That Topcoder account is not active and cannot be assigned as a manager.",
+  DuplicateEngagementManager:
+    "That member is already assigned as a manager on this engagement.",
+  EngagementManagerNotFound:
+    "That member is not assigned as a manager on this engagement.",
+  UnauthorizedManagerRead:
+    "You do not have permission to view managers for this engagement.",
+  UnauthorizedManagerChange:
+    "Only administrators can change engagement manager assignments.",
   AssignmentEngagementMismatch:
     "Assignment does not belong to the specified engagement",
   FeedbackTokenExpired:

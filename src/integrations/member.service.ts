@@ -8,6 +8,7 @@ import * as core from "tc-core-library-js";
 type MemberRecord = {
   userId?: string | number;
   handle?: string;
+  status?: string | null;
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
@@ -133,6 +134,73 @@ export class MemberService {
       }
 
       return String(userId);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return null;
+        }
+
+        this.logger.error("Member lookup failed.", {
+          status: error.response?.status,
+          data: error.response?.data,
+          handle,
+        });
+        throw error;
+      }
+
+      this.logger.error("Member lookup failed.", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Looks a member up by handle for the engagement-manager registry, which needs more than the id:
+   * the canonical handle casing, a display name, and whether the account is active.
+   *
+   * @returns The member, or null when no member has that handle.
+   */
+  async getMemberByHandle(handle: string): Promise<{
+    userId: string;
+    handle: string;
+    name: string | null;
+    isActive: boolean;
+  } | null> {
+    const token = await this.getM2MToken();
+    const baseUrl = this.getMemberApiBaseUrl();
+    const fields = encodeURIComponent(
+      "userId,handle,firstName,lastName,status",
+    );
+    const url = `${baseUrl}/${encodeURIComponent(handle)}?fields=${fields}`;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
+      const member: MemberRecord | undefined = response.data;
+      if (
+        !member ||
+        member.userId === undefined ||
+        member.userId === null ||
+        !member.handle
+      ) {
+        return null;
+      }
+
+      const name = [member.firstName, member.lastName]
+        .filter((part) => Boolean(part?.trim()))
+        .join(" ")
+        .trim();
+
+      return {
+        userId: String(member.userId),
+        handle: member.handle,
+        name: name || null,
+        // The member API reports an active account as ACTIVE. Treat an absent status as active
+        // rather than blocking an assignment on a field the profile may simply not expose.
+        isActive: (member.status ?? "ACTIVE").toUpperCase() === "ACTIVE",
+      };
     } catch (error) {
       if (isAxiosError(error)) {
         if (error.response?.status === 404) {

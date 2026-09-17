@@ -22,7 +22,7 @@ describe("TimesheetAuditService", () => {
   beforeEach(() => {
     create = jest.fn().mockResolvedValue({ id: "audit-id" });
     tx = {
-      engagementTimesheetEntryAudit: { create },
+      engagementTimesheetAudit: { create },
     } as unknown as Prisma.TransactionClient;
     service = new TimesheetAuditService();
   });
@@ -35,6 +35,7 @@ describe("TimesheetAuditService", () => {
       data: expect.objectContaining({
         id: "audit-id",
         timesheetEntryId: "entry1",
+        engagementId: null,
         action: TimesheetAuditAction.UPDATED,
         actorUserId: "1001",
         actorHandle: "johnsmith",
@@ -165,6 +166,56 @@ describe("TimesheetAuditService", () => {
         comment: null,
         actorRole: "MACHINE",
       }),
+    });
+  });
+
+  describe("audit targets", () => {
+    it("records an engagement-scoped event with no entry, which is how manager changes are audited", async () => {
+      await service.record(tx, {
+        engagementId: "eng1",
+        action: TimesheetAuditAction.MANAGER_ASSIGNED,
+        updatedValues: { managerHandle: "maryj" },
+        actorUserId: "3003",
+        actorHandle: "adminuser",
+        actorRole: TimesheetActorRole.Administrator,
+      });
+
+      expect(create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          timesheetEntryId: null,
+          engagementId: "eng1",
+          action: TimesheetAuditAction.MANAGER_ASSIGNED,
+          actorRole: "ADMINISTRATOR",
+        }),
+      });
+    });
+
+    it("rejects a record that targets neither an entry nor an engagement", async () => {
+      await expect(
+        service.record(tx, {
+          action: TimesheetAuditAction.UPDATED,
+          actorUserId: "1001",
+          actorRole: TimesheetActorRole.Member,
+        } as never),
+      ).rejects.toThrow(
+        "must reference exactly one of timesheetEntryId or engagementId",
+      );
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it("rejects a record that targets both", async () => {
+      await expect(
+        service.record(tx, {
+          timesheetEntryId: "entry1",
+          engagementId: "eng1",
+          action: TimesheetAuditAction.UPDATED,
+          actorUserId: "1001",
+          actorRole: TimesheetActorRole.Member,
+        } as never),
+      ).rejects.toThrow(
+        "must reference exactly one of timesheetEntryId or engagementId",
+      );
+      expect(create).not.toHaveBeenCalled();
     });
   });
 

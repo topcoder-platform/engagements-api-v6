@@ -153,6 +153,7 @@ model Engagement {
   applications        EngagementApplication[]
   assignments         EngagementAssignment[]
   managers            EngagementManager[]
+  timesheetAudit      EngagementTimesheetAudit[]
 
   @@index([projectId])
   @@index([status])
@@ -318,7 +319,7 @@ model EngagementTimesheetEntry {
   updatedBy              String?
 
   assignment             EngagementAssignment           @relation(fields: [engagementAssignmentId], references: [id], onDelete: Restrict)
-  auditRecords           EngagementTimesheetEntryAudit[]
+  auditRecords           EngagementTimesheetAudit[]
 
   @@unique([engagementAssignmentId, workDate])
   @@index([engagementAssignmentId, status])
@@ -326,9 +327,13 @@ model EngagementTimesheetEntry {
   @@index([status, workDate])
 }
 
-model EngagementTimesheetEntryAudit {
-  id               String               @id @default(uuid())
-  timesheetEntryId String
+/// One audit trail for the whole timesheet domain. Most rows are entry-scoped, but manager
+/// assignment and removal are engagement-scoped and have no entry, so exactly one of
+/// timesheetEntryId / engagementId is set on every row - enforced by a database check constraint.
+model EngagementTimesheetAudit {
+  id               String                @id @default(uuid())
+  timesheetEntryId String?
+  engagementId     String?
   action           TimesheetAuditAction
   previousValues   Json?
   updatedValues    Json?
@@ -336,11 +341,13 @@ model EngagementTimesheetEntryAudit {
   actorHandle      String?
   actorRole        String
   comment          String?
-  createdAt        DateTime             @default(now())
+  createdAt        DateTime              @default(now())
 
-  entry            EngagementTimesheetEntry @relation(fields: [timesheetEntryId], references: [id], onDelete: Cascade)
+  entry            EngagementTimesheetEntry? @relation(fields: [timesheetEntryId], references: [id], onDelete: Cascade)
+  engagement       Engagement?               @relation(fields: [engagementId], references: [id], onDelete: Cascade)
 
   @@index([timesheetEntryId, createdAt])
+  @@index([engagementId, createdAt])
   @@index([actorUserId])
 }
 
