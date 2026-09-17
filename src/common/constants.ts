@@ -36,6 +36,7 @@ export const ERROR_MESSAGES = {
   EngagementNotAssigned:
     "Cannot add feedback to an engagement that is not assigned to a member",
   AssignmentNotFound: "Engagement assignment not found",
+  TimesheetNotFound: "Timesheet not found",
   AssignmentEngagementMismatch:
     "Assignment does not belong to the specified engagement",
   FeedbackTokenExpired:
