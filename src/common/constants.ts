@@ -37,6 +37,35 @@ export const ERROR_MESSAGES = {
     "Cannot add feedback to an engagement that is not assigned to a member",
   AssignmentNotFound: "Engagement assignment not found",
   TimesheetNotFound: "Timesheet not found",
+  TimesheetEntriesNotFound:
+    "One or more timesheet entries were not found on this assignment.",
+  TimesheetEntryApprovedReadOnly:
+    "Approved timesheet entries cannot be changed. Ask an administrator to reopen them.",
+  TimesheetOverrideReasonRequired:
+    "An override reason is required when an administrator acts on another user's behalf.",
+  TimesheetManagerCannotEdit:
+    "Managers can approve timesheet entries but cannot change hours or remarks.",
+  TimesheetManagerCannotSubmit:
+    "Managers cannot submit timesheet entries on a member's behalf.",
+  TimesheetMemberCannotApprove:
+    "Only an assigned manager or an administrator can approve timesheet entries.",
+  TimesheetReopenAdminOnly:
+    "Only an administrator can reopen approved timesheet entries.",
+  TimesheetReopenNotApproved:
+    "Only approved timesheet entries can be reopened.",
+  TimesheetSubmitRejected:
+    "Some entries cannot be submitted, so nothing was submitted.",
+  TimesheetDuplicateWorkDate:
+    "The same work date appears more than once in this request.",
+  TimesheetHoursRequired: "Hours worked is required.",
+  TimesheetHoursNumeric: "Hours worked must be a number.",
+  TimesheetHoursNegative: "Hours worked cannot be negative.",
+  TimesheetHoursTooHigh: "Hours worked cannot exceed 24 for a single day.",
+  TimesheetRangeInverted: "The to date cannot be earlier than the from date.",
+  TimesheetRangeTooLong:
+    "A timesheet date range cannot span more than 31 days.",
+  UnauthorizedTimesheetList:
+    "You do not have permission to list timesheet engagements.",
   EngagementNotFound: "Engagement not found",
   ManagerUserIdRequired: "A Topcoder user id is required.",
   ManagerHandleUnresolved:

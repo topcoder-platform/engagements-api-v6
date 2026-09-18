@@ -217,25 +217,7 @@ export class EngagementManagersService {
   async findByEngagementIds(
     engagementIds: string[],
   ): Promise<Map<string, EngagementManagerResponseDto[]>> {
-    const ids = Array.from(new Set(engagementIds.filter(Boolean)));
-    const byEngagement = new Map<string, EngagementManagerResponseDto[]>();
-
-    if (!ids.length) {
-      return byEngagement;
-    }
-
-    const managers = await this.db.engagementManager.findMany({
-      where: { engagementId: { in: ids }, removedAt: null },
-      orderBy: { createdAt: "asc" },
-    });
-
-    managers.forEach((manager) => {
-      const existing = byEngagement.get(manager.engagementId) ?? [];
-      existing.push(this.toResponseDto(manager));
-      byEngagement.set(manager.engagementId, existing);
-    });
-
-    return byEngagement;
+    return this.access.findActiveManagers(engagementIds);
   }
 
   private toResponseDto(

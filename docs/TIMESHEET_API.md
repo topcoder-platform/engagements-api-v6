@@ -6,6 +6,9 @@ can be built in parallel. Sections marked **R2** are stubs for the payment-integ
 Status: agreed for implementation. Changes after this point need a note in this file and a heads-up to both
 the API and UI owners.
 
+See [`TIMESHEET_WORKFLOW.md`](./TIMESHEET_WORKFLOW.md) for the state machine, the role x action matrix, and the
+audit and event behaviour.
+
 ## Concepts
 
 A **timesheet entry** is one member's hours for one calendar day on one engagement assignment. Entries are
@@ -59,7 +62,7 @@ require an override reason and are audited as `ADMIN_OVERRIDE`.
 
 ## Endpoints
 
-### `GET /engagements/:id/assignments/:assignmentId/timesheets`
+### `GET /engagements/:engagementId/assignments/:assignmentId/timesheets`
 
 Read entries plus the header data every view shows.
 
@@ -68,13 +71,17 @@ Query: `fromDate`, `toDate` (`YYYY-MM-DD`), `status` (`DRAFT` | `SUBMITTED` | `A
 ```json
 {
   "viewerRole": "MEMBER",
-  "engagement": { "id": "...", "title": "Senior Frontend Engineer" },
+  "engagementId": "4c4dd8a7-2f5a-4f6d-8f7b-1d2c3b4a5e6f",
+  "engagementTitle": "Senior Frontend Engineer",
   "assignment": {
-    "id": "...",
-    "standardHoursPerDay": 8,
+    "id": "9a9a5f4d-2a3b-4e9c-9f1c-2b3c4d5e6f7a",
     "memberId": "1001",
+    "memberHandle": "johnsmith",
     "memberName": "John Smith",
-    "memberHandle": "johnsmith"
+    "status": "ASSIGNED",
+    "standardHoursPerDay": 8,
+    "startDate": "2026-09-01T00:00:00.000Z",
+    "endDate": "2026-09-30T00:00:00.000Z"
   },
   "managers": [
     { "userId": "2002", "handle": "maryj", "name": "Mary Jones" },
@@ -87,11 +94,13 @@ Query: `fromDate`, `toDate` (`YYYY-MM-DD`), `status` (`DRAFT` | `SUBMITTED` | `A
       "hoursWorked": "8.50",
       "remarks": "Sprint planning and API work",
       "status": "APPROVED",
+      "submittedAt": "2026-09-08T09:12:00.000Z",
       "approvedByHandle": "maryj",
       "approvedAt": "2026-09-12T10:04:11.000Z",
       "approvalComment": "Approved for week 37",
       "reopenedAt": null,
-      "outsideAssignmentWindow": false
+      "outsideAssignmentWindow": false,
+      "isPaid": false
     }
   ]
 }
@@ -103,7 +112,7 @@ Query: `fromDate`, `toDate` (`YYYY-MM-DD`), `status` (`DRAFT` | `SUBMITTED` | `A
 - Approval details on an approved entry are visible to **any** assigned manager, not only the approver.
 - `managers` lists every currently assigned manager; members need it for their timesheet header.
 
-### `PUT /engagements/:id/assignments/:assignmentId/timesheets/entries`
+### `PUT /engagements/:engagementId/assignments/:assignmentId/timesheets/entries`
 
 Bulk upsert, keyed on `(assignmentId, workDate)`. There is no endpoint that pre-creates empty rows for a date
 range: the UI generates the visible rows for a picked range in the browser and sends only the ones the member
@@ -139,7 +148,7 @@ one day rejected; a range over 31 days rejected; `toDate` before `fromDate` reje
 twice in one payload rejected (`400`). Entries outside the assignment's `startDate`/`endDate` are allowed but
 returned with `outsideAssignmentWindow: true` so the administrator view can flag them.
 
-### `POST /engagements/:id/assignments/:assignmentId/timesheets/submit`
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/submit`
 
 ```json
 { "entryIds": ["..."], "overrideReason": "administrators only" }
@@ -149,7 +158,7 @@ Only `DRAFT` entries with valid hours become `SUBMITTED`, recording `submittedAt
 missing required data is reported per entry and **nothing partially submits** — the call is atomic. An
 administrator may submit on behalf of a member, with a reason. Audit: `SUBMITTED` per entry.
 
-### `POST /engagements/:id/assignments/:assignmentId/timesheets/approve`
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/approve`
 
 ```json
 { "entryIds": ["..."], "approvalComment": "required" }
@@ -173,7 +182,7 @@ and the loser is told who got there first. The approval comment is required. Mem
 administrator approving on behalf of a manager must send `overrideReason`. Audit: `APPROVED` per entry,
 carrying the comment.
 
-### `POST /engagements/:id/assignments/:assignmentId/timesheets/reopen`
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/reopen`
 
 Administrators only. `{ "entryIds": ["..."], "overrideReason": "required" }`.
 
@@ -196,20 +205,21 @@ Query (administrators): `title`, `assignee`, `manager`, `status`, `fromDate`, `t
       "engagementId": "...",
       "engagementTitle": "Senior Frontend Engineer",
       "assignmentId": "...",
-      "assigneeName": "John Smith",
+      "assigneeId": "1001",
       "assigneeHandle": "johnsmith",
-      "timesheetStatus": "Pending Approval"
+      "assigneeName": "John Smith",
+      "timesheetStatus": "Pending Approval",
+      "viewerRole": "MANAGER"
     }
   ],
-  "page": 1,
-  "perPage": 20,
-  "total": 1
+  "meta": { "page": 1, "perPage": 20, "totalCount": 1, "totalPages": 1 }
 }
 ```
 
 A manager sees only engagements where they hold live approval authority; an administrator sees all eligible
-engagements. One record per (engagement, assignee) pair. `timesheetStatus` is `Pending Approval` when the
-assignee has any `SUBMITTED` entry, otherwise `Approved`.
+engagements. "Eligible" means an assignment that is still active or one that already has entries - a rejected
+offer with no entries has no timesheet to manage. One record per (engagement, assignee) pair. `timesheetStatus`
+is `Pending Approval` when the assignee has any `SUBMITTED` entry, otherwise `Approved`.
 
 ### `GET /engagements/:id/managers`
 
@@ -242,7 +252,7 @@ database constraint rather than a consequence of the lookup.
 Administrators only. Soft-deletes by setting `removedAt`/`removedBy`. Takes effect on the manager's next
 request. Audit `MANAGER_REMOVED`.
 
-### `GET /engagements/:id/assignments/:assignmentId/timesheets/summary` — **R2**
+### `GET /engagements/:engagementId/assignments/:assignmentId/timesheets/summary` — **R2**
 
 ```json
 {
@@ -257,7 +267,7 @@ request. Audit `MANAGER_REMOVED`.
 `APPROVED` entries only. Entries already consumed by a payment are excluded from the totals and `entryIds`,
 and listed in `alreadyPaidEntryIds` so the UI can explain a shortfall. Administrators and managers only.
 
-### `POST /engagements/:id/assignments/:assignmentId/timesheets/entries/payments` — **R2**
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/entries/payments` — **R2**
 
 `{ "entryIds": ["..."], "paymentReference": "..." }`. Stamps `paidPaymentReference`/`paidAt` and writes
 `PAYMENT_LINKED` audit records. An entry already carrying a reference is rejected and the whole call is

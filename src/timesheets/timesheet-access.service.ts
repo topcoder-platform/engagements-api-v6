@@ -5,6 +5,13 @@ import { getUserRoles, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
 import { TimesheetViewerRole } from "./timesheet-roles";
 
+/** A manager as displayed alongside a timesheet or an engagement. */
+export interface EngagementManagerSummary {
+  userId: string;
+  handle: string;
+  name: string | null;
+}
+
 /**
  * The subset of an engagement assignment needed to resolve timesheet access.
  */
@@ -103,6 +110,40 @@ export class TimesheetAccessService {
     });
 
     return Boolean(manager);
+  }
+
+  /**
+   * Current managers for several engagements at once, keyed by engagement id.
+   *
+   * Lives here rather than in the manager registry because both the registry and the timesheet views
+   * need it, and the timesheets module is the one both can depend on without a cycle.
+   */
+  async findActiveManagers(
+    engagementIds: string[],
+  ): Promise<Map<string, EngagementManagerSummary[]>> {
+    const ids = Array.from(new Set(engagementIds.filter(Boolean)));
+    const byEngagement = new Map<string, EngagementManagerSummary[]>();
+
+    if (!ids.length) {
+      return byEngagement;
+    }
+
+    const managers = await this.db.engagementManager.findMany({
+      where: { engagementId: { in: ids }, removedAt: null },
+      orderBy: { createdAt: "asc" },
+    });
+
+    managers.forEach((manager) => {
+      const existing = byEngagement.get(manager.engagementId) ?? [];
+      existing.push({
+        userId: manager.managerUserId,
+        handle: manager.managerHandle,
+        name: manager.managerName ?? null,
+      });
+      byEngagement.set(manager.engagementId, existing);
+    });
+
+    return byEngagement;
   }
 
   private hasManageScope(authUser: Record<string, any>): boolean {
