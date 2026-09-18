@@ -130,3 +130,34 @@ export class TimesheetEngagementRowDto {
   })
   viewerRole: TimesheetViewerRole;
 }
+
+export class TimesheetEngagementListMetaDto {
+  @ApiProperty({ description: "Current page", example: 1 })
+  page: number;
+
+  @ApiProperty({ description: "Items per page", example: 20 })
+  perPage: number;
+
+  @ApiProperty({ description: "Total matching rows", example: 42 })
+  totalCount: number;
+
+  @ApiProperty({ description: "Total pages", example: 3 })
+  totalPages: number;
+
+  @ApiProperty({
+    description:
+      "The caller's own role. Lets a client render the administrator-only filters without inferring " +
+      "anything from JWT roles, and tells it which view an empty list belongs to.",
+    enum: TimesheetViewerRole,
+    example: TimesheetViewerRole.Manager,
+  })
+  viewerRole: TimesheetViewerRole;
+}
+
+export class TimesheetEngagementListResponseDto {
+  @ApiProperty({ type: TimesheetEngagementRowDto, isArray: true })
+  data: TimesheetEngagementRowDto[];
+
+  @ApiProperty({ type: TimesheetEngagementListMetaDto })
+  meta: TimesheetEngagementListMetaDto;
+}

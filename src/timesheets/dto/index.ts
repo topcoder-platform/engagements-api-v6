@@ -1,3 +1,4 @@
+export * from "./timesheet-audit-response.dto";
 export * from "./timesheet-engagement-list.dto";
 export * from "./timesheet-entry-action.dto";
 export * from "./timesheet-query.dto";

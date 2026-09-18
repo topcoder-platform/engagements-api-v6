@@ -49,6 +49,8 @@ export const ERROR_MESSAGES = {
     "Managers cannot submit timesheet entries on a member's behalf.",
   TimesheetMemberCannotApprove:
     "Only an assigned manager or an administrator can approve timesheet entries.",
+  TimesheetAuditAdminOnly:
+    "Only an administrator can read timesheet audit history.",
   TimesheetReopenAdminOnly:
     "Only an administrator can reopen approved timesheet entries.",
   TimesheetReopenNotApproved:

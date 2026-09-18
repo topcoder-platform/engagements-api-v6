@@ -80,6 +80,7 @@ assignment exists, which is enough to enumerate assignment ids by probing.
 | Approve | `403` | yes, comment required | yes, reason + comment required | `404` |
 | Reopen an approved entry | `403` | `403` | yes, reason required | `404` |
 | List timesheets (landing) | n/a | own engagements only | all eligible | empty or `403` |
+| Read an entry's audit history | `403` | `403` | yes | `404` |
 
 Every administrator action that overrides a member's or a manager's work requires a reason, and that reason is
 recorded with the administrator's identity, the timestamp, and the previous value and status.
@@ -175,6 +176,7 @@ See [`TIMESHEET_API.md`](./TIMESHEET_API.md) for the request and response contra
 | `POST` | `/engagements/:engagementId/assignments/:assignmentId/timesheets/submit` |
 | `POST` | `/engagements/:engagementId/assignments/:assignmentId/timesheets/approve` |
 | `POST` | `/engagements/:engagementId/assignments/:assignmentId/timesheets/reopen` |
+| `GET` | `/engagements/:engagementId/assignments/:assignmentId/timesheets/entries/:entryId/audit` |
 | `GET` | `/timesheets/engagements` |
 
 None of these declares a scope. `PermissionsGuard` refuses every non-administrator human once scopes are

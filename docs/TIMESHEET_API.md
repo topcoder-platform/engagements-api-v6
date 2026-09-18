@@ -192,6 +192,29 @@ Sets `status = DRAFT` and `reopenedAt`, clears `approvedAt`/`approvedBy`/`approv
 A reopened entry returns to `DRAFT` rather than gaining a fourth status; `reopenedAt` is what the UI badges
 `Reopened` from.
 
+### `GET /engagements/:engagementId/assignments/:assignmentId/timesheets/entries/:entryId/audit`
+
+Administrators only. Returns the entry's recorded changes, newest first.
+
+```json
+[
+  {
+    "id": "...",
+    "action": "ADMIN_OVERRIDE",
+    "previousValues": { "hoursWorked": "8.00", "status": "APPROVED" },
+    "updatedValues": { "hoursWorked": "9.00", "status": "APPROVED" },
+    "actorUserId": "3003",
+    "actorHandle": "adminuser",
+    "actorRole": "ADMINISTRATOR",
+    "comment": "Corrected after payroll query",
+    "createdAt": "2026-09-14T11:02:00.000Z"
+  }
+]
+```
+
+Members and managers get `403`. The trail records who overrode whose work and why, which is an
+administrator's concern rather than something to show the people being audited.
+
 ### `GET /timesheets/engagements`
 
 The role-aware landing list. Paginated per the repo's `pagination.dto.ts`.
@@ -212,7 +235,13 @@ Query (administrators): `title`, `assignee`, `manager`, `status`, `fromDate`, `t
       "viewerRole": "MANAGER"
     }
   ],
-  "meta": { "page": 1, "perPage": 20, "totalCount": 1, "totalPages": 1 }
+  "meta": {
+    "page": 1,
+    "perPage": 20,
+    "totalCount": 1,
+    "totalPages": 1,
+    "viewerRole": "MANAGER"
+  }
 }
 ```
 

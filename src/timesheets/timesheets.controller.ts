@@ -25,6 +25,7 @@ import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import {
   ApproveTimesheetEntriesDto,
   ApproveTimesheetEntriesResultDto,
+  TimesheetAuditRecordDto,
   ReopenTimesheetEntriesDto,
   SubmitTimesheetEntriesDto,
   TimesheetQueryDto,
@@ -115,6 +116,35 @@ export class TimesheetsController {
       engagementId,
       assignmentId,
       body,
+      req.authUser,
+    );
+  }
+
+  @Get("entries/:entryId/audit")
+  @ApiOperation({
+    summary: "Read an entry's audit history",
+    description:
+      "Administrators only. Returns every recorded change to the entry, newest first: the action, the previous and updated values and statuses, who acted and in what role, when, and the approval comment or override reason. This is what an administrator needs when a correction is questioned, and is not a member's or manager's business.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Audit history retrieved.",
+    type: TimesheetAuditRecordDto,
+    isArray: true,
+  })
+  @ApiForbiddenResponse({
+    description: "Only an administrator can read audit history.",
+  })
+  async findEntryAudit(
+    @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
+    @Param("entryId") entryId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<TimesheetAuditRecordDto[]> {
+    return this.timesheetsService.findEntryAudit(
+      engagementId,
+      assignmentId,
+      entryId,
       req.authUser,
     );
   }

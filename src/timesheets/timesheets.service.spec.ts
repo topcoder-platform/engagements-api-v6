@@ -893,6 +893,72 @@ describe("TimesheetsService", () => {
     });
   });
 
+  describe("findEntryAudit", () => {
+    const auditRow = {
+      id: "audit-1",
+      action: TimesheetAuditAction.ADMIN_OVERRIDE,
+      previousValues: { hoursWorked: "8.00", status: "APPROVED" },
+      updatedValues: { hoursWorked: "9.00", status: "APPROVED" },
+      actorUserId: "3003",
+      actorHandle: "adminuser",
+      actorRole: "ADMINISTRATOR",
+      comment: "Payroll correction",
+      createdAt: utcDate("2026-09-14"),
+    };
+
+    beforeEach(() => {
+      db.engagementTimesheetAudit = {
+        findMany: jest.fn().mockResolvedValue([auditRow]),
+      };
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+    });
+
+    it("returns an entry's history newest first for an administrator", async () => {
+      const result = await service.findEntryAudit(
+        "eng1",
+        "asg1",
+        "entry1",
+        admin,
+      );
+
+      expect(db.engagementTimesheetAudit.findMany).toHaveBeenCalledWith({
+        where: { timesheetEntryId: "entry1" },
+        orderBy: { createdAt: "desc" },
+      });
+      expect(result).toEqual([
+        expect.objectContaining({
+          action: TimesheetAuditAction.ADMIN_OVERRIDE,
+          actorHandle: "adminuser",
+          actorRole: "ADMINISTRATOR",
+          comment: "Payroll correction",
+          previousValues: { hoursWorked: "8.00", status: "APPROVED" },
+        }),
+      ]);
+    });
+
+    it("refuses an assigned manager", async () => {
+      withManagerRow();
+
+      await expect(
+        service.findEntryAudit("eng1", "asg1", "entry1", manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("refuses the assignee", async () => {
+      await expect(
+        service.findEntryAudit("eng1", "asg1", "entry1", member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("404s for an entry on another assignment", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.findEntryAudit("eng1", "asg1", "someone-elses", admin),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
   describe("findEngagements", () => {
     const assignmentRow = (overrides: Record<string, unknown> = {}) => ({
       id: "asg1",
@@ -923,6 +989,8 @@ describe("TimesheetsService", () => {
         perPage: 20,
         totalCount: 1,
         totalPages: 1,
+        // The caller's role rides along so a client never has to infer it.
+        viewerRole: TimesheetViewerRole.Manager,
       });
     });
 

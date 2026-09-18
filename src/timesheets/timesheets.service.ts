@@ -21,15 +21,16 @@ import {
 import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
 import { MemberService } from "../integrations/member.service";
-import { PaginatedResponse } from "../engagements/dto";
 import {
   ApproveTimesheetEntriesDto,
   ApproveTimesheetEntriesResultDto,
   ReopenTimesheetEntriesDto,
   SkippedTimesheetEntryDto,
   SubmitTimesheetEntriesDto,
+  TimesheetEngagementListResponseDto,
   TimesheetEngagementQueryDto,
   TimesheetEngagementRowDto,
+  TimesheetAuditRecordDto,
   TimesheetEntryResponseDto,
   TimesheetQueryDto,
   UpsertTimesheetEntriesDto,
@@ -660,6 +661,49 @@ export class TimesheetsService {
   }
 
   /**
+   * Audit history for one entry, newest first.
+   *
+   * Administrators only. The trail records who changed a member's or manager's work and why, which is
+   * exactly the information an administrator needs when a correction is questioned - and is not a
+   * member's or manager's business.
+   */
+  async findEntryAudit(
+    engagementId: string,
+    assignmentId: string,
+    entryId: string,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetAuditRecordDto[]> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (!context.isAdministrator) {
+      throw new ForbiddenException(ERROR_MESSAGES.TimesheetAuditAdminOnly);
+    }
+
+    await this.loadEntriesForAction(assignmentId, [entryId]);
+
+    const records = await this.db.engagementTimesheetAudit.findMany({
+      where: { timesheetEntryId: entryId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return records.map((record) => ({
+      id: record.id,
+      action: record.action,
+      previousValues: record.previousValues ?? null,
+      updatedValues: record.updatedValues ?? null,
+      actorUserId: record.actorUserId,
+      actorHandle: record.actorHandle ?? null,
+      actorRole: record.actorRole,
+      comment: record.comment ?? null,
+      createdAt: record.createdAt,
+    }));
+  }
+
+  /**
    * Role-aware landing list: one row per (engagement, assignee).
    *
    * A manager sees only the engagements where they hold live approval authority; an administrator sees
@@ -668,7 +712,7 @@ export class TimesheetsService {
   async findEngagements(
     query: TimesheetEngagementQueryDto,
     authUser?: Record<string, any>,
-  ): Promise<PaginatedResponse<TimesheetEngagementRowDto>> {
+  ): Promise<TimesheetEngagementListResponseDto> {
     const isAdministrator = this.access.isAdministrator(authUser);
     const callerUserId = normalizeUserId(authUser?.userId);
 
@@ -750,6 +794,11 @@ export class TimesheetsService {
         perPage,
         totalCount,
         totalPages: Math.ceil(totalCount / perPage) || 0,
+        // The caller's own role, so a client can show the administrator-only filters without
+        // inferring anything from JWT roles - and so an empty list still says which view it is.
+        viewerRole: isAdministrator
+          ? TimesheetViewerRole.Administrator
+          : TimesheetViewerRole.Manager,
       },
     };
   }

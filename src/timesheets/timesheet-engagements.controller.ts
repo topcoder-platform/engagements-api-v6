@@ -10,8 +10,10 @@ import {
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { PermissionsGuard } from "../auth/guards/permissions.guard";
-import { PaginatedResponse } from "../engagements/dto";
-import { TimesheetEngagementQueryDto, TimesheetEngagementRowDto } from "./dto";
+import {
+  TimesheetEngagementListResponseDto,
+  TimesheetEngagementQueryDto,
+} from "./dto";
 import { TimesheetsService } from "./timesheets.service";
 
 /**
@@ -39,8 +41,7 @@ export class TimesheetEngagementsController {
   @ApiResponse({
     status: 200,
     description: "Paginated timesheet list retrieved.",
-    type: TimesheetEngagementRowDto,
-    isArray: true,
+    type: TimesheetEngagementListResponseDto,
   })
   @ApiBadRequestResponse({
     description:
@@ -53,7 +54,7 @@ export class TimesheetEngagementsController {
   async findEngagements(
     @Query() query: TimesheetEngagementQueryDto,
     @Req() req: Request & { authUser?: Record<string, any> },
-  ): Promise<PaginatedResponse<TimesheetEngagementRowDto>> {
+  ): Promise<TimesheetEngagementListResponseDto> {
     return this.timesheetsService.findEngagements(query, req.authUser);
   }
 }
