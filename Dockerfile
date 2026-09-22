@@ -30,11 +30,12 @@ RUN pnpm build
 
 # ---- Production Dependencies Stage ----
 FROM tooling AS prod-deps
+ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma
 # Install into a clean virtual store so build-only packages are absent from the
 # final image, then generate the Prisma client with builder-only tooling.
-RUN pnpm install --prod --frozen-lockfile --ignore-scripts \
+RUN pnpm install --prod --frozen-lockfile \
   && prisma generate --schema prisma/schema.prisma
 
 # ---- Production Stage ----
