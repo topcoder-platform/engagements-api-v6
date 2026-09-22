@@ -46,12 +46,21 @@ RUN apk upgrade --no-cache \
   && apk add --no-cache nodejs-current=${NODE_VERSION}-r0 \
   && addgroup -S app \
   && adduser -S -D -H -u 10001 -G app app
+ARG RESET_DB_ARG=false
+ARG SEED_DATA_ARG=""
 WORKDIR /usr/src/app
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    RESET_DB=$RESET_DB_ARG \
+    SEED_DATA=$SEED_DATA_ARG \
+    PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
 # Copy built application from the build stage
 COPY --chown=app:app --from=build /usr/src/app/dist ./dist
 # Copy production dependencies from the deps stage
 COPY --chown=app:app --from=prod-deps /usr/src/app/node_modules ./node_modules
+COPY --chown=app:app --from=build /usr/src/app/prisma ./prisma
+COPY --chown=app:app --from=build /usr/src/app/package.json ./package.json
+COPY --chown=app:app --from=build /usr/src/app/appStartUp.sh ./appStartUp.sh
+RUN chmod 0555 ./appStartUp.sh
 
 USER app
 
@@ -59,4 +68,4 @@ USER app
 EXPOSE 3000
 
 # The command to run the application
-CMD ["node", "dist/src/main.js"]
+CMD ["./appStartUp.sh"]

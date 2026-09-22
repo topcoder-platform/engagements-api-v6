@@ -95,6 +95,9 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.16.3
+      prisma:
+        specifier: ^7.8.0
+        version: 7.8.0(typescript@5.9.3)
       reflect-metadata:
         specifier: ^0.1.13
         version: 0.1.14
@@ -162,9 +165,6 @@ importers:
       prettier:
         specifier: ^3.2.5
         version: 3.7.4
-      prisma:
-        specifier: ^7.8.0
-        version: 7.8.0(typescript@5.9.3)
       supertest:
         specifier: ^7.0.0
         version: 7.2.2(supports-color@8.1.1)
@@ -1074,7 +1074,7 @@ packages:
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
 
   '@topcoder-platform/topcoder-bus-api-wrapper@https://codeload.github.com/topcoder-platform/tc-bus-api-wrapper/tar.gz/297a9c0adcdb97661257e7825bee9c3f5578b833':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/topcoder-platform/tc-bus-api-wrapper/tar.gz/297a9c0adcdb97661257e7825bee9c3f5578b833}
+    resolution: {gitHosted: true, integrity: sha512-2fcaM1CGuumlZDhjBVScMrArshg4xKjqur7Xl/SmIkbO8OamPbi793c3HmChpjQhDckhUsCLyq7vuTLKGzAKiw==, tarball: https://codeload.github.com/topcoder-platform/tc-bus-api-wrapper/tar.gz/297a9c0adcdb97661257e7825bee9c3f5578b833}
     version: 1.2.0
 
   '@tsconfig/node10@1.0.12':
@@ -3356,7 +3356,7 @@ packages:
     engines: {node: '>=6'}
 
   tc-core-library-js@https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/1075136355e1e1c4779f2138a30f3ffbd718bfa4:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/1075136355e1e1c4779f2138a30f3ffbd718bfa4}
+    resolution: {gitHosted: true, integrity: sha512-HexfdqYbUIpo5n+u/SV5bSNhOitL2UXlBQsnnNH+qHXeVCEEZfuzJJtwSEbJyGJc6XolWT2BLWg4TmIRjZj9Gg==, tarball: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/1075136355e1e1c4779f2138a30f3ffbd718bfa4}
     version: 3.0.1
     engines: {node: '>= 14'}
 
