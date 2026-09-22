@@ -14,7 +14,7 @@ RUN npm install -g pnpm@11.15.1 prisma@7.8.0
 # ---- Dependencies Stage ----
 FROM tooling AS deps
 # Copy dependency-defining files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml appStartUp.sh ./
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 COPY prisma ./prisma
@@ -57,9 +57,6 @@ ENV NODE_ENV=production \
 COPY --chown=app:app --from=build /usr/src/app/dist ./dist
 # Copy production dependencies from the deps stage
 COPY --chown=app:app --from=prod-deps /usr/src/app/node_modules ./node_modules
-COPY --chown=app:app --from=build /usr/src/app/prisma ./prisma
-COPY --chown=app:app --from=build /usr/src/app/package.json ./package.json
-COPY --chown=app:app --from=build /usr/src/app/appStartUp.sh ./appStartUp.sh
 RUN chmod 0555 ./appStartUp.sh
 
 USER app
