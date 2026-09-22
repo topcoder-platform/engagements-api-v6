@@ -16,6 +16,7 @@
     "test:external-client": "node --test packages/engagements-prisma-client/factory.test.js",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "deploy:dev": "BRANCH=$(git rev-parse --abbrev-ref HEAD) && TAG=\"dev-${BRANCH}\" && git tag -d \"$TAG\" 2>/dev/null; git push origin \":refs/tags/$TAG\" 2>/dev/null; git tag \"$TAG\" && git push origin \"$TAG\"",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
   },
   "dependencies": {
