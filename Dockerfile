@@ -1,5 +1,8 @@
+# Keep build tooling aligned with the version used by local development.
+ARG NODE_VERSION=26.5.1
+
 # ---- Base Stage ----
-FROM node:22.23.1-alpine AS base
+FROM node:${NODE_VERSION}-alpine AS base
 RUN apk upgrade --no-cache
 WORKDIR /usr/src/app
 
@@ -35,14 +38,22 @@ RUN pnpm install --prod --frozen-lockfile --ignore-scripts \
   && prisma generate --schema prisma/schema.prisma
 
 # ---- Production Stage ----
-FROM base AS production
+# Install Alpine's dynamically linked Node.js build so the runtime uses the
+# distribution-patched OpenSSL libraries instead of Node's bundled copy.
+FROM alpine:3.24 AS production
+ARG NODE_VERSION
+RUN apk upgrade --no-cache \
+  && apk add --no-cache nodejs-current=${NODE_VERSION}-r0 \
+  && addgroup -S app \
+  && adduser -S -D -H -u 10001 -G app app
+WORKDIR /usr/src/app
 ENV NODE_ENV=production
-RUN rm -rf /usr/local/lib/node_modules/npm \
-  && rm -f /usr/local/bin/npm /usr/local/bin/npx
 # Copy built application from the build stage
-COPY --from=build /usr/src/app/dist ./dist
+COPY --chown=app:app --from=build /usr/src/app/dist ./dist
 # Copy production dependencies from the deps stage
-COPY --from=prod-deps /usr/src/app/node_modules ./node_modules
+COPY --chown=app:app --from=prod-deps /usr/src/app/node_modules ./node_modules
+
+USER app
 
 # Expose the application port
 EXPOSE 3000
