@@ -24,6 +24,8 @@ import { MemberService } from "../integrations/member.service";
 import {
   ApproveTimesheetEntriesDto,
   ApproveTimesheetEntriesResultDto,
+  LinkTimesheetPaymentDto,
+  LinkedTimesheetPaymentDto,
   ReopenTimesheetEntriesDto,
   SkippedTimesheetEntryDto,
   SubmitTimesheetEntriesDto,
@@ -33,6 +35,8 @@ import {
   TimesheetAuditRecordDto,
   TimesheetEntryResponseDto,
   TimesheetQueryDto,
+  TimesheetSummaryQueryDto,
+  TimesheetSummaryResponseDto,
   UpsertTimesheetEntriesDto,
   UpsertTimesheetEntryDto,
   TimesheetViewResponseDto,
@@ -661,6 +665,224 @@ export class TimesheetsService {
   }
 
   /**
+   * Approved, unpaid hours for a payment period.
+   *
+   * Only `APPROVED` entries count: pending and unsubmitted hours are not payable, and an entry a
+   * payment already consumed is excluded from the totals and reported separately, so the caller can
+   * explain a shortfall rather than silently paying less than the member logged.
+   */
+  async findPaymentSummary(
+    engagementId: string,
+    assignmentId: string,
+    query: TimesheetSummaryQueryDto,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetSummaryResponseDto> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (context.viewerRole === TimesheetViewerRole.Member) {
+      throw new ForbiddenException(
+        ERROR_MESSAGES.TimesheetSummaryNotForMembers,
+      );
+    }
+
+    const fromDate = query.fromDate
+      ? toWorkDate(query.fromDate, "fromDate")
+      : undefined;
+    const toDate = query.toDate
+      ? toWorkDate(query.toDate, "toDate")
+      : undefined;
+    this.assertValidRange(fromDate, toDate);
+
+    const entries = await this.db.engagementTimesheetEntry.findMany({
+      where: {
+        engagementAssignmentId: assignmentId,
+        status: TimesheetEntryStatus.APPROVED,
+        ...(fromDate || toDate
+          ? {
+              workDate: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lte: toDate } : {}),
+              },
+            }
+          : {}),
+      },
+      orderBy: { workDate: "asc" },
+    });
+
+    const payable = entries.filter((entry) => !entry.paidPaymentReference);
+    const alreadyPaid = entries.filter((entry) => entry.paidPaymentReference);
+
+    // Summed as Decimal rather than with floats: this number is multiplied by an hourly rate and
+    // becomes money.
+    const totalHours = payable.reduce(
+      (total, entry) => total.plus(entry.hoursWorked),
+      new Prisma.Decimal(0),
+    );
+
+    return {
+      totalDays: payable.length,
+      totalHours: totalHours.toFixed(2),
+      ratePerHour: context.assignment.ratePerHour ?? null,
+      entryIds: payable.map((entry) => entry.id),
+      alreadyPaidEntryIds: alreadyPaid.map((entry) => entry.id),
+    };
+  }
+
+  /**
+   * Records that a payment consumed these entries.
+   *
+   * Rejecting an entry that already carries a payment reference is what actually prevents the same
+   * approved hours being paid twice - the summary endpoint's exclusion is only a convenience. The call
+   * is atomic, so a batch containing one already-paid entry links nothing.
+   */
+  async linkPayment(
+    engagementId: string,
+    assignmentId: string,
+    dto: LinkTimesheetPaymentDto,
+    authUser?: Record<string, any>,
+  ): Promise<LinkedTimesheetPaymentDto[]> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (context.viewerRole === TimesheetViewerRole.Member) {
+      throw new ForbiddenException(
+        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+      );
+    }
+
+    const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+
+    const notApproved = entries.filter(
+      (entry) => entry.status !== TimesheetEntryStatus.APPROVED,
+    );
+    if (notApproved.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetPaymentNotApproved,
+        entries: notApproved.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          currentStatus: entry.status,
+        })),
+      });
+    }
+
+    const alreadyPaid = entries.filter((entry) => entry.paidPaymentReference);
+    if (alreadyPaid.length) {
+      throw new ConflictException({
+        message: ERROR_MESSAGES.TimesheetPaymentAlreadyPaid,
+        entries: alreadyPaid.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          paymentReference: entry.paidPaymentReference,
+        })),
+      });
+    }
+
+    const paidAt = new Date();
+
+    return this.db.$transaction(async (tx) => {
+      const linked: LinkedTimesheetPaymentDto[] = [];
+
+      for (const entry of entries) {
+        // Guarded on the reference still being unset, so two payments racing for the same entry
+        // cannot both claim it.
+        const update = await tx.engagementTimesheetEntry.updateMany({
+          where: { id: entry.id, paidPaymentReference: null },
+          data: {
+            paidPaymentReference: dto.paymentReference,
+            paidAt,
+            updatedBy: context.actorUserId,
+          },
+        });
+
+        if (!update.count) {
+          throw new ConflictException({
+            message: ERROR_MESSAGES.TimesheetPaymentAlreadyPaid,
+            entries: [{ id: entry.id, workDate: toDateString(entry.workDate) }],
+          });
+        }
+
+        await this.audit.record(tx, {
+          timesheetEntryId: entry.id,
+          action: TimesheetAuditAction.PAYMENT_LINKED,
+          previousValues: { paidPaymentReference: null },
+          updatedValues: {
+            paidPaymentReference: dto.paymentReference,
+            paidAt: paidAt.toISOString(),
+            hoursWorked: entry.hoursWorked,
+          },
+          actorUserId: context.actorUserId,
+          actorHandle: context.actorHandle,
+          actorRole: this.toActorRole(context),
+          comment: `Payment ${dto.paymentReference}`,
+        });
+
+        linked.push({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          hoursWorked: entry.hoursWorked.toFixed(2),
+          paymentReference: dto.paymentReference,
+          paidAt,
+        });
+      }
+
+      this.logger.log(
+        `Linked ${linked.length} entries on assignment ${assignmentId} to payment ${dto.paymentReference}`,
+      );
+
+      return linked;
+    });
+  }
+
+  /**
+   * Reconciliation: which entries a payment consumed.
+   *
+   * The other direction - which payment consumed an entry - is already on the entry itself, and comes
+   * back on every timesheet read.
+   */
+  async findEntriesByPaymentReference(
+    engagementId: string,
+    assignmentId: string,
+    paymentReference: string,
+    authUser?: Record<string, any>,
+  ): Promise<LinkedTimesheetPaymentDto[]> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (context.viewerRole === TimesheetViewerRole.Member) {
+      throw new ForbiddenException(
+        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+      );
+    }
+
+    const entries = await this.db.engagementTimesheetEntry.findMany({
+      where: {
+        engagementAssignmentId: assignmentId,
+        paidPaymentReference: paymentReference,
+      },
+      orderBy: { workDate: "asc" },
+    });
+
+    return entries.map((entry) => ({
+      id: entry.id,
+      workDate: toDateString(entry.workDate),
+      hoursWorked: entry.hoursWorked.toFixed(2),
+      paymentReference,
+      paidAt: entry.paidAt as Date,
+    }));
+  }
+
+  /**
    * Audit history for one entry, newest first.
    *
    * Administrators only. The trail records who changed a member's or manager's work and why, which is
@@ -1106,6 +1328,8 @@ export class TimesheetsService {
         entry.workDate,
       ),
       isPaid: Boolean(entry.paidPaymentReference),
+      paymentReference: entry.paidPaymentReference ?? null,
+      paidAt: entry.paidAt ?? null,
     };
   }
 

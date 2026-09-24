@@ -25,10 +25,14 @@ import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import {
   ApproveTimesheetEntriesDto,
   ApproveTimesheetEntriesResultDto,
+  LinkTimesheetPaymentDto,
+  LinkedTimesheetPaymentDto,
   TimesheetAuditRecordDto,
   ReopenTimesheetEntriesDto,
   SubmitTimesheetEntriesDto,
   TimesheetQueryDto,
+  TimesheetSummaryQueryDto,
+  TimesheetSummaryResponseDto,
   TimesheetViewResponseDto,
   UpsertTimesheetEntriesDto,
 } from "./dto";
@@ -116,6 +120,104 @@ export class TimesheetsController {
       engagementId,
       assignmentId,
       body,
+      req.authUser,
+    );
+  }
+
+  @Get("summary")
+  @ApiOperation({
+    summary: "Summarize approved, unpaid hours for a payment period",
+    description:
+      "Returns the approved hours a payment may be made against: totals, the hourly rate, and the entries the payment would consume. Entries in any other status are excluded entirely, and entries a payment already consumed are excluded from the totals and listed separately so the caller can explain why the total is lower than the member's logged hours. Managers and administrators only.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Summary retrieved.",
+    type: TimesheetSummaryResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      "Invalid date range: malformed dates, inverted range, or a span over 31 days.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "The assignee cannot read payment summaries for their own timesheet.",
+  })
+  async findPaymentSummary(
+    @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
+    @Query() query: TimesheetSummaryQueryDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<TimesheetSummaryResponseDto> {
+    return this.timesheetsService.findPaymentSummary(
+      engagementId,
+      assignmentId,
+      query,
+      req.authUser,
+    );
+  }
+
+  @Post("entries/payments")
+  @ApiOperation({
+    summary: "Record that a payment consumed timesheet entries",
+    description:
+      "Stamps the payment reference on each entry so the same approved hours cannot be paid again. An entry that already carries a reference, or that is not approved, is rejected and the whole call links nothing - that rejection is the actual double-payment guard, while the summary endpoint's exclusion is only a convenience. Called after the payment exists: a crash between the two leaves entries unmarked, which is recoverable, where marking first would strand approved hours as unpayable if payment creation then failed.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Entries linked to the payment.",
+    type: LinkedTimesheetPaymentDto,
+    isArray: true,
+  })
+  @ApiBadRequestResponse({
+    description: "One or more entries are not approved. Nothing is linked.",
+  })
+  @ApiForbiddenResponse({
+    description: "The assignee cannot link their own entries to a payment.",
+  })
+  @ApiConflictResponse({
+    description: "One or more entries were already paid. Nothing is linked.",
+  })
+  async linkPayment(
+    @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
+    @Body() body: LinkTimesheetPaymentDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<LinkedTimesheetPaymentDto[]> {
+    return this.timesheetsService.linkPayment(
+      engagementId,
+      assignmentId,
+      body,
+      req.authUser,
+    );
+  }
+
+  @Get("entries/payments/:paymentReference")
+  @ApiOperation({
+    summary: "Reconcile a payment against the entries it consumed",
+    description:
+      "Lists the entries a given payment reference covers. The other direction - which payment consumed an entry - already rides on the entry itself in every timesheet read.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Linked entries retrieved.",
+    type: LinkedTimesheetPaymentDto,
+    isArray: true,
+  })
+  @ApiForbiddenResponse({
+    description:
+      "The assignee cannot reconcile payments on their own timesheet.",
+  })
+  async findEntriesByPaymentReference(
+    @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
+    @Param("paymentReference") paymentReference: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<LinkedTimesheetPaymentDto[]> {
+    return this.timesheetsService.findEntriesByPaymentReference(
+      engagementId,
+      assignmentId,
+      paymentReference,
       req.authUser,
     );
   }
