@@ -95,6 +95,7 @@ describe("EngagementsService", () => {
   let assignmentOfferResponseEmailService: {
     sendAssignmentOfferResponseEmails: jest.Mock;
   };
+  let managersService: { findByEngagementIds: jest.Mock };
 
   /**
    * Creates the service with the current mocks and environment.
@@ -113,6 +114,7 @@ describe("EngagementsService", () => {
       eventBusService as any,
       assignmentOfferEmailService as any,
       assignmentOfferResponseEmailService as any,
+      managersService as any,
     );
 
   const createDto = {
@@ -248,6 +250,9 @@ describe("EngagementsService", () => {
     };
     assignmentOfferResponseEmailService = {
       sendAssignmentOfferResponseEmails: jest.fn().mockResolvedValue(undefined),
+    };
+    managersService = {
+      findByEngagementIds: jest.fn().mockResolvedValue(new Map()),
     };
     service = createService();
   });
@@ -1259,6 +1264,7 @@ describe("EngagementsService", () => {
       otherRemarks: "Complete onboarding within the first week.",
       startDate: new Date("2026-02-12T00:00:00.000Z"),
       endDate: new Date("2026-05-12T00:00:00.000Z"),
+      managers: [],
     });
   });
 

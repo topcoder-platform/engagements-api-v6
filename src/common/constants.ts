@@ -36,6 +36,50 @@ export const ERROR_MESSAGES = {
   EngagementNotAssigned:
     "Cannot add feedback to an engagement that is not assigned to a member",
   AssignmentNotFound: "Engagement assignment not found",
+  TimesheetNotFound: "Timesheet not found",
+  TimesheetEntriesNotFound:
+    "One or more timesheet entries were not found on this assignment.",
+  TimesheetEntryApprovedReadOnly:
+    "Approved timesheet entries cannot be changed. Ask an administrator to reopen them.",
+  TimesheetOverrideReasonRequired:
+    "An override reason is required when an administrator acts on another user's behalf.",
+  TimesheetManagerCannotEdit:
+    "Managers can approve timesheet entries but cannot change hours or remarks.",
+  TimesheetManagerCannotSubmit:
+    "Managers cannot submit timesheet entries on a member's behalf.",
+  TimesheetMemberCannotApprove:
+    "Only an assigned manager or an administrator can approve timesheet entries.",
+  TimesheetAuditAdminOnly:
+    "Only an administrator can read timesheet audit history.",
+  TimesheetReopenAdminOnly:
+    "Only an administrator can reopen approved timesheet entries.",
+  TimesheetReopenNotApproved:
+    "Only approved timesheet entries can be reopened.",
+  TimesheetSubmitRejected:
+    "Some entries cannot be submitted, so nothing was submitted.",
+  TimesheetDuplicateWorkDate:
+    "The same work date appears more than once in this request.",
+  TimesheetHoursRequired: "Hours worked is required.",
+  TimesheetHoursNumeric: "Hours worked must be a number.",
+  TimesheetHoursNegative: "Hours worked cannot be negative.",
+  TimesheetHoursTooHigh: "Hours worked cannot exceed 24 for a single day.",
+  TimesheetRangeInverted: "The to date cannot be earlier than the from date.",
+  TimesheetRangeTooLong:
+    "A timesheet date range cannot span more than 31 days.",
+  UnauthorizedTimesheetList:
+    "You do not have permission to list timesheet engagements.",
+  EngagementNotFound: "Engagement not found",
+  ManagerUserIdRequired: "A Topcoder user id is required.",
+  ManagerHandleUnresolved:
+    "No Topcoder member was found for that user id. Send the manager's handle alongside the user id, or check the id.",
+  DuplicateEngagementManager:
+    "That member is already assigned as a manager on this engagement.",
+  EngagementManagerNotFound:
+    "That member is not assigned as a manager on this engagement.",
+  UnauthorizedManagerRead:
+    "You do not have permission to view managers for this engagement.",
+  UnauthorizedManagerChange:
+    "Only administrators can change engagement manager assignments.",
   AssignmentEngagementMismatch:
     "Assignment does not belong to the specified engagement",
   FeedbackTokenExpired:

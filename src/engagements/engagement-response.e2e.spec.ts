@@ -39,6 +39,9 @@ describe("Engagement Response (e2e)", () => {
     engagement: {
       findUnique: jest.fn(),
     },
+    engagementManager: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     $connect: jest.fn(),
     $disconnect: jest.fn(),
   };

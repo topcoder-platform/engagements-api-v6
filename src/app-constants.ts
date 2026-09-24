@@ -8,6 +8,10 @@ export const Scopes = {
   WriteFeedback: "write:feedback",
   ReadMemberExperience: "read:member-experience",
   WriteMemberExperience: "write:member-experience",
+  ReadTimesheets: "read:timesheets",
+  WriteTimesheets: "write:timesheets",
+  ApproveTimesheets: "approve:timesheets",
+  ManageTimesheets: "manage:timesheets",
 };
 
 export const UserRoles = {

@@ -69,6 +69,25 @@ enum AnticipatedStart {
   FEW_WEEKS
 }
 
+enum TimesheetEntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+enum TimesheetAuditAction {
+  CREATED
+  UPDATED
+  SUBMITTED
+  UNSUBMITTED
+  APPROVED
+  REOPENED
+  ADMIN_OVERRIDE
+  PAYMENT_LINKED
+  MANAGER_ASSIGNED
+  MANAGER_REMOVED
+}
+
 enum RoleLevel {
   JUNIOR
   MID
@@ -133,6 +152,8 @@ model Engagement {
 
   applications        EngagementApplication[]
   assignments         EngagementAssignment[]
+  managers            EngagementManager[]
+  timesheetAudit      EngagementTimesheetAudit[]
 
   @@index([projectId])
   @@index([status])
@@ -193,6 +214,7 @@ model EngagementAssignment {
   engagement     Engagement         @relation(fields: [engagementId], references: [id], onDelete: Restrict)
   feedback       EngagementFeedback[]
   memberExperiences  MemberExperience[]
+  timesheetEntries   EngagementTimesheetEntry[]
 
   @@index([engagementId])
   @@index([engagementId, memberId])
@@ -263,4 +285,88 @@ model EngagementLead {
   @@index([workEmail])
   @@index([accountName])
   @@index([createdAt])
+}
+
+model EngagementTimesheetEntry {
+  id                     String               @id @default(uuid())
+  engagementAssignmentId String
+  /// Calendar day the hours were worked. Stored as a date, not a timestamp: a timesheet row is a
+  /// calendar day in the member's frame of reference, so the unique constraint below means "one
+  /// entry per day" and no timezone conversion can shift the 7th into the 6th.
+  workDate               DateTime             @db.Date
+  /// Decimal, not Float: these hours are summed and multiplied by an hourly rate to produce a
+  /// payment amount, so they must sum exactly.
+  hoursWorked            Decimal              @db.Decimal(5, 2)
+  remarks                String?
+  status                 TimesheetEntryStatus @default(DRAFT)
+
+  submittedAt            DateTime?
+  submittedBy            String?
+  approvedAt             DateTime?
+  approvedBy             String?
+  approvedByHandle       String?
+  approvalComment        String?
+  /// Set when an administrator reopens an approved entry. The entry returns to DRAFT; this field is
+  /// what lets the UI badge it "Reopened" without the state machine growing a fourth status.
+  reopenedAt             DateTime?
+
+  paidPaymentReference   String?
+  paidAt                 DateTime?
+
+  createdAt              DateTime             @default(now())
+  createdBy              String
+  updatedAt              DateTime             @updatedAt
+  updatedBy              String?
+
+  assignment             EngagementAssignment           @relation(fields: [engagementAssignmentId], references: [id], onDelete: Restrict)
+  auditRecords           EngagementTimesheetAudit[]
+
+  @@unique([engagementAssignmentId, workDate])
+  @@index([engagementAssignmentId, status])
+  @@index([engagementAssignmentId, workDate])
+  @@index([status, workDate])
+}
+
+/// One audit trail for the whole timesheet domain. Most rows are entry-scoped, but manager
+/// assignment and removal are engagement-scoped and have no entry, so exactly one of
+/// timesheetEntryId / engagementId is set on every row - enforced by a database check constraint.
+model EngagementTimesheetAudit {
+  id               String                @id @default(uuid())
+  timesheetEntryId String?
+  engagementId     String?
+  action           TimesheetAuditAction
+  previousValues   Json?
+  updatedValues    Json?
+  actorUserId      String
+  actorHandle      String?
+  actorRole        String
+  comment          String?
+  createdAt        DateTime              @default(now())
+
+  entry            EngagementTimesheetEntry? @relation(fields: [timesheetEntryId], references: [id], onDelete: Cascade)
+  engagement       Engagement?               @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@index([timesheetEntryId, createdAt])
+  @@index([engagementId, createdAt])
+  @@index([actorUserId])
+}
+
+model EngagementManager {
+  id            String    @id @default(uuid())
+  engagementId  String
+  managerUserId String
+  managerHandle String
+  managerName   String?
+  createdAt     DateTime  @default(now())
+  createdBy     String
+  /// Soft delete. Removing a manager must not strand the approval records that name them, and the
+  /// audit history has to survive removal. `removedAt IS NULL` is the "is currently a manager"
+  /// predicate.
+  removedAt     DateTime?
+  removedBy     String?
+
+  engagement    Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@unique([engagementId, managerUserId])
+  @@index([managerUserId, removedAt])
 }

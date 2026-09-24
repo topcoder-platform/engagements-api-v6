@@ -106,6 +106,53 @@ export class MemberService {
     return emailByUserId;
   }
 
+  /**
+   * Display names for several members at once, keyed by user id.
+   *
+   * Batched deliberately: the timesheet views show "Name (handle)" for the assignee, and the
+   * administrator list shows one row per assignee, so a per-row lookup would be an N+1 against the
+   * member API. Members with no name on their profile are simply absent from the map, and callers
+   * fall back to the handle.
+   */
+  async getMemberNamesByUserIds(
+    userIds: string[],
+  ): Promise<Map<string, string>> {
+    const normalizedUserIds = Array.from(
+      new Set(
+        userIds
+          .map((userId) => userId?.trim())
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
+    );
+
+    if (!normalizedUserIds.length) {
+      return new Map();
+    }
+
+    const members = await this.fetchMembersByUserIds(
+      normalizedUserIds,
+      "userId,firstName,lastName",
+    );
+    const nameByUserId = new Map<string, string>();
+
+    members.forEach((member) => {
+      if (member.userId === undefined || member.userId === null) {
+        return;
+      }
+
+      const name = [member.firstName, member.lastName]
+        .filter((part) => Boolean(part?.trim()))
+        .join(" ")
+        .trim();
+
+      if (name) {
+        nameByUserId.set(String(member.userId), name);
+      }
+    });
+
+    return nameByUserId;
+  }
+
   async getMemberHandleByUserId(userId: string): Promise<string | null> {
     const members = await this.fetchMembers(userId, "handle");
     const member = members[0];

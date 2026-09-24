@@ -66,6 +66,8 @@ workflows:
               - develop
               - PM-4669_payment-cycles
               - PM-6091
+          tags:
+              only: /^dev-.*/
 
     # Production builds are exectuted only on tagged commits to the
     # master branch.

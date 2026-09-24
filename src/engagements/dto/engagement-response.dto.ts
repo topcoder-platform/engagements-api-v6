@@ -8,6 +8,7 @@ import {
   Workload,
 } from "@prisma/client";
 import { Transform } from "class-transformer";
+import { EngagementManagerResponseDto } from "../managers/dto";
 import { AssignmentResponseDto } from "./assignment-response.dto";
 
 class EngagementProjectResponseDto {
@@ -306,4 +307,12 @@ export class EngagementResponseDto {
     example: 12,
   })
   applicationsCount?: number;
+
+  @ApiPropertyOptional({
+    description:
+      "Managers currently authorized to approve timesheets on this engagement. Removed managers are excluded.",
+    type: EngagementManagerResponseDto,
+    isArray: true,
+  })
+  managers?: EngagementManagerResponseDto[];
 }
