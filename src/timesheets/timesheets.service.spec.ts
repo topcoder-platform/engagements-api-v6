@@ -179,6 +179,23 @@ describe("TimesheetsService", () => {
       expect(result.entries[0].approvalComment).toBe("Approved for week 37");
     });
 
+    it("returns entry-level payment reconciliation fields", async () => {
+      const paidAt = utcDate("2026-09-20");
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          paidAt,
+          paidPaymentReference: "win-1",
+          status: TimesheetEntryStatus.APPROVED,
+        }),
+      ]);
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(result.entries[0].isPaid).toBe(true);
+      expect(result.entries[0].paymentReference).toBe("win-1");
+      expect(result.entries[0].paidAt).toEqual(paidAt);
+    });
+
     it("404s when the assignment belongs to a different engagement", async () => {
       await expect(
         service.findTimesheet("other-eng", "asg1", {}, member),
@@ -890,6 +907,245 @@ describe("TimesheetsService", () => {
         service.reopenEntries("eng1", "asg1", reopenPayload, admin),
       ).rejects.toThrow("Only approved timesheet entries can be reopened");
       expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("findPaymentSummary", () => {
+    const approved = (overrides: Record<string, unknown> = {}) =>
+      entry({ status: TimesheetEntryStatus.APPROVED, ...overrides });
+
+    beforeEach(() => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        ratePerHour: "45.00",
+      });
+    });
+
+    it("totals approved hours exactly and reports the rate", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        approved({ id: "e1", hoursWorked: decimal("8.50") }),
+        approved({ id: "e2", hoursWorked: decimal("8.50") }),
+        approved({ id: "e3", hoursWorked: decimal("8.50") }),
+        approved({ id: "e4", hoursWorked: decimal("8.50") }),
+        approved({ id: "e5", hoursWorked: decimal("8.50") }),
+        approved({ id: "e6", hoursWorked: decimal("8.50") }),
+      ]);
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+
+      // Six times 8.5 is exactly 51, not 50.999...
+      expect(result.totalHours).toBe("51.00");
+      expect(result.totalDays).toBe(6);
+      expect(result.ratePerHour).toBe("45.00");
+      expect(result.entryIds).toHaveLength(6);
+      expect(result.alreadyPaidEntryIds).toEqual([]);
+    });
+
+    it("asks the database for approved entries only", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
+
+      await service.findPaymentSummary("eng1", "asg1", {}, manager);
+
+      const { where } = db.engagementTimesheetEntry.findMany.mock.calls[0][0];
+      expect(where.status).toBe(TimesheetEntryStatus.APPROVED);
+    });
+
+    it("excludes already-paid entries from the totals and reports them separately", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        approved({ id: "unpaid", hoursWorked: decimal("8.00") }),
+        approved({
+          id: "paid",
+          hoursWorked: decimal("8.00"),
+          paidPaymentReference: "win-1",
+        }),
+      ]);
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        {},
+        manager,
+      );
+
+      expect(result.totalDays).toBe(1);
+      expect(result.totalHours).toBe("8.00");
+      expect(result.entryIds).toEqual(["unpaid"]);
+      expect(result.alreadyPaidEntryIds).toEqual(["paid"]);
+    });
+
+    it("refuses the assignee", async () => {
+      await expect(
+        service.findPaymentSummary("eng1", "asg1", {}, member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("rejects an inverted range", async () => {
+      withManagerRow();
+
+      await expect(
+        service.findPaymentSummary(
+          "eng1",
+          "asg1",
+          { fromDate: "2026-09-30", toDate: "2026-09-01" },
+          manager,
+        ),
+      ).rejects.toThrow("cannot be earlier than the from date");
+    });
+  });
+
+  describe("linkPayment", () => {
+    const linkDto = { entryIds: ["e1"], paymentReference: "win-1" } as never;
+
+    beforeEach(() => {
+      db.engagementTimesheetEntry.updateMany.mockResolvedValue({ count: 1 });
+    });
+
+    it("stamps the payment reference and audits it", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.APPROVED }),
+      ]);
+
+      const result = await service.linkPayment(
+        "eng1",
+        "asg1",
+        linkDto,
+        manager,
+      );
+
+      expect(db.engagementTimesheetEntry.updateMany).toHaveBeenCalledWith({
+        where: { id: "e1", paidPaymentReference: null },
+        data: expect.objectContaining({ paidPaymentReference: "win-1" }),
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          action: TimesheetAuditAction.PAYMENT_LINKED,
+          comment: "Payment win-1",
+        }),
+      );
+      expect(result).toEqual([
+        expect.objectContaining({
+          id: "e1",
+          hoursWorked: "8.50",
+          paymentReference: "win-1",
+        }),
+      ]);
+    });
+
+    it("links nothing when one entry was already paid", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.APPROVED }),
+        entry({
+          id: "e2",
+          status: TimesheetEntryStatus.APPROVED,
+          paidPaymentReference: "win-0",
+        }),
+      ]);
+
+      await expect(
+        service.linkPayment(
+          "eng1",
+          "asg1",
+          { entryIds: ["e1", "e2"], paymentReference: "win-1" },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("links nothing when one entry is not approved", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.APPROVED }),
+        entry({ id: "e2", status: TimesheetEntryStatus.SUBMITTED }),
+      ]);
+
+      await expect(
+        service.linkPayment(
+          "eng1",
+          "asg1",
+          { entryIds: ["e1", "e2"], paymentReference: "win-1" },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("refuses a payment that raced another for the same entry", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.APPROVED }),
+      ]);
+      // The guarded update finds nothing: someone else claimed the entry in between.
+      db.engagementTimesheetEntry.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.linkPayment("eng1", "asg1", linkDto, manager),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it("refuses the assignee", async () => {
+      await expect(
+        service.linkPayment("eng1", "asg1", linkDto, member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("404s for an entry on another assignment", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.linkPayment("eng1", "asg1", linkDto, manager),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe("findEntriesByPaymentReference", () => {
+    it("lists the entries a payment consumed", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          id: "e1",
+          status: TimesheetEntryStatus.APPROVED,
+          paidPaymentReference: "win-1",
+          paidAt: utcDate("2026-09-20"),
+        }),
+      ]);
+
+      const result = await service.findEntriesByPaymentReference(
+        "eng1",
+        "asg1",
+        "win-1",
+        manager,
+      );
+
+      expect(db.engagementTimesheetEntry.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            engagementAssignmentId: "asg1",
+            paidPaymentReference: "win-1",
+          },
+        }),
+      );
+      expect(result).toEqual([
+        expect.objectContaining({ id: "e1", paymentReference: "win-1" }),
+      ]);
+    });
+
+    it("refuses the assignee", async () => {
+      await expect(
+        service.findEntriesByPaymentReference("eng1", "asg1", "win-1", member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 

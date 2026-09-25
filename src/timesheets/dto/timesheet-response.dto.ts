@@ -84,6 +84,20 @@ export class TimesheetEntryResponseDto {
     example: false,
   })
   isPaid: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      "Identifier of the payment that consumed this entry. This is the entry -> payment leg of reconciliation.",
+    example: "8f14e45f-ceea-467a-9c3d-2b1a5f6c7d8e",
+    nullable: true,
+  })
+  paymentReference: string | null;
+
+  @ApiPropertyOptional({
+    description: "When this entry was linked to a payment",
+    nullable: true,
+  })
+  paidAt: Date | null;
 }
 
 export class TimesheetAssignmentResponseDto {
