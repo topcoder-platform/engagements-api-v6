@@ -126,6 +126,9 @@ export class LinkedTimesheetPaymentDto {
   })
   paymentReference: string;
 
-  @ApiProperty({ description: "When the entry was linked to the payment" })
+  @ApiPropertyOptional({
+    description: "When the entry was linked to the payment",
+    nullable: true,
+  })
   paidAt: Date;
 }
