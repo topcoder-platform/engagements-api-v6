@@ -372,7 +372,7 @@ export class MemberService {
     const baseUrl = this.getMemberApiBaseUrl();
     const authToken = token ?? (await this.getM2MToken());
     const query = normalizedUserIds
-      .map((userId) => `userIds=${encodeURIComponent(userId)}`)
+      .map((userId) => `userIds[]=${encodeURIComponent(userId)}`)
       .join("&");
     const fieldsQuery = fields ? `&fields=${encodeURIComponent(fields)}` : "";
     const url = `${baseUrl}?${query}${fieldsQuery}&perPage=${normalizedUserIds.length}`;
