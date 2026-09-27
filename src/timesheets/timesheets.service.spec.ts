@@ -42,6 +42,11 @@ describe("TimesheetsService", () => {
     handle: "adminuser",
     roles: [UserRoles.Admin],
   };
+  const taskManager = {
+    userId: "4004",
+    handle: "tmuser",
+    roles: [UserRoles.TaskManager],
+  };
   const projectManager = {
     userId: "4004",
     handle: "pmuser",
@@ -177,6 +182,24 @@ describe("TimesheetsService", () => {
       expect(result.viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.entries[0].approvedByHandle).toBe("robertl");
       expect(result.entries[0].approvalComment).toBe("Approved for week 37");
+    });
+
+    it("shows a TM only the submitted entries", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "submitted", status: TimesheetEntryStatus.SUBMITTED }),
+        entry({ id: "approved", status: TimesheetEntryStatus.APPROVED }),
+      ]);
+
+      const result = await service.findTimesheet(
+        "eng1",
+        "asg1",
+        {},
+        taskManager,
+      );
+
+      expect(result.viewerRole).toBe(TimesheetViewerRole.Tm);
+      expect(result.entries).toHaveLength(1);
+      expect(result.entries[0].id).toBe("submitted");
     });
 
     it("returns entry-level payment reconciliation fields", async () => {
@@ -488,7 +511,7 @@ describe("TimesheetsService", () => {
       );
     });
 
-    it("treats a platform manager role as an administrator needing a reason", async () => {
+    it("denies a project manager without elevating them", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([
         entry({ status: TimesheetEntryStatus.APPROVED }),
       ]);
@@ -500,7 +523,18 @@ describe("TimesheetsService", () => {
           payload([{ workDate: "2026-09-07", hoursWorked: "9" }]),
           projectManager,
         ),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it("rejects a TM editing entries", async () => {
+      await expect(
+        service.upsertEntries(
+          "eng1",
+          "asg1",
+          payload([{ workDate: "2026-09-07", hoursWorked: "8" }]),
+          taskManager,
+        ),
+      ).rejects.toThrow("submitted timesheet entries only");
     });
 
     it("refuses an assigned manager: approval is their power, editing is not", async () => {
@@ -675,6 +709,17 @@ describe("TimesheetsService", () => {
         ),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
+
+    it("refuses a TM", async () => {
+      await expect(
+        service.submitEntries(
+          "eng1",
+          "asg1",
+          { entryIds: ["entry1"] },
+          taskManager,
+        ),
+      ).rejects.toThrow("submitted timesheet entries only");
+    });
   });
 
   describe("approveEntries", () => {
@@ -803,6 +848,17 @@ describe("TimesheetsService", () => {
       expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
     });
 
+    it("refuses a TM", async () => {
+      await expect(
+        service.approveEntries(
+          "eng1",
+          "asg1",
+          approvalPayload,
+          taskManager,
+        ),
+      ).rejects.toThrow("submitted timesheet entries only");
+    });
+
     it("404s for a manager of a different engagement", async () => {
       db.engagementManager.findFirst.mockResolvedValue(null);
 
@@ -897,6 +953,12 @@ describe("TimesheetsService", () => {
     it("refuses the assignee", async () => {
       await expect(
         service.reopenEntries("eng1", "asg1", reopenPayload, member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("refuses a TM", async () => {
+      await expect(
+        service.reopenEntries("eng1", "asg1", reopenPayload, taskManager),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
@@ -1098,6 +1160,12 @@ describe("TimesheetsService", () => {
       await expect(
         service.linkPayment("eng1", "asg1", linkDto, member),
       ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("refuses a TM", async () => {
+      await expect(
+        service.linkPayment("eng1", "asg1", linkDto, taskManager),
+      ).rejects.toThrow("submitted timesheet entries only");
     });
 
     it("404s for an entry on another assignment", async () => {

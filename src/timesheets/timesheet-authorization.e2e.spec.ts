@@ -27,6 +27,11 @@ const tokens: Record<string, Record<string, any>> = {
     handle: "adminuser",
     roles: [UserRoles.Admin],
   },
+  "task-manager": {
+    userId: "4004",
+    handle: "tmuser",
+    roles: [UserRoles.TaskManager],
+  },
   "platform-manager": {
     userId: "4004",
     handle: "pmuser",
@@ -171,6 +176,7 @@ describe("Timesheet authorization (e2e)", () => {
     it.each([
       ["the assignee", "assignee", "MEMBER"],
       ["an assigned manager", "assigned-manager", "MANAGER"],
+      ["a task manager", "task-manager", "TM"],
       ["an administrator", "administrator", "ADMINISTRATOR"],
       ["a machine token with the manage scope", "m2m-manage", "ADMINISTRATOR"],
     ])(
@@ -182,10 +188,10 @@ describe("Timesheet authorization (e2e)", () => {
       },
     );
 
-    it("treats a platform manager role as an administrator, not a manager", async () => {
-      const response = await get("platform-manager").expect(200);
+    it("treats a project manager role as unrelated", async () => {
+      const response = await get("platform-manager").expect(404);
 
-      expect(response.body.viewerRole).toBe("ADMINISTRATOR");
+      expect(response.body.message).toBe("Timesheet not found");
     });
 
     it.each([
@@ -231,6 +237,10 @@ describe("Timesheet authorization (e2e)", () => {
 
     it("lets the assignee save entries", async () => {
       await put("assignee").expect(200);
+    });
+
+    it("403s a task manager: they can view but not edit", async () => {
+      await put("task-manager").expect(403);
     });
 
     it("403s an assigned manager: approving is their power, editing is not", async () => {
@@ -300,6 +310,10 @@ describe("Timesheet authorization (e2e)", () => {
       await approve("assigned-manager").expect(201);
     });
 
+    it("403s a task manager", async () => {
+      await approve("task-manager").expect(403);
+    });
+
     it("403s the assignee approving their own hours", async () => {
       await approve("assignee").expect(403);
     });
@@ -350,6 +364,10 @@ describe("Timesheet authorization (e2e)", () => {
       await reopen("assignee").expect(403);
     });
 
+    it("403s a task manager", async () => {
+      await reopen("task-manager").expect(403);
+    });
+
     it("404s an unrelated member", async () => {
       await reopen("other-member").expect(404);
     });
@@ -379,6 +397,17 @@ describe("Timesheet authorization (e2e)", () => {
       const { where } =
         dbServiceMock.engagementAssignment.findMany.mock.calls[0][0];
       expect(where.engagement).toBeUndefined();
+    });
+
+    it("lets a task manager load the submitted-review list", async () => {
+      await request(app.getHttpServer())
+        .get("/v6/engagements/timesheets/engagements")
+        .set("Authorization", "Bearer task-manager")
+        .expect(200);
+
+      const { where } =
+        dbServiceMock.engagementAssignment.findMany.mock.calls[0][0];
+      expect(where.timesheetEntries.some.status).toBe(TimesheetEntryStatus.SUBMITTED);
     });
 
     it("401s an anonymous caller", async () => {

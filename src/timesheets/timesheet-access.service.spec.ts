@@ -95,7 +95,29 @@ describe("TimesheetAccessService", () => {
       expect(findFirst).not.toHaveBeenCalled();
     });
 
-    it("resolves a platform manager role as ADMINISTRATOR, not MANAGER", async () => {
+    it("resolves a task manager role as TM", async () => {
+      asNotManager();
+
+      await expect(
+        service.resolveTimesheetRole(
+          { userId: "4004", roles: [UserRoles.TaskManager] },
+          assignment,
+        ),
+      ).resolves.toBe(TimesheetViewerRole.Tm);
+    });
+
+    it("resolves a talent manager role as TM", async () => {
+      asNotManager();
+
+      await expect(
+        service.resolveTimesheetRole(
+          { userId: "5005", roles: [UserRoles.TalentManager] },
+          assignment,
+        ),
+      ).resolves.toBe(TimesheetViewerRole.Tm);
+    });
+
+    it("denies a project manager without elevating them", async () => {
       asNotManager();
 
       await expect(
@@ -103,7 +125,7 @@ describe("TimesheetAccessService", () => {
           { userId: "4004", roles: [UserRoles.ProjectManager] },
           assignment,
         ),
-      ).resolves.toBe(TimesheetViewerRole.Administrator);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it("resolves a machine token with the manage scope as ADMINISTRATOR", async () => {
@@ -143,14 +165,7 @@ describe("TimesheetAccessService", () => {
 
   describe("isAdministrator", () => {
     it("accepts every privileged platform role", () => {
-      [
-        UserRoles.Admin,
-        UserRoles.ProjectManager,
-        UserRoles.TaskManager,
-        UserRoles.TalentManager,
-      ].forEach((role) => {
-        expect(service.isAdministrator({ roles: [role] })).toBe(true);
-      });
+      expect(service.isAdministrator({ roles: [UserRoles.Admin] })).toBe(true);
     });
 
     it("is case insensitive", () => {
@@ -159,6 +174,21 @@ describe("TimesheetAccessService", () => {
 
     it("rejects a plain member", () => {
       expect(service.isAdministrator({ roles: ["Topcoder User"] })).toBe(false);
+    });
+
+    it("treats task and talent managers as TM, not administrators", () => {
+      expect(service.isTimesheetTm({ roles: [UserRoles.TaskManager] })).toBe(
+        true,
+      );
+      expect(service.isTimesheetTm({ roles: [UserRoles.TalentManager] })).toBe(
+        true,
+      );
+      expect(service.isTimesheetPm({ roles: [UserRoles.ProjectManager] })).toBe(
+        true,
+      );
+      expect(service.isAdministrator({ roles: [UserRoles.TaskManager] })).toBe(
+        false,
+      );
     });
 
     it("rejects an undefined caller", () => {

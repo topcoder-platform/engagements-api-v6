@@ -274,7 +274,7 @@ export class EngagementManagersService {
   }
 
   private assertCanChange(authUser?: Record<string, any>): void {
-    if (!this.access.isAdministrator(authUser)) {
+    if (!this.access.canManageEngagementManagers(authUser)) {
       throw new ForbiddenException(ERROR_MESSAGES.UnauthorizedManagerChange);
     }
   }
@@ -283,7 +283,7 @@ export class EngagementManagersService {
     engagementId: string,
     authUser?: Record<string, any>,
   ): Promise<void> {
-    if (this.access.isAdministrator(authUser)) {
+    if (this.access.canManageEngagementManagers(authUser)) {
       return;
     }
 

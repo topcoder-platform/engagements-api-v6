@@ -7,6 +7,7 @@
 export const TimesheetViewerRole = {
   Member: "MEMBER",
   Manager: "MANAGER",
+  Tm: "TM",
   Administrator: "ADMINISTRATOR",
 } as const;
 

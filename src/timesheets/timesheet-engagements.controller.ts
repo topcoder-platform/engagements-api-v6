@@ -31,12 +31,12 @@ export class TimesheetEngagementsController {
     summary: "List timesheets the caller may act on",
     description:
       "One row per (engagement, assignee), so an engagement with three assignees produces three rows.\
-      A manager sees only engagements where they hold live approval authority; an administrator sees \
-      every engagement eligible for timesheet management, meaning an active assignment or one that \
-      already has entries. Each row carries a rolled-up status: Pending Approval when the assignee \
-      has any submitted entry, otherwise Approved. The title, assignee, manager, status, and \
-      date-range filters are for the administrator view; a manager caller is already \
-      restricted to their own engagements.",
+      A manager sees only engagements where they hold live approval authority; a TM caller sees the \
+      submitted-entry review list; an administrator sees every engagement eligible for timesheet \
+      management, meaning an active assignment or one that already has entries. Each row carries a \
+      rolled-up status: Pending Approval when the assignee has any submitted entry, otherwise \
+      Approved. The title, assignee, manager, status, and date-range filters are for the \
+      administrator view; a manager or TM caller is already restricted to their own scope.",
   })
   @ApiResponse({
     status: 200,
