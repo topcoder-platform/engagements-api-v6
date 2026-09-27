@@ -1051,7 +1051,7 @@ export class TimesheetsService {
         ? TimesheetViewerRole.Administrator
         : isTm
           ? TimesheetViewerRole.Tm
-          : TimesheetViewerRole.Manager,
+          : undefined,
     }));
 
     return {
@@ -1067,7 +1067,7 @@ export class TimesheetsService {
           ? TimesheetViewerRole.Administrator
           : isTm
             ? TimesheetViewerRole.Tm
-            : TimesheetViewerRole.Manager,
+            : undefined,
       },
     };
   }
