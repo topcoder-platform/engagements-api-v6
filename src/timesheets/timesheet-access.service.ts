@@ -1,11 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import {
-  ProjectManagerRoles,
-  Scopes,
-  TaskManagerRoles,
-  TalentManagerRoles,
-  UserRoles,
-} from "../app-constants";
+import { Scopes, TalentManagerRoles, UserRoles } from "../app-constants";
 import { ERROR_MESSAGES } from "../common/constants";
 import { getUserRoles, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
@@ -34,13 +28,7 @@ export class TimesheetAccessService {
   ]);
 
   private static readonly tmRoles = new Set(
-    [...TaskManagerRoles, ...TalentManagerRoles].map((role) =>
-      role.toLowerCase(),
-    ),
-  );
-
-  private static readonly pmRoles = new Set(
-    ProjectManagerRoles.map((role) => role.toLowerCase()),
+    [...TalentManagerRoles].map((role) => role.toLowerCase()),
   );
 
   constructor(private readonly db: DbService) {}
@@ -113,17 +101,6 @@ export class TimesheetAccessService {
 
     return getUserRoles(authUser).some((role) =>
       TimesheetAccessService.tmRoles.has(role?.toLowerCase()),
-    );
-  }
-
-  /** True when the caller holds a Project Manager platform role. */
-  isTimesheetPm(authUser?: Record<string, any>): boolean {
-    if (!authUser) {
-      return false;
-    }
-
-    return getUserRoles(authUser).some((role) =>
-      TimesheetAccessService.pmRoles.has(role?.toLowerCase()),
     );
   }
 
