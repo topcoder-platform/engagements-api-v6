@@ -40,10 +40,10 @@ describe("EngagementManagersService", () => {
     handle: "adminuser",
     roles: [UserRoles.Admin],
   };
-  const taskManager = {
+  const talentManager = {
     userId: "4004",
     handle: "tmuser",
-    roles: [UserRoles.TaskManager],
+    roles: [UserRoles.TalentManager],
   };
   const projectManager = {
     userId: "5005",
@@ -225,7 +225,7 @@ describe("EngagementManagersService", () => {
       db.engagementManager.create.mockResolvedValue(activeManagerRow);
 
       await expect(
-        service.assign("eng1", selection, taskManager),
+        service.assign("eng1", selection, talentManager),
       ).resolves.toEqual({
         userId: "2002",
         handle: "maryj",
@@ -310,7 +310,7 @@ describe("EngagementManagersService", () => {
       });
 
       await expect(
-        service.remove("eng1", "2002", taskManager),
+        service.remove("eng1", "2002", talentManager),
       ).resolves.toBeUndefined();
     });
 
