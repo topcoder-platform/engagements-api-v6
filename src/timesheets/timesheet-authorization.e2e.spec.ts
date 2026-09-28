@@ -27,10 +27,10 @@ const tokens: Record<string, Record<string, any>> = {
     handle: "adminuser",
     roles: [UserRoles.Admin],
   },
-  "task-manager": {
+  "talent-manager": {
     userId: "4004",
     handle: "tmuser",
-    roles: [UserRoles.TaskManager],
+    roles: [UserRoles.TalentManager],
   },
   "platform-manager": {
     userId: "4004",
@@ -176,7 +176,7 @@ describe("Timesheet authorization (e2e)", () => {
     it.each([
       ["the assignee", "assignee", "MEMBER"],
       ["an assigned manager", "assigned-manager", "MANAGER"],
-      ["a task manager", "task-manager", "TM"],
+      ["a talent manager", "talent-manager", "TM"],
       ["an administrator", "administrator", "ADMINISTRATOR"],
       ["a machine token with the manage scope", "m2m-manage", "ADMINISTRATOR"],
     ])(
@@ -239,8 +239,8 @@ describe("Timesheet authorization (e2e)", () => {
       await put("assignee").expect(200);
     });
 
-    it("403s a task manager: they can view but not edit", async () => {
-      await put("task-manager").expect(403);
+    it("403s a talent manager: they can view but not edit", async () => {
+      await put("talent-manager").expect(403);
     });
 
     it("403s an assigned manager: approving is their power, editing is not", async () => {
@@ -310,8 +310,8 @@ describe("Timesheet authorization (e2e)", () => {
       await approve("assigned-manager").expect(201);
     });
 
-    it("403s a task manager", async () => {
-      await approve("task-manager").expect(403);
+    it("403s a talent manager", async () => {
+      await approve("talent-manager").expect(403);
     });
 
     it("403s the assignee approving their own hours", async () => {
@@ -364,8 +364,8 @@ describe("Timesheet authorization (e2e)", () => {
       await reopen("assignee").expect(403);
     });
 
-    it("403s a task manager", async () => {
-      await reopen("task-manager").expect(403);
+    it("403s a talent manager", async () => {
+      await reopen("talent-manager").expect(403);
     });
 
     it("404s an unrelated member", async () => {
@@ -399,10 +399,10 @@ describe("Timesheet authorization (e2e)", () => {
       expect(where.engagement).toBeUndefined();
     });
 
-    it("lets a task manager load the submitted-review list", async () => {
+    it("lets a talent manager load the submitted-review list", async () => {
       await request(app.getHttpServer())
         .get("/v6/engagements/timesheets/engagements")
-        .set("Authorization", "Bearer task-manager")
+        .set("Authorization", "Bearer talent-manager")
         .expect(200);
 
       const { where } =

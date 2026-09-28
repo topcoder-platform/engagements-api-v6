@@ -41,7 +41,7 @@ export class TimesheetAccessService {
    *   1. ADMINISTRATOR - a human administrator or a machine token with the manage scope.
    *   2. MEMBER        - the assignee themselves.
    *   3. MANAGER       - a live EngagementManager row for the assignment's engagement.
-   *   4. TM            - a Task/Talent Manager platform role, read-only.
+   *   4. TM            - a Talent Manager platform role, read-only.
    *   5. otherwise     - NotFoundException.
    *
    * A caller with no relationship gets a 404, not a 403. A 403 would confirm that the assignment
@@ -93,7 +93,7 @@ export class TimesheetAccessService {
     );
   }
 
-  /** True when the caller holds a Task Manager or Talent Manager platform role. */
+  /** True when the caller holds a Talent Manager platform role. */
   isTimesheetTm(authUser?: Record<string, any>): boolean {
     if (!authUser) {
       return false;

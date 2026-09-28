@@ -172,7 +172,7 @@ describe("TimesheetAccessService", () => {
       expect(service.isTimesheetTm({ roles: [UserRoles.TaskManager] })).toBe(
         false,
       );
-      expect(service.isAdministrator({ roles: [UserRoles.TaskManager] })).toBe(
+      expect(service.isAdministrator({ roles: [UserRoles.TalentManager] })).toBe(
         false,
       );
     });

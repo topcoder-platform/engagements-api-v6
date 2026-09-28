@@ -42,10 +42,10 @@ describe("TimesheetsService", () => {
     handle: "adminuser",
     roles: [UserRoles.Admin],
   };
-  const taskManager = {
+  const talentManager = {
     userId: "4004",
     handle: "tmuser",
-    roles: [UserRoles.TaskManager],
+    roles: [UserRoles.TalentManager],
   };
   const projectManager = {
     userId: "4004",
@@ -194,7 +194,7 @@ describe("TimesheetsService", () => {
         "eng1",
         "asg1",
         {},
-        taskManager,
+        talentManager,
       );
 
       expect(result.viewerRole).toBe(TimesheetViewerRole.Tm);
@@ -532,7 +532,7 @@ describe("TimesheetsService", () => {
           "eng1",
           "asg1",
           payload([{ workDate: "2026-09-07", hoursWorked: "8" }]),
-          taskManager,
+          talentManager,
         ),
       ).rejects.toThrow("submitted timesheet entries only");
     });
@@ -716,7 +716,7 @@ describe("TimesheetsService", () => {
           "eng1",
           "asg1",
           { entryIds: ["entry1"] },
-          taskManager,
+          talentManager,
         ),
       ).rejects.toThrow("submitted timesheet entries only");
     });
@@ -854,7 +854,7 @@ describe("TimesheetsService", () => {
           "eng1",
           "asg1",
           approvalPayload,
-          taskManager,
+          talentManager,
         ),
       ).rejects.toThrow("submitted timesheet entries only");
     });
@@ -958,7 +958,7 @@ describe("TimesheetsService", () => {
 
     it("refuses a TM", async () => {
       await expect(
-        service.reopenEntries("eng1", "asg1", reopenPayload, taskManager),
+        service.reopenEntries("eng1", "asg1", reopenPayload, talentManager),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
@@ -1164,7 +1164,7 @@ describe("TimesheetsService", () => {
 
     it("refuses a TM", async () => {
       await expect(
-        service.linkPayment("eng1", "asg1", linkDto, taskManager),
+        service.linkPayment("eng1", "asg1", linkDto, talentManager),
       ).rejects.toThrow("submitted timesheet entries only");
     });
 
