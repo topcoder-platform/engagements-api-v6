@@ -35,6 +35,7 @@ describe("EngagementManagersService", () => {
   let memberService: {
     getMemberHandleByUserId: jest.Mock;
     getMemberNamesByUserIds: jest.Mock;
+    isMemberActiveByUserId: jest.Mock;
   };
   let audit: { record: jest.Mock };
 
@@ -89,6 +90,7 @@ describe("EngagementManagersService", () => {
       getMemberNamesByUserIds: jest
         .fn()
         .mockResolvedValue(new Map<string, string>()),
+      isMemberActiveByUserId: jest.fn().mockResolvedValue(true),
     };
     audit = { record: jest.fn().mockResolvedValue(undefined) };
 
@@ -190,6 +192,19 @@ describe("EngagementManagersService", () => {
         service.assign("eng1", { userId: "   " }, admin),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(memberService.getMemberHandleByUserId).not.toHaveBeenCalled();
+      expect(memberService.isMemberActiveByUserId).not.toHaveBeenCalled();
+    });
+
+    it("rejects inactive users with HTTP 400", async () => {
+      memberService.isMemberActiveByUserId.mockResolvedValue(false);
+
+      await expect(service.assign("eng1", selection, admin)).rejects.toThrow(
+        "That member is inactive and cannot be assigned as a manager.",
+      );
+      expect(memberService.isMemberActiveByUserId).toHaveBeenCalledWith(
+        "2002",
+      );
+      expect(db.engagementManager.create).not.toHaveBeenCalled();
     });
 
     it("rejects a duplicate assignment without creating a second row", async () => {

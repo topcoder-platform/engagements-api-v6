@@ -81,6 +81,8 @@ export const ERROR_MESSAGES = {
   ManagerUserIdRequired: "A Topcoder user id is required.",
   ManagerHandleUnresolved:
     "No Topcoder member was found for that user id. Send the manager's handle alongside the user id, or check the id.",
+  ManagerInactive:
+    "That member is inactive and cannot be assigned as a manager.",
   DuplicateEngagementManager:
     "That member is already assigned as a manager on this engagement.",
   EngagementManagerNotFound:
