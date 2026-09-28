@@ -128,7 +128,7 @@ export class TimesheetEngagementRowDto {
     enum: TimesheetViewerRole,
     example: TimesheetViewerRole.Tm,
   })
-  viewerRole: TimesheetViewerRole | undefined;
+  viewerRole: TimesheetViewerRole;
 }
 
 export class TimesheetEngagementListMetaDto {
@@ -151,7 +151,7 @@ export class TimesheetEngagementListMetaDto {
     enum: TimesheetViewerRole,
     example: TimesheetViewerRole.Tm,
   })
-  viewerRole: TimesheetViewerRole | undefined;
+  viewerRole: TimesheetViewerRole;
 }
 
 export class TimesheetEngagementListResponseDto {

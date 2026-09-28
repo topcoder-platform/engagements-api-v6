@@ -1051,7 +1051,7 @@ export class TimesheetsService {
         ? TimesheetViewerRole.Administrator
         : isTm
           ? TimesheetViewerRole.Tm
-          : undefined,
+          : TimesheetViewerRole.Manager,
     }));
 
     return {
@@ -1067,7 +1067,7 @@ export class TimesheetsService {
           ? TimesheetViewerRole.Administrator
           : isTm
             ? TimesheetViewerRole.Tm
-            : undefined,
+            : TimesheetViewerRole.Manager,
       },
     };
   }
@@ -1133,7 +1133,7 @@ export class TimesheetsService {
       where.memberHandle = { contains: query.assignee, mode: "insensitive" };
     }
 
-    if (entryDateFilter) {
+    if (entryDateFilter && !isTm) {
       where.timesheetEntries = { some: entryDateFilter };
     }
 
