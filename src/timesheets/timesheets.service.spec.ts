@@ -167,6 +167,34 @@ describe("TimesheetsService", () => {
       );
     });
 
+    it("backfills a missing manager name from member service", async () => {
+      db.engagementManager.findMany.mockResolvedValue([
+        {
+          engagementId: "eng1",
+          managerUserId: "2002",
+          managerHandle: "maryj",
+          managerName: null,
+          createdAt: utcDate("2026-09-01"),
+        },
+      ]);
+      memberService.getMemberNamesByUserIds.mockResolvedValueOnce(
+        new Map([
+          ["1001", "John Smith"],
+          ["2002", "Mary Jones"],
+        ]),
+      );
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(result.managers).toEqual([
+        { userId: "2002", handle: "maryj", name: "Mary Jones" },
+      ]);
+      expect(memberService.getMemberNamesByUserIds).toHaveBeenCalledWith([
+        "1001",
+        "2002",
+      ]);
+    });
+
     it("shows a manager approval details recorded by a different manager", async () => {
       withManagerRow();
       db.engagementTimesheetEntry.findMany.mockResolvedValue([

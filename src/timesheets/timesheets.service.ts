@@ -1338,10 +1338,21 @@ export class TimesheetsService {
     entries: EngagementTimesheetEntry[],
   ): Promise<TimesheetViewResponseDto> {
     const { assignment } = context;
-    const [managersByEngagement, nameByUserId] = await Promise.all([
-      this.access.findActiveManagers([assignment.engagementId]),
-      this.resolveMemberNames([assignment.memberId]),
+    const managersByEngagement = await this.access.findActiveManagers([
+      assignment.engagementId,
     ]);
+    const managers = managersByEngagement.get(assignment.engagementId) ?? [];
+    const managerUserIdsMissingNames = managers
+      .filter((manager) => !(manager.name ?? "").trim())
+      .map((manager) => manager.userId);
+    const nameByUserId = await this.resolveMemberNames([
+      assignment.memberId,
+      ...managerUserIdsMissingNames,
+    ]);
+    const hydratedManagers = managers.map((manager) => ({
+      ...manager,
+      name: manager.name ?? nameByUserId.get(manager.userId) ?? null,
+    }));
 
     return {
       viewerRole: context.viewerRole,
@@ -1357,7 +1368,7 @@ export class TimesheetsService {
         startDate: assignment.startDate ?? null,
         endDate: assignment.endDate ?? null,
       },
-      managers: managersByEngagement.get(assignment.engagementId) ?? [],
+      managers: hydratedManagers,
       entries: entries.map((entry) => this.toEntryDto(assignment, entry)),
     };
   }
