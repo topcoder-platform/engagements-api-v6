@@ -198,9 +198,9 @@ describe("EngagementManagersService", () => {
     it("rejects inactive users with HTTP 400", async () => {
       memberService.isMemberActiveByUserId.mockResolvedValue(false);
 
-      await expect(
-        service.assign("eng1", selection, admin),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.assign("eng1", selection, admin)).rejects.toThrow(
+        "That member is inactive and cannot be assigned as a manager.",
+      );
       expect(memberService.isMemberActiveByUserId).toHaveBeenCalledWith(
         "2002",
       );

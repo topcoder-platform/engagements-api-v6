@@ -266,7 +266,7 @@ export class EngagementManagersService {
    * Settles the handle and name to store for a manager.
    *
    * A supplied handle is taken as-is: it is a display field, and the front ends only ever send one
-   * they picked out of a member search. Only a caller that omits it pays for a member-API lookup.
+   * they picked out of a member search.
    */
   private async resolveManagerIdentity(
     managerUserId: string,
