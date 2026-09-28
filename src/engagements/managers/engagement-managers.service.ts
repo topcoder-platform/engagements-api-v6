@@ -6,7 +6,11 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { EngagementManager, TimesheetAuditAction } from "@prisma/client";
+import {
+  AssignmentStatus,
+  EngagementManager,
+  TimesheetAuditAction,
+} from "@prisma/client";
 import { nanoid } from "nanoid";
 import { ERROR_MESSAGES } from "../../common/constants";
 import { getUserIdentifier, normalizeUserId } from "../../common/user.util";
@@ -325,7 +329,11 @@ export class EngagementManagersService {
     }
 
     const assignment = await this.db.engagementAssignment.findFirst({
-      where: { engagementId, memberId: userId },
+      where: {
+        engagementId,
+        memberId: userId,
+        status: AssignmentStatus.ASSIGNED,
+      },
       select: { id: true },
     });
 

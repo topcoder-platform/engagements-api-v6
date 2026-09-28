@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "@nestjs/common";
-import { TimesheetAuditAction } from "@prisma/client";
+import { AssignmentStatus, TimesheetAuditAction } from "@prisma/client";
 import { UserRoles } from "../../app-constants";
 import { DbService } from "../../db/db.service";
 import { MemberService } from "../../integrations/member.service";
@@ -376,6 +376,30 @@ describe("EngagementManagersService", () => {
       db.engagementManager.findMany.mockResolvedValue([activeManagerRow]);
 
       await expect(service.findAll("eng1", member)).resolves.toHaveLength(1);
+      expect(db.engagementAssignment.findFirst).toHaveBeenCalledWith({
+        where: {
+          engagementId: "eng1",
+          memberId: "1001",
+          status: AssignmentStatus.ASSIGNED,
+        },
+        select: { id: true },
+      });
+    });
+
+    it("refuses a selected member who has not accepted the assignment", async () => {
+      db.engagementAssignment.findFirst.mockResolvedValue(null);
+
+      await expect(service.findAll("eng1", member)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+
+    it("refuses a rejected member", async () => {
+      db.engagementAssignment.findFirst.mockResolvedValue(null);
+
+      await expect(service.findAll("eng1", member)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
     });
 
     it("lets a manager of the engagement read the list", async () => {
