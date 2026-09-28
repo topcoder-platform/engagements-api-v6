@@ -159,12 +159,7 @@ export class TimesheetsService {
       orderBy: { workDate: "asc" },
     });
 
-    const visibleEntries =
-      context.viewerRole === TimesheetViewerRole.Tm
-        ? entries.filter((entry) => entry.status === TimesheetEntryStatus.SUBMITTED)
-        : entries;
-
-    return this.toTimesheetView(context, visibleEntries);
+    return this.toTimesheetView(context, entries);
   }
 
   /**

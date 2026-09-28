@@ -212,10 +212,9 @@ describe("TimesheetsService", () => {
       expect(result.entries[0].approvalComment).toBe("Approved for week 37");
     });
 
-    it("shows a TM only the submitted entries", async () => {
+    it("shows a TM only submitted entries by default", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([
         entry({ id: "submitted", status: TimesheetEntryStatus.SUBMITTED }),
-        entry({ id: "approved", status: TimesheetEntryStatus.APPROVED }),
       ]);
 
       const result = await service.findTimesheet(
@@ -228,6 +227,37 @@ describe("TimesheetsService", () => {
       expect(result.viewerRole).toBe(TimesheetViewerRole.Tm);
       expect(result.entries).toHaveLength(1);
       expect(result.entries[0].id).toBe("submitted");
+      expect(db.engagementTimesheetEntry.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: TimesheetEntryStatus.SUBMITTED,
+          }),
+        }),
+      );
+    });
+
+    it("shows a TM approved entries when filtering status=APPROVED", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "approved", status: TimesheetEntryStatus.APPROVED }),
+      ]);
+
+      const result = await service.findTimesheet(
+        "eng1",
+        "asg1",
+        { status: TimesheetEntryStatus.APPROVED },
+        talentManager,
+      );
+
+      expect(result.viewerRole).toBe(TimesheetViewerRole.Tm);
+      expect(result.entries).toHaveLength(1);
+      expect(result.entries[0].id).toBe("approved");
+      expect(db.engagementTimesheetEntry.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: TimesheetEntryStatus.APPROVED,
+          }),
+        }),
+      );
     });
 
     it("returns entry-level payment reconciliation fields", async () => {
