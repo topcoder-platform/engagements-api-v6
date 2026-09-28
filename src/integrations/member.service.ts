@@ -9,7 +9,6 @@ type MemberRecord = {
   userId?: string | number;
   handle?: string;
   status?: string | null;
-  active?: boolean | null;
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
@@ -171,14 +170,10 @@ export class MemberService {
    * Returns null when no member exists for the user id.
    */
   async isMemberActiveByUserId(userId: string): Promise<boolean | null> {
-    const members = await this.fetchMembers(userId, "active,status");
+    const members = await this.fetchMembers(userId, "status");
     const member = members[0];
     if (!member) {
       return null;
-    }
-
-    if (typeof member.active === "boolean") {
-      return member.active;
     }
 
     const normalizedStatus =
