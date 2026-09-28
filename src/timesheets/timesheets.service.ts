@@ -159,7 +159,12 @@ export class TimesheetsService {
       orderBy: { workDate: "asc" },
     });
 
-    return this.toTimesheetView(context, entries);
+    const visibleEntries =
+      context.viewerRole === TimesheetViewerRole.Tm
+        ? entries.filter((entry) => entry.status === TimesheetEntryStatus.SUBMITTED)
+        : entries;
+
+    return this.toTimesheetView(context, visibleEntries);
   }
 
   /**
@@ -182,8 +187,15 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (context.viewerRole === TimesheetViewerRole.Manager) {
-      throw new ForbiddenException(ERROR_MESSAGES.TimesheetManagerCannotEdit);
+    if (
+      context.viewerRole === TimesheetViewerRole.Manager ||
+      context.viewerRole === TimesheetViewerRole.Tm
+    ) {
+      throw new ForbiddenException(
+        context.viewerRole === TimesheetViewerRole.Tm
+          ? ERROR_MESSAGES.TimesheetTmReadOnly
+          : ERROR_MESSAGES.TimesheetManagerCannotEdit,
+      );
     }
 
     const parsed = this.parseUpsertEntries(dto.entries);
@@ -378,8 +390,15 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (context.viewerRole === TimesheetViewerRole.Manager) {
-      throw new ForbiddenException(ERROR_MESSAGES.TimesheetManagerCannotSubmit);
+    if (
+      context.viewerRole === TimesheetViewerRole.Manager ||
+      context.viewerRole === TimesheetViewerRole.Tm
+    ) {
+      throw new ForbiddenException(
+        context.viewerRole === TimesheetViewerRole.Tm
+          ? ERROR_MESSAGES.TimesheetTmReadOnly
+          : ERROR_MESSAGES.TimesheetManagerCannotSubmit,
+      );
     }
 
     if (context.isAdministrator && !dto.overrideReason) {
@@ -481,8 +500,15 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (context.viewerRole === TimesheetViewerRole.Member) {
-      throw new ForbiddenException(ERROR_MESSAGES.TimesheetMemberCannotApprove);
+    if (
+      context.viewerRole === TimesheetViewerRole.Member ||
+      context.viewerRole === TimesheetViewerRole.Tm
+    ) {
+      throw new ForbiddenException(
+        context.viewerRole === TimesheetViewerRole.Tm
+          ? ERROR_MESSAGES.TimesheetTmReadOnly
+          : ERROR_MESSAGES.TimesheetMemberCannotApprove,
+      );
     }
 
     if (context.isAdministrator && !dto.overrideReason) {
@@ -683,9 +709,14 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (context.viewerRole === TimesheetViewerRole.Member) {
+    if (
+      context.viewerRole === TimesheetViewerRole.Member ||
+      context.viewerRole === TimesheetViewerRole.Tm
+    ) {
       throw new ForbiddenException(
-        ERROR_MESSAGES.TimesheetSummaryNotForMembers,
+        context.viewerRole === TimesheetViewerRole.Tm
+          ? ERROR_MESSAGES.TimesheetTmReadOnly
+          : ERROR_MESSAGES.TimesheetSummaryNotForMembers,
       );
     }
 
@@ -751,9 +782,14 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (context.viewerRole === TimesheetViewerRole.Member) {
+    if (
+      context.viewerRole === TimesheetViewerRole.Member ||
+      context.viewerRole === TimesheetViewerRole.Tm
+    ) {
       throw new ForbiddenException(
-        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+        context.viewerRole === TimesheetViewerRole.Tm
+          ? ERROR_MESSAGES.TimesheetTmReadOnly
+          : ERROR_MESSAGES.TimesheetPaymentNotForMembers,
       );
     }
 
@@ -859,9 +895,14 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (context.viewerRole === TimesheetViewerRole.Member) {
+    if (
+      context.viewerRole === TimesheetViewerRole.Member ||
+      context.viewerRole === TimesheetViewerRole.Tm
+    ) {
       throw new ForbiddenException(
-        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+        context.viewerRole === TimesheetViewerRole.Tm
+          ? ERROR_MESSAGES.TimesheetTmReadOnly
+          : ERROR_MESSAGES.TimesheetPaymentNotForMembers,
       );
     }
 
@@ -935,10 +976,11 @@ export class TimesheetsService {
     query: TimesheetEngagementQueryDto,
     authUser?: Record<string, any>,
   ): Promise<TimesheetEngagementListResponseDto> {
-    const isAdministrator = this.access.isAdministrator(authUser);
+    const isAdministrator = this.access.isTimesheetAdmin(authUser);
+    const isTm = this.access.isTimesheetTm(authUser);
     const callerUserId = normalizeUserId(authUser?.userId);
 
-    if (!isAdministrator && !callerUserId) {
+    if (!isAdministrator && !isTm && !callerUserId) {
       throw new ForbiddenException(ERROR_MESSAGES.UnauthorizedTimesheetList);
     }
 
@@ -953,6 +995,7 @@ export class TimesheetsService {
     const where = this.buildEngagementListWhere(
       query,
       isAdministrator,
+      isTm,
       callerUserId,
       fromDate,
       toDate,
@@ -1006,7 +1049,9 @@ export class TimesheetsService {
         : TimesheetRollupStatus.Approved,
       viewerRole: isAdministrator
         ? TimesheetViewerRole.Administrator
-        : TimesheetViewerRole.Manager,
+        : isTm
+          ? TimesheetViewerRole.Tm
+          : TimesheetViewerRole.Manager,
     }));
 
     return {
@@ -1020,7 +1065,9 @@ export class TimesheetsService {
         // inferring anything from JWT roles - and so an empty list still says which view it is.
         viewerRole: isAdministrator
           ? TimesheetViewerRole.Administrator
-          : TimesheetViewerRole.Manager,
+          : isTm
+            ? TimesheetViewerRole.Tm
+            : TimesheetViewerRole.Manager,
       },
     };
   }
@@ -1028,6 +1075,7 @@ export class TimesheetsService {
   private buildEngagementListWhere(
     query: TimesheetEngagementQueryDto,
     isAdministrator: boolean,
+    isTm: boolean,
     callerUserId: string | undefined,
     fromDate?: Date,
     toDate?: Date,
@@ -1042,8 +1090,24 @@ export class TimesheetsService {
       ],
     };
     const engagementFilters: Prisma.EngagementWhereInput = {};
+    const entryDateFilter =
+      fromDate || toDate
+        ? {
+            workDate: {
+              ...(fromDate ? { gte: fromDate } : {}),
+              ...(toDate ? { lte: toDate } : {}),
+            },
+          }
+        : undefined;
 
-    if (!isAdministrator) {
+    if (isTm) {
+      where.timesheetEntries = {
+        some: {
+          ...(entryDateFilter ?? {}),
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+      };
+    } else if (!isAdministrator) {
       // A manager's authority is the filter: only engagements carrying a live manager row for them.
       engagementFilters.managers = {
         some: { managerUserId: callerUserId, removedAt: null },
@@ -1069,28 +1133,18 @@ export class TimesheetsService {
       where.memberHandle = { contains: query.assignee, mode: "insensitive" };
     }
 
-    const entryDateFilter =
-      fromDate || toDate
-        ? {
-            workDate: {
-              ...(fromDate ? { gte: fromDate } : {}),
-              ...(toDate ? { lte: toDate } : {}),
-            },
-          }
-        : undefined;
-
-    if (entryDateFilter) {
+    if (entryDateFilter && !isTm) {
       where.timesheetEntries = { some: entryDateFilter };
     }
 
-    if (query.status === TimesheetRollupStatus.PendingApproval) {
+    if (!isTm && query.status === TimesheetRollupStatus.PendingApproval) {
       where.timesheetEntries = {
         some: {
           ...(entryDateFilter ?? {}),
           status: TimesheetEntryStatus.SUBMITTED,
         },
       };
-    } else if (query.status === TimesheetRollupStatus.Approved) {
+    } else if (!isTm && query.status === TimesheetRollupStatus.Approved) {
       where.timesheetEntries = {
         ...(entryDateFilter ? { some: entryDateFilter } : {}),
         none: {

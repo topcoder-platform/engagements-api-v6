@@ -40,6 +40,16 @@ describe("EngagementManagersService", () => {
     handle: "adminuser",
     roles: [UserRoles.Admin],
   };
+  const talentManager = {
+    userId: "4004",
+    handle: "tmuser",
+    roles: [UserRoles.TalentManager],
+  };
+  const projectManager = {
+    userId: "5005",
+    handle: "pmuser",
+    roles: [UserRoles.ProjectManager],
+  };
   const member = { userId: "1001", handle: "johnsmith", roles: [] };
   const outsider = { userId: "9009", handle: "someone", roles: [] };
 
@@ -211,6 +221,24 @@ describe("EngagementManagersService", () => {
       expect(memberService.getMemberHandleByUserId).not.toHaveBeenCalled();
     });
 
+    it("allows a TM to assign a manager", async () => {
+      db.engagementManager.create.mockResolvedValue(activeManagerRow);
+
+      await expect(
+        service.assign("eng1", selection, talentManager),
+      ).resolves.toEqual({
+        userId: "2002",
+        handle: "maryj",
+        name: "Mary Jones",
+      });
+    });
+
+    it("refuses a project manager", async () => {
+      await expect(
+        service.assign("eng1", selection, projectManager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
     it("404s for an unknown engagement", async () => {
       db.engagement.findUnique.mockResolvedValue(null);
 
@@ -271,6 +299,24 @@ describe("EngagementManagersService", () => {
     it("refuses a non-administrator", async () => {
       await expect(
         service.remove("eng1", "2002", member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("allows a TM to remove a manager", async () => {
+      db.engagementManager.findUnique.mockResolvedValue(activeManagerRow);
+      db.engagementManager.update.mockResolvedValue({
+        ...activeManagerRow,
+        removedAt: new Date(),
+      });
+
+      await expect(
+        service.remove("eng1", "2002", talentManager),
+      ).resolves.toBeUndefined();
+    });
+
+    it("refuses a project manager", async () => {
+      await expect(
+        service.remove("eng1", "2002", projectManager),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });

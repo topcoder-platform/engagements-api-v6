@@ -41,6 +41,8 @@ export const ERROR_MESSAGES = {
     "One or more timesheet entries were not found on this assignment.",
   TimesheetEntryApprovedReadOnly:
     "Approved timesheet entries cannot be changed. Ask an administrator to reopen them.",
+  TimesheetTmReadOnly:
+    "Talent Manager can view submitted timesheet entries only.",
   TimesheetOverrideReasonRequired:
     "An override reason is required when an administrator acts on another user's behalf.",
   TimesheetManagerCannotEdit:

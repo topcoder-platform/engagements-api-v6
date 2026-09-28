@@ -22,8 +22,6 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Request } from "express";
-import { Scopes as AppScopes } from "../../app-constants";
-import { Scopes as ScopesDecorator } from "../../auth/decorators/scopes.decorator";
 import { PermissionsGuard } from "../../auth/guards/permissions.guard";
 import {
   AssignEngagementManagerDto,
@@ -75,11 +73,10 @@ export class EngagementManagersController {
   }
 
   @Post()
-  @ScopesDecorator(AppScopes.ManageTimesheets)
   @ApiOperation({
     summary: "Assign an engagement manager",
     description:
-      "Grants a member timesheet approval authority on this engagement, keyed on the member's Topcoder user id. Administrators only. Send handle and name alongside the user id when they are already known - both front ends pick the manager from a member search - and no member-API lookup is needed. Re-assigning a previously removed manager reactivates the existing record rather than creating a second one.",
+      "Grants a member timesheet approval authority on this engagement, keyed on the member's Topcoder user id. Administrators and TM platform roles only. Send handle and name alongside the user id when they are already known - both front ends pick the manager from a member search - and no member-API lookup is needed. Re-assigning a previously removed manager reactivates the existing record rather than creating a second one.",
   })
   @ApiResponse({
     status: 201,
@@ -91,7 +88,7 @@ export class EngagementManagersController {
       "userId is missing, or no handle was supplied and none could be resolved for that user id.",
   })
   @ApiUnauthorizedResponse({ description: "Caller is not authenticated." })
-  @ApiForbiddenResponse({ description: "Caller is not an administrator." })
+  @ApiForbiddenResponse({ description: "Caller cannot manage engagement managers." })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   @ApiConflictResponse({
     description: "That member is already a manager on this engagement.",
@@ -106,15 +103,14 @@ export class EngagementManagersController {
 
   @Delete(":managerUserId")
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ScopesDecorator(AppScopes.ManageTimesheets)
   @ApiOperation({
     summary: "Remove an engagement manager",
     description:
-      "Revokes a manager's timesheet approval authority. Administrators only. The record is soft-deleted so approvals made by this manager keep their attribution; the change takes effect on the manager's next request.",
+      "Revokes a manager's timesheet approval authority. Administrators and TM platform roles only. The record is soft-deleted so approvals made by this manager keep their attribution; the change takes effect on the manager's next request.",
   })
   @ApiResponse({ status: 204, description: "Manager removed." })
   @ApiUnauthorizedResponse({ description: "Caller is not authenticated." })
-  @ApiForbiddenResponse({ description: "Caller is not an administrator." })
+  @ApiForbiddenResponse({ description: "Caller cannot manage engagement managers." })
   @ApiNotFoundResponse({
     description: "Engagement not found, or that member is not a manager on it.",
   })

@@ -126,7 +126,7 @@ export class TimesheetEngagementRowDto {
   @ApiProperty({
     description: "The caller's relationship to this row's timesheet",
     enum: TimesheetViewerRole,
-    example: TimesheetViewerRole.Manager,
+    example: TimesheetViewerRole.Tm,
   })
   viewerRole: TimesheetViewerRole;
 }
@@ -149,7 +149,7 @@ export class TimesheetEngagementListMetaDto {
       "The caller's own role. Lets a client render the administrator-only filters without inferring " +
       "anything from JWT roles, and tells it which view an empty list belongs to.",
     enum: TimesheetViewerRole,
-    example: TimesheetViewerRole.Manager,
+    example: TimesheetViewerRole.Tm,
   })
   viewerRole: TimesheetViewerRole;
 }

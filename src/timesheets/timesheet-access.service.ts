@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrivilegedUserRoles, Scopes } from "../app-constants";
+import { Scopes, TalentManagerRoles, UserRoles } from "../app-constants";
 import { ERROR_MESSAGES } from "../common/constants";
 import { getUserRoles, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
@@ -23,8 +23,12 @@ export interface TimesheetAssignmentRef {
 
 @Injectable()
 export class TimesheetAccessService {
-  private static readonly administratorRoles = new Set(
-    PrivilegedUserRoles.map((role) => role.toLowerCase()),
+  private static readonly administratorRoles = new Set([
+    UserRoles.Admin.toLowerCase(),
+  ]);
+
+  private static readonly tmRoles = new Set(
+    [...TalentManagerRoles].map((role) => role.toLowerCase()),
   );
 
   constructor(private readonly db: DbService) {}
@@ -34,27 +38,20 @@ export class TimesheetAccessService {
    * call this before doing anything else.
    *
    * Order matters, first match wins:
-   *   1. ADMINISTRATOR - a privileged platform role, or a machine token with the manage scope.
+   *   1. ADMINISTRATOR - a human administrator or a machine token with the manage scope.
    *   2. MEMBER        - the assignee themselves.
    *   3. MANAGER       - a live EngagementManager row for the assignment's engagement.
-   *   4. otherwise     - NotFoundException.
+   *   4. TM            - a Talent Manager platform role, read-only.
+   *   5. otherwise     - NotFoundException.
    *
-   * Two behaviours here are deliberate and load-bearing:
-   *
-   * - A platform manager role (Topcoder Project / Task / Talent Manager) resolves to ADMINISTRATOR,
-   *   never MANAGER. Approval authority as a manager comes only from an EngagementManager row, so a
-   *   platform manager who is not assigned to the engagement acts through the administrator path -
-   *   override reason required, audited as ADMIN_OVERRIDE. That is what stops the audit requirements
-   *   being sidestepped by a role that merely has "manager" in its name.
-   *
-   * - A caller with no relationship gets a 404, not a 403. A 403 would confirm that the assignment
-   *   exists, which is enough to enumerate assignment ids.
+   * A caller with no relationship gets a 404, not a 403. A 403 would confirm that the assignment
+   * exists, which is enough to enumerate assignment ids.
    */
   async resolveTimesheetRole(
     authUser: Record<string, any> | undefined,
     assignment: TimesheetAssignmentRef,
   ): Promise<TimesheetViewerRole> {
-    if (this.isAdministrator(authUser)) {
+    if (this.isTimesheetAdmin(authUser)) {
       return TimesheetViewerRole.Administrator;
     }
 
@@ -71,14 +68,18 @@ export class TimesheetAccessService {
       return TimesheetViewerRole.Manager;
     }
 
+    if (this.isTimesheetTm(authUser)) {
+      return TimesheetViewerRole.Tm;
+    }
+
     throw new NotFoundException(ERROR_MESSAGES.TimesheetNotFound);
   }
 
   /**
-   * True when the caller holds a privileged platform role, or is a machine token carrying the
-   * timesheet manage scope.
+   * True when the caller is a timesheet administrator: a human Administrator or a machine token
+   * carrying the manage scope.
    */
-  isAdministrator(authUser?: Record<string, any>): boolean {
+  isTimesheetAdmin(authUser?: Record<string, any>): boolean {
     if (!authUser) {
       return false;
     }
@@ -90,6 +91,27 @@ export class TimesheetAccessService {
     return getUserRoles(authUser).some((role) =>
       TimesheetAccessService.administratorRoles.has(role?.toLowerCase()),
     );
+  }
+
+  /** True when the caller holds a Talent Manager platform role. */
+  isTimesheetTm(authUser?: Record<string, any>): boolean {
+    if (!authUser) {
+      return false;
+    }
+
+    return getUserRoles(authUser).some((role) =>
+      TimesheetAccessService.tmRoles.has(role?.toLowerCase()),
+    );
+  }
+
+  /** Backward-compatible alias for existing callers in the timesheets module. */
+  isAdministrator(authUser?: Record<string, any>): boolean {
+    return this.isTimesheetAdmin(authUser);
+  }
+
+  /** True when the caller may assign or remove engagement managers for timesheets. */
+  canManageEngagementManagers(authUser?: Record<string, any>): boolean {
+    return this.isTimesheetAdmin(authUser) || this.isTimesheetTm(authUser);
   }
 
   /**
