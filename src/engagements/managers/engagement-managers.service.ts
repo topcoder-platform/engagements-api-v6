@@ -272,6 +272,14 @@ export class EngagementManagersService {
     managerUserId: string,
     input: { handle?: string; name?: string },
   ): Promise<{ handle: string; name: string | null }> {
+    const isActive = await this.memberService.isMemberActiveByUserId(
+      managerUserId,
+    );
+
+    if (isActive === false) {
+      throw new BadRequestException(ERROR_MESSAGES.ManagerInactive);
+    }
+
     const suppliedHandle = input.handle?.trim();
     if (suppliedHandle) {
       return {

@@ -8,6 +8,8 @@ import * as core from "tc-core-library-js";
 type MemberRecord = {
   userId?: string | number;
   handle?: string;
+  status?: string | null;
+  active?: boolean | null;
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
@@ -161,6 +163,35 @@ export class MemberService {
     }
 
     return member.handle;
+  }
+
+  /**
+   * Whether the member account may be assigned to approval roles.
+   *
+   * Returns null when no member exists for the user id.
+   */
+  async isMemberActiveByUserId(userId: string): Promise<boolean | null> {
+    const members = await this.fetchMembers(userId, "active,status");
+    const member = members[0];
+    if (!member) {
+      return null;
+    }
+
+    if (typeof member.active === "boolean") {
+      return member.active;
+    }
+
+    const normalizedStatus =
+      typeof member.status === "string"
+        ? member.status.trim().toUpperCase()
+        : "";
+
+    if (!normalizedStatus) {
+      // Older member payloads may omit status; default to active to avoid false negatives.
+      return true;
+    }
+
+    return normalizedStatus === "ACTIVE";
   }
 
   async getMemberUserIdByHandle(handle: string): Promise<string | null> {
