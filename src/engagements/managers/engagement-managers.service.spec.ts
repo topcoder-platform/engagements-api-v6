@@ -32,7 +32,10 @@ describe("EngagementManagersService", () => {
     };
     $transaction: jest.Mock;
   };
-  let memberService: { getMemberHandleByUserId: jest.Mock };
+  let memberService: {
+    getMemberHandleByUserId: jest.Mock;
+    getMemberNamesByUserIds: jest.Mock;
+  };
   let audit: { record: jest.Mock };
 
   const admin = {
@@ -83,6 +86,9 @@ describe("EngagementManagersService", () => {
     };
     memberService = {
       getMemberHandleByUserId: jest.fn().mockResolvedValue("maryj"),
+      getMemberNamesByUserIds: jest
+        .fn()
+        .mockResolvedValue(new Map<string, string>()),
     };
     audit = { record: jest.fn().mockResolvedValue(undefined) };
 
@@ -328,11 +334,41 @@ describe("EngagementManagersService", () => {
       await expect(service.findAll("eng1", admin)).resolves.toEqual([
         { userId: "2002", handle: "maryj", name: "Mary Jones" },
       ]);
+      expect(memberService.getMemberNamesByUserIds).not.toHaveBeenCalled();
       expect(db.engagementManager.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { engagementId: "eng1", removedAt: null },
         }),
       );
+    });
+
+    it("backfills missing manager names from the member API", async () => {
+      db.engagementManager.findMany.mockResolvedValue([
+        { ...activeManagerRow, managerName: null },
+      ]);
+      memberService.getMemberNamesByUserIds.mockResolvedValue(
+        new Map([["2002", "Mary Jones"]]),
+      );
+
+      await expect(service.findAll("eng1", admin)).resolves.toEqual([
+        { userId: "2002", handle: "maryj", name: "Mary Jones" },
+      ]);
+      expect(memberService.getMemberNamesByUserIds).toHaveBeenCalledWith([
+        "2002",
+      ]);
+    });
+
+    it("keeps response stable when name backfill lookup fails", async () => {
+      db.engagementManager.findMany.mockResolvedValue([
+        { ...activeManagerRow, managerName: null },
+      ]);
+      memberService.getMemberNamesByUserIds.mockRejectedValue(
+        new Error("member api unavailable"),
+      );
+
+      await expect(service.findAll("eng1", admin)).resolves.toEqual([
+        { userId: "2002", handle: "maryj", name: null },
+      ]);
     });
 
     it("lets an assigned member read their managers", async () => {

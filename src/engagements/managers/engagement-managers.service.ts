@@ -48,7 +48,29 @@ export class EngagementManagersService {
       orderBy: { createdAt: "asc" },
     });
 
-    return managers.map((manager) => this.toResponseDto(manager));
+    const managerUserIdsMissingNames = managers
+      .filter((manager) => !(manager.managerName ?? "").trim())
+      .map((manager) => manager.managerUserId);
+
+    let resolvedNamesByUserId = new Map<string, string>();
+    if (managerUserIdsMissingNames.length) {
+      try {
+        resolvedNamesByUserId =
+          await this.memberService.getMemberNamesByUserIds(
+            managerUserIdsMissingNames,
+          );
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `Failed to resolve manager names for engagement ${engagementId}: ${message}`,
+        );
+      }
+    }
+
+    return managers.map((manager) =>
+      this.toResponseDto(manager, resolvedNamesByUserId),
+    );
   }
 
   /**
@@ -222,11 +244,17 @@ export class EngagementManagersService {
 
   private toResponseDto(
     manager: EngagementManager,
+    resolvedNamesByUserId?: Map<string, string>,
   ): EngagementManagerResponseDto {
+    const persistedName = (manager.managerName ?? "").trim();
+    const resolvedName = resolvedNamesByUserId
+      ?.get(manager.managerUserId)
+      ?.trim();
+
     return {
       userId: manager.managerUserId,
       handle: manager.managerHandle,
-      name: manager.managerName ?? null,
+      name: persistedName || resolvedName || null,
     };
   }
 
