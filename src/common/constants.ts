@@ -42,7 +42,7 @@ export const ERROR_MESSAGES = {
   TimesheetEntryApprovedReadOnly:
     "Approved timesheet entries cannot be changed. Ask an administrator to reopen them.",
   TimesheetTmReadOnly:
-    "Talent Manager can view submitted timesheet entries only.",
+    "Talent Manager can approve submitted timesheet entries but cannot edit or submit entries.",
   TimesheetOverrideReasonRequired:
     "An override reason is required when an administrator acts on another user's behalf.",
   TimesheetManagerCannotEdit:

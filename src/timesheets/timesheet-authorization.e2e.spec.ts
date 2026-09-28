@@ -310,8 +310,8 @@ describe("Timesheet authorization (e2e)", () => {
       await approve("assigned-manager").expect(201);
     });
 
-    it("403s a talent manager", async () => {
-      await approve("talent-manager").expect(403);
+    it("lets a talent manager approve", async () => {
+      await approve("talent-manager").expect(201);
     });
 
     it("403s the assignee approving their own hours", async () => {
