@@ -562,7 +562,7 @@ describe("TimesheetsService", () => {
           payload([{ workDate: "2026-09-07", hoursWorked: "8" }]),
           talentManager,
         ),
-      ).rejects.toThrow("submitted timesheet entries only");
+      ).rejects.toThrow("cannot edit or submit entries");
     });
 
     it("refuses an assigned manager: approval is their power, editing is not", async () => {
@@ -746,7 +746,7 @@ describe("TimesheetsService", () => {
           { entryIds: ["entry1"] },
           talentManager,
         ),
-      ).rejects.toThrow("submitted timesheet entries only");
+      ).rejects.toThrow("cannot edit or submit entries");
     });
   });
 
@@ -876,15 +876,31 @@ describe("TimesheetsService", () => {
       expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
     });
 
-    it("refuses a TM", async () => {
-      await expect(
-        service.approveEntries(
-          "eng1",
-          "asg1",
-          approvalPayload,
-          talentManager,
-        ),
-      ).rejects.toThrow("submitted timesheet entries only");
+    it("lets a TM approve submitted entries", async () => {
+      stageApproval(["entry1", "entry2"]);
+
+      const result = await service.approveEntries(
+        "eng1",
+        "asg1",
+        approvalPayload,
+        talentManager,
+      );
+
+      expect(db.engagementTimesheetEntry.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ["entry1", "entry2"] },
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+        data: expect.objectContaining({
+          approvedBy: "4004",
+          approvedByHandle: "tmuser",
+          approvalComment: "Approved for week 37",
+          status: TimesheetEntryStatus.APPROVED,
+        }),
+      });
+      expect(result.approved).toEqual(["entry1", "entry2"]);
+      expect(result.skipped).toEqual([]);
     });
 
     it("404s for a manager of a different engagement", async () => {
@@ -1193,7 +1209,7 @@ describe("TimesheetsService", () => {
     it("refuses a TM", async () => {
       await expect(
         service.linkPayment("eng1", "asg1", linkDto, talentManager),
-      ).rejects.toThrow("submitted timesheet entries only");
+      ).rejects.toThrow("cannot edit or submit entries");
     });
 
     it("404s for an entry on another assignment", async () => {
