@@ -699,14 +699,9 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (
-      context.viewerRole === TimesheetViewerRole.Member ||
-      context.viewerRole === TimesheetViewerRole.Tm
-    ) {
+    if (context.viewerRole === TimesheetViewerRole.Member) {
       throw new ForbiddenException(
-        context.viewerRole === TimesheetViewerRole.Tm
-          ? ERROR_MESSAGES.TimesheetTmReadOnly
-          : ERROR_MESSAGES.TimesheetSummaryNotForMembers,
+        ERROR_MESSAGES.TimesheetSummaryNotForMembers,
       );
     }
 
