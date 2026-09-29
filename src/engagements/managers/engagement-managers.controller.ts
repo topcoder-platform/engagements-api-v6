@@ -23,6 +23,7 @@ import {
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { PermissionsGuard } from "../../auth/guards/permissions.guard";
+import { TimesheetAuditRecordDto } from "../../timesheets/dto/timesheet-audit-response.dto";
 import {
   AssignEngagementManagerDto,
   EngagementManagerResponseDto,
@@ -70,6 +71,30 @@ export class EngagementManagersController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementManagerResponseDto[]> {
     return this.managersService.findAll(engagementId, req.authUser);
+  }
+
+  @Get("audit")
+  @ApiOperation({
+    summary: "Read manager assignment audit history",
+    description:
+      "Returns the engagement-level manager assignment and removal events, newest first. These are the records behind the management history shown in the timesheet header.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Manager audit history retrieved.",
+    type: TimesheetAuditRecordDto,
+    isArray: true,
+  })
+  @ApiUnauthorizedResponse({ description: "Caller is not authenticated." })
+  @ApiForbiddenResponse({
+    description: "Caller has no access to this engagement's manager history.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement not found." })
+  async findAudit(
+    @Param("id") engagementId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<TimesheetAuditRecordDto[]> {
+    return this.managersService.findAudit(engagementId, req.authUser);
   }
 
   @Post()
