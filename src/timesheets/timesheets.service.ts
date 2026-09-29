@@ -1090,14 +1090,7 @@ export class TimesheetsService {
           }
         : undefined;
 
-    if (isTm) {
-      where.timesheetEntries = {
-        some: {
-          ...(entryDateFilter ?? {}),
-          status: TimesheetEntryStatus.SUBMITTED,
-        },
-      };
-    } else if (!isAdministrator) {
+    if (!isAdministrator && !isTm) {
       // A manager's authority is the filter: only engagements carrying a live manager row for them.
       engagementFilters.managers = {
         some: { managerUserId: callerUserId, removedAt: null },
@@ -1123,18 +1116,18 @@ export class TimesheetsService {
       where.memberHandle = { contains: query.assignee, mode: "insensitive" };
     }
 
-    if (entryDateFilter && !isTm) {
+    if (entryDateFilter) {
       where.timesheetEntries = { some: entryDateFilter };
     }
 
-    if (!isTm && query.status === TimesheetRollupStatus.PendingApproval) {
+    if (query.status === TimesheetRollupStatus.PendingApproval) {
       where.timesheetEntries = {
         some: {
           ...(entryDateFilter ?? {}),
           status: TimesheetEntryStatus.SUBMITTED,
         },
       };
-    } else if (!isTm && query.status === TimesheetRollupStatus.Approved) {
+    } else if (query.status === TimesheetRollupStatus.Approved) {
       where.timesheetEntries = {
         ...(entryDateFilter ? { some: entryDateFilter } : {}),
         none: {
