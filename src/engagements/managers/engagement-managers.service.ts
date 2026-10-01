@@ -21,6 +21,7 @@ import {
   TimesheetActorRole,
   TimesheetAuditService,
 } from "../../timesheets";
+import { TimesheetAuditRecordDto } from "../../timesheets/dto/timesheet-audit-response.dto";
 import { EngagementManagerResponseDto } from "./dto";
 
 @Injectable()
@@ -75,6 +76,39 @@ export class EngagementManagersService {
     return managers.map((manager) =>
       this.toResponseDto(manager, resolvedNamesByUserId),
     );
+  }
+
+  async findAudit(
+    engagementId: string,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetAuditRecordDto[]> {
+    await this.assertEngagementExists(engagementId);
+    await this.assertCanRead(engagementId, authUser);
+
+    const records = await this.db.engagementTimesheetAudit.findMany({
+      where: {
+        engagementId,
+        action: {
+          in: [
+            TimesheetAuditAction.MANAGER_ASSIGNED,
+            TimesheetAuditAction.MANAGER_REMOVED,
+          ],
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return records.map((record) => ({
+      id: record.id,
+      action: record.action,
+      previousValues: record.previousValues ?? null,
+      updatedValues: record.updatedValues ?? null,
+      actorUserId: record.actorUserId,
+      actorHandle: record.actorHandle ?? null,
+      actorRole: record.actorRole,
+      comment: record.comment ?? null,
+      createdAt: record.createdAt,
+    }));
   }
 
   /**

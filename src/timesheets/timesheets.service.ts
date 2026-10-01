@@ -159,12 +159,7 @@ export class TimesheetsService {
       orderBy: { workDate: "asc" },
     });
 
-    const visibleEntries =
-      context.viewerRole === TimesheetViewerRole.Tm
-        ? entries.filter((entry) => entry.status === TimesheetEntryStatus.SUBMITTED)
-        : entries;
-
-    return this.toTimesheetView(context, visibleEntries);
+    return this.toTimesheetView(context, entries);
   }
 
   /**
@@ -704,14 +699,9 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (
-      context.viewerRole === TimesheetViewerRole.Member ||
-      context.viewerRole === TimesheetViewerRole.Tm
-    ) {
+    if (context.viewerRole === TimesheetViewerRole.Member) {
       throw new ForbiddenException(
-        context.viewerRole === TimesheetViewerRole.Tm
-          ? ERROR_MESSAGES.TimesheetTmReadOnly
-          : ERROR_MESSAGES.TimesheetSummaryNotForMembers,
+        ERROR_MESSAGES.TimesheetSummaryNotForMembers,
       );
     }
 
@@ -1095,14 +1085,7 @@ export class TimesheetsService {
           }
         : undefined;
 
-    if (isTm) {
-      where.timesheetEntries = {
-        some: {
-          ...(entryDateFilter ?? {}),
-          status: TimesheetEntryStatus.SUBMITTED,
-        },
-      };
-    } else if (!isAdministrator) {
+    if (!isAdministrator && !isTm) {
       // A manager's authority is the filter: only engagements carrying a live manager row for them.
       engagementFilters.managers = {
         some: { managerUserId: callerUserId, removedAt: null },
@@ -1128,18 +1111,18 @@ export class TimesheetsService {
       where.memberHandle = { contains: query.assignee, mode: "insensitive" };
     }
 
-    if (entryDateFilter && !isTm) {
+    if (entryDateFilter) {
       where.timesheetEntries = { some: entryDateFilter };
     }
 
-    if (!isTm && query.status === TimesheetRollupStatus.PendingApproval) {
+    if (query.status === TimesheetRollupStatus.PendingApproval) {
       where.timesheetEntries = {
         some: {
           ...(entryDateFilter ?? {}),
           status: TimesheetEntryStatus.SUBMITTED,
         },
       };
-    } else if (!isTm && query.status === TimesheetRollupStatus.Approved) {
+    } else if (query.status === TimesheetRollupStatus.Approved) {
       where.timesheetEntries = {
         ...(entryDateFilter ? { some: entryDateFilter } : {}),
         none: {
