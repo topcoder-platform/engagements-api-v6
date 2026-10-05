@@ -63,6 +63,8 @@ import {
   MY_ASSIGNMENTS_STATUSES,
 } from "../common/constants";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
+import { EngagementManagerResponseDto } from "./managers/dto";
+import { EngagementManagersService } from "./managers/engagement-managers.service";
 
 const USER_ID_PATTERN = /^\d+$/;
 const ANY_LOCATION = "Any";
@@ -159,10 +161,12 @@ type AssignmentContextDetail = {
   wiproIdEndDate?: Date | null;
   candidateWiproId?: string | null;
   source?: AssignmentSource | null;
+  managers?: EngagementManagerResponseDto[];
 };
 
 type EngagementDetail = Engagement & {
   assignments?: EngagementAssignment[];
+  managers?: EngagementManagerResponseDto[];
 };
 
 type PublicEngagementRecord = Pick<
@@ -309,6 +313,7 @@ export class EngagementsService {
     private readonly eventBusService: EventBusService,
     private readonly assignmentOfferEmailService: AssignmentOfferEmailService,
     private readonly assignmentOfferResponseEmailService: AssignmentOfferResponseEmailService,
+    private readonly managersService: EngagementManagersService,
   ) {}
 
   async create(
@@ -942,17 +947,15 @@ export class EngagementsService {
           )
         : [];
 
-    const responseData = (
-      isMemberScopedPrivateFeed
-        ? engagementsWithSkills.map((engagement) =>
-            this.serializeAppliedByMeEngagement(engagement),
-          )
-        : includeAssignments
-          ? engagementsWithProjectDetails
-          : engagementsWithSkills.map((engagement) =>
-              this.serializePublicEngagement(engagement),
-            )
-    ) as unknown as Engagement[];
+    const responseData = (isMemberScopedPrivateFeed
+      ? engagementsWithSkills.map((engagement) =>
+          this.serializeAppliedByMeEngagement(engagement),
+        )
+      : includeAssignments
+        ? engagementsWithProjectDetails
+        : engagementsWithSkills.map((engagement) =>
+            this.serializePublicEngagement(engagement),
+          )) as unknown as Engagement[];
 
     return {
       data: responseData,
@@ -1163,14 +1166,26 @@ export class EngagementsService {
       return this.serializePublicEngagement(publicEngagement);
     }
 
+    // Managers are internal staff, so they ride along only on privileged reads - the public
+    // serialization above already strips internal account metadata for the same reason.
+    const managersByEngagement = await this.managersService.findByEngagementIds(
+      [id],
+    );
+    const engagementWithManagers = {
+      ...normalizedEngagement,
+      managers: managersByEngagement.get(id) ?? [],
+    };
+
     if (!options.includeCreatorEmail) {
-      return normalizedEngagement;
+      return engagementWithManagers;
     }
 
-    const [hydrated] = await this.hydrateCreatorEmails([normalizedEngagement]);
+    const [hydrated] = await this.hydrateCreatorEmails([
+      engagementWithManagers,
+    ]);
     return (
       hydrated ?? {
-        ...normalizedEngagement,
+        ...engagementWithManagers,
         createdByEmail: null,
       }
     );
@@ -1207,6 +1222,9 @@ export class EngagementsService {
 
     const billingAccountId =
       await this.projectService.getProjectBillingAccountId(projectId);
+    const managersByEngagement = await this.managersService.findByEngagementIds(
+      [assignment.engagementId],
+    );
 
     return {
       assignmentId: assignment.id,
@@ -1229,6 +1247,7 @@ export class EngagementsService {
       wiproIdEndDate: assignment.wiproIdEndDate,
       candidateWiproId: assignment.candidateWiproId,
       source: assignment.source,
+      managers: managersByEngagement.get(assignment.engagementId) ?? [],
     };
   }
 
@@ -2376,9 +2395,7 @@ export class EngagementsService {
       projectName?: string;
       skills?: EngagementSkillReference[];
     },
-  >(
-    engagement: T,
-  ): T {
+  >(engagement: T): T {
     const publicEngagement: PublicEngagementRecord = {
       id: engagement.id,
       projectId: engagement.projectId,
@@ -2391,9 +2408,7 @@ export class EngagementsService {
       timeZones: engagement.timeZones,
       countries: engagement.countries,
       requiredSkills: engagement.requiredSkills,
-      ...(engagement.skills !== undefined
-        ? { skills: engagement.skills }
-        : {}),
+      ...(engagement.skills !== undefined ? { skills: engagement.skills } : {}),
       anticipatedStart: engagement.anticipatedStart,
       status: engagement.status,
       isPrivate: engagement.isPrivate,

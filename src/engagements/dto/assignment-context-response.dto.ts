@@ -4,6 +4,7 @@ import {
   AssignmentStatus,
   PaymentCycle,
 } from "@prisma/client";
+import { EngagementManagerResponseDto } from "../managers/dto";
 
 export class AssignmentContextResponseDto {
   @ApiProperty({
@@ -132,4 +133,12 @@ export class AssignmentContextResponseDto {
     example: AssignmentSource.DIRECT,
   })
   source?: AssignmentSource | null;
+
+  @ApiPropertyOptional({
+    description:
+      "Managers currently authorized to approve timesheets on this engagement. Removed managers are excluded.",
+    type: EngagementManagerResponseDto,
+    isArray: true,
+  })
+  managers?: EngagementManagerResponseDto[];
 }

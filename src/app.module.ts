@@ -9,6 +9,7 @@ import { IntegrationsModule } from "./integrations/integrations.module";
 import { FeedbackModule } from "./feedback/feedback.module";
 import { MemberExperienceModule } from "./member-experience/member-experience.module";
 import { EngagementLeadsModule } from "./engagement-leads/engagement-leads.module";
+import { TimesheetsModule } from "./timesheets/timesheets.module";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { EngagementLeadsModule } from "./engagement-leads/engagement-leads.modul
     FeedbackModule,
     MemberExperienceModule,
     EngagementLeadsModule,
+    TimesheetsModule,
     HealthModule,
   ],
 })

@@ -8,6 +8,7 @@ import * as core from "tc-core-library-js";
 type MemberRecord = {
   userId?: string | number;
   handle?: string;
+  status?: string | null;
   email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
@@ -106,6 +107,53 @@ export class MemberService {
     return emailByUserId;
   }
 
+  /**
+   * Display names for several members at once, keyed by user id.
+   *
+   * Batched deliberately: the timesheet views show "Name (handle)" for the assignee, and the
+   * administrator list shows one row per assignee, so a per-row lookup would be an N+1 against the
+   * member API. Members with no name on their profile are simply absent from the map, and callers
+   * fall back to the handle.
+   */
+  async getMemberNamesByUserIds(
+    userIds: string[],
+  ): Promise<Map<string, string>> {
+    const normalizedUserIds = Array.from(
+      new Set(
+        userIds
+          .map((userId) => userId?.trim())
+          .filter((userId): userId is string => Boolean(userId)),
+      ),
+    );
+
+    if (!normalizedUserIds.length) {
+      return new Map();
+    }
+
+    const members = await this.fetchMembersByUserIds(
+      normalizedUserIds,
+      "userId,firstName,lastName",
+    );
+    const nameByUserId = new Map<string, string>();
+
+    members.forEach((member) => {
+      if (member.userId === undefined || member.userId === null) {
+        return;
+      }
+
+      const name = [member.firstName, member.lastName]
+        .filter((part) => Boolean(part?.trim()))
+        .join(" ")
+        .trim();
+
+      if (name) {
+        nameByUserId.set(String(member.userId), name);
+      }
+    });
+
+    return nameByUserId;
+  }
+
   async getMemberHandleByUserId(userId: string): Promise<string | null> {
     const members = await this.fetchMembers(userId, "handle");
     const member = members[0];
@@ -114,6 +162,31 @@ export class MemberService {
     }
 
     return member.handle;
+  }
+
+  /**
+   * Whether the member account may be assigned to approval roles.
+   *
+   * Returns null when no member exists for the user id.
+   */
+  async isMemberActiveByUserId(userId: string): Promise<boolean | null> {
+    const members = await this.fetchMembers(userId, "status");
+    const member = members[0];
+    if (!member) {
+      return null;
+    }
+
+    const normalizedStatus =
+      typeof member.status === "string"
+        ? member.status.trim().toUpperCase()
+        : "";
+
+    if (!normalizedStatus) {
+      // Older member payloads may omit status; default to active to avoid false negatives.
+      return true;
+    }
+
+    return normalizedStatus === "ACTIVE";
   }
 
   async getMemberUserIdByHandle(handle: string): Promise<string | null> {
@@ -325,7 +398,7 @@ export class MemberService {
     const baseUrl = this.getMemberApiBaseUrl();
     const authToken = token ?? (await this.getM2MToken());
     const query = normalizedUserIds
-      .map((userId) => `userIds=${encodeURIComponent(userId)}`)
+      .map((userId) => `userIds[]=${encodeURIComponent(userId)}`)
       .join("&");
     const fieldsQuery = fields ? `&fields=${encodeURIComponent(fields)}` : "";
     const url = `${baseUrl}?${query}${fieldsQuery}&perPage=${normalizedUserIds.length}`;
