@@ -668,6 +668,52 @@ describe("TimesheetsService", () => {
         ),
       ).rejects.toThrow("cannot span more than 31 days");
     });
+
+    it.each([
+      AssignmentStatus.COMPLETED,
+      AssignmentStatus.TERMINATED,
+      AssignmentStatus.SELECTED,
+    ])("refuses the member once the assignment is %s", async (status) => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        status,
+      });
+
+      await expect(
+        service.upsertEntries(
+          "eng1",
+          "asg1",
+          payload([{ workDate: "2026-09-07", hoursWorked: "8" }]),
+          member,
+        ),
+      ).rejects.toThrow(
+        "only be entered or submitted while the assignment is active",
+      );
+      expect(db.engagementTimesheetEntry.create).not.toHaveBeenCalled();
+      expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+    });
+
+    it("still lets an administrator override on a completed assignment", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        status: AssignmentStatus.COMPLETED,
+      });
+      db.engagementTimesheetEntry.create.mockResolvedValue(
+        entry({ id: "created" }),
+      );
+
+      await service.upsertEntries(
+        "eng1",
+        "asg1",
+        payload(
+          [{ workDate: "2026-09-07", hoursWorked: "8" }],
+          "Late correction",
+        ),
+        admin,
+      );
+
+      expect(db.engagementTimesheetEntry.create).toHaveBeenCalled();
+    });
   });
 
   describe("submitEntries", () => {
@@ -778,6 +824,27 @@ describe("TimesheetsService", () => {
         ),
       ).rejects.toThrow("cannot edit or submit entries");
     });
+
+    it.each([AssignmentStatus.COMPLETED, AssignmentStatus.TERMINATED])(
+      "refuses the member's submit once the assignment is %s",
+      async (status) => {
+        db.engagementAssignment.findUnique.mockResolvedValue({
+          ...assignment,
+          status,
+        });
+        db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+
+        await expect(
+          service.submitEntries(
+            "eng1",
+            "asg1",
+            { entryIds: ["entry1"] },
+            member,
+          ),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+        expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe("approveEntries", () => {

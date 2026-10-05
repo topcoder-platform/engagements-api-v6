@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import {
+  AssignmentStatus,
   EngagementAssignment,
   EngagementTimesheetEntry,
   Prisma,
@@ -192,6 +193,8 @@ export class TimesheetsService {
           : ERROR_MESSAGES.TimesheetManagerCannotEdit,
       );
     }
+
+    this.assertMemberAssignmentActive(context);
 
     const parsed = this.parseUpsertEntries(dto.entries);
     const existingEntries = await this.db.engagementTimesheetEntry.findMany({
@@ -395,6 +398,8 @@ export class TimesheetsService {
           : ERROR_MESSAGES.TimesheetManagerCannotSubmit,
       );
     }
+
+    this.assertMemberAssignmentActive(context);
 
     if (context.isAdministrator && !dto.overrideReason) {
       throw new BadRequestException(
@@ -1167,6 +1172,22 @@ export class TimesheetsService {
       actorHandle: authUser?.handle ?? null,
       isAdministrator: viewerRole === TimesheetViewerRole.Administrator,
     };
+  }
+
+  /**
+   * Members may only write to their timesheet while they are actively assigned. A completed or
+   * terminated assignee keeps read access to what they logged, but the UI hiding the controls is not
+   * enough - the page is still reachable by URL - so the API refuses the write. Administrators are
+   * not held to this: their overrides carry a reason and an audit record, and they are how a late
+   * correction on a closed assignment gets made.
+   */
+  private assertMemberAssignmentActive(context: TimesheetContext): void {
+    if (
+      context.viewerRole === TimesheetViewerRole.Member &&
+      context.assignment.status !== AssignmentStatus.ASSIGNED
+    ) {
+      throw new ForbiddenException(ERROR_MESSAGES.TimesheetAssignmentNotActive);
+    }
   }
 
   /**
