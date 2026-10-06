@@ -18,7 +18,6 @@ import { DbService } from "../../db/db.service";
 import { MemberService } from "../../integrations/member.service";
 import {
   TimesheetAccessService,
-  TimesheetActorRole,
   TimesheetAuditService,
 } from "../../timesheets";
 import { TimesheetAuditRecordDto } from "../../timesheets/dto/timesheet-audit-response.dto";
@@ -192,7 +191,7 @@ export class EngagementManagersService {
         },
         actorUserId,
         actorHandle,
-        actorRole: TimesheetActorRole.Administrator,
+        actorRole: this.access.resolveEngagementActorRole(authUser),
       });
 
       return saved;
@@ -261,7 +260,7 @@ export class EngagementManagersService {
         },
         actorUserId,
         actorHandle,
-        actorRole: TimesheetActorRole.Administrator,
+        actorRole: this.access.resolveEngagementActorRole(authUser),
       });
     });
 

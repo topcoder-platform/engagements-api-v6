@@ -242,7 +242,7 @@ describe("EngagementManagersService", () => {
       expect(memberService.getMemberHandleByUserId).not.toHaveBeenCalled();
     });
 
-    it("allows a TM to assign a manager", async () => {
+    it("allows a TM to assign a manager, and audits it as the TM", async () => {
       db.engagementManager.create.mockResolvedValue(activeManagerRow);
 
       await expect(
@@ -252,6 +252,27 @@ describe("EngagementManagersService", () => {
         handle: "maryj",
         name: "Mary Jones",
       });
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          action: TimesheetAuditAction.MANAGER_ASSIGNED,
+          actorRole: "TM",
+        }),
+      );
+    });
+
+    it("audits a machine token as MACHINE", async () => {
+      db.engagementManager.create.mockResolvedValue(activeManagerRow);
+
+      await service.assign("eng1", selection, {
+        isMachine: true,
+        scopes: ["manage:timesheets"],
+      });
+
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({ actorRole: "MACHINE" }),
+      );
     });
 
     it("refuses a project manager", async () => {
@@ -333,6 +354,13 @@ describe("EngagementManagersService", () => {
       await expect(
         service.remove("eng1", "2002", talentManager),
       ).resolves.toBeUndefined();
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          action: TimesheetAuditAction.MANAGER_REMOVED,
+          actorRole: "TM",
+        }),
+      );
     });
 
     it("refuses a project manager", async () => {
