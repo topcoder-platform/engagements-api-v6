@@ -449,6 +449,53 @@ describe("TimesheetsService", () => {
       );
     });
 
+    it("keeps a submitted entry submitted when an administrator corrects it", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          id: "edited",
+          status: TimesheetEntryStatus.SUBMITTED,
+          submittedAt: utcDate("2026-09-12"),
+          submittedBy: "1001",
+        }),
+      ]);
+      db.engagementTimesheetEntry.update.mockResolvedValue(
+        entry({
+          id: "edited",
+          hoursWorked: decimal("7.00"),
+          remarks: "Corrected",
+          status: TimesheetEntryStatus.SUBMITTED,
+        }),
+      );
+
+      await service.upsertEntries(
+        "eng1",
+        "asg1",
+        payload(
+          [{ workDate: "2026-09-07", hoursWorked: "7", remarks: "Corrected" }],
+          "Manager on leave",
+        ),
+        admin,
+      );
+
+      const { data } = db.engagementTimesheetEntry.update.mock.calls[0][0];
+      expect(data.hoursWorked.toString()).toBe("7");
+      expect(data.remarks).toBe("Corrected");
+      expect(data).not.toHaveProperty("status");
+      expect(data).not.toHaveProperty("submittedAt");
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          timesheetEntryId: "edited",
+          action: TimesheetAuditAction.UPDATED,
+          comment: "Manager on leave",
+        }),
+      );
+      expect(events.emit).not.toHaveBeenCalledWith(
+        TimesheetEventTopics.Unsubmitted,
+        expect.anything(),
+      );
+    });
+
     it("is a no-op when nothing material changed", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([
         entry({ status: TimesheetEntryStatus.SUBMITTED }),

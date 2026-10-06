@@ -170,6 +170,10 @@ export class TimesheetsService {
    * the client is ignored outright: the edit-after-submit reset and the immutability of approved
    * entries are only enforceable if the server decides, so a stale client cannot talk its way into an
    * illegal state.
+   *
+   * The reset applies to members only. An administrator correcting a submitted entry is reviewing it,
+   * not changing the member's claim, so the entry stays submitted and can be approved as corrected -
+   * sending it back to draft would leave nothing to approve.
    */
   async upsertEntries(
     engagementId: string,
@@ -308,7 +312,8 @@ export class TimesheetsService {
         }
 
         const resetsToDraft =
-          existing.status === TimesheetEntryStatus.SUBMITTED;
+          existing.status === TimesheetEntryStatus.SUBMITTED &&
+          !context.isAdministrator;
         const updated = await tx.engagementTimesheetEntry.update({
           where: { id: existing.id },
           data: {
