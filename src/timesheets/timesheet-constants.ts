@@ -1,6 +1,7 @@
 /**
- * A date range may not span more than 31 days, which also caps how many entries one request can carry:
- * a timesheet is filled in a month at a time, and the cap keeps a single call bounded.
+ * A save may not span more than 31 days, which also caps how many entries one request can carry: a
+ * timesheet is filled in a month at a time, and the cap keeps a single call bounded. Read filters are
+ * not capped - reviewing and paying routinely look back further.
  */
 export const TIMESHEET_MAX_RANGE_DAYS = 31;
 

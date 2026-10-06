@@ -71,12 +71,13 @@ export const ERROR_MESSAGES = {
   TimesheetDuplicateWorkDate:
     "The same work date appears more than once in this request.",
   TimesheetHoursRequired: "Hours worked is required.",
+  TimesheetRemarksRequired: "Remarks are required before submitting.",
   TimesheetHoursNumeric: "Hours worked must be a number.",
   TimesheetHoursNegative: "Hours worked cannot be negative.",
   TimesheetHoursTooHigh: "Hours worked cannot exceed 24 for a single day.",
   TimesheetRangeInverted: "The to date cannot be earlier than the from date.",
   TimesheetRangeTooLong:
-    "A timesheet date range cannot span more than 31 days.",
+    "Timesheet entries saved at once cannot span more than 31 days.",
   UnauthorizedTimesheetList:
     "You do not have permission to list timesheet engagements.",
   EngagementNotFound: "Engagement not found",
@@ -89,6 +90,8 @@ export const ERROR_MESSAGES = {
     "That member is already assigned as a manager on this engagement.",
   EngagementManagerNotFound:
     "That member is not assigned as a manager on this engagement.",
+  ManagerAuditAdminOrTmOnly:
+    "Only an administrator or Talent Manager can read manager assignment history.",
   UnauthorizedManagerRead:
     "You do not have permission to view managers for this engagement.",
   UnauthorizedManagerChange:

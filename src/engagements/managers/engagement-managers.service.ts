@@ -18,7 +18,6 @@ import { DbService } from "../../db/db.service";
 import { MemberService } from "../../integrations/member.service";
 import {
   TimesheetAccessService,
-  TimesheetActorRole,
   TimesheetAuditService,
 } from "../../timesheets";
 import { TimesheetAuditRecordDto } from "../../timesheets/dto/timesheet-audit-response.dto";
@@ -83,7 +82,12 @@ export class EngagementManagersService {
     authUser?: Record<string, any>,
   ): Promise<TimesheetAuditRecordDto[]> {
     await this.assertEngagementExists(engagementId);
-    await this.assertCanRead(engagementId, authUser);
+
+    // The history is for the people who make these changes - administrators and TMs. Managers and
+    // assignees can see the current managers through findAll, but not the history behind them.
+    if (!this.access.canManageEngagementManagers(authUser)) {
+      throw new ForbiddenException(ERROR_MESSAGES.ManagerAuditAdminOrTmOnly);
+    }
 
     const records = await this.db.engagementTimesheetAudit.findMany({
       where: {
@@ -192,7 +196,7 @@ export class EngagementManagersService {
         },
         actorUserId,
         actorHandle,
-        actorRole: TimesheetActorRole.Administrator,
+        actorRole: this.access.resolveEngagementActorRole(authUser),
       });
 
       return saved;
@@ -261,7 +265,7 @@ export class EngagementManagersService {
         },
         actorUserId,
         actorHandle,
-        actorRole: TimesheetActorRole.Administrator,
+        actorRole: this.access.resolveEngagementActorRole(authUser),
       });
     });
 

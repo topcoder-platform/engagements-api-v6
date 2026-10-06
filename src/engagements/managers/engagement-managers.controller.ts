@@ -77,7 +77,7 @@ export class EngagementManagersController {
   @ApiOperation({
     summary: "Read manager assignment audit history",
     description:
-      "Returns the engagement-level manager assignment and removal events, newest first. These are the records behind the management history shown in the timesheet header.",
+      "Returns the engagement-level manager assignment and removal events, newest first. These are the records behind the management history shown in the timesheet header. Administrators and Talent Managers only.",
   })
   @ApiResponse({
     status: 200,
@@ -87,7 +87,7 @@ export class EngagementManagersController {
   })
   @ApiUnauthorizedResponse({ description: "Caller is not authenticated." })
   @ApiForbiddenResponse({
-    description: "Caller has no access to this engagement's manager history.",
+    description: "Caller is not an administrator or Talent Manager.",
   })
   @ApiNotFoundResponse({ description: "Engagement not found." })
   async findAudit(
