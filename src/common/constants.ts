@@ -45,6 +45,8 @@ export const ERROR_MESSAGES = {
     "Talent Manager can approve submitted timesheet entries but cannot edit or submit entries.",
   TimesheetOverrideReasonRequired:
     "An override reason is required when an administrator acts on another user's behalf.",
+  TimesheetAssignmentNotActive:
+    "Timesheet entries can only be entered or submitted while the assignment is active.",
   TimesheetManagerCannotEdit:
     "Managers can approve timesheet entries but cannot change hours or remarks.",
   TimesheetManagerCannotSubmit:

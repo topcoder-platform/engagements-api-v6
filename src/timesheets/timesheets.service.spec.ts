@@ -449,6 +449,53 @@ describe("TimesheetsService", () => {
       );
     });
 
+    it("keeps a submitted entry submitted when an administrator corrects it", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          id: "edited",
+          status: TimesheetEntryStatus.SUBMITTED,
+          submittedAt: utcDate("2026-09-12"),
+          submittedBy: "1001",
+        }),
+      ]);
+      db.engagementTimesheetEntry.update.mockResolvedValue(
+        entry({
+          id: "edited",
+          hoursWorked: decimal("7.00"),
+          remarks: "Corrected",
+          status: TimesheetEntryStatus.SUBMITTED,
+        }),
+      );
+
+      await service.upsertEntries(
+        "eng1",
+        "asg1",
+        payload(
+          [{ workDate: "2026-09-07", hoursWorked: "7", remarks: "Corrected" }],
+          "Manager on leave",
+        ),
+        admin,
+      );
+
+      const { data } = db.engagementTimesheetEntry.update.mock.calls[0][0];
+      expect(data.hoursWorked.toString()).toBe("7");
+      expect(data.remarks).toBe("Corrected");
+      expect(data).not.toHaveProperty("status");
+      expect(data).not.toHaveProperty("submittedAt");
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          timesheetEntryId: "edited",
+          action: TimesheetAuditAction.UPDATED,
+          comment: "Manager on leave",
+        }),
+      );
+      expect(events.emit).not.toHaveBeenCalledWith(
+        TimesheetEventTopics.Unsubmitted,
+        expect.anything(),
+      );
+    });
+
     it("is a no-op when nothing material changed", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([
         entry({ status: TimesheetEntryStatus.SUBMITTED }),
@@ -668,6 +715,52 @@ describe("TimesheetsService", () => {
         ),
       ).rejects.toThrow("cannot span more than 31 days");
     });
+
+    it.each([
+      AssignmentStatus.COMPLETED,
+      AssignmentStatus.TERMINATED,
+      AssignmentStatus.SELECTED,
+    ])("refuses the member once the assignment is %s", async (status) => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        status,
+      });
+
+      await expect(
+        service.upsertEntries(
+          "eng1",
+          "asg1",
+          payload([{ workDate: "2026-09-07", hoursWorked: "8" }]),
+          member,
+        ),
+      ).rejects.toThrow(
+        "only be entered or submitted while the assignment is active",
+      );
+      expect(db.engagementTimesheetEntry.create).not.toHaveBeenCalled();
+      expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+    });
+
+    it("still lets an administrator override on a completed assignment", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        status: AssignmentStatus.COMPLETED,
+      });
+      db.engagementTimesheetEntry.create.mockResolvedValue(
+        entry({ id: "created" }),
+      );
+
+      await service.upsertEntries(
+        "eng1",
+        "asg1",
+        payload(
+          [{ workDate: "2026-09-07", hoursWorked: "8" }],
+          "Late correction",
+        ),
+        admin,
+      );
+
+      expect(db.engagementTimesheetEntry.create).toHaveBeenCalled();
+    });
   });
 
   describe("submitEntries", () => {
@@ -778,6 +871,27 @@ describe("TimesheetsService", () => {
         ),
       ).rejects.toThrow("cannot edit or submit entries");
     });
+
+    it.each([AssignmentStatus.COMPLETED, AssignmentStatus.TERMINATED])(
+      "refuses the member's submit once the assignment is %s",
+      async (status) => {
+        db.engagementAssignment.findUnique.mockResolvedValue({
+          ...assignment,
+          status,
+        });
+        db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+
+        await expect(
+          service.submitEntries(
+            "eng1",
+            "asg1",
+            { entryIds: ["entry1"] },
+            member,
+          ),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+        expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe("approveEntries", () => {
@@ -1436,13 +1550,28 @@ describe("TimesheetsService", () => {
     });
 
     it("rolls up status from one grouped query rather than a query per assignee", async () => {
-      db.engagementAssignment.count.mockResolvedValue(2);
+      db.engagementAssignment.count.mockResolvedValue(3);
       db.engagementAssignment.findMany.mockResolvedValue([
         assignmentRow(),
         assignmentRow({ id: "asg2", memberHandle: "janedoe" }),
+        assignmentRow({ id: "asg3", memberHandle: "newhire" }),
       ]);
       db.engagementTimesheetEntry.groupBy.mockResolvedValue([
-        { engagementAssignmentId: "asg1", _count: { _all: 3 } },
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.SUBMITTED,
+          _count: { _all: 3 },
+        },
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 2 },
+        },
+        {
+          engagementAssignmentId: "asg2",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 5 },
+        },
       ]);
 
       const result = await service.findEngagements(
@@ -1454,7 +1583,34 @@ describe("TimesheetsService", () => {
       expect(result.data.map((row) => row.timesheetStatus)).toEqual([
         TimesheetRollupStatus.PendingApproval,
         TimesheetRollupStatus.Approved,
+        // No approved or submitted entries is not "Approved".
+        TimesheetRollupStatus.NotSubmitted,
       ]);
+    });
+
+    it("only lists assignees with something approved under the Approved filter", async () => {
+      db.engagementAssignment.count.mockResolvedValue(0);
+
+      await service.findEngagements(
+        {
+          page: 1,
+          perPage: 20,
+          status: TimesheetRollupStatus.Approved,
+          fromDate: "2026-09-01",
+          toDate: "2026-09-30",
+        },
+        admin,
+      );
+
+      const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
+      const workDate = {
+        gte: utcDate("2026-09-01"),
+        lte: utcDate("2026-09-30"),
+      };
+      expect(where.timesheetEntries).toEqual({
+        some: { workDate, status: TimesheetEntryStatus.APPROVED },
+        none: { workDate, status: TimesheetEntryStatus.SUBMITTED },
+      });
     });
 
     it("applies every administrator filter", async () => {
