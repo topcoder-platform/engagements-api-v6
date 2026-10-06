@@ -71,6 +71,7 @@ export const ERROR_MESSAGES = {
   TimesheetDuplicateWorkDate:
     "The same work date appears more than once in this request.",
   TimesheetHoursRequired: "Hours worked is required.",
+  TimesheetRemarksRequired: "Remarks are required before submitting.",
   TimesheetHoursNumeric: "Hours worked must be a number.",
   TimesheetHoursNegative: "Hours worked cannot be negative.",
   TimesheetHoursTooHigh: "Hours worked cannot exceed 24 for a single day.",

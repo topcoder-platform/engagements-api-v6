@@ -413,20 +413,31 @@ export class TimesheetsService {
     }
 
     const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+    // Drafts may be saved without remarks, but a manager approving hours needs to know what they
+    // were for, so remarks are required by the time an entry is submitted.
+    const submitProblem = (entry: EngagementTimesheetEntry): string | null => {
+      if (entry.status !== TimesheetEntryStatus.DRAFT) {
+        return `Only draft entries can be submitted; this entry is ${entry.status}.`;
+      }
+
+      if (entry.hoursWorked.lessThanOrEqualTo(0)) {
+        return "Hours worked must be greater than zero.";
+      }
+
+      if (!entry.remarks?.trim()) {
+        return ERROR_MESSAGES.TimesheetRemarksRequired;
+      }
+
+      return null;
+    };
     const problems = entries
-      .filter(
-        (entry) =>
-          entry.status !== TimesheetEntryStatus.DRAFT ||
-          entry.hoursWorked.lessThanOrEqualTo(0),
-      )
-      .map((entry) => ({
+      .map((entry) => ({ entry, reason: submitProblem(entry) }))
+      .filter(({ reason }) => reason !== null)
+      .map(({ entry, reason }) => ({
         id: entry.id,
         workDate: toDateString(entry.workDate),
         currentStatus: entry.status,
-        reason:
-          entry.status === TimesheetEntryStatus.DRAFT
-            ? "Hours worked must be greater than zero."
-            : `Only draft entries can be submitted; this entry is ${entry.status}.`,
+        reason,
       }));
 
     if (problems.length) {

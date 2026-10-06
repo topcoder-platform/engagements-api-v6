@@ -840,6 +840,40 @@ describe("TimesheetsService", () => {
       expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
     });
 
+    it("submits nothing when one entry has no remarks", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "ok" }),
+        entry({ id: "blank", remarks: "   " }),
+        entry({ id: "missing", remarks: null }),
+      ]);
+
+      const error = await service
+        .submitEntries(
+          "eng1",
+          "asg1",
+          { entryIds: ["ok", "blank", "missing"] },
+          member,
+        )
+        .catch((caught: BadRequestException) => caught);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect((error as BadRequestException).getResponse()).toEqual(
+        expect.objectContaining({
+          entries: [
+            expect.objectContaining({
+              id: "blank",
+              reason: "Remarks are required before submitting.",
+            }),
+            expect.objectContaining({
+              id: "missing",
+              reason: "Remarks are required before submitting.",
+            }),
+          ],
+        }),
+      );
+      expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+    });
+
     it("404s when an entry id belongs to another assignment", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
 
