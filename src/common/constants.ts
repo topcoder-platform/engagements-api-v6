@@ -89,6 +89,8 @@ export const ERROR_MESSAGES = {
     "That member is already assigned as a manager on this engagement.",
   EngagementManagerNotFound:
     "That member is not assigned as a manager on this engagement.",
+  ManagerAuditAdminOrTmOnly:
+    "Only an administrator or Talent Manager can read manager assignment history.",
   UnauthorizedManagerRead:
     "You do not have permission to view managers for this engagement.",
   UnauthorizedManagerChange:

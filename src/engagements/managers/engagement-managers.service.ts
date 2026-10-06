@@ -82,7 +82,12 @@ export class EngagementManagersService {
     authUser?: Record<string, any>,
   ): Promise<TimesheetAuditRecordDto[]> {
     await this.assertEngagementExists(engagementId);
-    await this.assertCanRead(engagementId, authUser);
+
+    // The history is for the people who make these changes - administrators and TMs. Managers and
+    // assignees can see the current managers through findAll, but not the history behind them.
+    if (!this.access.canManageEngagementManagers(authUser)) {
+      throw new ForbiddenException(ERROR_MESSAGES.ManagerAuditAdminOrTmOnly);
+    }
 
     const records = await this.db.engagementTimesheetAudit.findMany({
       where: {
