@@ -318,15 +318,26 @@ describe("TimesheetsService", () => {
       ).rejects.toThrow("cannot be earlier than the from date");
     });
 
-    it("rejects a range longer than 31 days", async () => {
-      await expect(
-        service.findTimesheet(
-          "eng1",
-          "asg1",
-          { fromDate: "2026-09-01", toDate: "2026-10-05" },
-          member,
-        ),
-      ).rejects.toThrow("cannot span more than 31 days");
+    it("lets a filter span more than 31 days, since reading is not capped", async () => {
+      withManagerRow();
+
+      await service.findTimesheet(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-01-01", toDate: "2026-09-30" },
+        manager,
+      );
+
+      expect(db.engagementTimesheetEntry.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            workDate: {
+              gte: utcDate("2026-01-01"),
+              lte: utcDate("2026-09-30"),
+            },
+          }),
+        }),
+      );
     });
   });
 
@@ -1586,6 +1597,22 @@ describe("TimesheetsService", () => {
         // No approved or submitted entries is not "Approved".
         TimesheetRollupStatus.NotSubmitted,
       ]);
+    });
+
+    it("accepts a landing-list date filter longer than 31 days", async () => {
+      db.engagementAssignment.count.mockResolvedValue(0);
+
+      await expect(
+        service.findEngagements(
+          {
+            page: 1,
+            perPage: 20,
+            fromDate: "2026-01-01",
+            toDate: "2026-09-30",
+          },
+          admin,
+        ),
+      ).resolves.toEqual(expect.objectContaining({ data: [] }));
     });
 
     it("only lists assignees with something approved under the Approved filter", async () => {

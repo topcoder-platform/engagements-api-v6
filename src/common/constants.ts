@@ -76,7 +76,7 @@ export const ERROR_MESSAGES = {
   TimesheetHoursTooHigh: "Hours worked cannot exceed 24 for a single day.",
   TimesheetRangeInverted: "The to date cannot be earlier than the from date.",
   TimesheetRangeTooLong:
-    "A timesheet date range cannot span more than 31 days.",
+    "Timesheet entries saved at once cannot span more than 31 days.",
   UnauthorizedTimesheetList:
     "You do not have permission to list timesheet engagements.",
   EngagementNotFound: "Engagement not found",

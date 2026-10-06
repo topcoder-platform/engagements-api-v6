@@ -1309,6 +1309,11 @@ export class TimesheetsService {
     return hours;
   }
 
+  /**
+   * Checks a read filter's range. There is no length cap here: managers, TMs, and administrators
+   * review and pay across months. The 31-day cap belongs to saving entries, which
+   * `parseUpsertEntries` enforces.
+   */
   private assertValidRange(fromDate?: Date, toDate?: Date): void {
     if (!fromDate || !toDate) {
       return;
@@ -1316,11 +1321,6 @@ export class TimesheetsService {
 
     if (toDate.getTime() < fromDate.getTime()) {
       throw new BadRequestException(ERROR_MESSAGES.TimesheetRangeInverted);
-    }
-
-    const spanDays = (toDate.getTime() - fromDate.getTime()) / DAY_IN_MS + 1;
-    if (spanDays > TIMESHEET_MAX_RANGE_DAYS) {
-      throw new BadRequestException(ERROR_MESSAGES.TimesheetRangeTooLong);
     }
   }
 
