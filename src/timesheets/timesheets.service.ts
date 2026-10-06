@@ -1013,24 +1013,52 @@ export class TimesheetsService {
 
     // One grouped query for the rolled-up status, and one batched member lookup for names. Both keep
     // the list off an N+1 as the assignee count grows.
-    const [pendingGroups, nameByUserId] = await Promise.all([
+    const [statusGroups, nameByUserId] = await Promise.all([
       assignmentIds.length
         ? this.db.engagementTimesheetEntry.groupBy({
-            by: ["engagementAssignmentId"],
+            by: ["engagementAssignmentId", "status"],
             where: {
               engagementAssignmentId: { in: assignmentIds },
-              status: TimesheetEntryStatus.SUBMITTED,
+              status: {
+                in: [
+                  TimesheetEntryStatus.SUBMITTED,
+                  TimesheetEntryStatus.APPROVED,
+                ],
+              },
             },
             _count: { _all: true },
           })
-        : Promise.resolve([]),
+        : Promise.resolve(
+            [] as Array<{
+              engagementAssignmentId: string;
+              status: TimesheetEntryStatus;
+            }>,
+          ),
       this.resolveMemberNames(
         assignments.map((assignment) => assignment.memberId),
       ),
     ]);
-    const pendingAssignmentIds = new Set(
-      pendingGroups.map((group) => group.engagementAssignmentId),
+    const assignmentIdsWithStatus = (status: TimesheetEntryStatus) =>
+      new Set(
+        statusGroups
+          .filter((group) => group.status === status)
+          .map((group) => group.engagementAssignmentId),
+      );
+    const pendingAssignmentIds = assignmentIdsWithStatus(
+      TimesheetEntryStatus.SUBMITTED,
     );
+    const approvedAssignmentIds = assignmentIdsWithStatus(
+      TimesheetEntryStatus.APPROVED,
+    );
+    const toRollupStatus = (assignmentId: string): TimesheetRollupStatus => {
+      if (pendingAssignmentIds.has(assignmentId)) {
+        return TimesheetRollupStatus.PendingApproval;
+      }
+
+      return approvedAssignmentIds.has(assignmentId)
+        ? TimesheetRollupStatus.Approved
+        : TimesheetRollupStatus.NotSubmitted;
+    };
 
     const data: TimesheetEngagementRowDto[] = assignments.map((assignment) => ({
       engagementId: assignment.engagementId,
@@ -1039,9 +1067,7 @@ export class TimesheetsService {
       assigneeId: assignment.memberId,
       assigneeHandle: assignment.memberHandle,
       assigneeName: nameByUserId.get(assignment.memberId) ?? null,
-      timesheetStatus: pendingAssignmentIds.has(assignment.id)
-        ? TimesheetRollupStatus.PendingApproval
-        : TimesheetRollupStatus.Approved,
+      timesheetStatus: toRollupStatus(assignment.id),
       viewerRole: isAdministrator
         ? TimesheetViewerRole.Administrator
         : isTm
@@ -1133,8 +1159,13 @@ export class TimesheetsService {
         },
       };
     } else if (query.status === TimesheetRollupStatus.Approved) {
+      // "Nothing pending" alone would also match assignees with no entries or only drafts, so require
+      // something to actually have been approved.
       where.timesheetEntries = {
-        ...(entryDateFilter ? { some: entryDateFilter } : {}),
+        some: {
+          ...(entryDateFilter ?? {}),
+          status: TimesheetEntryStatus.APPROVED,
+        },
         none: {
           ...(entryDateFilter ?? {}),
           status: TimesheetEntryStatus.SUBMITTED,

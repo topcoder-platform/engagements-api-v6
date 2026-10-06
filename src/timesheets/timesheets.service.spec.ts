@@ -1550,13 +1550,28 @@ describe("TimesheetsService", () => {
     });
 
     it("rolls up status from one grouped query rather than a query per assignee", async () => {
-      db.engagementAssignment.count.mockResolvedValue(2);
+      db.engagementAssignment.count.mockResolvedValue(3);
       db.engagementAssignment.findMany.mockResolvedValue([
         assignmentRow(),
         assignmentRow({ id: "asg2", memberHandle: "janedoe" }),
+        assignmentRow({ id: "asg3", memberHandle: "newhire" }),
       ]);
       db.engagementTimesheetEntry.groupBy.mockResolvedValue([
-        { engagementAssignmentId: "asg1", _count: { _all: 3 } },
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.SUBMITTED,
+          _count: { _all: 3 },
+        },
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 2 },
+        },
+        {
+          engagementAssignmentId: "asg2",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 5 },
+        },
       ]);
 
       const result = await service.findEngagements(
@@ -1568,7 +1583,34 @@ describe("TimesheetsService", () => {
       expect(result.data.map((row) => row.timesheetStatus)).toEqual([
         TimesheetRollupStatus.PendingApproval,
         TimesheetRollupStatus.Approved,
+        // No approved or submitted entries is not "Approved".
+        TimesheetRollupStatus.NotSubmitted,
       ]);
+    });
+
+    it("only lists assignees with something approved under the Approved filter", async () => {
+      db.engagementAssignment.count.mockResolvedValue(0);
+
+      await service.findEngagements(
+        {
+          page: 1,
+          perPage: 20,
+          status: TimesheetRollupStatus.Approved,
+          fromDate: "2026-09-01",
+          toDate: "2026-09-30",
+        },
+        admin,
+      );
+
+      const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
+      const workDate = {
+        gte: utcDate("2026-09-01"),
+        lte: utcDate("2026-09-30"),
+      };
+      expect(where.timesheetEntries).toEqual({
+        some: { workDate, status: TimesheetEntryStatus.APPROVED },
+        none: { workDate, status: TimesheetEntryStatus.SUBMITTED },
+      });
     });
 
     it("applies every administrator filter", async () => {
