@@ -740,10 +740,11 @@ export class TimesheetsService {
       : undefined;
     this.assertValidRange(fromDate, toDate);
 
+    // Every entry in the period, not just approved ones: paid hours count whatever an entry's status
+    // is now, e.g. one reopened after it was paid.
     const entries = await this.db.engagementTimesheetEntry.findMany({
       where: {
         engagementAssignmentId: assignmentId,
-        status: TimesheetEntryStatus.APPROVED,
         ...(fromDate || toDate
           ? {
               workDate: {
@@ -756,23 +757,80 @@ export class TimesheetsService {
       orderBy: { workDate: "asc" },
     });
 
-    const payable = entries.filter((entry) => !entry.paidPaymentReference);
-    const alreadyPaid = entries.filter((entry) => entry.paidPaymentReference);
-
-    // Summed as Decimal rather than with floats: this number is multiplied by an hourly rate and
-    // becomes money.
-    const totalHours = payable.reduce(
-      (total, entry) => total.plus(entry.hoursWorked),
-      new Prisma.Decimal(0),
+    const approved = entries.filter(
+      (entry) => entry.status === TimesheetEntryStatus.APPROVED,
     );
+    const payable = approved.filter((entry) => !entry.paidPaymentReference);
+    const alreadyPaid = approved.filter((entry) => entry.paidPaymentReference);
+    const paid = entries.filter((entry) => entry.paidPaymentReference);
+
+    // Summed as Decimal rather than with floats: these numbers are multiplied by an hourly rate and
+    // become money.
+    const sumHours = (rows: EngagementTimesheetEntry[]) =>
+      rows
+        .reduce(
+          (total, entry) => total.plus(entry.hoursWorked),
+          new Prisma.Decimal(0),
+        )
+        .toFixed(2);
 
     return {
       totalDays: payable.length,
-      totalHours: totalHours.toFixed(2),
+      totalHours: sumHours(payable),
       ratePerHour: context.assignment.ratePerHour ?? null,
       entryIds: payable.map((entry) => entry.id),
       alreadyPaidEntryIds: alreadyPaid.map((entry) => entry.id),
+      approvedHours: sumHours(approved),
+      paidHours: sumHours(paid),
+      expectedHours: this.expectedHours(context.assignment, fromDate, toDate),
     };
+  }
+
+  /**
+   * Standard hours per day times the weekdays (Monday to Friday) in the period, counting only days
+   * inside the assignment's start and end dates.
+   */
+  private expectedHours(
+    assignment: EngagementAssignment,
+    fromDate?: Date,
+    toDate?: Date,
+  ): string | null {
+    // Older assignments only carry the deprecated weekly figure; a working week is five days.
+    const hoursPerDay =
+      assignment.standardHoursPerDay ??
+      (assignment.standardHoursPerWeek
+        ? assignment.standardHoursPerWeek / 5
+        : null);
+
+    if (!fromDate || !toDate || !hoursPerDay || hoursPerDay <= 0) {
+      return null;
+    }
+
+    const assignmentStart = assignment.startDate
+      ? toWorkDate(toDateString(assignment.startDate))
+      : undefined;
+    const assignmentEnd = assignment.endDate
+      ? toWorkDate(toDateString(assignment.endDate))
+      : undefined;
+    const start = Math.max(fromDate.getTime(), assignmentStart?.getTime() ?? 0);
+    const end = Math.min(
+      toDate.getTime(),
+      assignmentEnd?.getTime() ?? Number.POSITIVE_INFINITY,
+    );
+
+    if (start > end) {
+      return null;
+    }
+
+    let weekdays = 0;
+    for (let day = start; day <= end; day += DAY_IN_MS) {
+      const dayOfWeek = new Date(day).getUTCDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        weekdays += 1;
+      }
+    }
+
+    return new Prisma.Decimal(hoursPerDay).times(weekdays).toFixed(2);
   }
 
   /**
