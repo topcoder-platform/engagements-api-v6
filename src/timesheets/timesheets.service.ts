@@ -58,6 +58,12 @@ import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
+/** Assignment statuses a manager's landing list shows. */
+const MANAGER_LIST_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
+  AssignmentStatus.ASSIGNED,
+  AssignmentStatus.COMPLETED,
+];
+
 type AssignmentWithEngagement = EngagementAssignment & {
   engagement: { id: string; title: string };
 };
@@ -1078,6 +1084,8 @@ export class TimesheetsService {
       assigneeId: assignment.memberId,
       assigneeHandle: assignment.memberHandle,
       assigneeName: nameByUserId.get(assignment.memberId) ?? null,
+      assignmentStatus: assignment.status,
+      hasPendingApproval: pendingAssignmentIds.has(assignment.id),
       timesheetStatus: toRollupStatus(assignment.id),
       viewerRole: isAdministrator
         ? TimesheetViewerRole.Administrator
@@ -1137,6 +1145,9 @@ export class TimesheetsService {
       engagementFilters.managers = {
         some: { managerUserId: callerUserId, removedAt: null },
       };
+      // A manager reviews people who are working or have worked; pending offers, rejections, and
+      // terminations are not theirs to review.
+      where.status = { in: MANAGER_LIST_ASSIGNMENT_STATUSES };
     } else if (query.manager) {
       engagementFilters.managers = {
         some: {

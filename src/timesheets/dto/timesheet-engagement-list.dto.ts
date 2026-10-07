@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { AssignmentStatus } from "@prisma/client";
 import { Transform } from "class-transformer";
 import {
   IsIn,
@@ -119,6 +120,21 @@ export class TimesheetEngagementRowDto {
     nullable: true,
   })
   assigneeName: string | null;
+
+  @ApiProperty({
+    description:
+      "The assignment's own status. A manager's list only ever carries ASSIGNED and COMPLETED.",
+    enum: AssignmentStatus,
+    example: AssignmentStatus.ASSIGNED,
+  })
+  assignmentStatus: AssignmentStatus;
+
+  @ApiProperty({
+    description:
+      "True when at least one entry is submitted and awaiting approval",
+    example: true,
+  })
+  hasPendingApproval: boolean;
 
   @ApiProperty({
     description:

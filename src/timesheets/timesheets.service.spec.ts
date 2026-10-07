@@ -1522,6 +1522,7 @@ describe("TimesheetsService", () => {
       engagementId: "eng1",
       memberId: "1001",
       memberHandle: "johnsmith",
+      status: AssignmentStatus.ASSIGNED,
       engagement: { id: "eng1", title: "Senior Frontend Engineer" },
       ...overrides,
     });
@@ -1539,6 +1540,10 @@ describe("TimesheetsService", () => {
       expect(where.engagement.managers.some).toEqual({
         managerUserId: "2002",
         removedAt: null,
+      });
+      // Pending offers, rejections, and terminations are not on a manager's list.
+      expect(where.status).toEqual({
+        in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
       });
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.meta).toEqual({
@@ -1562,6 +1567,7 @@ describe("TimesheetsService", () => {
 
       const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
       expect(where.engagement).toBeUndefined();
+      expect(where.status).toBeUndefined();
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Administrator);
     });
 
@@ -1631,6 +1637,12 @@ describe("TimesheetsService", () => {
         // No approved or submitted entries is not "Approved".
         TimesheetRollupStatus.NotSubmitted,
       ]);
+      expect(result.data.map((row) => row.hasPendingApproval)).toEqual([
+        true,
+        false,
+        false,
+      ]);
+      expect(result.data[0].assignmentStatus).toBe(AssignmentStatus.ASSIGNED);
     });
 
     it("accepts a landing-list date filter longer than 31 days", async () => {
