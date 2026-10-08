@@ -198,6 +198,8 @@ model EngagementAssignment {
   ratePerHour          String?
   paymentCycle         PaymentCycle      @default(WEEKLY)
   standardHoursPerDay  Float?
+  /// Hours allocated to the assignment overall. Optional; hours left are derived from it.
+  totalHours           Float?
   /// @deprecated Use standardHoursPerDay instead.
   standardHoursPerWeek Float?
   durationMonths       Int?

@@ -427,6 +427,72 @@ describe("ApplicationsService", () => {
     expect(result).toBe(application);
   });
 
+  it("stores totalHours on the assignment without emailing the member", async () => {
+    const application = {
+      id: "app-1",
+      engagementId: "eng-1",
+      userId: "user-1",
+      status: ApplicationStatus.SUBMITTED,
+    };
+    const engagement = {
+      id: "eng-1",
+      title: "Senior Frontend Engineer",
+      requiredMemberCount: 3,
+      requiredSkills: ["skill-1"],
+    };
+    const existingAssignment = {
+      id: "assign-1",
+      engagementId: "eng-1",
+      memberId: "user-1",
+      memberHandle: "member-handle",
+      status: AssignmentStatus.SELECTED,
+      startDate: null,
+      durationMonths: 3,
+      paymentCycle: PaymentCycle.WEEKLY,
+      ratePerHour: "10",
+      standardHoursPerDay: 8,
+      totalHours: null,
+      agreementRate: "400.00",
+      otherRemarks: null,
+    };
+    const tx = {
+      engagement: {
+        findUnique: jest.fn().mockResolvedValue(engagement),
+      },
+      engagementAssignment: {
+        findFirst: jest.fn().mockResolvedValue(existingAssignment),
+        update: jest
+          .fn()
+          .mockResolvedValue({ ...existingAssignment, totalHours: 480 }),
+      },
+    };
+
+    jest.spyOn(service, "findOne").mockResolvedValue(application as any);
+    memberService.getMemberHandleByUserId.mockResolvedValue("member-handle");
+    db.$transaction.mockImplementation((callback) => callback(tx as any));
+    db.engagementApplication.update.mockResolvedValue({
+      ...application,
+      status: ApplicationStatus.SELECTED,
+    });
+
+    await service.updateStatus(
+      "app-1",
+      ApplicationStatus.SELECTED,
+      { userId: "manager-1" },
+      { totalHours: 480 } as any,
+    );
+
+    expect(tx.engagementAssignment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ totalHours: 480 }),
+      }),
+    );
+    // Total hours are not part of the offer the member sees.
+    expect(
+      assignmentOfferEmailService.sendAssignmentUpdatedEmail,
+    ).not.toHaveBeenCalled();
+  });
+
   it("updates assignment paymentCycle and sends updated email", async () => {
     const application = {
       id: "app-1",

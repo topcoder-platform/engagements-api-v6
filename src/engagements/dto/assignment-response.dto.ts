@@ -63,6 +63,12 @@ export class AssignmentResponseDto {
   standardHoursPerDay?: number | null;
 
   @ApiPropertyOptional({
+    description: "Total hours allocated to the assignment",
+    example: 480,
+  })
+  totalHours?: number | null;
+
+  @ApiPropertyOptional({
     description: "Assignment duration in months",
     example: 3,
   })
