@@ -1242,14 +1242,125 @@ describe("TimesheetsService", () => {
       expect(result.alreadyPaidEntryIds).toEqual([]);
     });
 
-    it("asks the database for approved entries only", async () => {
+    it("leaves drafts and submitted entries out of the approved and payable totals", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        approved({ id: "approved", hoursWorked: decimal("8.00") }),
+        entry({ id: "draft", hoursWorked: decimal("4.00") }),
+        entry({
+          id: "submitted",
+          hoursWorked: decimal("6.00"),
+          status: TimesheetEntryStatus.SUBMITTED,
+        }),
+      ]);
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+
+      expect(result.entryIds).toEqual(["approved"]);
+      expect(result.totalHours).toBe("8.00");
+      expect(result.approvedHours).toBe("8.00");
+    });
+
+    it("reports approved hours including paid ones, and paid hours", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        approved({ id: "unpaid", hoursWorked: decimal("8.00") }),
+        approved({
+          id: "paid",
+          hoursWorked: decimal("7.50"),
+          paidPaymentReference: "win-1",
+        }),
+        // Paid, then reopened: still paid hours, no longer approved ones.
+        entry({
+          id: "reopened",
+          hoursWorked: decimal("2.00"),
+          paidPaymentReference: "win-1",
+        }),
+      ]);
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+
+      expect(result.approvedHours).toBe("15.50");
+      expect(result.paidHours).toBe("9.50");
+      expect(result.totalHours).toBe("8.00");
+    });
+
+    it("expects standard hours for each weekday of the assignment inside the period", async () => {
       withManagerRow();
       db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
 
-      await service.findPaymentSummary("eng1", "asg1", {}, manager);
+      // The assignment starts on Tuesday 2026-09-01, so only 1-4 and 7-8 September count: six
+      // weekdays at 8 hours.
+      const clamped = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-08-25", toDate: "2026-09-08" },
+        manager,
+      );
+      expect(clamped.expectedHours).toBe("48.00");
 
-      const { where } = db.engagementTimesheetEntry.findMany.mock.calls[0][0];
-      expect(where.status).toBe(TimesheetEntryStatus.APPROVED);
+      const fullMonth = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+      expect(fullMonth.expectedHours).toBe("176.00");
+    });
+
+    it("has no expected hours without standard hours or a closed period", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
+
+      const openEnded = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01" },
+        manager,
+      );
+      expect(openEnded.expectedHours).toBeNull();
+
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        standardHoursPerDay: null,
+        standardHoursPerWeek: null,
+      });
+      const noStandard = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+      expect(noStandard.expectedHours).toBeNull();
+    });
+
+    it("falls back to the deprecated weekly standard hours", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        standardHoursPerDay: null,
+        standardHoursPerWeek: 20,
+      });
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-07", toDate: "2026-09-11" },
+        manager,
+      );
+
+      expect(result.expectedHours).toBe("20.00");
     });
 
     it("excludes already-paid entries from the totals and reports them separately", async () => {
@@ -1522,6 +1633,7 @@ describe("TimesheetsService", () => {
       engagementId: "eng1",
       memberId: "1001",
       memberHandle: "johnsmith",
+      status: AssignmentStatus.ASSIGNED,
       engagement: { id: "eng1", title: "Senior Frontend Engineer" },
       ...overrides,
     });
@@ -1539,6 +1651,10 @@ describe("TimesheetsService", () => {
       expect(where.engagement.managers.some).toEqual({
         managerUserId: "2002",
         removedAt: null,
+      });
+      // Pending offers, rejections, and terminations are not on a manager's list.
+      expect(where.status).toEqual({
+        in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
       });
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.meta).toEqual({
@@ -1562,6 +1678,7 @@ describe("TimesheetsService", () => {
 
       const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
       expect(where.engagement).toBeUndefined();
+      expect(where.status).toBeUndefined();
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Administrator);
     });
 
@@ -1631,6 +1748,12 @@ describe("TimesheetsService", () => {
         // No approved or submitted entries is not "Approved".
         TimesheetRollupStatus.NotSubmitted,
       ]);
+      expect(result.data.map((row) => row.hasPendingApproval)).toEqual([
+        true,
+        false,
+        false,
+      ]);
+      expect(result.data[0].assignmentStatus).toBe(AssignmentStatus.ASSIGNED);
     });
 
     it("accepts a landing-list date filter longer than 31 days", async () => {
