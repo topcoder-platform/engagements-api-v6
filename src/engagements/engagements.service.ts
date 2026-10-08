@@ -113,6 +113,7 @@ type ResolvedAssignmentDetails = {
   paymentCycle?: PaymentCycle;
   ratePerHour?: string;
   standardHoursPerDay?: number;
+  totalHours?: number;
   agreementRate?: string;
   otherRemarks?: string;
   wiproIdEndDate?: Date;
@@ -154,6 +155,7 @@ type AssignmentContextDetail = {
   paymentCycle?: PaymentCycle | null;
   ratePerHour?: string | null;
   standardHoursPerDay?: number | null;
+  totalHours?: number | null;
   durationMonths?: number | null;
   otherRemarks?: string | null;
   startDate?: Date | null;
@@ -427,6 +429,9 @@ export class EngagementsService {
               details.paymentCycle ?? DEFAULT_PAYMENT_CYCLE;
             if (details.standardHoursPerDay !== undefined) {
               assignmentData.standardHoursPerDay = details.standardHoursPerDay;
+            }
+            if (details.totalHours !== undefined) {
+              assignmentData.totalHours = details.totalHours;
             }
             if (details.agreementRate !== undefined) {
               assignmentData.agreementRate = details.agreementRate;
@@ -1240,6 +1245,7 @@ export class EngagementsService {
       paymentCycle: assignment.paymentCycle,
       ratePerHour: assignment.ratePerHour,
       standardHoursPerDay: assignment.standardHoursPerDay,
+      totalHours: assignment.totalHours,
       durationMonths: assignment.durationMonths,
       otherRemarks: assignment.otherRemarks,
       startDate: assignment.startDate,
@@ -1858,6 +1864,9 @@ export class EngagementsService {
                 assignmentUpdateData.standardHoursPerDay =
                   details.standardHoursPerDay;
               }
+              if (details.totalHours !== undefined) {
+                assignmentUpdateData.totalHours = details.totalHours;
+              }
               if (details.agreementRate !== undefined) {
                 assignmentUpdateData.agreementRate = details.agreementRate;
               }
@@ -1909,6 +1918,9 @@ export class EngagementsService {
             if (details.standardHoursPerDay !== undefined) {
               assignmentCreateData.standardHoursPerDay =
                 details.standardHoursPerDay;
+            }
+            if (details.totalHours !== undefined) {
+              assignmentCreateData.totalHours = details.totalHours;
             }
             if (details.agreementRate !== undefined) {
               assignmentCreateData.agreementRate = details.agreementRate;
@@ -2524,6 +2536,7 @@ export class EngagementsService {
     paymentCycle?: PaymentCycle;
     ratePerHour?: string;
     standardHoursPerDay?: number;
+    totalHours?: number;
     agreementRate?: string;
     otherRemarks?: string;
     wiproIdEndDate?: Date;
@@ -2572,6 +2585,7 @@ export class EngagementsService {
       paymentCycle,
       ratePerHour,
       standardHoursPerDay,
+      totalHours: details?.totalHours,
       agreementRate: agreementRate ? agreementRate : undefined,
       otherRemarks: otherRemarks ? otherRemarks : undefined,
       wiproIdEndDate,

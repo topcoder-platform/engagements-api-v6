@@ -373,6 +373,7 @@ export class ApplicationsService {
     paymentCycle?: PaymentCycle;
     ratePerHour?: string;
     standardHoursPerDay?: number;
+    totalHours?: number;
     agreementRate?: string;
     otherRemarks?: string | null;
     wiproIdEndDate?: Date;
@@ -397,6 +398,7 @@ export class ApplicationsService {
     const paymentCycle = details?.paymentCycle;
     const ratePerHour = details?.ratePerHour;
     const standardHoursPerDay = details?.standardHoursPerDay;
+    const totalHours = details?.totalHours;
     const agreementRate = this.calculateAgreementRate(
       ratePerHour,
       standardHoursPerDay,
@@ -416,6 +418,7 @@ export class ApplicationsService {
       paymentCycle,
       ratePerHour,
       standardHoursPerDay,
+      totalHours,
       agreementRate,
       otherRemarks,
       wiproIdEndDate,
@@ -427,6 +430,7 @@ export class ApplicationsService {
         paymentCycle !== undefined ||
         ratePerHour !== undefined ||
         standardHoursPerDay !== undefined ||
+        totalHours !== undefined ||
         agreementRate !== undefined ||
         otherRemarks !== undefined ||
         wiproIdEndDate !== undefined ||
@@ -496,6 +500,9 @@ export class ApplicationsService {
           if (normalizedAssignment.standardHoursPerDay !== undefined) {
             updateData.standardHoursPerDay =
               normalizedAssignment.standardHoursPerDay;
+          }
+          if (normalizedAssignment.totalHours !== undefined) {
+            updateData.totalHours = normalizedAssignment.totalHours;
           }
           if (normalizedAssignment.agreementRate !== undefined) {
             updateData.agreementRate = normalizedAssignment.agreementRate;
@@ -579,6 +586,9 @@ export class ApplicationsService {
           }),
           ...(normalizedAssignment.standardHoursPerDay !== undefined && {
             standardHoursPerDay: normalizedAssignment.standardHoursPerDay,
+          }),
+          ...(normalizedAssignment.totalHours !== undefined && {
+            totalHours: normalizedAssignment.totalHours,
           }),
           ...(normalizedAssignment.agreementRate !== undefined && {
             agreementRate: normalizedAssignment.agreementRate,
