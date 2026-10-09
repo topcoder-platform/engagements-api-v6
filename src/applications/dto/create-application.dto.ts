@@ -27,12 +27,22 @@ export class CreateApplicationDto {
   coverLetter: string;
 
   @ApiPropertyOptional({
-    description: "Resume URL",
-    example: "https://example.com/resume.pdf",
+    description:
+      "Link to the applicant's resume or professional profile, such as a LinkedIn profile, a CV shared on Google Drive, or a personal website",
+    example: "https://www.linkedin.com/in/jane-doe",
   })
   @IsOptional()
   @IsUrl()
   resumeUrl?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "URL of the CV file the applicant uploaded through Filestack (stored in S3)",
+    example: "https://cdn.filestackcontent.com/AbCdEfGhIjKlMnOpQrSt",
+  })
+  @IsOptional()
+  @IsUrl()
+  cvFileUrl?: string;
 
   @ApiPropertyOptional({
     description: "Portfolio URLs",
