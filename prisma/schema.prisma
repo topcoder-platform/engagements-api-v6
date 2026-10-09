@@ -171,7 +171,10 @@ model EngagementApplication {
   address           String?
   mobileNumber      String?
   coverLetter       String?
+  /// Link to the applicant's resume or professional profile (LinkedIn profile, Google Drive CV, website).
   resumeUrl         String?
+  /// URL of the CV file the applicant uploaded through Filestack (stored in S3).
+  cvFileUrl         String?
   portfolioUrls     String[]
   yearsOfExperience Int?
   availability      String?

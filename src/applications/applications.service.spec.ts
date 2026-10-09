@@ -2,6 +2,7 @@ import { ForbiddenException } from "@nestjs/common";
 import {
   ApplicationStatus,
   AssignmentStatus,
+  EngagementStatus,
   PaymentCycle,
 } from "@prisma/client";
 import { ApplicationsService } from "./applications.service";
@@ -111,6 +112,40 @@ describe("ApplicationsService", () => {
 
     expect(db.engagementApplication.create).not.toHaveBeenCalled();
     expect(engagementsService.findOne).not.toHaveBeenCalled();
+  });
+
+  it("stores the uploaded CV file URL alongside the resume/profile link", async () => {
+    engagementsService.findOne.mockResolvedValue({
+      id: "eng-1",
+      status: EngagementStatus.OPEN,
+    });
+    db.engagementApplication.findUnique.mockResolvedValue(null);
+    memberService.getMemberByUserId.mockResolvedValue({
+      email: "member@example.com",
+      firstName: "Jane",
+      lastName: "Doe",
+    });
+    memberService.getMemberAddress.mockResolvedValue(null);
+    db.engagementApplication.create.mockImplementation(({ data }) => data);
+
+    await service.create(
+      "eng-1",
+      {
+        ...createDto,
+        resumeUrl: "https://www.linkedin.com/in/jane-doe",
+        cvFileUrl: "https://cdn.filestackcontent.com/cv-handle",
+      } as any,
+      { userId: "123", handle: "jane" },
+    );
+
+    expect(db.engagementApplication.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        engagementId: "eng-1",
+        userId: "123",
+        resumeUrl: "https://www.linkedin.com/in/jane-doe",
+        cvFileUrl: "https://cdn.filestackcontent.com/cv-handle",
+      }),
+    });
   });
 
   it("sets updatedBy to system for M2M status update", async () => {

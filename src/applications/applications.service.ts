@@ -161,6 +161,7 @@ export class ApplicationsService {
         mobileNumber: createDto.mobileNumber,
         coverLetter: createDto.coverLetter,
         resumeUrl: createDto.resumeUrl,
+        cvFileUrl: createDto.cvFileUrl,
         portfolioUrls: createDto.portfolioUrls ?? [],
         yearsOfExperience: createDto.yearsOfExperience,
         availability: createDto.availability,
