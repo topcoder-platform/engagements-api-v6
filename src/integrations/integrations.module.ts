@@ -5,6 +5,7 @@ import { ProjectService } from "./project.service";
 import { SkillsService } from "./skills.service";
 import { MemberService } from "./member.service";
 import { EventBusService } from "./event-bus.service";
+import { FinanceService } from "./finance.service";
 import { AssignmentOfferEmailService } from "./assignment-offer-email.service";
 import { AssignmentOfferResponseEmailService } from "./assignment-offer-response-email.service";
 import { ApplicationStatusEmailService } from "./application-status-email.service";
@@ -17,6 +18,7 @@ import { ApplicationStatusEmailService } from "./application-status-email.servic
     SkillsService,
     MemberService,
     EventBusService,
+    FinanceService,
     AssignmentOfferEmailService,
     AssignmentOfferResponseEmailService,
     ApplicationStatusEmailService,
@@ -26,6 +28,7 @@ import { ApplicationStatusEmailService } from "./application-status-email.servic
     SkillsService,
     MemberService,
     EventBusService,
+    FinanceService,
     AssignmentOfferEmailService,
     AssignmentOfferResponseEmailService,
     ApplicationStatusEmailService,

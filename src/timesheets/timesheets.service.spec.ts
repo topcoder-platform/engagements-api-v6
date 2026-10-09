@@ -11,6 +11,7 @@ import {
   TimesheetEntryStatus,
 } from "@prisma/client";
 import { UserRoles } from "../app-constants";
+import { FinanceService } from "../integrations/finance.service";
 import { MemberService } from "../integrations/member.service";
 import { TimesheetAccessService } from "./timesheet-access.service";
 import { TimesheetAuditService } from "./timesheet-audit.service";
@@ -33,6 +34,7 @@ describe("TimesheetsService", () => {
   let audit: { record: jest.Mock };
   let events: { emit: jest.Mock };
   let memberService: { getMemberNamesByUserIds: jest.Mock };
+  let financeService: { getProcessedPaymentHours: jest.Mock };
 
   const member = { userId: "1001", handle: "johnsmith", roles: [] };
   const manager = { userId: "2002", handle: "maryj", roles: [] };
@@ -111,6 +113,9 @@ describe("TimesheetsService", () => {
     };
     audit = { record: jest.fn().mockResolvedValue(undefined) };
     events = { emit: jest.fn().mockResolvedValue(undefined) };
+    financeService = {
+      getProcessedPaymentHours: jest.fn().mockResolvedValue(0),
+    };
     memberService = {
       getMemberNamesByUserIds: jest
         .fn()
@@ -123,6 +128,7 @@ describe("TimesheetsService", () => {
       audit as unknown as TimesheetAuditService,
       events as unknown as TimesheetEventsService,
       memberService as unknown as MemberService,
+      financeService as unknown as FinanceService,
     );
   });
 
@@ -210,6 +216,56 @@ describe("TimesheetsService", () => {
       expect(result.viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.entries[0].approvedByHandle).toBe("robertl");
       expect(result.entries[0].approvalComment).toBe("Approved for week 37");
+    });
+
+    it("reports total hours and the hours left after processed payments", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        totalHours: 480,
+      });
+      financeService.getProcessedPaymentHours.mockResolvedValue(167.5);
+      withManagerRow();
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, manager);
+
+      expect(financeService.getProcessedPaymentHours).toHaveBeenCalledWith(
+        "asg1",
+      );
+      expect(result.assignment.totalHours).toBe(480);
+      expect(result.assignment.hoursLeft).toBe(312.5);
+    });
+
+    it("does not ask finance for the member's own view", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        totalHours: 480,
+      });
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(financeService.getProcessedPaymentHours).not.toHaveBeenCalled();
+      expect(result.assignment.hoursLeft).toBeNull();
+    });
+
+    it("does not ask finance when the assignment has no total hours", async () => {
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(financeService.getProcessedPaymentHours).not.toHaveBeenCalled();
+      expect(result.assignment.totalHours).toBeNull();
+      expect(result.assignment.hoursLeft).toBeNull();
+    });
+
+    it("leaves hours left null when finance cannot be read", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        totalHours: 480,
+      });
+      financeService.getProcessedPaymentHours.mockResolvedValue(null);
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, admin);
+
+      expect(result.assignment.totalHours).toBe(480);
+      expect(result.assignment.hoursLeft).toBeNull();
     });
 
     it("shows a TM only submitted entries by default", async () => {

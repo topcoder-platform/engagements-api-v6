@@ -133,6 +133,22 @@ export class TimesheetAssignmentResponseDto {
   standardHoursPerDay: number | null;
 
   @ApiPropertyOptional({
+    description: "Total hours allocated to the assignment",
+    example: 480,
+    nullable: true,
+  })
+  totalHours: number | null;
+
+  @ApiPropertyOptional({
+    description:
+      "Total hours minus the hours on processed payments. Null when the assignment has no total " +
+      "hours, for the member's own view, or when payments could not be read.",
+    example: 312.5,
+    nullable: true,
+  })
+  hoursLeft: number | null;
+
+  @ApiPropertyOptional({
     description: "Assignment billing start date",
     nullable: true,
   })
