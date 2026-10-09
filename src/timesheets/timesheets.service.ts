@@ -21,6 +21,7 @@ import {
 } from "../common/constants";
 import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
+import { FinanceService } from "../integrations/finance.service";
 import { MemberService } from "../integrations/member.service";
 import {
   ApproveTimesheetEntriesDto,
@@ -121,6 +122,7 @@ export class TimesheetsService {
     private readonly audit: TimesheetAuditService,
     private readonly events: TimesheetEventsService,
     private readonly memberService: MemberService,
+    private readonly financeService: FinanceService,
   ) {}
 
   /**
@@ -1432,6 +1434,34 @@ export class TimesheetsService {
     return context.viewerRole;
   }
 
+  /**
+   * Total hours minus the hours finance has processed for payment, for the people who review and pay
+   * the timesheet. Finance is only asked when the assignment has a total, since there is nothing to
+   * subtract from otherwise, and never on the member's own view, which does not show it.
+   */
+  private async resolveHoursLeft(
+    context: TimesheetContext,
+  ): Promise<number | null> {
+    const { assignment } = context;
+    const totalHours = assignment.totalHours;
+
+    if (
+      context.viewerRole === TimesheetViewerRole.Member ||
+      !totalHours ||
+      totalHours <= 0
+    ) {
+      return null;
+    }
+
+    const processedHours = await this.financeService.getProcessedPaymentHours(
+      assignment.id,
+    );
+
+    return processedHours === null
+      ? null
+      : Math.round((totalHours - processedHours) * 100) / 100;
+  }
+
   private async resolveMemberNames(
     userIds: string[],
   ): Promise<Map<string, string>> {
@@ -1460,9 +1490,12 @@ export class TimesheetsService {
     const managerUserIdsMissingNames = managers
       .filter((manager) => !(manager.name ?? "").trim())
       .map((manager) => manager.userId);
-    const nameByUserId = await this.resolveMemberNames([
-      assignment.memberId,
-      ...managerUserIdsMissingNames,
+    const [nameByUserId, hoursLeft] = await Promise.all([
+      this.resolveMemberNames([
+        assignment.memberId,
+        ...managerUserIdsMissingNames,
+      ]),
+      this.resolveHoursLeft(context),
     ]);
     const hydratedManagers = managers.map((manager) => ({
       ...manager,
@@ -1480,6 +1513,8 @@ export class TimesheetsService {
         memberName: nameByUserId.get(assignment.memberId) ?? null,
         status: assignment.status,
         standardHoursPerDay: assignment.standardHoursPerDay ?? null,
+        totalHours: assignment.totalHours ?? null,
+        hoursLeft,
         startDate: assignment.startDate ?? null,
         endDate: assignment.endDate ?? null,
       },
