@@ -1,10 +1,11 @@
-import { INestApplication, UnauthorizedException } from "@nestjs/common";
+import { INestApplication, UnauthorizedException, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import * as request from "supertest";
 import { AppModule } from "../src/app.module";
 import { EngagementsService } from "../src/engagements/engagements.service";
 import { ApplicationsService } from "../src/applications/applications.service";
 import { UserRoles } from "../src/app-constants";
+import { DbService } from "../src/db/db.service";
 
 jest.mock("nanoid", () => ({
   nanoid: () => "test-id",
@@ -135,6 +136,8 @@ describe("Authentication & Authorization (e2e)", () => {
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
     })
+      .overrideProvider(DbService)
+      .useValue({})
       .overrideProvider(EngagementsService)
       .useValue(engagementsServiceMock)
       .overrideProvider(ApplicationsService)
@@ -142,6 +145,7 @@ describe("Authentication & Authorization (e2e)", () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
     app.use((req, _res, next) => {
       const header = req.headers?.authorization;
@@ -481,6 +485,10 @@ describe("Authentication & Authorization (e2e)", () => {
   });
 
   describe("includePrivate Access", () => {
+    beforeEach(() => {
+      engagementsServiceMock.findAll.mockClear();
+    });
+
     it("allows admin user to request includePrivate=true", async () => {
       await request(app.getHttpServer())
         .get("/engagements?includePrivate=true")
@@ -502,24 +510,36 @@ describe("Authentication & Authorization (e2e)", () => {
         .expect(200);
     });
 
-    it("returns 401 for project manager requesting includePrivate=true", async () => {
-      await request(app.getHttpServer())
-        .get("/engagements?includePrivate=true")
-        .set("Authorization", "Bearer project-manager-user")
-        .expect(401);
-    });
+    it.each(["project-manager-user", "task-manager-user", "member-user", "bare-user"])(
+      "returns public engagements for %s requesting includePrivate=true",
+      async (token) => {
+        const response = await request(app.getHttpServer())
+          .get("/engagements?page=1&perPage=12&status=OPEN&includePrivate=true")
+          .set("Authorization", `Bearer ${token}`)
+          .expect(200);
 
-    it("returns 401 for task manager requesting includePrivate=true", async () => {
-      await request(app.getHttpServer())
-        .get("/engagements?includePrivate=true")
-        .set("Authorization", "Bearer task-manager-user")
-        .expect(401);
-    });
+        expect(response.body.data).toEqual([{ id: "eng-1" }]);
+        expect(engagementsServiceMock.findAll).toHaveBeenCalledWith(
+          expect.objectContaining({
+            page: 1,
+            perPage: 12,
+            status: "OPEN",
+            includePrivate: false,
+          }),
+          undefined,
+        );
+      },
+    );
 
-    it("returns 401 for anonymous request with includePrivate=true", async () => {
+    it("returns public engagements for an anonymous request with includePrivate=true", async () => {
       await request(app.getHttpServer())
         .get("/engagements?includePrivate=true")
-        .expect(401);
+        .expect(200);
+
+      expect(engagementsServiceMock.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ includePrivate: false }),
+        undefined,
+      );
     });
 
     it("allows member user to request includePrivate=true when appliedByMe=true", async () => {

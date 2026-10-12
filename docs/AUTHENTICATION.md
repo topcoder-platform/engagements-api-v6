@@ -28,6 +28,12 @@ M2M tokens are issued via the Auth0 client credentials flow. These tokens do not
 
 - Administrators and Topcoder Project Managers can bypass scope checks for most management operations.
 - Regular members can view public engagements and manage their own applications.
+- On `GET /engagements`, `includePrivate=true` is honored for Administrators,
+  Talent Managers, and M2M callers. For other callers (including anonymous
+  visitors, Project Managers, and Task Managers), it is silently ignored and
+  the normal public list is returned with HTTP 200. Member-scoped
+  `includePrivate=true&appliedByMe=true` access remains supported; explicit
+  `status=ON_HOLD` filters still require private-read access.
 - Assigned members can view the details of their own private engagements.
 - Project Managers can view and update application statuses for engagements they own.
 

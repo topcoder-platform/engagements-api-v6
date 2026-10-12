@@ -144,7 +144,8 @@ export class EngagementsController {
 
   /**
    * Lists engagement opportunities using public and optional current-user
-   * filters.
+   * filters. Unauthorized `includePrivate=true` requests use the public feed
+   * instead; explicit ON_HOLD status filters still require private-read access.
    *
    * @param query Pagination and engagement filters. `appliedByMe=true`
    * requires an authenticated human user; false or omission keeps the public
@@ -161,9 +162,9 @@ export class EngagementsController {
    * read their own assigned private engagements and receive only their own
    * assignments.
    * @throws UnauthorizedException When `appliedByMe=true` is requested without
-   * a usable authenticated user id.
+   * a usable authenticated user id, or ON_HOLD is requested without permission.
    * @throws ForbiddenException When an M2M caller requests
-   * `appliedByMe=true`, or when private data is requested without permission.
+   * `appliedByMe=true`.
    */
   @Get()
   @ApiOperation({
@@ -172,6 +173,7 @@ export class EngagementsController {
       "Returns a paginated list of engagements. Authentication is optional unless appliedByMe=true; " +
       "that filter accepts a human-user token, limits public results to engagements the member applied to, and returns that member's applicationStatus. " +
       "When paired with includePrivate=true, ordinary members may additionally read their own assigned private engagements, including ON_HOLD rows, and only their own assignments. " +
+      "Otherwise, includePrivate=true is silently ignored for callers without private-read access and public results are returned. Explicit ON_HOLD status filters still require private-read access. " +
       "appliedByMe=false or omission preserves the anonymous public list. search matches title, description, or an exact standardized skill name. requiredSkills accepts at most 20 UUIDs or case-insensitive exact standardized-skill names. Public rows add safe skill display names while omitting internal account metadata and creator email; privileged includePrivate=true reads retain those protected fields.",
   })
   @ApiResponse({
@@ -184,11 +186,11 @@ export class EngagementsController {
   })
   @ApiUnauthorizedResponse({
     description:
-      "appliedByMe=true was requested without an authenticated user id.",
+      "appliedByMe=true was requested without an authenticated user id, or ON_HOLD was requested without permission.",
   })
   @ApiForbiddenResponse({
     description:
-      "M2M tokens cannot use appliedByMe=true, or the caller cannot include private engagements.",
+      "M2M tokens cannot use appliedByMe=true.",
   })
   async findAll(
     @Query() query: EngagementQueryDto,
@@ -201,12 +203,18 @@ export class EngagementsController {
     const allowMemberScopedPrivateRead =
       query.includePrivate === true && Boolean(appliedByUserId);
     if (
-      (query.includePrivate || query.status === EngagementStatus.ON_HOLD) &&
+      query.status === EngagementStatus.ON_HOLD &&
       !allowMemberScopedPrivateRead
     ) {
       this.assertCanIncludePrivate(req.authUser);
     }
-    return this.engagementsService.findAll(query, appliedByUserId);
+    const effectiveQuery =
+      query.includePrivate === true &&
+      !allowMemberScopedPrivateRead &&
+      !this.canViewAssignmentDetails(req.authUser)
+        ? { ...query, includePrivate: false }
+        : query;
+    return this.engagementsService.findAll(effectiveQuery, appliedByUserId);
   }
 
   @Get("active")
