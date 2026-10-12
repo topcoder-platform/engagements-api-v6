@@ -157,6 +157,14 @@ GET /v6/engagements/engagements?requiredSkills=React,11111111-1111-4111-8111-111
 
 ### Current-user application filter
 
+`GET /engagements?includePrivate=true` includes private engagements for
+Administrators, Talent Managers (including Topcoder Talent Managers), and M2M
+callers. For other callers, including Project Managers, Task Managers, ordinary
+members, and anonymous visitors, the flag is silently ignored and the API returns
+HTTP 200 with the normal public engagement list. Pagination and other filters
+are preserved, and protected fields and assignments remain excluded.
+Explicit `status=ON_HOLD` requests still require private-read access.
+
 The public opportunity list supports an optional current-user filter:
 
 ```http
@@ -172,6 +180,9 @@ Authorization: Bearer <member JWT>
 - `appliedByMe=false`, or omitting the parameter, applies no current-user
   filter. Authentication remains optional and the existing public-list privacy,
   status, search, sorting, and pagination behavior is unchanged.
+- `includePrivate=true&appliedByMe=true` retains member-scoped access to the
+  authenticated member's own private engagements and assignments, including
+  `ON_HOLD` engagements. The public fallback does not change this access.
 - The response contract remains the normal engagement list shape:
 
 ```json

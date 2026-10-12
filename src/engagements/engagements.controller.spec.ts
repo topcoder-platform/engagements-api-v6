@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Request } from "express";
+import { UserRoles } from "../app-constants";
 
 import { EngagementsController } from "./engagements.controller";
 
@@ -25,7 +26,7 @@ const buildRequest = (
   authUser?: Record<string, any>,
 ): AuthenticatedRequest => ({ authUser }) as AuthenticatedRequest;
 
-describe("EngagementsController appliedByMe filter", () => {
+describe("EngagementsController list filters", () => {
   let findAll: jest.Mock;
   let controller: EngagementsController;
 
@@ -62,6 +63,55 @@ describe("EngagementsController appliedByMe filter", () => {
     );
 
     expect(findAll).toHaveBeenCalledWith(query, "654321");
+  });
+
+  it.each([
+    ["anonymous", undefined],
+    ["member", { userId: "654321", roles: ["Member"] }],
+    ["project manager", { roles: [UserRoles.ProjectManager] }],
+    ["task manager", { roles: [UserRoles.TaskManager] }],
+    ["user without roles", { userId: "654321" }],
+  ])("silently uses public filters for an unauthorized %s", async (_label, authUser) => {
+    const query = {
+      page: 1,
+      perPage: 12,
+      status: "OPEN",
+      search: "frontend",
+      includePrivate: true,
+    } as any;
+
+    const response = await controller.findAll(query, buildRequest(authUser));
+
+    expect(findAll).toHaveBeenCalledWith(
+      { ...query, includePrivate: false },
+      undefined,
+    );
+    expect(response).toEqual(await findAll.mock.results[0].value);
+    expect(query.includePrivate).toBe(true);
+  });
+
+  it.each([
+    ["administrator", { roles: [UserRoles.Admin] }],
+    ["talent manager", { roles: [UserRoles.TalentManager] }],
+    ["talent manager alias", { roles: ["Talent Manager"] }],
+    ["case-insensitive administrator", { roles: ["ADMINISTRATOR"] }],
+    ["M2M", { isMachine: true }],
+  ])("keeps private inclusion for an authorized %s", async (_label, authUser) => {
+    const query = { page: 1, perPage: 12, includePrivate: true } as any;
+
+    await controller.findAll(query, buildRequest(authUser));
+
+    expect(findAll).toHaveBeenCalledWith(query, undefined);
+  });
+
+  it("keeps the ON_HOLD authorization check when includePrivate is requested", async () => {
+    await expect(
+      controller.findAll(
+        { page: 1, perPage: 12, includePrivate: true, status: "ON_HOLD" } as any,
+        buildRequest({ userId: "654321", roles: ["Member"] }),
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(findAll).not.toHaveBeenCalled();
   });
 
   it("allows includePrivate=true when appliedByMe=true resolves a human user id", async () => {

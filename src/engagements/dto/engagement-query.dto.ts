@@ -121,7 +121,7 @@ export class EngagementQueryDto extends PaginationDto {
 
   @ApiPropertyOptional({
     description:
-      "Include private engagements (requires admin, PM, Task Manager, or Talent Manager role)",
+      "Include private engagements for Administrators, Talent Managers, or M2M callers. Silently ignored for other callers, who receive public engagements. With appliedByMe=true, authenticated members may read their own private engagements and assignments. Explicit ON_HOLD status filters still require private-read access.",
     default: false,
   })
   @IsOptional()
