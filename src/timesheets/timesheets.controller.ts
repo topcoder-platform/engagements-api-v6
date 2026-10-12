@@ -173,7 +173,8 @@ export class TimesheetsController {
     description: "One or more entries are not approved. Nothing is linked.",
   })
   @ApiForbiddenResponse({
-    description: "The assignee cannot link their own entries to a payment.",
+    description:
+      "The assignee cannot link their own entries to a payment. Managers, Talent Managers and administrators can.",
   })
   @ApiConflictResponse({
     description: "One or more entries were already paid. Nothing is linked.",

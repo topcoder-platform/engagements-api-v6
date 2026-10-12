@@ -20,7 +20,7 @@ import {
   TimesheetRollupStatus,
   TimesheetEventTopics,
 } from "./timesheet-constants";
-import { TimesheetViewerRole } from "./timesheet-roles";
+import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 import { TimesheetsService } from "./timesheets.service";
 
 jest.mock("nanoid", () => ({ nanoid: () => "new-entry-id" }));
@@ -1562,10 +1562,43 @@ describe("TimesheetsService", () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it("refuses a TM", async () => {
+    it("lets a TM pay approved entries", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.APPROVED }),
+      ]);
+
+      const result = await service.linkPayment(
+        "eng1",
+        "asg1",
+        linkDto,
+        talentManager,
+      );
+
+      expect(db.engagementTimesheetEntry.updateMany).toHaveBeenCalledWith({
+        where: { id: "e1", paidPaymentReference: null },
+        data: expect.objectContaining({ paidPaymentReference: "win-1" }),
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          action: TimesheetAuditAction.PAYMENT_LINKED,
+          actorRole: TimesheetActorRole.Tm,
+        }),
+      );
+      expect(result).toEqual([
+        expect.objectContaining({ id: "e1", paymentReference: "win-1" }),
+      ]);
+    });
+
+    it("refuses a TM paying entries that are not approved", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.SUBMITTED }),
+      ]);
+
       await expect(
         service.linkPayment("eng1", "asg1", linkDto, talentManager),
-      ).rejects.toThrow("cannot edit or submit entries");
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
     });
 
     it("404s for an entry on another assignment", async () => {
@@ -1614,6 +1647,28 @@ describe("TimesheetsService", () => {
       await expect(
         service.findEntriesByPaymentReference("eng1", "asg1", "win-1", member),
       ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("lets a TM reconcile a payment", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          id: "e1",
+          status: TimesheetEntryStatus.APPROVED,
+          paidPaymentReference: "win-1",
+          paidAt: utcDate("2026-09-20"),
+        }),
+      ]);
+
+      await expect(
+        service.findEntriesByPaymentReference(
+          "eng1",
+          "asg1",
+          "win-1",
+          talentManager,
+        ),
+      ).resolves.toEqual([
+        expect.objectContaining({ id: "e1", paymentReference: "win-1" }),
+      ]);
     });
   });
 

@@ -525,9 +525,7 @@ export class TimesheetsService {
     );
 
     if (context.viewerRole === TimesheetViewerRole.Member) {
-      throw new ForbiddenException(
-        ERROR_MESSAGES.TimesheetMemberCannotApprove,
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.TimesheetMemberCannotApprove);
     }
 
     if (context.isAdministrator && !dto.overrideReason) {
@@ -854,14 +852,9 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (
-      context.viewerRole === TimesheetViewerRole.Member ||
-      context.viewerRole === TimesheetViewerRole.Tm
-    ) {
+    if (context.viewerRole === TimesheetViewerRole.Member) {
       throw new ForbiddenException(
-        context.viewerRole === TimesheetViewerRole.Tm
-          ? ERROR_MESSAGES.TimesheetTmReadOnly
-          : ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
       );
     }
 
@@ -967,14 +960,9 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (
-      context.viewerRole === TimesheetViewerRole.Member ||
-      context.viewerRole === TimesheetViewerRole.Tm
-    ) {
+    if (context.viewerRole === TimesheetViewerRole.Member) {
       throw new ForbiddenException(
-        context.viewerRole === TimesheetViewerRole.Tm
-          ? ERROR_MESSAGES.TimesheetTmReadOnly
-          : ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
       );
     }
 
