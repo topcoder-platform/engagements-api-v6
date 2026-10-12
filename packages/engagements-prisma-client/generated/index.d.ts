@@ -38,6 +38,28 @@ export type EngagementFeedback = $Result.DefaultSelection<Prisma.$EngagementFeed
  * 
  */
 export type MemberExperience = $Result.DefaultSelection<Prisma.$MemberExperiencePayload>
+/**
+ * Model EngagementLead
+ * 
+ */
+export type EngagementLead = $Result.DefaultSelection<Prisma.$EngagementLeadPayload>
+/**
+ * Model EngagementTimesheetEntry
+ * 
+ */
+export type EngagementTimesheetEntry = $Result.DefaultSelection<Prisma.$EngagementTimesheetEntryPayload>
+/**
+ * Model EngagementTimesheetAudit
+ * One audit trail for the whole timesheet domain. Most rows are entry-scoped, but manager
+ * assignment and removal are engagement-scoped and have no entry, so exactly one of
+ * timesheetEntryId / engagementId is set on every row - enforced by a database check constraint.
+ */
+export type EngagementTimesheetAudit = $Result.DefaultSelection<Prisma.$EngagementTimesheetAuditPayload>
+/**
+ * Model EngagementManager
+ * 
+ */
+export type EngagementManager = $Result.DefaultSelection<Prisma.$EngagementManagerPayload>
 
 /**
  * Enums
@@ -124,6 +146,31 @@ export const AnticipatedStart: {
 export type AnticipatedStart = (typeof AnticipatedStart)[keyof typeof AnticipatedStart]
 
 
+export const TimesheetEntryStatus: {
+  DRAFT: 'DRAFT',
+  SUBMITTED: 'SUBMITTED',
+  APPROVED: 'APPROVED'
+};
+
+export type TimesheetEntryStatus = (typeof TimesheetEntryStatus)[keyof typeof TimesheetEntryStatus]
+
+
+export const TimesheetAuditAction: {
+  CREATED: 'CREATED',
+  UPDATED: 'UPDATED',
+  SUBMITTED: 'SUBMITTED',
+  UNSUBMITTED: 'UNSUBMITTED',
+  APPROVED: 'APPROVED',
+  REOPENED: 'REOPENED',
+  ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
+  PAYMENT_LINKED: 'PAYMENT_LINKED',
+  MANAGER_ASSIGNED: 'MANAGER_ASSIGNED',
+  MANAGER_REMOVED: 'MANAGER_REMOVED'
+};
+
+export type TimesheetAuditAction = (typeof TimesheetAuditAction)[keyof typeof TimesheetAuditAction]
+
+
 export const RoleLevel: {
   JUNIOR: 'JUNIOR',
   MID: 'MID',
@@ -131,6 +178,45 @@ export const RoleLevel: {
 };
 
 export type RoleLevel = (typeof RoleLevel)[keyof typeof RoleLevel]
+
+
+export const EngagementLeadStatus: {
+  SUBMITTED: 'SUBMITTED',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  QUALIFIED: 'QUALIFIED',
+  CONVERTED: 'CONVERTED',
+  REJECTED: 'REJECTED'
+};
+
+export type EngagementLeadStatus = (typeof EngagementLeadStatus)[keyof typeof EngagementLeadStatus]
+
+
+export const EngagementModel: {
+  TIME_AND_MATERIAL: 'TIME_AND_MATERIAL',
+  FIXED_PRICE: 'FIXED_PRICE'
+};
+
+export type EngagementModel = (typeof EngagementModel)[keyof typeof EngagementModel]
+
+
+export const ExperienceLevel: {
+  JUNIOR: 'JUNIOR',
+  MID: 'MID',
+  SENIOR: 'SENIOR',
+  LEAD_ARCHITECT: 'LEAD_ARCHITECT'
+};
+
+export type ExperienceLevel = (typeof ExperienceLevel)[keyof typeof ExperienceLevel]
+
+
+export const LeadPriority: {
+  CRITICAL: 'CRITICAL',
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW'
+};
+
+export type LeadPriority = (typeof LeadPriority)[keyof typeof LeadPriority]
 
 }
 
@@ -166,9 +252,33 @@ export type AnticipatedStart = $Enums.AnticipatedStart
 
 export const AnticipatedStart: typeof $Enums.AnticipatedStart
 
+export type TimesheetEntryStatus = $Enums.TimesheetEntryStatus
+
+export const TimesheetEntryStatus: typeof $Enums.TimesheetEntryStatus
+
+export type TimesheetAuditAction = $Enums.TimesheetAuditAction
+
+export const TimesheetAuditAction: typeof $Enums.TimesheetAuditAction
+
 export type RoleLevel = $Enums.RoleLevel
 
 export const RoleLevel: typeof $Enums.RoleLevel
+
+export type EngagementLeadStatus = $Enums.EngagementLeadStatus
+
+export const EngagementLeadStatus: typeof $Enums.EngagementLeadStatus
+
+export type EngagementModel = $Enums.EngagementModel
+
+export const EngagementModel: typeof $Enums.EngagementModel
+
+export type ExperienceLevel = $Enums.ExperienceLevel
+
+export const ExperienceLevel: typeof $Enums.ExperienceLevel
+
+export type LeadPriority = $Enums.LeadPriority
+
+export const LeadPriority: typeof $Enums.LeadPriority
 
 /**
  * ##  Prisma Client ʲˢ
@@ -340,6 +450,46 @@ export class PrismaClient<
     * ```
     */
   get memberExperience(): Prisma.MemberExperienceDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.engagementLead`: Exposes CRUD operations for the **EngagementLead** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EngagementLeads
+    * const engagementLeads = await prisma.engagementLead.findMany()
+    * ```
+    */
+  get engagementLead(): Prisma.EngagementLeadDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.engagementTimesheetEntry`: Exposes CRUD operations for the **EngagementTimesheetEntry** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EngagementTimesheetEntries
+    * const engagementTimesheetEntries = await prisma.engagementTimesheetEntry.findMany()
+    * ```
+    */
+  get engagementTimesheetEntry(): Prisma.EngagementTimesheetEntryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.engagementTimesheetAudit`: Exposes CRUD operations for the **EngagementTimesheetAudit** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EngagementTimesheetAudits
+    * const engagementTimesheetAudits = await prisma.engagementTimesheetAudit.findMany()
+    * ```
+    */
+  get engagementTimesheetAudit(): Prisma.EngagementTimesheetAuditDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.engagementManager`: Exposes CRUD operations for the **EngagementManager** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EngagementManagers
+    * const engagementManagers = await prisma.engagementManager.findMany()
+    * ```
+    */
+  get engagementManager(): Prisma.EngagementManagerDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -778,7 +928,11 @@ export namespace Prisma {
     EngagementApplication: 'EngagementApplication',
     EngagementAssignment: 'EngagementAssignment',
     EngagementFeedback: 'EngagementFeedback',
-    MemberExperience: 'MemberExperience'
+    MemberExperience: 'MemberExperience',
+    EngagementLead: 'EngagementLead',
+    EngagementTimesheetEntry: 'EngagementTimesheetEntry',
+    EngagementTimesheetAudit: 'EngagementTimesheetAudit',
+    EngagementManager: 'EngagementManager'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -794,7 +948,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "engagement" | "engagementApplication" | "engagementAssignment" | "engagementFeedback" | "memberExperience"
+      modelProps: "engagement" | "engagementApplication" | "engagementAssignment" | "engagementFeedback" | "memberExperience" | "engagementLead" | "engagementTimesheetEntry" | "engagementTimesheetAudit" | "engagementManager"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1168,6 +1322,302 @@ export namespace Prisma {
           }
         }
       }
+      EngagementLead: {
+        payload: Prisma.$EngagementLeadPayload<ExtArgs>
+        fields: Prisma.EngagementLeadFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EngagementLeadFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EngagementLeadFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>
+          }
+          findFirst: {
+            args: Prisma.EngagementLeadFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EngagementLeadFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>
+          }
+          findMany: {
+            args: Prisma.EngagementLeadFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>[]
+          }
+          create: {
+            args: Prisma.EngagementLeadCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>
+          }
+          createMany: {
+            args: Prisma.EngagementLeadCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.EngagementLeadCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>[]
+          }
+          delete: {
+            args: Prisma.EngagementLeadDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>
+          }
+          update: {
+            args: Prisma.EngagementLeadUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>
+          }
+          deleteMany: {
+            args: Prisma.EngagementLeadDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EngagementLeadUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.EngagementLeadUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>[]
+          }
+          upsert: {
+            args: Prisma.EngagementLeadUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadPayload>
+          }
+          aggregate: {
+            args: Prisma.EngagementLeadAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEngagementLead>
+          }
+          groupBy: {
+            args: Prisma.EngagementLeadGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EngagementLeadGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EngagementLeadCountArgs<ExtArgs>
+            result: $Utils.Optional<EngagementLeadCountAggregateOutputType> | number
+          }
+        }
+      }
+      EngagementTimesheetEntry: {
+        payload: Prisma.$EngagementTimesheetEntryPayload<ExtArgs>
+        fields: Prisma.EngagementTimesheetEntryFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EngagementTimesheetEntryFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EngagementTimesheetEntryFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>
+          }
+          findFirst: {
+            args: Prisma.EngagementTimesheetEntryFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EngagementTimesheetEntryFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>
+          }
+          findMany: {
+            args: Prisma.EngagementTimesheetEntryFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>[]
+          }
+          create: {
+            args: Prisma.EngagementTimesheetEntryCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>
+          }
+          createMany: {
+            args: Prisma.EngagementTimesheetEntryCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.EngagementTimesheetEntryCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>[]
+          }
+          delete: {
+            args: Prisma.EngagementTimesheetEntryDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>
+          }
+          update: {
+            args: Prisma.EngagementTimesheetEntryUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>
+          }
+          deleteMany: {
+            args: Prisma.EngagementTimesheetEntryDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EngagementTimesheetEntryUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.EngagementTimesheetEntryUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>[]
+          }
+          upsert: {
+            args: Prisma.EngagementTimesheetEntryUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetEntryPayload>
+          }
+          aggregate: {
+            args: Prisma.EngagementTimesheetEntryAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEngagementTimesheetEntry>
+          }
+          groupBy: {
+            args: Prisma.EngagementTimesheetEntryGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EngagementTimesheetEntryGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EngagementTimesheetEntryCountArgs<ExtArgs>
+            result: $Utils.Optional<EngagementTimesheetEntryCountAggregateOutputType> | number
+          }
+        }
+      }
+      EngagementTimesheetAudit: {
+        payload: Prisma.$EngagementTimesheetAuditPayload<ExtArgs>
+        fields: Prisma.EngagementTimesheetAuditFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EngagementTimesheetAuditFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EngagementTimesheetAuditFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>
+          }
+          findFirst: {
+            args: Prisma.EngagementTimesheetAuditFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EngagementTimesheetAuditFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>
+          }
+          findMany: {
+            args: Prisma.EngagementTimesheetAuditFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>[]
+          }
+          create: {
+            args: Prisma.EngagementTimesheetAuditCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>
+          }
+          createMany: {
+            args: Prisma.EngagementTimesheetAuditCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.EngagementTimesheetAuditCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>[]
+          }
+          delete: {
+            args: Prisma.EngagementTimesheetAuditDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>
+          }
+          update: {
+            args: Prisma.EngagementTimesheetAuditUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>
+          }
+          deleteMany: {
+            args: Prisma.EngagementTimesheetAuditDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EngagementTimesheetAuditUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.EngagementTimesheetAuditUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>[]
+          }
+          upsert: {
+            args: Prisma.EngagementTimesheetAuditUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementTimesheetAuditPayload>
+          }
+          aggregate: {
+            args: Prisma.EngagementTimesheetAuditAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEngagementTimesheetAudit>
+          }
+          groupBy: {
+            args: Prisma.EngagementTimesheetAuditGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EngagementTimesheetAuditGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EngagementTimesheetAuditCountArgs<ExtArgs>
+            result: $Utils.Optional<EngagementTimesheetAuditCountAggregateOutputType> | number
+          }
+        }
+      }
+      EngagementManager: {
+        payload: Prisma.$EngagementManagerPayload<ExtArgs>
+        fields: Prisma.EngagementManagerFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EngagementManagerFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EngagementManagerFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>
+          }
+          findFirst: {
+            args: Prisma.EngagementManagerFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EngagementManagerFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>
+          }
+          findMany: {
+            args: Prisma.EngagementManagerFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>[]
+          }
+          create: {
+            args: Prisma.EngagementManagerCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>
+          }
+          createMany: {
+            args: Prisma.EngagementManagerCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.EngagementManagerCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>[]
+          }
+          delete: {
+            args: Prisma.EngagementManagerDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>
+          }
+          update: {
+            args: Prisma.EngagementManagerUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>
+          }
+          deleteMany: {
+            args: Prisma.EngagementManagerDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EngagementManagerUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.EngagementManagerUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>[]
+          }
+          upsert: {
+            args: Prisma.EngagementManagerUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementManagerPayload>
+          }
+          aggregate: {
+            args: Prisma.EngagementManagerAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEngagementManager>
+          }
+          groupBy: {
+            args: Prisma.EngagementManagerGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EngagementManagerGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EngagementManagerCountArgs<ExtArgs>
+            result: $Utils.Optional<EngagementManagerCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1281,6 +1731,10 @@ export namespace Prisma {
     engagementAssignment?: EngagementAssignmentOmit
     engagementFeedback?: EngagementFeedbackOmit
     memberExperience?: MemberExperienceOmit
+    engagementLead?: EngagementLeadOmit
+    engagementTimesheetEntry?: EngagementTimesheetEntryOmit
+    engagementTimesheetAudit?: EngagementTimesheetAuditOmit
+    engagementManager?: EngagementManagerOmit
   }
 
   /* Types for Logging */
@@ -1363,11 +1817,15 @@ export namespace Prisma {
   export type EngagementCountOutputType = {
     applications: number
     assignments: number
+    managers: number
+    timesheetAudit: number
   }
 
   export type EngagementCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     applications?: boolean | EngagementCountOutputTypeCountApplicationsArgs
     assignments?: boolean | EngagementCountOutputTypeCountAssignmentsArgs
+    managers?: boolean | EngagementCountOutputTypeCountManagersArgs
+    timesheetAudit?: boolean | EngagementCountOutputTypeCountTimesheetAuditArgs
   }
 
   // Custom InputTypes
@@ -1395,6 +1853,20 @@ export namespace Prisma {
     where?: EngagementAssignmentWhereInput
   }
 
+  /**
+   * EngagementCountOutputType without action
+   */
+  export type EngagementCountOutputTypeCountManagersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementManagerWhereInput
+  }
+
+  /**
+   * EngagementCountOutputType without action
+   */
+  export type EngagementCountOutputTypeCountTimesheetAuditArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementTimesheetAuditWhereInput
+  }
+
 
   /**
    * Count Type EngagementAssignmentCountOutputType
@@ -1403,11 +1875,13 @@ export namespace Prisma {
   export type EngagementAssignmentCountOutputType = {
     feedback: number
     memberExperiences: number
+    timesheetEntries: number
   }
 
   export type EngagementAssignmentCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     feedback?: boolean | EngagementAssignmentCountOutputTypeCountFeedbackArgs
     memberExperiences?: boolean | EngagementAssignmentCountOutputTypeCountMemberExperiencesArgs
+    timesheetEntries?: boolean | EngagementAssignmentCountOutputTypeCountTimesheetEntriesArgs
   }
 
   // Custom InputTypes
@@ -1433,6 +1907,44 @@ export namespace Prisma {
    */
   export type EngagementAssignmentCountOutputTypeCountMemberExperiencesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: MemberExperienceWhereInput
+  }
+
+  /**
+   * EngagementAssignmentCountOutputType without action
+   */
+  export type EngagementAssignmentCountOutputTypeCountTimesheetEntriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementTimesheetEntryWhereInput
+  }
+
+
+  /**
+   * Count Type EngagementTimesheetEntryCountOutputType
+   */
+
+  export type EngagementTimesheetEntryCountOutputType = {
+    auditRecords: number
+  }
+
+  export type EngagementTimesheetEntryCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    auditRecords?: boolean | EngagementTimesheetEntryCountOutputTypeCountAuditRecordsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * EngagementTimesheetEntryCountOutputType without action
+   */
+  export type EngagementTimesheetEntryCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntryCountOutputType
+     */
+    select?: EngagementTimesheetEntryCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * EngagementTimesheetEntryCountOutputType without action
+   */
+  export type EngagementTimesheetEntryCountOutputTypeCountAuditRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementTimesheetAuditWhereInput
   }
 
 
@@ -1812,6 +2324,8 @@ export namespace Prisma {
     updatedBy?: boolean
     applications?: boolean | Engagement$applicationsArgs<ExtArgs>
     assignments?: boolean | Engagement$assignmentsArgs<ExtArgs>
+    managers?: boolean | Engagement$managersArgs<ExtArgs>
+    timesheetAudit?: boolean | Engagement$timesheetAuditArgs<ExtArgs>
     _count?: boolean | EngagementCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["engagement"]>
 
@@ -1909,6 +2423,8 @@ export namespace Prisma {
   export type EngagementInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     applications?: boolean | Engagement$applicationsArgs<ExtArgs>
     assignments?: boolean | Engagement$assignmentsArgs<ExtArgs>
+    managers?: boolean | Engagement$managersArgs<ExtArgs>
+    timesheetAudit?: boolean | Engagement$timesheetAuditArgs<ExtArgs>
     _count?: boolean | EngagementCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type EngagementIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1919,6 +2435,8 @@ export namespace Prisma {
     objects: {
       applications: Prisma.$EngagementApplicationPayload<ExtArgs>[]
       assignments: Prisma.$EngagementAssignmentPayload<ExtArgs>[]
+      managers: Prisma.$EngagementManagerPayload<ExtArgs>[]
+      timesheetAudit: Prisma.$EngagementTimesheetAuditPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2344,6 +2862,8 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     applications<T extends Engagement$applicationsArgs<ExtArgs> = {}>(args?: Subset<T, Engagement$applicationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     assignments<T extends Engagement$assignmentsArgs<ExtArgs> = {}>(args?: Subset<T, Engagement$assignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    managers<T extends Engagement$managersArgs<ExtArgs> = {}>(args?: Subset<T, Engagement$managersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    timesheetAudit<T extends Engagement$timesheetAuditArgs<ExtArgs> = {}>(args?: Subset<T, Engagement$timesheetAuditArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2841,6 +3361,54 @@ export namespace Prisma {
   }
 
   /**
+   * Engagement.managers
+   */
+  export type Engagement$managersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    where?: EngagementManagerWhereInput
+    orderBy?: EngagementManagerOrderByWithRelationInput | EngagementManagerOrderByWithRelationInput[]
+    cursor?: EngagementManagerWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EngagementManagerScalarFieldEnum | EngagementManagerScalarFieldEnum[]
+  }
+
+  /**
+   * Engagement.timesheetAudit
+   */
+  export type Engagement$timesheetAuditArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    where?: EngagementTimesheetAuditWhereInput
+    orderBy?: EngagementTimesheetAuditOrderByWithRelationInput | EngagementTimesheetAuditOrderByWithRelationInput[]
+    cursor?: EngagementTimesheetAuditWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EngagementTimesheetAuditScalarFieldEnum | EngagementTimesheetAuditScalarFieldEnum[]
+  }
+
+  /**
    * Engagement without action
    */
   export type EngagementDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2890,8 +3458,11 @@ export namespace Prisma {
     mobileNumber: string | null
     coverLetter: string | null
     resumeUrl: string | null
+    cvFileUrl: string | null
     yearsOfExperience: number | null
     availability: string | null
+    expectedPayRate: string | null
+    referralSource: string | null
     status: $Enums.ApplicationStatus | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -2909,8 +3480,11 @@ export namespace Prisma {
     mobileNumber: string | null
     coverLetter: string | null
     resumeUrl: string | null
+    cvFileUrl: string | null
     yearsOfExperience: number | null
     availability: string | null
+    expectedPayRate: string | null
+    referralSource: string | null
     status: $Enums.ApplicationStatus | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -2928,9 +3502,12 @@ export namespace Prisma {
     mobileNumber: number
     coverLetter: number
     resumeUrl: number
+    cvFileUrl: number
     portfolioUrls: number
     yearsOfExperience: number
     availability: number
+    expectedPayRate: number
+    referralSource: number
     status: number
     createdAt: number
     updatedAt: number
@@ -2958,8 +3535,11 @@ export namespace Prisma {
     mobileNumber?: true
     coverLetter?: true
     resumeUrl?: true
+    cvFileUrl?: true
     yearsOfExperience?: true
     availability?: true
+    expectedPayRate?: true
+    referralSource?: true
     status?: true
     createdAt?: true
     updatedAt?: true
@@ -2977,8 +3557,11 @@ export namespace Prisma {
     mobileNumber?: true
     coverLetter?: true
     resumeUrl?: true
+    cvFileUrl?: true
     yearsOfExperience?: true
     availability?: true
+    expectedPayRate?: true
+    referralSource?: true
     status?: true
     createdAt?: true
     updatedAt?: true
@@ -2996,9 +3579,12 @@ export namespace Prisma {
     mobileNumber?: true
     coverLetter?: true
     resumeUrl?: true
+    cvFileUrl?: true
     portfolioUrls?: true
     yearsOfExperience?: true
     availability?: true
+    expectedPayRate?: true
+    referralSource?: true
     status?: true
     createdAt?: true
     updatedAt?: true
@@ -3103,9 +3689,12 @@ export namespace Prisma {
     mobileNumber: string | null
     coverLetter: string | null
     resumeUrl: string | null
+    cvFileUrl: string | null
     portfolioUrls: string[]
     yearsOfExperience: number | null
     availability: string | null
+    expectedPayRate: string | null
+    referralSource: string | null
     status: $Enums.ApplicationStatus
     createdAt: Date
     updatedAt: Date
@@ -3142,9 +3731,12 @@ export namespace Prisma {
     mobileNumber?: boolean
     coverLetter?: boolean
     resumeUrl?: boolean
+    cvFileUrl?: boolean
     portfolioUrls?: boolean
     yearsOfExperience?: boolean
     availability?: boolean
+    expectedPayRate?: boolean
+    referralSource?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3163,9 +3755,12 @@ export namespace Prisma {
     mobileNumber?: boolean
     coverLetter?: boolean
     resumeUrl?: boolean
+    cvFileUrl?: boolean
     portfolioUrls?: boolean
     yearsOfExperience?: boolean
     availability?: boolean
+    expectedPayRate?: boolean
+    referralSource?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3184,9 +3779,12 @@ export namespace Prisma {
     mobileNumber?: boolean
     coverLetter?: boolean
     resumeUrl?: boolean
+    cvFileUrl?: boolean
     portfolioUrls?: boolean
     yearsOfExperience?: boolean
     availability?: boolean
+    expectedPayRate?: boolean
+    referralSource?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -3205,16 +3803,19 @@ export namespace Prisma {
     mobileNumber?: boolean
     coverLetter?: boolean
     resumeUrl?: boolean
+    cvFileUrl?: boolean
     portfolioUrls?: boolean
     yearsOfExperience?: boolean
     availability?: boolean
+    expectedPayRate?: boolean
+    referralSource?: boolean
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
   }
 
-  export type EngagementApplicationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "userId" | "handle" | "email" | "name" | "address" | "mobileNumber" | "coverLetter" | "resumeUrl" | "portfolioUrls" | "yearsOfExperience" | "availability" | "status" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementApplication"]>
+  export type EngagementApplicationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "userId" | "handle" | "email" | "name" | "address" | "mobileNumber" | "coverLetter" | "resumeUrl" | "cvFileUrl" | "portfolioUrls" | "yearsOfExperience" | "availability" | "expectedPayRate" | "referralSource" | "status" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementApplication"]>
   export type EngagementApplicationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
   }
@@ -3240,10 +3841,25 @@ export namespace Prisma {
       address: string | null
       mobileNumber: string | null
       coverLetter: string | null
+      /**
+       * Link to the applicant's resume or professional profile (LinkedIn profile, Google Drive CV, website).
+       */
       resumeUrl: string | null
+      /**
+       * URL of the CV file the applicant uploaded through Filestack (stored in S3).
+       */
+      cvFileUrl: string | null
       portfolioUrls: string[]
       yearsOfExperience: number | null
       availability: string | null
+      /**
+       * Pay rate the applicant expects for the engagement, as entered by the applicant (e.g. "$50/hour").
+       */
+      expectedPayRate: string | null
+      /**
+       * How the applicant came to know of the opportunity.
+       */
+      referralSource: string | null
       status: $Enums.ApplicationStatus
       createdAt: Date
       updatedAt: Date
@@ -3682,9 +4298,12 @@ export namespace Prisma {
     readonly mobileNumber: FieldRef<"EngagementApplication", 'String'>
     readonly coverLetter: FieldRef<"EngagementApplication", 'String'>
     readonly resumeUrl: FieldRef<"EngagementApplication", 'String'>
+    readonly cvFileUrl: FieldRef<"EngagementApplication", 'String'>
     readonly portfolioUrls: FieldRef<"EngagementApplication", 'String[]'>
     readonly yearsOfExperience: FieldRef<"EngagementApplication", 'Int'>
     readonly availability: FieldRef<"EngagementApplication", 'String'>
+    readonly expectedPayRate: FieldRef<"EngagementApplication", 'String'>
+    readonly referralSource: FieldRef<"EngagementApplication", 'String'>
     readonly status: FieldRef<"EngagementApplication", 'ApplicationStatus'>
     readonly createdAt: FieldRef<"EngagementApplication", 'DateTime'>
     readonly updatedAt: FieldRef<"EngagementApplication", 'DateTime'>
@@ -4122,12 +4741,14 @@ export namespace Prisma {
 
   export type EngagementAssignmentAvgAggregateOutputType = {
     standardHoursPerDay: number | null
+    totalHours: number | null
     standardHoursPerWeek: number | null
     durationMonths: number | null
   }
 
   export type EngagementAssignmentSumAggregateOutputType = {
     standardHoursPerDay: number | null
+    totalHours: number | null
     standardHoursPerWeek: number | null
     durationMonths: number | null
   }
@@ -4142,6 +4763,7 @@ export namespace Prisma {
     ratePerHour: string | null
     paymentCycle: $Enums.PaymentCycle | null
     standardHoursPerDay: number | null
+    totalHours: number | null
     standardHoursPerWeek: number | null
     durationMonths: number | null
     otherRemarks: string | null
@@ -4165,6 +4787,7 @@ export namespace Prisma {
     ratePerHour: string | null
     paymentCycle: $Enums.PaymentCycle | null
     standardHoursPerDay: number | null
+    totalHours: number | null
     standardHoursPerWeek: number | null
     durationMonths: number | null
     otherRemarks: string | null
@@ -4188,6 +4811,7 @@ export namespace Prisma {
     ratePerHour: number
     paymentCycle: number
     standardHoursPerDay: number
+    totalHours: number
     standardHoursPerWeek: number
     durationMonths: number
     otherRemarks: number
@@ -4205,12 +4829,14 @@ export namespace Prisma {
 
   export type EngagementAssignmentAvgAggregateInputType = {
     standardHoursPerDay?: true
+    totalHours?: true
     standardHoursPerWeek?: true
     durationMonths?: true
   }
 
   export type EngagementAssignmentSumAggregateInputType = {
     standardHoursPerDay?: true
+    totalHours?: true
     standardHoursPerWeek?: true
     durationMonths?: true
   }
@@ -4225,6 +4851,7 @@ export namespace Prisma {
     ratePerHour?: true
     paymentCycle?: true
     standardHoursPerDay?: true
+    totalHours?: true
     standardHoursPerWeek?: true
     durationMonths?: true
     otherRemarks?: true
@@ -4248,6 +4875,7 @@ export namespace Prisma {
     ratePerHour?: true
     paymentCycle?: true
     standardHoursPerDay?: true
+    totalHours?: true
     standardHoursPerWeek?: true
     durationMonths?: true
     otherRemarks?: true
@@ -4271,6 +4899,7 @@ export namespace Prisma {
     ratePerHour?: true
     paymentCycle?: true
     standardHoursPerDay?: true
+    totalHours?: true
     standardHoursPerWeek?: true
     durationMonths?: true
     otherRemarks?: true
@@ -4381,6 +5010,7 @@ export namespace Prisma {
     ratePerHour: string | null
     paymentCycle: $Enums.PaymentCycle
     standardHoursPerDay: number | null
+    totalHours: number | null
     standardHoursPerWeek: number | null
     durationMonths: number | null
     otherRemarks: string | null
@@ -4423,6 +5053,7 @@ export namespace Prisma {
     ratePerHour?: boolean
     paymentCycle?: boolean
     standardHoursPerDay?: boolean
+    totalHours?: boolean
     standardHoursPerWeek?: boolean
     durationMonths?: boolean
     otherRemarks?: boolean
@@ -4437,6 +5068,7 @@ export namespace Prisma {
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
     feedback?: boolean | EngagementAssignment$feedbackArgs<ExtArgs>
     memberExperiences?: boolean | EngagementAssignment$memberExperiencesArgs<ExtArgs>
+    timesheetEntries?: boolean | EngagementAssignment$timesheetEntriesArgs<ExtArgs>
     _count?: boolean | EngagementAssignmentCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["engagementAssignment"]>
 
@@ -4450,6 +5082,7 @@ export namespace Prisma {
     ratePerHour?: boolean
     paymentCycle?: boolean
     standardHoursPerDay?: boolean
+    totalHours?: boolean
     standardHoursPerWeek?: boolean
     durationMonths?: boolean
     otherRemarks?: boolean
@@ -4474,6 +5107,7 @@ export namespace Prisma {
     ratePerHour?: boolean
     paymentCycle?: boolean
     standardHoursPerDay?: boolean
+    totalHours?: boolean
     standardHoursPerWeek?: boolean
     durationMonths?: boolean
     otherRemarks?: boolean
@@ -4498,6 +5132,7 @@ export namespace Prisma {
     ratePerHour?: boolean
     paymentCycle?: boolean
     standardHoursPerDay?: boolean
+    totalHours?: boolean
     standardHoursPerWeek?: boolean
     durationMonths?: boolean
     otherRemarks?: boolean
@@ -4511,11 +5146,12 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "status" | "agreementRate" | "ratePerHour" | "paymentCycle" | "standardHoursPerDay" | "standardHoursPerWeek" | "durationMonths" | "otherRemarks" | "terminationReason" | "startDate" | "endDate" | "wiproIdEndDate" | "candidateWiproId" | "source" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
+  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "status" | "agreementRate" | "ratePerHour" | "paymentCycle" | "standardHoursPerDay" | "totalHours" | "standardHoursPerWeek" | "durationMonths" | "otherRemarks" | "terminationReason" | "startDate" | "endDate" | "wiproIdEndDate" | "candidateWiproId" | "source" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
   export type EngagementAssignmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
     feedback?: boolean | EngagementAssignment$feedbackArgs<ExtArgs>
     memberExperiences?: boolean | EngagementAssignment$memberExperiencesArgs<ExtArgs>
+    timesheetEntries?: boolean | EngagementAssignment$timesheetEntriesArgs<ExtArgs>
     _count?: boolean | EngagementAssignmentCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type EngagementAssignmentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4531,6 +5167,7 @@ export namespace Prisma {
       engagement: Prisma.$EngagementPayload<ExtArgs>
       feedback: Prisma.$EngagementFeedbackPayload<ExtArgs>[]
       memberExperiences: Prisma.$MemberExperiencePayload<ExtArgs>[]
+      timesheetEntries: Prisma.$EngagementTimesheetEntryPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -4542,6 +5179,10 @@ export namespace Prisma {
       ratePerHour: string | null
       paymentCycle: $Enums.PaymentCycle
       standardHoursPerDay: number | null
+      /**
+       * Hours allocated to the assignment overall. Optional; hours left are derived from it.
+       */
+      totalHours: number | null
       /**
        * @deprecated Use standardHoursPerDay instead.
        */
@@ -4953,6 +5594,7 @@ export namespace Prisma {
     engagement<T extends EngagementDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EngagementDefaultArgs<ExtArgs>>): Prisma__EngagementClient<$Result.GetResult<Prisma.$EngagementPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     feedback<T extends EngagementAssignment$feedbackArgs<ExtArgs> = {}>(args?: Subset<T, EngagementAssignment$feedbackArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementFeedbackPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     memberExperiences<T extends EngagementAssignment$memberExperiencesArgs<ExtArgs> = {}>(args?: Subset<T, EngagementAssignment$memberExperiencesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MemberExperiencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    timesheetEntries<T extends EngagementAssignment$timesheetEntriesArgs<ExtArgs> = {}>(args?: Subset<T, EngagementAssignment$timesheetEntriesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4991,6 +5633,7 @@ export namespace Prisma {
     readonly ratePerHour: FieldRef<"EngagementAssignment", 'String'>
     readonly paymentCycle: FieldRef<"EngagementAssignment", 'PaymentCycle'>
     readonly standardHoursPerDay: FieldRef<"EngagementAssignment", 'Float'>
+    readonly totalHours: FieldRef<"EngagementAssignment", 'Float'>
     readonly standardHoursPerWeek: FieldRef<"EngagementAssignment", 'Float'>
     readonly durationMonths: FieldRef<"EngagementAssignment", 'Int'>
     readonly otherRemarks: FieldRef<"EngagementAssignment", 'String'>
@@ -5448,6 +6091,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: MemberExperienceScalarFieldEnum | MemberExperienceScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementAssignment.timesheetEntries
+   */
+  export type EngagementAssignment$timesheetEntriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    where?: EngagementTimesheetEntryWhereInput
+    orderBy?: EngagementTimesheetEntryOrderByWithRelationInput | EngagementTimesheetEntryOrderByWithRelationInput[]
+    cursor?: EngagementTimesheetEntryWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EngagementTimesheetEntryScalarFieldEnum | EngagementTimesheetEntryScalarFieldEnum[]
   }
 
   /**
@@ -7708,6 +8375,4951 @@ export namespace Prisma {
 
 
   /**
+   * Model EngagementLead
+   */
+
+  export type AggregateEngagementLead = {
+    _count: EngagementLeadCountAggregateOutputType | null
+    _avg: EngagementLeadAvgAggregateOutputType | null
+    _sum: EngagementLeadSumAggregateOutputType | null
+    _min: EngagementLeadMinAggregateOutputType | null
+    _max: EngagementLeadMaxAggregateOutputType | null
+  }
+
+  export type EngagementLeadAvgAggregateOutputType = {
+    minYearsExperience: number | null
+    resourcesRequired: number | null
+    workingHoursPerDay: number | null
+  }
+
+  export type EngagementLeadSumAggregateOutputType = {
+    minYearsExperience: number | null
+    resourcesRequired: number | null
+    workingHoursPerDay: number | null
+  }
+
+  export type EngagementLeadMinAggregateOutputType = {
+    id: string | null
+    workEmail: string | null
+    accountName: string | null
+    smu: string | null
+    engagementModel: $Enums.EngagementModel | null
+    roleTitle: string | null
+    jobDescription: string | null
+    experienceLevel: $Enums.ExperienceLevel | null
+    minYearsExperience: number | null
+    industryDomain: string | null
+    resourcesRequired: number | null
+    preferredStartDate: Date | null
+    engagementDuration: string | null
+    workingHoursPerDay: number | null
+    timeZoneRequirement: string | null
+    remoteWorkAccepted: boolean | null
+    workLocationRestrictions: string | null
+    billRateCurrency: string | null
+    billRateAmount: string | null
+    priority: $Enums.LeadPriority | null
+    additionalRequirements: string | null
+    status: $Enums.EngagementLeadStatus | null
+    convertedEngagementId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    updatedBy: string | null
+  }
+
+  export type EngagementLeadMaxAggregateOutputType = {
+    id: string | null
+    workEmail: string | null
+    accountName: string | null
+    smu: string | null
+    engagementModel: $Enums.EngagementModel | null
+    roleTitle: string | null
+    jobDescription: string | null
+    experienceLevel: $Enums.ExperienceLevel | null
+    minYearsExperience: number | null
+    industryDomain: string | null
+    resourcesRequired: number | null
+    preferredStartDate: Date | null
+    engagementDuration: string | null
+    workingHoursPerDay: number | null
+    timeZoneRequirement: string | null
+    remoteWorkAccepted: boolean | null
+    workLocationRestrictions: string | null
+    billRateCurrency: string | null
+    billRateAmount: string | null
+    priority: $Enums.LeadPriority | null
+    additionalRequirements: string | null
+    status: $Enums.EngagementLeadStatus | null
+    convertedEngagementId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    updatedBy: string | null
+  }
+
+  export type EngagementLeadCountAggregateOutputType = {
+    id: number
+    workEmail: number
+    accountName: number
+    smu: number
+    engagementModel: number
+    roleTitle: number
+    jobDescription: number
+    requiredSkills: number
+    experienceLevel: number
+    minYearsExperience: number
+    industryDomain: number
+    resourcesRequired: number
+    preferredStartDate: number
+    engagementDuration: number
+    workingHoursPerDay: number
+    timeZoneRequirement: number
+    remoteWorkAccepted: number
+    workLocationRestrictions: number
+    billRateCurrency: number
+    billRateAmount: number
+    priority: number
+    additionalRequirements: number
+    status: number
+    convertedEngagementId: number
+    createdAt: number
+    updatedAt: number
+    updatedBy: number
+    _all: number
+  }
+
+
+  export type EngagementLeadAvgAggregateInputType = {
+    minYearsExperience?: true
+    resourcesRequired?: true
+    workingHoursPerDay?: true
+  }
+
+  export type EngagementLeadSumAggregateInputType = {
+    minYearsExperience?: true
+    resourcesRequired?: true
+    workingHoursPerDay?: true
+  }
+
+  export type EngagementLeadMinAggregateInputType = {
+    id?: true
+    workEmail?: true
+    accountName?: true
+    smu?: true
+    engagementModel?: true
+    roleTitle?: true
+    jobDescription?: true
+    experienceLevel?: true
+    minYearsExperience?: true
+    industryDomain?: true
+    resourcesRequired?: true
+    preferredStartDate?: true
+    engagementDuration?: true
+    workingHoursPerDay?: true
+    timeZoneRequirement?: true
+    remoteWorkAccepted?: true
+    workLocationRestrictions?: true
+    billRateCurrency?: true
+    billRateAmount?: true
+    priority?: true
+    additionalRequirements?: true
+    status?: true
+    convertedEngagementId?: true
+    createdAt?: true
+    updatedAt?: true
+    updatedBy?: true
+  }
+
+  export type EngagementLeadMaxAggregateInputType = {
+    id?: true
+    workEmail?: true
+    accountName?: true
+    smu?: true
+    engagementModel?: true
+    roleTitle?: true
+    jobDescription?: true
+    experienceLevel?: true
+    minYearsExperience?: true
+    industryDomain?: true
+    resourcesRequired?: true
+    preferredStartDate?: true
+    engagementDuration?: true
+    workingHoursPerDay?: true
+    timeZoneRequirement?: true
+    remoteWorkAccepted?: true
+    workLocationRestrictions?: true
+    billRateCurrency?: true
+    billRateAmount?: true
+    priority?: true
+    additionalRequirements?: true
+    status?: true
+    convertedEngagementId?: true
+    createdAt?: true
+    updatedAt?: true
+    updatedBy?: true
+  }
+
+  export type EngagementLeadCountAggregateInputType = {
+    id?: true
+    workEmail?: true
+    accountName?: true
+    smu?: true
+    engagementModel?: true
+    roleTitle?: true
+    jobDescription?: true
+    requiredSkills?: true
+    experienceLevel?: true
+    minYearsExperience?: true
+    industryDomain?: true
+    resourcesRequired?: true
+    preferredStartDate?: true
+    engagementDuration?: true
+    workingHoursPerDay?: true
+    timeZoneRequirement?: true
+    remoteWorkAccepted?: true
+    workLocationRestrictions?: true
+    billRateCurrency?: true
+    billRateAmount?: true
+    priority?: true
+    additionalRequirements?: true
+    status?: true
+    convertedEngagementId?: true
+    createdAt?: true
+    updatedAt?: true
+    updatedBy?: true
+    _all?: true
+  }
+
+  export type EngagementLeadAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementLead to aggregate.
+     */
+    where?: EngagementLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeads to fetch.
+     */
+    orderBy?: EngagementLeadOrderByWithRelationInput | EngagementLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EngagementLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EngagementLeads
+    **/
+    _count?: true | EngagementLeadCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: EngagementLeadAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: EngagementLeadSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EngagementLeadMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EngagementLeadMaxAggregateInputType
+  }
+
+  export type GetEngagementLeadAggregateType<T extends EngagementLeadAggregateArgs> = {
+        [P in keyof T & keyof AggregateEngagementLead]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEngagementLead[P]>
+      : GetScalarType<T[P], AggregateEngagementLead[P]>
+  }
+
+
+
+
+  export type EngagementLeadGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementLeadWhereInput
+    orderBy?: EngagementLeadOrderByWithAggregationInput | EngagementLeadOrderByWithAggregationInput[]
+    by: EngagementLeadScalarFieldEnum[] | EngagementLeadScalarFieldEnum
+    having?: EngagementLeadScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EngagementLeadCountAggregateInputType | true
+    _avg?: EngagementLeadAvgAggregateInputType
+    _sum?: EngagementLeadSumAggregateInputType
+    _min?: EngagementLeadMinAggregateInputType
+    _max?: EngagementLeadMaxAggregateInputType
+  }
+
+  export type EngagementLeadGroupByOutputType = {
+    id: string
+    workEmail: string
+    accountName: string
+    smu: string
+    engagementModel: $Enums.EngagementModel
+    roleTitle: string
+    jobDescription: string
+    requiredSkills: string[]
+    experienceLevel: $Enums.ExperienceLevel
+    minYearsExperience: number
+    industryDomain: string | null
+    resourcesRequired: number
+    preferredStartDate: Date
+    engagementDuration: string
+    workingHoursPerDay: number
+    timeZoneRequirement: string
+    remoteWorkAccepted: boolean
+    workLocationRestrictions: string | null
+    billRateCurrency: string
+    billRateAmount: string
+    priority: $Enums.LeadPriority
+    additionalRequirements: string | null
+    status: $Enums.EngagementLeadStatus
+    convertedEngagementId: string | null
+    createdAt: Date
+    updatedAt: Date
+    updatedBy: string | null
+    _count: EngagementLeadCountAggregateOutputType | null
+    _avg: EngagementLeadAvgAggregateOutputType | null
+    _sum: EngagementLeadSumAggregateOutputType | null
+    _min: EngagementLeadMinAggregateOutputType | null
+    _max: EngagementLeadMaxAggregateOutputType | null
+  }
+
+  type GetEngagementLeadGroupByPayload<T extends EngagementLeadGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EngagementLeadGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EngagementLeadGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EngagementLeadGroupByOutputType[P]>
+            : GetScalarType<T[P], EngagementLeadGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EngagementLeadSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workEmail?: boolean
+    accountName?: boolean
+    smu?: boolean
+    engagementModel?: boolean
+    roleTitle?: boolean
+    jobDescription?: boolean
+    requiredSkills?: boolean
+    experienceLevel?: boolean
+    minYearsExperience?: boolean
+    industryDomain?: boolean
+    resourcesRequired?: boolean
+    preferredStartDate?: boolean
+    engagementDuration?: boolean
+    workingHoursPerDay?: boolean
+    timeZoneRequirement?: boolean
+    remoteWorkAccepted?: boolean
+    workLocationRestrictions?: boolean
+    billRateCurrency?: boolean
+    billRateAmount?: boolean
+    priority?: boolean
+    additionalRequirements?: boolean
+    status?: boolean
+    convertedEngagementId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+  }, ExtArgs["result"]["engagementLead"]>
+
+  export type EngagementLeadSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workEmail?: boolean
+    accountName?: boolean
+    smu?: boolean
+    engagementModel?: boolean
+    roleTitle?: boolean
+    jobDescription?: boolean
+    requiredSkills?: boolean
+    experienceLevel?: boolean
+    minYearsExperience?: boolean
+    industryDomain?: boolean
+    resourcesRequired?: boolean
+    preferredStartDate?: boolean
+    engagementDuration?: boolean
+    workingHoursPerDay?: boolean
+    timeZoneRequirement?: boolean
+    remoteWorkAccepted?: boolean
+    workLocationRestrictions?: boolean
+    billRateCurrency?: boolean
+    billRateAmount?: boolean
+    priority?: boolean
+    additionalRequirements?: boolean
+    status?: boolean
+    convertedEngagementId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+  }, ExtArgs["result"]["engagementLead"]>
+
+  export type EngagementLeadSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workEmail?: boolean
+    accountName?: boolean
+    smu?: boolean
+    engagementModel?: boolean
+    roleTitle?: boolean
+    jobDescription?: boolean
+    requiredSkills?: boolean
+    experienceLevel?: boolean
+    minYearsExperience?: boolean
+    industryDomain?: boolean
+    resourcesRequired?: boolean
+    preferredStartDate?: boolean
+    engagementDuration?: boolean
+    workingHoursPerDay?: boolean
+    timeZoneRequirement?: boolean
+    remoteWorkAccepted?: boolean
+    workLocationRestrictions?: boolean
+    billRateCurrency?: boolean
+    billRateAmount?: boolean
+    priority?: boolean
+    additionalRequirements?: boolean
+    status?: boolean
+    convertedEngagementId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+  }, ExtArgs["result"]["engagementLead"]>
+
+  export type EngagementLeadSelectScalar = {
+    id?: boolean
+    workEmail?: boolean
+    accountName?: boolean
+    smu?: boolean
+    engagementModel?: boolean
+    roleTitle?: boolean
+    jobDescription?: boolean
+    requiredSkills?: boolean
+    experienceLevel?: boolean
+    minYearsExperience?: boolean
+    industryDomain?: boolean
+    resourcesRequired?: boolean
+    preferredStartDate?: boolean
+    engagementDuration?: boolean
+    workingHoursPerDay?: boolean
+    timeZoneRequirement?: boolean
+    remoteWorkAccepted?: boolean
+    workLocationRestrictions?: boolean
+    billRateCurrency?: boolean
+    billRateAmount?: boolean
+    priority?: boolean
+    additionalRequirements?: boolean
+    status?: boolean
+    convertedEngagementId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+  }
+
+  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
+
+  export type $EngagementLeadPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EngagementLead"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workEmail: string
+      accountName: string
+      smu: string
+      engagementModel: $Enums.EngagementModel
+      roleTitle: string
+      jobDescription: string
+      requiredSkills: string[]
+      experienceLevel: $Enums.ExperienceLevel
+      minYearsExperience: number
+      industryDomain: string | null
+      resourcesRequired: number
+      preferredStartDate: Date
+      engagementDuration: string
+      workingHoursPerDay: number
+      timeZoneRequirement: string
+      remoteWorkAccepted: boolean
+      workLocationRestrictions: string | null
+      billRateCurrency: string
+      billRateAmount: string
+      priority: $Enums.LeadPriority
+      additionalRequirements: string | null
+      status: $Enums.EngagementLeadStatus
+      convertedEngagementId: string | null
+      createdAt: Date
+      updatedAt: Date
+      updatedBy: string | null
+    }, ExtArgs["result"]["engagementLead"]>
+    composites: {}
+  }
+
+  type EngagementLeadGetPayload<S extends boolean | null | undefined | EngagementLeadDefaultArgs> = $Result.GetResult<Prisma.$EngagementLeadPayload, S>
+
+  type EngagementLeadCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EngagementLeadFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EngagementLeadCountAggregateInputType | true
+    }
+
+  export interface EngagementLeadDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EngagementLead'], meta: { name: 'EngagementLead' } }
+    /**
+     * Find zero or one EngagementLead that matches the filter.
+     * @param {EngagementLeadFindUniqueArgs} args - Arguments to find a EngagementLead
+     * @example
+     * // Get one EngagementLead
+     * const engagementLead = await prisma.engagementLead.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EngagementLeadFindUniqueArgs>(args: SelectSubset<T, EngagementLeadFindUniqueArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EngagementLead that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EngagementLeadFindUniqueOrThrowArgs} args - Arguments to find a EngagementLead
+     * @example
+     * // Get one EngagementLead
+     * const engagementLead = await prisma.engagementLead.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EngagementLeadFindUniqueOrThrowArgs>(args: SelectSubset<T, EngagementLeadFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementLead that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadFindFirstArgs} args - Arguments to find a EngagementLead
+     * @example
+     * // Get one EngagementLead
+     * const engagementLead = await prisma.engagementLead.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EngagementLeadFindFirstArgs>(args?: SelectSubset<T, EngagementLeadFindFirstArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementLead that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadFindFirstOrThrowArgs} args - Arguments to find a EngagementLead
+     * @example
+     * // Get one EngagementLead
+     * const engagementLead = await prisma.engagementLead.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EngagementLeadFindFirstOrThrowArgs>(args?: SelectSubset<T, EngagementLeadFindFirstOrThrowArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EngagementLeads that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EngagementLeads
+     * const engagementLeads = await prisma.engagementLead.findMany()
+     * 
+     * // Get first 10 EngagementLeads
+     * const engagementLeads = await prisma.engagementLead.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const engagementLeadWithIdOnly = await prisma.engagementLead.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EngagementLeadFindManyArgs>(args?: SelectSubset<T, EngagementLeadFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EngagementLead.
+     * @param {EngagementLeadCreateArgs} args - Arguments to create a EngagementLead.
+     * @example
+     * // Create one EngagementLead
+     * const EngagementLead = await prisma.engagementLead.create({
+     *   data: {
+     *     // ... data to create a EngagementLead
+     *   }
+     * })
+     * 
+     */
+    create<T extends EngagementLeadCreateArgs>(args: SelectSubset<T, EngagementLeadCreateArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EngagementLeads.
+     * @param {EngagementLeadCreateManyArgs} args - Arguments to create many EngagementLeads.
+     * @example
+     * // Create many EngagementLeads
+     * const engagementLead = await prisma.engagementLead.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EngagementLeadCreateManyArgs>(args?: SelectSubset<T, EngagementLeadCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many EngagementLeads and returns the data saved in the database.
+     * @param {EngagementLeadCreateManyAndReturnArgs} args - Arguments to create many EngagementLeads.
+     * @example
+     * // Create many EngagementLeads
+     * const engagementLead = await prisma.engagementLead.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many EngagementLeads and only return the `id`
+     * const engagementLeadWithIdOnly = await prisma.engagementLead.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends EngagementLeadCreateManyAndReturnArgs>(args?: SelectSubset<T, EngagementLeadCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a EngagementLead.
+     * @param {EngagementLeadDeleteArgs} args - Arguments to delete one EngagementLead.
+     * @example
+     * // Delete one EngagementLead
+     * const EngagementLead = await prisma.engagementLead.delete({
+     *   where: {
+     *     // ... filter to delete one EngagementLead
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EngagementLeadDeleteArgs>(args: SelectSubset<T, EngagementLeadDeleteArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EngagementLead.
+     * @param {EngagementLeadUpdateArgs} args - Arguments to update one EngagementLead.
+     * @example
+     * // Update one EngagementLead
+     * const engagementLead = await prisma.engagementLead.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EngagementLeadUpdateArgs>(args: SelectSubset<T, EngagementLeadUpdateArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EngagementLeads.
+     * @param {EngagementLeadDeleteManyArgs} args - Arguments to filter EngagementLeads to delete.
+     * @example
+     * // Delete a few EngagementLeads
+     * const { count } = await prisma.engagementLead.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EngagementLeadDeleteManyArgs>(args?: SelectSubset<T, EngagementLeadDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementLeads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EngagementLeads
+     * const engagementLead = await prisma.engagementLead.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EngagementLeadUpdateManyArgs>(args: SelectSubset<T, EngagementLeadUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementLeads and returns the data updated in the database.
+     * @param {EngagementLeadUpdateManyAndReturnArgs} args - Arguments to update many EngagementLeads.
+     * @example
+     * // Update many EngagementLeads
+     * const engagementLead = await prisma.engagementLead.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more EngagementLeads and only return the `id`
+     * const engagementLeadWithIdOnly = await prisma.engagementLead.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends EngagementLeadUpdateManyAndReturnArgs>(args: SelectSubset<T, EngagementLeadUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one EngagementLead.
+     * @param {EngagementLeadUpsertArgs} args - Arguments to update or create a EngagementLead.
+     * @example
+     * // Update or create a EngagementLead
+     * const engagementLead = await prisma.engagementLead.upsert({
+     *   create: {
+     *     // ... data to create a EngagementLead
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EngagementLead we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EngagementLeadUpsertArgs>(args: SelectSubset<T, EngagementLeadUpsertArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EngagementLeads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadCountArgs} args - Arguments to filter EngagementLeads to count.
+     * @example
+     * // Count the number of EngagementLeads
+     * const count = await prisma.engagementLead.count({
+     *   where: {
+     *     // ... the filter for the EngagementLeads we want to count
+     *   }
+     * })
+    **/
+    count<T extends EngagementLeadCountArgs>(
+      args?: Subset<T, EngagementLeadCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EngagementLeadCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EngagementLead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EngagementLeadAggregateArgs>(args: Subset<T, EngagementLeadAggregateArgs>): Prisma.PrismaPromise<GetEngagementLeadAggregateType<T>>
+
+    /**
+     * Group by EngagementLead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EngagementLeadGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EngagementLeadGroupByArgs['orderBy'] }
+        : { orderBy?: EngagementLeadGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EngagementLeadGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEngagementLeadGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EngagementLead model
+   */
+  readonly fields: EngagementLeadFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EngagementLead.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EngagementLeadClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EngagementLead model
+   */
+  interface EngagementLeadFieldRefs {
+    readonly id: FieldRef<"EngagementLead", 'String'>
+    readonly workEmail: FieldRef<"EngagementLead", 'String'>
+    readonly accountName: FieldRef<"EngagementLead", 'String'>
+    readonly smu: FieldRef<"EngagementLead", 'String'>
+    readonly engagementModel: FieldRef<"EngagementLead", 'EngagementModel'>
+    readonly roleTitle: FieldRef<"EngagementLead", 'String'>
+    readonly jobDescription: FieldRef<"EngagementLead", 'String'>
+    readonly requiredSkills: FieldRef<"EngagementLead", 'String[]'>
+    readonly experienceLevel: FieldRef<"EngagementLead", 'ExperienceLevel'>
+    readonly minYearsExperience: FieldRef<"EngagementLead", 'Int'>
+    readonly industryDomain: FieldRef<"EngagementLead", 'String'>
+    readonly resourcesRequired: FieldRef<"EngagementLead", 'Int'>
+    readonly preferredStartDate: FieldRef<"EngagementLead", 'DateTime'>
+    readonly engagementDuration: FieldRef<"EngagementLead", 'String'>
+    readonly workingHoursPerDay: FieldRef<"EngagementLead", 'Float'>
+    readonly timeZoneRequirement: FieldRef<"EngagementLead", 'String'>
+    readonly remoteWorkAccepted: FieldRef<"EngagementLead", 'Boolean'>
+    readonly workLocationRestrictions: FieldRef<"EngagementLead", 'String'>
+    readonly billRateCurrency: FieldRef<"EngagementLead", 'String'>
+    readonly billRateAmount: FieldRef<"EngagementLead", 'String'>
+    readonly priority: FieldRef<"EngagementLead", 'LeadPriority'>
+    readonly additionalRequirements: FieldRef<"EngagementLead", 'String'>
+    readonly status: FieldRef<"EngagementLead", 'EngagementLeadStatus'>
+    readonly convertedEngagementId: FieldRef<"EngagementLead", 'String'>
+    readonly createdAt: FieldRef<"EngagementLead", 'DateTime'>
+    readonly updatedAt: FieldRef<"EngagementLead", 'DateTime'>
+    readonly updatedBy: FieldRef<"EngagementLead", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EngagementLead findUnique
+   */
+  export type EngagementLeadFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Filter, which EngagementLead to fetch.
+     */
+    where: EngagementLeadWhereUniqueInput
+  }
+
+  /**
+   * EngagementLead findUniqueOrThrow
+   */
+  export type EngagementLeadFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Filter, which EngagementLead to fetch.
+     */
+    where: EngagementLeadWhereUniqueInput
+  }
+
+  /**
+   * EngagementLead findFirst
+   */
+  export type EngagementLeadFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Filter, which EngagementLead to fetch.
+     */
+    where?: EngagementLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeads to fetch.
+     */
+    orderBy?: EngagementLeadOrderByWithRelationInput | EngagementLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementLeads.
+     */
+    cursor?: EngagementLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementLeads.
+     */
+    distinct?: EngagementLeadScalarFieldEnum | EngagementLeadScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementLead findFirstOrThrow
+   */
+  export type EngagementLeadFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Filter, which EngagementLead to fetch.
+     */
+    where?: EngagementLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeads to fetch.
+     */
+    orderBy?: EngagementLeadOrderByWithRelationInput | EngagementLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementLeads.
+     */
+    cursor?: EngagementLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementLeads.
+     */
+    distinct?: EngagementLeadScalarFieldEnum | EngagementLeadScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementLead findMany
+   */
+  export type EngagementLeadFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Filter, which EngagementLeads to fetch.
+     */
+    where?: EngagementLeadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeads to fetch.
+     */
+    orderBy?: EngagementLeadOrderByWithRelationInput | EngagementLeadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EngagementLeads.
+     */
+    cursor?: EngagementLeadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementLeads.
+     */
+    distinct?: EngagementLeadScalarFieldEnum | EngagementLeadScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementLead create
+   */
+  export type EngagementLeadCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * The data needed to create a EngagementLead.
+     */
+    data: XOR<EngagementLeadCreateInput, EngagementLeadUncheckedCreateInput>
+  }
+
+  /**
+   * EngagementLead createMany
+   */
+  export type EngagementLeadCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EngagementLeads.
+     */
+    data: EngagementLeadCreateManyInput | EngagementLeadCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EngagementLead createManyAndReturn
+   */
+  export type EngagementLeadCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * The data used to create many EngagementLeads.
+     */
+    data: EngagementLeadCreateManyInput | EngagementLeadCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EngagementLead update
+   */
+  export type EngagementLeadUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * The data needed to update a EngagementLead.
+     */
+    data: XOR<EngagementLeadUpdateInput, EngagementLeadUncheckedUpdateInput>
+    /**
+     * Choose, which EngagementLead to update.
+     */
+    where: EngagementLeadWhereUniqueInput
+  }
+
+  /**
+   * EngagementLead updateMany
+   */
+  export type EngagementLeadUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EngagementLeads.
+     */
+    data: XOR<EngagementLeadUpdateManyMutationInput, EngagementLeadUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementLeads to update
+     */
+    where?: EngagementLeadWhereInput
+    /**
+     * Limit how many EngagementLeads to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementLead updateManyAndReturn
+   */
+  export type EngagementLeadUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * The data used to update EngagementLeads.
+     */
+    data: XOR<EngagementLeadUpdateManyMutationInput, EngagementLeadUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementLeads to update
+     */
+    where?: EngagementLeadWhereInput
+    /**
+     * Limit how many EngagementLeads to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementLead upsert
+   */
+  export type EngagementLeadUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * The filter to search for the EngagementLead to update in case it exists.
+     */
+    where: EngagementLeadWhereUniqueInput
+    /**
+     * In case the EngagementLead found by the `where` argument doesn't exist, create a new EngagementLead with this data.
+     */
+    create: XOR<EngagementLeadCreateInput, EngagementLeadUncheckedCreateInput>
+    /**
+     * In case the EngagementLead was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EngagementLeadUpdateInput, EngagementLeadUncheckedUpdateInput>
+  }
+
+  /**
+   * EngagementLead delete
+   */
+  export type EngagementLeadDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Filter which EngagementLead to delete.
+     */
+    where: EngagementLeadWhereUniqueInput
+  }
+
+  /**
+   * EngagementLead deleteMany
+   */
+  export type EngagementLeadDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementLeads to delete
+     */
+    where?: EngagementLeadWhereInput
+    /**
+     * Limit how many EngagementLeads to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementLead without action
+   */
+  export type EngagementLeadDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model EngagementTimesheetEntry
+   */
+
+  export type AggregateEngagementTimesheetEntry = {
+    _count: EngagementTimesheetEntryCountAggregateOutputType | null
+    _avg: EngagementTimesheetEntryAvgAggregateOutputType | null
+    _sum: EngagementTimesheetEntrySumAggregateOutputType | null
+    _min: EngagementTimesheetEntryMinAggregateOutputType | null
+    _max: EngagementTimesheetEntryMaxAggregateOutputType | null
+  }
+
+  export type EngagementTimesheetEntryAvgAggregateOutputType = {
+    hoursWorked: Decimal | null
+  }
+
+  export type EngagementTimesheetEntrySumAggregateOutputType = {
+    hoursWorked: Decimal | null
+  }
+
+  export type EngagementTimesheetEntryMinAggregateOutputType = {
+    id: string | null
+    engagementAssignmentId: string | null
+    workDate: Date | null
+    hoursWorked: Decimal | null
+    remarks: string | null
+    status: $Enums.TimesheetEntryStatus | null
+    submittedAt: Date | null
+    submittedBy: string | null
+    approvedAt: Date | null
+    approvedBy: string | null
+    approvedByHandle: string | null
+    approvalComment: string | null
+    reopenedAt: Date | null
+    paidPaymentReference: string | null
+    paidAt: Date | null
+    createdAt: Date | null
+    createdBy: string | null
+    updatedAt: Date | null
+    updatedBy: string | null
+  }
+
+  export type EngagementTimesheetEntryMaxAggregateOutputType = {
+    id: string | null
+    engagementAssignmentId: string | null
+    workDate: Date | null
+    hoursWorked: Decimal | null
+    remarks: string | null
+    status: $Enums.TimesheetEntryStatus | null
+    submittedAt: Date | null
+    submittedBy: string | null
+    approvedAt: Date | null
+    approvedBy: string | null
+    approvedByHandle: string | null
+    approvalComment: string | null
+    reopenedAt: Date | null
+    paidPaymentReference: string | null
+    paidAt: Date | null
+    createdAt: Date | null
+    createdBy: string | null
+    updatedAt: Date | null
+    updatedBy: string | null
+  }
+
+  export type EngagementTimesheetEntryCountAggregateOutputType = {
+    id: number
+    engagementAssignmentId: number
+    workDate: number
+    hoursWorked: number
+    remarks: number
+    status: number
+    submittedAt: number
+    submittedBy: number
+    approvedAt: number
+    approvedBy: number
+    approvedByHandle: number
+    approvalComment: number
+    reopenedAt: number
+    paidPaymentReference: number
+    paidAt: number
+    createdAt: number
+    createdBy: number
+    updatedAt: number
+    updatedBy: number
+    _all: number
+  }
+
+
+  export type EngagementTimesheetEntryAvgAggregateInputType = {
+    hoursWorked?: true
+  }
+
+  export type EngagementTimesheetEntrySumAggregateInputType = {
+    hoursWorked?: true
+  }
+
+  export type EngagementTimesheetEntryMinAggregateInputType = {
+    id?: true
+    engagementAssignmentId?: true
+    workDate?: true
+    hoursWorked?: true
+    remarks?: true
+    status?: true
+    submittedAt?: true
+    submittedBy?: true
+    approvedAt?: true
+    approvedBy?: true
+    approvedByHandle?: true
+    approvalComment?: true
+    reopenedAt?: true
+    paidPaymentReference?: true
+    paidAt?: true
+    createdAt?: true
+    createdBy?: true
+    updatedAt?: true
+    updatedBy?: true
+  }
+
+  export type EngagementTimesheetEntryMaxAggregateInputType = {
+    id?: true
+    engagementAssignmentId?: true
+    workDate?: true
+    hoursWorked?: true
+    remarks?: true
+    status?: true
+    submittedAt?: true
+    submittedBy?: true
+    approvedAt?: true
+    approvedBy?: true
+    approvedByHandle?: true
+    approvalComment?: true
+    reopenedAt?: true
+    paidPaymentReference?: true
+    paidAt?: true
+    createdAt?: true
+    createdBy?: true
+    updatedAt?: true
+    updatedBy?: true
+  }
+
+  export type EngagementTimesheetEntryCountAggregateInputType = {
+    id?: true
+    engagementAssignmentId?: true
+    workDate?: true
+    hoursWorked?: true
+    remarks?: true
+    status?: true
+    submittedAt?: true
+    submittedBy?: true
+    approvedAt?: true
+    approvedBy?: true
+    approvedByHandle?: true
+    approvalComment?: true
+    reopenedAt?: true
+    paidPaymentReference?: true
+    paidAt?: true
+    createdAt?: true
+    createdBy?: true
+    updatedAt?: true
+    updatedBy?: true
+    _all?: true
+  }
+
+  export type EngagementTimesheetEntryAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementTimesheetEntry to aggregate.
+     */
+    where?: EngagementTimesheetEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetEntries to fetch.
+     */
+    orderBy?: EngagementTimesheetEntryOrderByWithRelationInput | EngagementTimesheetEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EngagementTimesheetEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EngagementTimesheetEntries
+    **/
+    _count?: true | EngagementTimesheetEntryCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: EngagementTimesheetEntryAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: EngagementTimesheetEntrySumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EngagementTimesheetEntryMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EngagementTimesheetEntryMaxAggregateInputType
+  }
+
+  export type GetEngagementTimesheetEntryAggregateType<T extends EngagementTimesheetEntryAggregateArgs> = {
+        [P in keyof T & keyof AggregateEngagementTimesheetEntry]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEngagementTimesheetEntry[P]>
+      : GetScalarType<T[P], AggregateEngagementTimesheetEntry[P]>
+  }
+
+
+
+
+  export type EngagementTimesheetEntryGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementTimesheetEntryWhereInput
+    orderBy?: EngagementTimesheetEntryOrderByWithAggregationInput | EngagementTimesheetEntryOrderByWithAggregationInput[]
+    by: EngagementTimesheetEntryScalarFieldEnum[] | EngagementTimesheetEntryScalarFieldEnum
+    having?: EngagementTimesheetEntryScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EngagementTimesheetEntryCountAggregateInputType | true
+    _avg?: EngagementTimesheetEntryAvgAggregateInputType
+    _sum?: EngagementTimesheetEntrySumAggregateInputType
+    _min?: EngagementTimesheetEntryMinAggregateInputType
+    _max?: EngagementTimesheetEntryMaxAggregateInputType
+  }
+
+  export type EngagementTimesheetEntryGroupByOutputType = {
+    id: string
+    engagementAssignmentId: string
+    workDate: Date
+    hoursWorked: Decimal
+    remarks: string | null
+    status: $Enums.TimesheetEntryStatus
+    submittedAt: Date | null
+    submittedBy: string | null
+    approvedAt: Date | null
+    approvedBy: string | null
+    approvedByHandle: string | null
+    approvalComment: string | null
+    reopenedAt: Date | null
+    paidPaymentReference: string | null
+    paidAt: Date | null
+    createdAt: Date
+    createdBy: string
+    updatedAt: Date
+    updatedBy: string | null
+    _count: EngagementTimesheetEntryCountAggregateOutputType | null
+    _avg: EngagementTimesheetEntryAvgAggregateOutputType | null
+    _sum: EngagementTimesheetEntrySumAggregateOutputType | null
+    _min: EngagementTimesheetEntryMinAggregateOutputType | null
+    _max: EngagementTimesheetEntryMaxAggregateOutputType | null
+  }
+
+  type GetEngagementTimesheetEntryGroupByPayload<T extends EngagementTimesheetEntryGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EngagementTimesheetEntryGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EngagementTimesheetEntryGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EngagementTimesheetEntryGroupByOutputType[P]>
+            : GetScalarType<T[P], EngagementTimesheetEntryGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EngagementTimesheetEntrySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementAssignmentId?: boolean
+    workDate?: boolean
+    hoursWorked?: boolean
+    remarks?: boolean
+    status?: boolean
+    submittedAt?: boolean
+    submittedBy?: boolean
+    approvedAt?: boolean
+    approvedBy?: boolean
+    approvedByHandle?: boolean
+    approvalComment?: boolean
+    reopenedAt?: boolean
+    paidPaymentReference?: boolean
+    paidAt?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+    assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
+    auditRecords?: boolean | EngagementTimesheetEntry$auditRecordsArgs<ExtArgs>
+    _count?: boolean | EngagementTimesheetEntryCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementTimesheetEntry"]>
+
+  export type EngagementTimesheetEntrySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementAssignmentId?: boolean
+    workDate?: boolean
+    hoursWorked?: boolean
+    remarks?: boolean
+    status?: boolean
+    submittedAt?: boolean
+    submittedBy?: boolean
+    approvedAt?: boolean
+    approvedBy?: boolean
+    approvedByHandle?: boolean
+    approvalComment?: boolean
+    reopenedAt?: boolean
+    paidPaymentReference?: boolean
+    paidAt?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+    assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementTimesheetEntry"]>
+
+  export type EngagementTimesheetEntrySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementAssignmentId?: boolean
+    workDate?: boolean
+    hoursWorked?: boolean
+    remarks?: boolean
+    status?: boolean
+    submittedAt?: boolean
+    submittedBy?: boolean
+    approvedAt?: boolean
+    approvedBy?: boolean
+    approvedByHandle?: boolean
+    approvalComment?: boolean
+    reopenedAt?: boolean
+    paidPaymentReference?: boolean
+    paidAt?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+    assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementTimesheetEntry"]>
+
+  export type EngagementTimesheetEntrySelectScalar = {
+    id?: boolean
+    engagementAssignmentId?: boolean
+    workDate?: boolean
+    hoursWorked?: boolean
+    remarks?: boolean
+    status?: boolean
+    submittedAt?: boolean
+    submittedBy?: boolean
+    approvedAt?: boolean
+    approvedBy?: boolean
+    approvedByHandle?: boolean
+    approvalComment?: boolean
+    reopenedAt?: boolean
+    paidPaymentReference?: boolean
+    paidAt?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean
+  }
+
+  export type EngagementTimesheetEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementAssignmentId" | "workDate" | "hoursWorked" | "remarks" | "status" | "submittedAt" | "submittedBy" | "approvedAt" | "approvedBy" | "approvedByHandle" | "approvalComment" | "reopenedAt" | "paidPaymentReference" | "paidAt" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementTimesheetEntry"]>
+  export type EngagementTimesheetEntryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
+    auditRecords?: boolean | EngagementTimesheetEntry$auditRecordsArgs<ExtArgs>
+    _count?: boolean | EngagementTimesheetEntryCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type EngagementTimesheetEntryIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
+  }
+  export type EngagementTimesheetEntryIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
+  }
+
+  export type $EngagementTimesheetEntryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EngagementTimesheetEntry"
+    objects: {
+      assignment: Prisma.$EngagementAssignmentPayload<ExtArgs>
+      auditRecords: Prisma.$EngagementTimesheetAuditPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      engagementAssignmentId: string
+      /**
+       * Calendar day the hours were worked. Stored as a date, not a timestamp: a timesheet row is a
+       * calendar day in the member's frame of reference, so the unique constraint below means "one
+       * entry per day" and no timezone conversion can shift the 7th into the 6th.
+       */
+      workDate: Date
+      /**
+       * Decimal, not Float: these hours are summed and multiplied by an hourly rate to produce a
+       * payment amount, so they must sum exactly.
+       */
+      hoursWorked: Prisma.Decimal
+      remarks: string | null
+      status: $Enums.TimesheetEntryStatus
+      submittedAt: Date | null
+      submittedBy: string | null
+      approvedAt: Date | null
+      approvedBy: string | null
+      approvedByHandle: string | null
+      approvalComment: string | null
+      /**
+       * Set when an administrator reopens an approved entry. The entry returns to DRAFT; this field is
+       * what lets the UI badge it "Reopened" without the state machine growing a fourth status.
+       */
+      reopenedAt: Date | null
+      paidPaymentReference: string | null
+      paidAt: Date | null
+      createdAt: Date
+      createdBy: string
+      updatedAt: Date
+      updatedBy: string | null
+    }, ExtArgs["result"]["engagementTimesheetEntry"]>
+    composites: {}
+  }
+
+  type EngagementTimesheetEntryGetPayload<S extends boolean | null | undefined | EngagementTimesheetEntryDefaultArgs> = $Result.GetResult<Prisma.$EngagementTimesheetEntryPayload, S>
+
+  type EngagementTimesheetEntryCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EngagementTimesheetEntryFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EngagementTimesheetEntryCountAggregateInputType | true
+    }
+
+  export interface EngagementTimesheetEntryDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EngagementTimesheetEntry'], meta: { name: 'EngagementTimesheetEntry' } }
+    /**
+     * Find zero or one EngagementTimesheetEntry that matches the filter.
+     * @param {EngagementTimesheetEntryFindUniqueArgs} args - Arguments to find a EngagementTimesheetEntry
+     * @example
+     * // Get one EngagementTimesheetEntry
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EngagementTimesheetEntryFindUniqueArgs>(args: SelectSubset<T, EngagementTimesheetEntryFindUniqueArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EngagementTimesheetEntry that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EngagementTimesheetEntryFindUniqueOrThrowArgs} args - Arguments to find a EngagementTimesheetEntry
+     * @example
+     * // Get one EngagementTimesheetEntry
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EngagementTimesheetEntryFindUniqueOrThrowArgs>(args: SelectSubset<T, EngagementTimesheetEntryFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementTimesheetEntry that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetEntryFindFirstArgs} args - Arguments to find a EngagementTimesheetEntry
+     * @example
+     * // Get one EngagementTimesheetEntry
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EngagementTimesheetEntryFindFirstArgs>(args?: SelectSubset<T, EngagementTimesheetEntryFindFirstArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementTimesheetEntry that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetEntryFindFirstOrThrowArgs} args - Arguments to find a EngagementTimesheetEntry
+     * @example
+     * // Get one EngagementTimesheetEntry
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EngagementTimesheetEntryFindFirstOrThrowArgs>(args?: SelectSubset<T, EngagementTimesheetEntryFindFirstOrThrowArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EngagementTimesheetEntries that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetEntryFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EngagementTimesheetEntries
+     * const engagementTimesheetEntries = await prisma.engagementTimesheetEntry.findMany()
+     * 
+     * // Get first 10 EngagementTimesheetEntries
+     * const engagementTimesheetEntries = await prisma.engagementTimesheetEntry.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const engagementTimesheetEntryWithIdOnly = await prisma.engagementTimesheetEntry.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EngagementTimesheetEntryFindManyArgs>(args?: SelectSubset<T, EngagementTimesheetEntryFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EngagementTimesheetEntry.
+     * @param {EngagementTimesheetEntryCreateArgs} args - Arguments to create a EngagementTimesheetEntry.
+     * @example
+     * // Create one EngagementTimesheetEntry
+     * const EngagementTimesheetEntry = await prisma.engagementTimesheetEntry.create({
+     *   data: {
+     *     // ... data to create a EngagementTimesheetEntry
+     *   }
+     * })
+     * 
+     */
+    create<T extends EngagementTimesheetEntryCreateArgs>(args: SelectSubset<T, EngagementTimesheetEntryCreateArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EngagementTimesheetEntries.
+     * @param {EngagementTimesheetEntryCreateManyArgs} args - Arguments to create many EngagementTimesheetEntries.
+     * @example
+     * // Create many EngagementTimesheetEntries
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EngagementTimesheetEntryCreateManyArgs>(args?: SelectSubset<T, EngagementTimesheetEntryCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many EngagementTimesheetEntries and returns the data saved in the database.
+     * @param {EngagementTimesheetEntryCreateManyAndReturnArgs} args - Arguments to create many EngagementTimesheetEntries.
+     * @example
+     * // Create many EngagementTimesheetEntries
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many EngagementTimesheetEntries and only return the `id`
+     * const engagementTimesheetEntryWithIdOnly = await prisma.engagementTimesheetEntry.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends EngagementTimesheetEntryCreateManyAndReturnArgs>(args?: SelectSubset<T, EngagementTimesheetEntryCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a EngagementTimesheetEntry.
+     * @param {EngagementTimesheetEntryDeleteArgs} args - Arguments to delete one EngagementTimesheetEntry.
+     * @example
+     * // Delete one EngagementTimesheetEntry
+     * const EngagementTimesheetEntry = await prisma.engagementTimesheetEntry.delete({
+     *   where: {
+     *     // ... filter to delete one EngagementTimesheetEntry
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EngagementTimesheetEntryDeleteArgs>(args: SelectSubset<T, EngagementTimesheetEntryDeleteArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EngagementTimesheetEntry.
+     * @param {EngagementTimesheetEntryUpdateArgs} args - Arguments to update one EngagementTimesheetEntry.
+     * @example
+     * // Update one EngagementTimesheetEntry
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EngagementTimesheetEntryUpdateArgs>(args: SelectSubset<T, EngagementTimesheetEntryUpdateArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EngagementTimesheetEntries.
+     * @param {EngagementTimesheetEntryDeleteManyArgs} args - Arguments to filter EngagementTimesheetEntries to delete.
+     * @example
+     * // Delete a few EngagementTimesheetEntries
+     * const { count } = await prisma.engagementTimesheetEntry.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EngagementTimesheetEntryDeleteManyArgs>(args?: SelectSubset<T, EngagementTimesheetEntryDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementTimesheetEntries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetEntryUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EngagementTimesheetEntries
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EngagementTimesheetEntryUpdateManyArgs>(args: SelectSubset<T, EngagementTimesheetEntryUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementTimesheetEntries and returns the data updated in the database.
+     * @param {EngagementTimesheetEntryUpdateManyAndReturnArgs} args - Arguments to update many EngagementTimesheetEntries.
+     * @example
+     * // Update many EngagementTimesheetEntries
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more EngagementTimesheetEntries and only return the `id`
+     * const engagementTimesheetEntryWithIdOnly = await prisma.engagementTimesheetEntry.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends EngagementTimesheetEntryUpdateManyAndReturnArgs>(args: SelectSubset<T, EngagementTimesheetEntryUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one EngagementTimesheetEntry.
+     * @param {EngagementTimesheetEntryUpsertArgs} args - Arguments to update or create a EngagementTimesheetEntry.
+     * @example
+     * // Update or create a EngagementTimesheetEntry
+     * const engagementTimesheetEntry = await prisma.engagementTimesheetEntry.upsert({
+     *   create: {
+     *     // ... data to create a EngagementTimesheetEntry
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EngagementTimesheetEntry we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EngagementTimesheetEntryUpsertArgs>(args: SelectSubset<T, EngagementTimesheetEntryUpsertArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EngagementTimesheetEntries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetEntryCountArgs} args - Arguments to filter EngagementTimesheetEntries to count.
+     * @example
+     * // Count the number of EngagementTimesheetEntries
+     * const count = await prisma.engagementTimesheetEntry.count({
+     *   where: {
+     *     // ... the filter for the EngagementTimesheetEntries we want to count
+     *   }
+     * })
+    **/
+    count<T extends EngagementTimesheetEntryCountArgs>(
+      args?: Subset<T, EngagementTimesheetEntryCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EngagementTimesheetEntryCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EngagementTimesheetEntry.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetEntryAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EngagementTimesheetEntryAggregateArgs>(args: Subset<T, EngagementTimesheetEntryAggregateArgs>): Prisma.PrismaPromise<GetEngagementTimesheetEntryAggregateType<T>>
+
+    /**
+     * Group by EngagementTimesheetEntry.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetEntryGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EngagementTimesheetEntryGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EngagementTimesheetEntryGroupByArgs['orderBy'] }
+        : { orderBy?: EngagementTimesheetEntryGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EngagementTimesheetEntryGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEngagementTimesheetEntryGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EngagementTimesheetEntry model
+   */
+  readonly fields: EngagementTimesheetEntryFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EngagementTimesheetEntry.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EngagementTimesheetEntryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    assignment<T extends EngagementAssignmentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EngagementAssignmentDefaultArgs<ExtArgs>>): Prisma__EngagementAssignmentClient<$Result.GetResult<Prisma.$EngagementAssignmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    auditRecords<T extends EngagementTimesheetEntry$auditRecordsArgs<ExtArgs> = {}>(args?: Subset<T, EngagementTimesheetEntry$auditRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EngagementTimesheetEntry model
+   */
+  interface EngagementTimesheetEntryFieldRefs {
+    readonly id: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly engagementAssignmentId: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly workDate: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly hoursWorked: FieldRef<"EngagementTimesheetEntry", 'Decimal'>
+    readonly remarks: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly status: FieldRef<"EngagementTimesheetEntry", 'TimesheetEntryStatus'>
+    readonly submittedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly submittedBy: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly approvedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly approvedBy: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly approvedByHandle: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly approvalComment: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly reopenedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly paidPaymentReference: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly paidAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly createdAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly createdBy: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly updatedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly updatedBy: FieldRef<"EngagementTimesheetEntry", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EngagementTimesheetEntry findUnique
+   */
+  export type EngagementTimesheetEntryFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetEntry to fetch.
+     */
+    where: EngagementTimesheetEntryWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetEntry findUniqueOrThrow
+   */
+  export type EngagementTimesheetEntryFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetEntry to fetch.
+     */
+    where: EngagementTimesheetEntryWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetEntry findFirst
+   */
+  export type EngagementTimesheetEntryFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetEntry to fetch.
+     */
+    where?: EngagementTimesheetEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetEntries to fetch.
+     */
+    orderBy?: EngagementTimesheetEntryOrderByWithRelationInput | EngagementTimesheetEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementTimesheetEntries.
+     */
+    cursor?: EngagementTimesheetEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementTimesheetEntries.
+     */
+    distinct?: EngagementTimesheetEntryScalarFieldEnum | EngagementTimesheetEntryScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementTimesheetEntry findFirstOrThrow
+   */
+  export type EngagementTimesheetEntryFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetEntry to fetch.
+     */
+    where?: EngagementTimesheetEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetEntries to fetch.
+     */
+    orderBy?: EngagementTimesheetEntryOrderByWithRelationInput | EngagementTimesheetEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementTimesheetEntries.
+     */
+    cursor?: EngagementTimesheetEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementTimesheetEntries.
+     */
+    distinct?: EngagementTimesheetEntryScalarFieldEnum | EngagementTimesheetEntryScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementTimesheetEntry findMany
+   */
+  export type EngagementTimesheetEntryFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetEntries to fetch.
+     */
+    where?: EngagementTimesheetEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetEntries to fetch.
+     */
+    orderBy?: EngagementTimesheetEntryOrderByWithRelationInput | EngagementTimesheetEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EngagementTimesheetEntries.
+     */
+    cursor?: EngagementTimesheetEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementTimesheetEntries.
+     */
+    distinct?: EngagementTimesheetEntryScalarFieldEnum | EngagementTimesheetEntryScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementTimesheetEntry create
+   */
+  export type EngagementTimesheetEntryCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * The data needed to create a EngagementTimesheetEntry.
+     */
+    data: XOR<EngagementTimesheetEntryCreateInput, EngagementTimesheetEntryUncheckedCreateInput>
+  }
+
+  /**
+   * EngagementTimesheetEntry createMany
+   */
+  export type EngagementTimesheetEntryCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EngagementTimesheetEntries.
+     */
+    data: EngagementTimesheetEntryCreateManyInput | EngagementTimesheetEntryCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EngagementTimesheetEntry createManyAndReturn
+   */
+  export type EngagementTimesheetEntryCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * The data used to create many EngagementTimesheetEntries.
+     */
+    data: EngagementTimesheetEntryCreateManyInput | EngagementTimesheetEntryCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementTimesheetEntry update
+   */
+  export type EngagementTimesheetEntryUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * The data needed to update a EngagementTimesheetEntry.
+     */
+    data: XOR<EngagementTimesheetEntryUpdateInput, EngagementTimesheetEntryUncheckedUpdateInput>
+    /**
+     * Choose, which EngagementTimesheetEntry to update.
+     */
+    where: EngagementTimesheetEntryWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetEntry updateMany
+   */
+  export type EngagementTimesheetEntryUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EngagementTimesheetEntries.
+     */
+    data: XOR<EngagementTimesheetEntryUpdateManyMutationInput, EngagementTimesheetEntryUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementTimesheetEntries to update
+     */
+    where?: EngagementTimesheetEntryWhereInput
+    /**
+     * Limit how many EngagementTimesheetEntries to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementTimesheetEntry updateManyAndReturn
+   */
+  export type EngagementTimesheetEntryUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * The data used to update EngagementTimesheetEntries.
+     */
+    data: XOR<EngagementTimesheetEntryUpdateManyMutationInput, EngagementTimesheetEntryUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementTimesheetEntries to update
+     */
+    where?: EngagementTimesheetEntryWhereInput
+    /**
+     * Limit how many EngagementTimesheetEntries to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementTimesheetEntry upsert
+   */
+  export type EngagementTimesheetEntryUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * The filter to search for the EngagementTimesheetEntry to update in case it exists.
+     */
+    where: EngagementTimesheetEntryWhereUniqueInput
+    /**
+     * In case the EngagementTimesheetEntry found by the `where` argument doesn't exist, create a new EngagementTimesheetEntry with this data.
+     */
+    create: XOR<EngagementTimesheetEntryCreateInput, EngagementTimesheetEntryUncheckedCreateInput>
+    /**
+     * In case the EngagementTimesheetEntry was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EngagementTimesheetEntryUpdateInput, EngagementTimesheetEntryUncheckedUpdateInput>
+  }
+
+  /**
+   * EngagementTimesheetEntry delete
+   */
+  export type EngagementTimesheetEntryDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    /**
+     * Filter which EngagementTimesheetEntry to delete.
+     */
+    where: EngagementTimesheetEntryWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetEntry deleteMany
+   */
+  export type EngagementTimesheetEntryDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementTimesheetEntries to delete
+     */
+    where?: EngagementTimesheetEntryWhereInput
+    /**
+     * Limit how many EngagementTimesheetEntries to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementTimesheetEntry.auditRecords
+   */
+  export type EngagementTimesheetEntry$auditRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    where?: EngagementTimesheetAuditWhereInput
+    orderBy?: EngagementTimesheetAuditOrderByWithRelationInput | EngagementTimesheetAuditOrderByWithRelationInput[]
+    cursor?: EngagementTimesheetAuditWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EngagementTimesheetAuditScalarFieldEnum | EngagementTimesheetAuditScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementTimesheetEntry without action
+   */
+  export type EngagementTimesheetEntryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model EngagementTimesheetAudit
+   */
+
+  export type AggregateEngagementTimesheetAudit = {
+    _count: EngagementTimesheetAuditCountAggregateOutputType | null
+    _min: EngagementTimesheetAuditMinAggregateOutputType | null
+    _max: EngagementTimesheetAuditMaxAggregateOutputType | null
+  }
+
+  export type EngagementTimesheetAuditMinAggregateOutputType = {
+    id: string | null
+    timesheetEntryId: string | null
+    engagementId: string | null
+    action: $Enums.TimesheetAuditAction | null
+    actorUserId: string | null
+    actorHandle: string | null
+    actorRole: string | null
+    comment: string | null
+    createdAt: Date | null
+  }
+
+  export type EngagementTimesheetAuditMaxAggregateOutputType = {
+    id: string | null
+    timesheetEntryId: string | null
+    engagementId: string | null
+    action: $Enums.TimesheetAuditAction | null
+    actorUserId: string | null
+    actorHandle: string | null
+    actorRole: string | null
+    comment: string | null
+    createdAt: Date | null
+  }
+
+  export type EngagementTimesheetAuditCountAggregateOutputType = {
+    id: number
+    timesheetEntryId: number
+    engagementId: number
+    action: number
+    previousValues: number
+    updatedValues: number
+    actorUserId: number
+    actorHandle: number
+    actorRole: number
+    comment: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type EngagementTimesheetAuditMinAggregateInputType = {
+    id?: true
+    timesheetEntryId?: true
+    engagementId?: true
+    action?: true
+    actorUserId?: true
+    actorHandle?: true
+    actorRole?: true
+    comment?: true
+    createdAt?: true
+  }
+
+  export type EngagementTimesheetAuditMaxAggregateInputType = {
+    id?: true
+    timesheetEntryId?: true
+    engagementId?: true
+    action?: true
+    actorUserId?: true
+    actorHandle?: true
+    actorRole?: true
+    comment?: true
+    createdAt?: true
+  }
+
+  export type EngagementTimesheetAuditCountAggregateInputType = {
+    id?: true
+    timesheetEntryId?: true
+    engagementId?: true
+    action?: true
+    previousValues?: true
+    updatedValues?: true
+    actorUserId?: true
+    actorHandle?: true
+    actorRole?: true
+    comment?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type EngagementTimesheetAuditAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementTimesheetAudit to aggregate.
+     */
+    where?: EngagementTimesheetAuditWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetAudits to fetch.
+     */
+    orderBy?: EngagementTimesheetAuditOrderByWithRelationInput | EngagementTimesheetAuditOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EngagementTimesheetAuditWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetAudits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetAudits.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EngagementTimesheetAudits
+    **/
+    _count?: true | EngagementTimesheetAuditCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EngagementTimesheetAuditMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EngagementTimesheetAuditMaxAggregateInputType
+  }
+
+  export type GetEngagementTimesheetAuditAggregateType<T extends EngagementTimesheetAuditAggregateArgs> = {
+        [P in keyof T & keyof AggregateEngagementTimesheetAudit]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEngagementTimesheetAudit[P]>
+      : GetScalarType<T[P], AggregateEngagementTimesheetAudit[P]>
+  }
+
+
+
+
+  export type EngagementTimesheetAuditGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementTimesheetAuditWhereInput
+    orderBy?: EngagementTimesheetAuditOrderByWithAggregationInput | EngagementTimesheetAuditOrderByWithAggregationInput[]
+    by: EngagementTimesheetAuditScalarFieldEnum[] | EngagementTimesheetAuditScalarFieldEnum
+    having?: EngagementTimesheetAuditScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EngagementTimesheetAuditCountAggregateInputType | true
+    _min?: EngagementTimesheetAuditMinAggregateInputType
+    _max?: EngagementTimesheetAuditMaxAggregateInputType
+  }
+
+  export type EngagementTimesheetAuditGroupByOutputType = {
+    id: string
+    timesheetEntryId: string | null
+    engagementId: string | null
+    action: $Enums.TimesheetAuditAction
+    previousValues: JsonValue | null
+    updatedValues: JsonValue | null
+    actorUserId: string
+    actorHandle: string | null
+    actorRole: string
+    comment: string | null
+    createdAt: Date
+    _count: EngagementTimesheetAuditCountAggregateOutputType | null
+    _min: EngagementTimesheetAuditMinAggregateOutputType | null
+    _max: EngagementTimesheetAuditMaxAggregateOutputType | null
+  }
+
+  type GetEngagementTimesheetAuditGroupByPayload<T extends EngagementTimesheetAuditGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EngagementTimesheetAuditGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EngagementTimesheetAuditGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EngagementTimesheetAuditGroupByOutputType[P]>
+            : GetScalarType<T[P], EngagementTimesheetAuditGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EngagementTimesheetAuditSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    timesheetEntryId?: boolean
+    engagementId?: boolean
+    action?: boolean
+    previousValues?: boolean
+    updatedValues?: boolean
+    actorUserId?: boolean
+    actorHandle?: boolean
+    actorRole?: boolean
+    comment?: boolean
+    createdAt?: boolean
+    entry?: boolean | EngagementTimesheetAudit$entryArgs<ExtArgs>
+    engagement?: boolean | EngagementTimesheetAudit$engagementArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementTimesheetAudit"]>
+
+  export type EngagementTimesheetAuditSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    timesheetEntryId?: boolean
+    engagementId?: boolean
+    action?: boolean
+    previousValues?: boolean
+    updatedValues?: boolean
+    actorUserId?: boolean
+    actorHandle?: boolean
+    actorRole?: boolean
+    comment?: boolean
+    createdAt?: boolean
+    entry?: boolean | EngagementTimesheetAudit$entryArgs<ExtArgs>
+    engagement?: boolean | EngagementTimesheetAudit$engagementArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementTimesheetAudit"]>
+
+  export type EngagementTimesheetAuditSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    timesheetEntryId?: boolean
+    engagementId?: boolean
+    action?: boolean
+    previousValues?: boolean
+    updatedValues?: boolean
+    actorUserId?: boolean
+    actorHandle?: boolean
+    actorRole?: boolean
+    comment?: boolean
+    createdAt?: boolean
+    entry?: boolean | EngagementTimesheetAudit$entryArgs<ExtArgs>
+    engagement?: boolean | EngagementTimesheetAudit$engagementArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementTimesheetAudit"]>
+
+  export type EngagementTimesheetAuditSelectScalar = {
+    id?: boolean
+    timesheetEntryId?: boolean
+    engagementId?: boolean
+    action?: boolean
+    previousValues?: boolean
+    updatedValues?: boolean
+    actorUserId?: boolean
+    actorHandle?: boolean
+    actorRole?: boolean
+    comment?: boolean
+    createdAt?: boolean
+  }
+
+  export type EngagementTimesheetAuditOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "timesheetEntryId" | "engagementId" | "action" | "previousValues" | "updatedValues" | "actorUserId" | "actorHandle" | "actorRole" | "comment" | "createdAt", ExtArgs["result"]["engagementTimesheetAudit"]>
+  export type EngagementTimesheetAuditInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entry?: boolean | EngagementTimesheetAudit$entryArgs<ExtArgs>
+    engagement?: boolean | EngagementTimesheetAudit$engagementArgs<ExtArgs>
+  }
+  export type EngagementTimesheetAuditIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entry?: boolean | EngagementTimesheetAudit$entryArgs<ExtArgs>
+    engagement?: boolean | EngagementTimesheetAudit$engagementArgs<ExtArgs>
+  }
+  export type EngagementTimesheetAuditIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entry?: boolean | EngagementTimesheetAudit$entryArgs<ExtArgs>
+    engagement?: boolean | EngagementTimesheetAudit$engagementArgs<ExtArgs>
+  }
+
+  export type $EngagementTimesheetAuditPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EngagementTimesheetAudit"
+    objects: {
+      entry: Prisma.$EngagementTimesheetEntryPayload<ExtArgs> | null
+      engagement: Prisma.$EngagementPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      timesheetEntryId: string | null
+      engagementId: string | null
+      action: $Enums.TimesheetAuditAction
+      previousValues: Prisma.JsonValue | null
+      updatedValues: Prisma.JsonValue | null
+      actorUserId: string
+      actorHandle: string | null
+      actorRole: string
+      comment: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["engagementTimesheetAudit"]>
+    composites: {}
+  }
+
+  type EngagementTimesheetAuditGetPayload<S extends boolean | null | undefined | EngagementTimesheetAuditDefaultArgs> = $Result.GetResult<Prisma.$EngagementTimesheetAuditPayload, S>
+
+  type EngagementTimesheetAuditCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EngagementTimesheetAuditFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EngagementTimesheetAuditCountAggregateInputType | true
+    }
+
+  export interface EngagementTimesheetAuditDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EngagementTimesheetAudit'], meta: { name: 'EngagementTimesheetAudit' } }
+    /**
+     * Find zero or one EngagementTimesheetAudit that matches the filter.
+     * @param {EngagementTimesheetAuditFindUniqueArgs} args - Arguments to find a EngagementTimesheetAudit
+     * @example
+     * // Get one EngagementTimesheetAudit
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EngagementTimesheetAuditFindUniqueArgs>(args: SelectSubset<T, EngagementTimesheetAuditFindUniqueArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EngagementTimesheetAudit that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EngagementTimesheetAuditFindUniqueOrThrowArgs} args - Arguments to find a EngagementTimesheetAudit
+     * @example
+     * // Get one EngagementTimesheetAudit
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EngagementTimesheetAuditFindUniqueOrThrowArgs>(args: SelectSubset<T, EngagementTimesheetAuditFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementTimesheetAudit that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetAuditFindFirstArgs} args - Arguments to find a EngagementTimesheetAudit
+     * @example
+     * // Get one EngagementTimesheetAudit
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EngagementTimesheetAuditFindFirstArgs>(args?: SelectSubset<T, EngagementTimesheetAuditFindFirstArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementTimesheetAudit that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetAuditFindFirstOrThrowArgs} args - Arguments to find a EngagementTimesheetAudit
+     * @example
+     * // Get one EngagementTimesheetAudit
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EngagementTimesheetAuditFindFirstOrThrowArgs>(args?: SelectSubset<T, EngagementTimesheetAuditFindFirstOrThrowArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EngagementTimesheetAudits that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetAuditFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EngagementTimesheetAudits
+     * const engagementTimesheetAudits = await prisma.engagementTimesheetAudit.findMany()
+     * 
+     * // Get first 10 EngagementTimesheetAudits
+     * const engagementTimesheetAudits = await prisma.engagementTimesheetAudit.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const engagementTimesheetAuditWithIdOnly = await prisma.engagementTimesheetAudit.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EngagementTimesheetAuditFindManyArgs>(args?: SelectSubset<T, EngagementTimesheetAuditFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EngagementTimesheetAudit.
+     * @param {EngagementTimesheetAuditCreateArgs} args - Arguments to create a EngagementTimesheetAudit.
+     * @example
+     * // Create one EngagementTimesheetAudit
+     * const EngagementTimesheetAudit = await prisma.engagementTimesheetAudit.create({
+     *   data: {
+     *     // ... data to create a EngagementTimesheetAudit
+     *   }
+     * })
+     * 
+     */
+    create<T extends EngagementTimesheetAuditCreateArgs>(args: SelectSubset<T, EngagementTimesheetAuditCreateArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EngagementTimesheetAudits.
+     * @param {EngagementTimesheetAuditCreateManyArgs} args - Arguments to create many EngagementTimesheetAudits.
+     * @example
+     * // Create many EngagementTimesheetAudits
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EngagementTimesheetAuditCreateManyArgs>(args?: SelectSubset<T, EngagementTimesheetAuditCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many EngagementTimesheetAudits and returns the data saved in the database.
+     * @param {EngagementTimesheetAuditCreateManyAndReturnArgs} args - Arguments to create many EngagementTimesheetAudits.
+     * @example
+     * // Create many EngagementTimesheetAudits
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many EngagementTimesheetAudits and only return the `id`
+     * const engagementTimesheetAuditWithIdOnly = await prisma.engagementTimesheetAudit.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends EngagementTimesheetAuditCreateManyAndReturnArgs>(args?: SelectSubset<T, EngagementTimesheetAuditCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a EngagementTimesheetAudit.
+     * @param {EngagementTimesheetAuditDeleteArgs} args - Arguments to delete one EngagementTimesheetAudit.
+     * @example
+     * // Delete one EngagementTimesheetAudit
+     * const EngagementTimesheetAudit = await prisma.engagementTimesheetAudit.delete({
+     *   where: {
+     *     // ... filter to delete one EngagementTimesheetAudit
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EngagementTimesheetAuditDeleteArgs>(args: SelectSubset<T, EngagementTimesheetAuditDeleteArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EngagementTimesheetAudit.
+     * @param {EngagementTimesheetAuditUpdateArgs} args - Arguments to update one EngagementTimesheetAudit.
+     * @example
+     * // Update one EngagementTimesheetAudit
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EngagementTimesheetAuditUpdateArgs>(args: SelectSubset<T, EngagementTimesheetAuditUpdateArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EngagementTimesheetAudits.
+     * @param {EngagementTimesheetAuditDeleteManyArgs} args - Arguments to filter EngagementTimesheetAudits to delete.
+     * @example
+     * // Delete a few EngagementTimesheetAudits
+     * const { count } = await prisma.engagementTimesheetAudit.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EngagementTimesheetAuditDeleteManyArgs>(args?: SelectSubset<T, EngagementTimesheetAuditDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementTimesheetAudits.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetAuditUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EngagementTimesheetAudits
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EngagementTimesheetAuditUpdateManyArgs>(args: SelectSubset<T, EngagementTimesheetAuditUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementTimesheetAudits and returns the data updated in the database.
+     * @param {EngagementTimesheetAuditUpdateManyAndReturnArgs} args - Arguments to update many EngagementTimesheetAudits.
+     * @example
+     * // Update many EngagementTimesheetAudits
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more EngagementTimesheetAudits and only return the `id`
+     * const engagementTimesheetAuditWithIdOnly = await prisma.engagementTimesheetAudit.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends EngagementTimesheetAuditUpdateManyAndReturnArgs>(args: SelectSubset<T, EngagementTimesheetAuditUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one EngagementTimesheetAudit.
+     * @param {EngagementTimesheetAuditUpsertArgs} args - Arguments to update or create a EngagementTimesheetAudit.
+     * @example
+     * // Update or create a EngagementTimesheetAudit
+     * const engagementTimesheetAudit = await prisma.engagementTimesheetAudit.upsert({
+     *   create: {
+     *     // ... data to create a EngagementTimesheetAudit
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EngagementTimesheetAudit we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EngagementTimesheetAuditUpsertArgs>(args: SelectSubset<T, EngagementTimesheetAuditUpsertArgs<ExtArgs>>): Prisma__EngagementTimesheetAuditClient<$Result.GetResult<Prisma.$EngagementTimesheetAuditPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EngagementTimesheetAudits.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetAuditCountArgs} args - Arguments to filter EngagementTimesheetAudits to count.
+     * @example
+     * // Count the number of EngagementTimesheetAudits
+     * const count = await prisma.engagementTimesheetAudit.count({
+     *   where: {
+     *     // ... the filter for the EngagementTimesheetAudits we want to count
+     *   }
+     * })
+    **/
+    count<T extends EngagementTimesheetAuditCountArgs>(
+      args?: Subset<T, EngagementTimesheetAuditCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EngagementTimesheetAuditCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EngagementTimesheetAudit.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetAuditAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EngagementTimesheetAuditAggregateArgs>(args: Subset<T, EngagementTimesheetAuditAggregateArgs>): Prisma.PrismaPromise<GetEngagementTimesheetAuditAggregateType<T>>
+
+    /**
+     * Group by EngagementTimesheetAudit.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementTimesheetAuditGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EngagementTimesheetAuditGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EngagementTimesheetAuditGroupByArgs['orderBy'] }
+        : { orderBy?: EngagementTimesheetAuditGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EngagementTimesheetAuditGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEngagementTimesheetAuditGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EngagementTimesheetAudit model
+   */
+  readonly fields: EngagementTimesheetAuditFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EngagementTimesheetAudit.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EngagementTimesheetAuditClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    entry<T extends EngagementTimesheetAudit$entryArgs<ExtArgs> = {}>(args?: Subset<T, EngagementTimesheetAudit$entryArgs<ExtArgs>>): Prisma__EngagementTimesheetEntryClient<$Result.GetResult<Prisma.$EngagementTimesheetEntryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    engagement<T extends EngagementTimesheetAudit$engagementArgs<ExtArgs> = {}>(args?: Subset<T, EngagementTimesheetAudit$engagementArgs<ExtArgs>>): Prisma__EngagementClient<$Result.GetResult<Prisma.$EngagementPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EngagementTimesheetAudit model
+   */
+  interface EngagementTimesheetAuditFieldRefs {
+    readonly id: FieldRef<"EngagementTimesheetAudit", 'String'>
+    readonly timesheetEntryId: FieldRef<"EngagementTimesheetAudit", 'String'>
+    readonly engagementId: FieldRef<"EngagementTimesheetAudit", 'String'>
+    readonly action: FieldRef<"EngagementTimesheetAudit", 'TimesheetAuditAction'>
+    readonly previousValues: FieldRef<"EngagementTimesheetAudit", 'Json'>
+    readonly updatedValues: FieldRef<"EngagementTimesheetAudit", 'Json'>
+    readonly actorUserId: FieldRef<"EngagementTimesheetAudit", 'String'>
+    readonly actorHandle: FieldRef<"EngagementTimesheetAudit", 'String'>
+    readonly actorRole: FieldRef<"EngagementTimesheetAudit", 'String'>
+    readonly comment: FieldRef<"EngagementTimesheetAudit", 'String'>
+    readonly createdAt: FieldRef<"EngagementTimesheetAudit", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EngagementTimesheetAudit findUnique
+   */
+  export type EngagementTimesheetAuditFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetAudit to fetch.
+     */
+    where: EngagementTimesheetAuditWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetAudit findUniqueOrThrow
+   */
+  export type EngagementTimesheetAuditFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetAudit to fetch.
+     */
+    where: EngagementTimesheetAuditWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetAudit findFirst
+   */
+  export type EngagementTimesheetAuditFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetAudit to fetch.
+     */
+    where?: EngagementTimesheetAuditWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetAudits to fetch.
+     */
+    orderBy?: EngagementTimesheetAuditOrderByWithRelationInput | EngagementTimesheetAuditOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementTimesheetAudits.
+     */
+    cursor?: EngagementTimesheetAuditWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetAudits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetAudits.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementTimesheetAudits.
+     */
+    distinct?: EngagementTimesheetAuditScalarFieldEnum | EngagementTimesheetAuditScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementTimesheetAudit findFirstOrThrow
+   */
+  export type EngagementTimesheetAuditFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetAudit to fetch.
+     */
+    where?: EngagementTimesheetAuditWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetAudits to fetch.
+     */
+    orderBy?: EngagementTimesheetAuditOrderByWithRelationInput | EngagementTimesheetAuditOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementTimesheetAudits.
+     */
+    cursor?: EngagementTimesheetAuditWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetAudits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetAudits.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementTimesheetAudits.
+     */
+    distinct?: EngagementTimesheetAuditScalarFieldEnum | EngagementTimesheetAuditScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementTimesheetAudit findMany
+   */
+  export type EngagementTimesheetAuditFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementTimesheetAudits to fetch.
+     */
+    where?: EngagementTimesheetAuditWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementTimesheetAudits to fetch.
+     */
+    orderBy?: EngagementTimesheetAuditOrderByWithRelationInput | EngagementTimesheetAuditOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EngagementTimesheetAudits.
+     */
+    cursor?: EngagementTimesheetAuditWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementTimesheetAudits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementTimesheetAudits.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementTimesheetAudits.
+     */
+    distinct?: EngagementTimesheetAuditScalarFieldEnum | EngagementTimesheetAuditScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementTimesheetAudit create
+   */
+  export type EngagementTimesheetAuditCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * The data needed to create a EngagementTimesheetAudit.
+     */
+    data: XOR<EngagementTimesheetAuditCreateInput, EngagementTimesheetAuditUncheckedCreateInput>
+  }
+
+  /**
+   * EngagementTimesheetAudit createMany
+   */
+  export type EngagementTimesheetAuditCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EngagementTimesheetAudits.
+     */
+    data: EngagementTimesheetAuditCreateManyInput | EngagementTimesheetAuditCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EngagementTimesheetAudit createManyAndReturn
+   */
+  export type EngagementTimesheetAuditCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * The data used to create many EngagementTimesheetAudits.
+     */
+    data: EngagementTimesheetAuditCreateManyInput | EngagementTimesheetAuditCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementTimesheetAudit update
+   */
+  export type EngagementTimesheetAuditUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * The data needed to update a EngagementTimesheetAudit.
+     */
+    data: XOR<EngagementTimesheetAuditUpdateInput, EngagementTimesheetAuditUncheckedUpdateInput>
+    /**
+     * Choose, which EngagementTimesheetAudit to update.
+     */
+    where: EngagementTimesheetAuditWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetAudit updateMany
+   */
+  export type EngagementTimesheetAuditUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EngagementTimesheetAudits.
+     */
+    data: XOR<EngagementTimesheetAuditUpdateManyMutationInput, EngagementTimesheetAuditUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementTimesheetAudits to update
+     */
+    where?: EngagementTimesheetAuditWhereInput
+    /**
+     * Limit how many EngagementTimesheetAudits to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementTimesheetAudit updateManyAndReturn
+   */
+  export type EngagementTimesheetAuditUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * The data used to update EngagementTimesheetAudits.
+     */
+    data: XOR<EngagementTimesheetAuditUpdateManyMutationInput, EngagementTimesheetAuditUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementTimesheetAudits to update
+     */
+    where?: EngagementTimesheetAuditWhereInput
+    /**
+     * Limit how many EngagementTimesheetAudits to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementTimesheetAudit upsert
+   */
+  export type EngagementTimesheetAuditUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * The filter to search for the EngagementTimesheetAudit to update in case it exists.
+     */
+    where: EngagementTimesheetAuditWhereUniqueInput
+    /**
+     * In case the EngagementTimesheetAudit found by the `where` argument doesn't exist, create a new EngagementTimesheetAudit with this data.
+     */
+    create: XOR<EngagementTimesheetAuditCreateInput, EngagementTimesheetAuditUncheckedCreateInput>
+    /**
+     * In case the EngagementTimesheetAudit was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EngagementTimesheetAuditUpdateInput, EngagementTimesheetAuditUncheckedUpdateInput>
+  }
+
+  /**
+   * EngagementTimesheetAudit delete
+   */
+  export type EngagementTimesheetAuditDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+    /**
+     * Filter which EngagementTimesheetAudit to delete.
+     */
+    where: EngagementTimesheetAuditWhereUniqueInput
+  }
+
+  /**
+   * EngagementTimesheetAudit deleteMany
+   */
+  export type EngagementTimesheetAuditDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementTimesheetAudits to delete
+     */
+    where?: EngagementTimesheetAuditWhereInput
+    /**
+     * Limit how many EngagementTimesheetAudits to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementTimesheetAudit.entry
+   */
+  export type EngagementTimesheetAudit$entryArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetEntry
+     */
+    select?: EngagementTimesheetEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetEntry
+     */
+    omit?: EngagementTimesheetEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetEntryInclude<ExtArgs> | null
+    where?: EngagementTimesheetEntryWhereInput
+  }
+
+  /**
+   * EngagementTimesheetAudit.engagement
+   */
+  export type EngagementTimesheetAudit$engagementArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Engagement
+     */
+    select?: EngagementSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Engagement
+     */
+    omit?: EngagementOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementInclude<ExtArgs> | null
+    where?: EngagementWhereInput
+  }
+
+  /**
+   * EngagementTimesheetAudit without action
+   */
+  export type EngagementTimesheetAuditDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementTimesheetAudit
+     */
+    select?: EngagementTimesheetAuditSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementTimesheetAudit
+     */
+    omit?: EngagementTimesheetAuditOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementTimesheetAuditInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model EngagementManager
+   */
+
+  export type AggregateEngagementManager = {
+    _count: EngagementManagerCountAggregateOutputType | null
+    _min: EngagementManagerMinAggregateOutputType | null
+    _max: EngagementManagerMaxAggregateOutputType | null
+  }
+
+  export type EngagementManagerMinAggregateOutputType = {
+    id: string | null
+    engagementId: string | null
+    managerUserId: string | null
+    managerHandle: string | null
+    managerName: string | null
+    createdAt: Date | null
+    createdBy: string | null
+    removedAt: Date | null
+    removedBy: string | null
+  }
+
+  export type EngagementManagerMaxAggregateOutputType = {
+    id: string | null
+    engagementId: string | null
+    managerUserId: string | null
+    managerHandle: string | null
+    managerName: string | null
+    createdAt: Date | null
+    createdBy: string | null
+    removedAt: Date | null
+    removedBy: string | null
+  }
+
+  export type EngagementManagerCountAggregateOutputType = {
+    id: number
+    engagementId: number
+    managerUserId: number
+    managerHandle: number
+    managerName: number
+    createdAt: number
+    createdBy: number
+    removedAt: number
+    removedBy: number
+    _all: number
+  }
+
+
+  export type EngagementManagerMinAggregateInputType = {
+    id?: true
+    engagementId?: true
+    managerUserId?: true
+    managerHandle?: true
+    managerName?: true
+    createdAt?: true
+    createdBy?: true
+    removedAt?: true
+    removedBy?: true
+  }
+
+  export type EngagementManagerMaxAggregateInputType = {
+    id?: true
+    engagementId?: true
+    managerUserId?: true
+    managerHandle?: true
+    managerName?: true
+    createdAt?: true
+    createdBy?: true
+    removedAt?: true
+    removedBy?: true
+  }
+
+  export type EngagementManagerCountAggregateInputType = {
+    id?: true
+    engagementId?: true
+    managerUserId?: true
+    managerHandle?: true
+    managerName?: true
+    createdAt?: true
+    createdBy?: true
+    removedAt?: true
+    removedBy?: true
+    _all?: true
+  }
+
+  export type EngagementManagerAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementManager to aggregate.
+     */
+    where?: EngagementManagerWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementManagers to fetch.
+     */
+    orderBy?: EngagementManagerOrderByWithRelationInput | EngagementManagerOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EngagementManagerWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementManagers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementManagers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EngagementManagers
+    **/
+    _count?: true | EngagementManagerCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EngagementManagerMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EngagementManagerMaxAggregateInputType
+  }
+
+  export type GetEngagementManagerAggregateType<T extends EngagementManagerAggregateArgs> = {
+        [P in keyof T & keyof AggregateEngagementManager]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEngagementManager[P]>
+      : GetScalarType<T[P], AggregateEngagementManager[P]>
+  }
+
+
+
+
+  export type EngagementManagerGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementManagerWhereInput
+    orderBy?: EngagementManagerOrderByWithAggregationInput | EngagementManagerOrderByWithAggregationInput[]
+    by: EngagementManagerScalarFieldEnum[] | EngagementManagerScalarFieldEnum
+    having?: EngagementManagerScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EngagementManagerCountAggregateInputType | true
+    _min?: EngagementManagerMinAggregateInputType
+    _max?: EngagementManagerMaxAggregateInputType
+  }
+
+  export type EngagementManagerGroupByOutputType = {
+    id: string
+    engagementId: string
+    managerUserId: string
+    managerHandle: string
+    managerName: string | null
+    createdAt: Date
+    createdBy: string
+    removedAt: Date | null
+    removedBy: string | null
+    _count: EngagementManagerCountAggregateOutputType | null
+    _min: EngagementManagerMinAggregateOutputType | null
+    _max: EngagementManagerMaxAggregateOutputType | null
+  }
+
+  type GetEngagementManagerGroupByPayload<T extends EngagementManagerGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EngagementManagerGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EngagementManagerGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EngagementManagerGroupByOutputType[P]>
+            : GetScalarType<T[P], EngagementManagerGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EngagementManagerSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementId?: boolean
+    managerUserId?: boolean
+    managerHandle?: boolean
+    managerName?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    removedAt?: boolean
+    removedBy?: boolean
+    engagement?: boolean | EngagementDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementManager"]>
+
+  export type EngagementManagerSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementId?: boolean
+    managerUserId?: boolean
+    managerHandle?: boolean
+    managerName?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    removedAt?: boolean
+    removedBy?: boolean
+    engagement?: boolean | EngagementDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementManager"]>
+
+  export type EngagementManagerSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementId?: boolean
+    managerUserId?: boolean
+    managerHandle?: boolean
+    managerName?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    removedAt?: boolean
+    removedBy?: boolean
+    engagement?: boolean | EngagementDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementManager"]>
+
+  export type EngagementManagerSelectScalar = {
+    id?: boolean
+    engagementId?: boolean
+    managerUserId?: boolean
+    managerHandle?: boolean
+    managerName?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    removedAt?: boolean
+    removedBy?: boolean
+  }
+
+  export type EngagementManagerOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "managerUserId" | "managerHandle" | "managerName" | "createdAt" | "createdBy" | "removedAt" | "removedBy", ExtArgs["result"]["engagementManager"]>
+  export type EngagementManagerInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    engagement?: boolean | EngagementDefaultArgs<ExtArgs>
+  }
+  export type EngagementManagerIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    engagement?: boolean | EngagementDefaultArgs<ExtArgs>
+  }
+  export type EngagementManagerIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    engagement?: boolean | EngagementDefaultArgs<ExtArgs>
+  }
+
+  export type $EngagementManagerPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EngagementManager"
+    objects: {
+      engagement: Prisma.$EngagementPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      engagementId: string
+      managerUserId: string
+      managerHandle: string
+      managerName: string | null
+      createdAt: Date
+      createdBy: string
+      /**
+       * Soft delete. Removing a manager must not strand the approval records that name them, and the
+       * audit history has to survive removal. `removedAt IS NULL` is the "is currently a manager"
+       * predicate.
+       */
+      removedAt: Date | null
+      removedBy: string | null
+    }, ExtArgs["result"]["engagementManager"]>
+    composites: {}
+  }
+
+  type EngagementManagerGetPayload<S extends boolean | null | undefined | EngagementManagerDefaultArgs> = $Result.GetResult<Prisma.$EngagementManagerPayload, S>
+
+  type EngagementManagerCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EngagementManagerFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EngagementManagerCountAggregateInputType | true
+    }
+
+  export interface EngagementManagerDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EngagementManager'], meta: { name: 'EngagementManager' } }
+    /**
+     * Find zero or one EngagementManager that matches the filter.
+     * @param {EngagementManagerFindUniqueArgs} args - Arguments to find a EngagementManager
+     * @example
+     * // Get one EngagementManager
+     * const engagementManager = await prisma.engagementManager.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EngagementManagerFindUniqueArgs>(args: SelectSubset<T, EngagementManagerFindUniqueArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EngagementManager that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EngagementManagerFindUniqueOrThrowArgs} args - Arguments to find a EngagementManager
+     * @example
+     * // Get one EngagementManager
+     * const engagementManager = await prisma.engagementManager.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EngagementManagerFindUniqueOrThrowArgs>(args: SelectSubset<T, EngagementManagerFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementManager that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementManagerFindFirstArgs} args - Arguments to find a EngagementManager
+     * @example
+     * // Get one EngagementManager
+     * const engagementManager = await prisma.engagementManager.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EngagementManagerFindFirstArgs>(args?: SelectSubset<T, EngagementManagerFindFirstArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementManager that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementManagerFindFirstOrThrowArgs} args - Arguments to find a EngagementManager
+     * @example
+     * // Get one EngagementManager
+     * const engagementManager = await prisma.engagementManager.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EngagementManagerFindFirstOrThrowArgs>(args?: SelectSubset<T, EngagementManagerFindFirstOrThrowArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EngagementManagers that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementManagerFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EngagementManagers
+     * const engagementManagers = await prisma.engagementManager.findMany()
+     * 
+     * // Get first 10 EngagementManagers
+     * const engagementManagers = await prisma.engagementManager.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const engagementManagerWithIdOnly = await prisma.engagementManager.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EngagementManagerFindManyArgs>(args?: SelectSubset<T, EngagementManagerFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EngagementManager.
+     * @param {EngagementManagerCreateArgs} args - Arguments to create a EngagementManager.
+     * @example
+     * // Create one EngagementManager
+     * const EngagementManager = await prisma.engagementManager.create({
+     *   data: {
+     *     // ... data to create a EngagementManager
+     *   }
+     * })
+     * 
+     */
+    create<T extends EngagementManagerCreateArgs>(args: SelectSubset<T, EngagementManagerCreateArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EngagementManagers.
+     * @param {EngagementManagerCreateManyArgs} args - Arguments to create many EngagementManagers.
+     * @example
+     * // Create many EngagementManagers
+     * const engagementManager = await prisma.engagementManager.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EngagementManagerCreateManyArgs>(args?: SelectSubset<T, EngagementManagerCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many EngagementManagers and returns the data saved in the database.
+     * @param {EngagementManagerCreateManyAndReturnArgs} args - Arguments to create many EngagementManagers.
+     * @example
+     * // Create many EngagementManagers
+     * const engagementManager = await prisma.engagementManager.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many EngagementManagers and only return the `id`
+     * const engagementManagerWithIdOnly = await prisma.engagementManager.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends EngagementManagerCreateManyAndReturnArgs>(args?: SelectSubset<T, EngagementManagerCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a EngagementManager.
+     * @param {EngagementManagerDeleteArgs} args - Arguments to delete one EngagementManager.
+     * @example
+     * // Delete one EngagementManager
+     * const EngagementManager = await prisma.engagementManager.delete({
+     *   where: {
+     *     // ... filter to delete one EngagementManager
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EngagementManagerDeleteArgs>(args: SelectSubset<T, EngagementManagerDeleteArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EngagementManager.
+     * @param {EngagementManagerUpdateArgs} args - Arguments to update one EngagementManager.
+     * @example
+     * // Update one EngagementManager
+     * const engagementManager = await prisma.engagementManager.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EngagementManagerUpdateArgs>(args: SelectSubset<T, EngagementManagerUpdateArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EngagementManagers.
+     * @param {EngagementManagerDeleteManyArgs} args - Arguments to filter EngagementManagers to delete.
+     * @example
+     * // Delete a few EngagementManagers
+     * const { count } = await prisma.engagementManager.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EngagementManagerDeleteManyArgs>(args?: SelectSubset<T, EngagementManagerDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementManagers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementManagerUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EngagementManagers
+     * const engagementManager = await prisma.engagementManager.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EngagementManagerUpdateManyArgs>(args: SelectSubset<T, EngagementManagerUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementManagers and returns the data updated in the database.
+     * @param {EngagementManagerUpdateManyAndReturnArgs} args - Arguments to update many EngagementManagers.
+     * @example
+     * // Update many EngagementManagers
+     * const engagementManager = await prisma.engagementManager.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more EngagementManagers and only return the `id`
+     * const engagementManagerWithIdOnly = await prisma.engagementManager.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends EngagementManagerUpdateManyAndReturnArgs>(args: SelectSubset<T, EngagementManagerUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one EngagementManager.
+     * @param {EngagementManagerUpsertArgs} args - Arguments to update or create a EngagementManager.
+     * @example
+     * // Update or create a EngagementManager
+     * const engagementManager = await prisma.engagementManager.upsert({
+     *   create: {
+     *     // ... data to create a EngagementManager
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EngagementManager we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EngagementManagerUpsertArgs>(args: SelectSubset<T, EngagementManagerUpsertArgs<ExtArgs>>): Prisma__EngagementManagerClient<$Result.GetResult<Prisma.$EngagementManagerPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EngagementManagers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementManagerCountArgs} args - Arguments to filter EngagementManagers to count.
+     * @example
+     * // Count the number of EngagementManagers
+     * const count = await prisma.engagementManager.count({
+     *   where: {
+     *     // ... the filter for the EngagementManagers we want to count
+     *   }
+     * })
+    **/
+    count<T extends EngagementManagerCountArgs>(
+      args?: Subset<T, EngagementManagerCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EngagementManagerCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EngagementManager.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementManagerAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EngagementManagerAggregateArgs>(args: Subset<T, EngagementManagerAggregateArgs>): Prisma.PrismaPromise<GetEngagementManagerAggregateType<T>>
+
+    /**
+     * Group by EngagementManager.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementManagerGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EngagementManagerGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EngagementManagerGroupByArgs['orderBy'] }
+        : { orderBy?: EngagementManagerGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EngagementManagerGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEngagementManagerGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EngagementManager model
+   */
+  readonly fields: EngagementManagerFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EngagementManager.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EngagementManagerClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    engagement<T extends EngagementDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EngagementDefaultArgs<ExtArgs>>): Prisma__EngagementClient<$Result.GetResult<Prisma.$EngagementPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EngagementManager model
+   */
+  interface EngagementManagerFieldRefs {
+    readonly id: FieldRef<"EngagementManager", 'String'>
+    readonly engagementId: FieldRef<"EngagementManager", 'String'>
+    readonly managerUserId: FieldRef<"EngagementManager", 'String'>
+    readonly managerHandle: FieldRef<"EngagementManager", 'String'>
+    readonly managerName: FieldRef<"EngagementManager", 'String'>
+    readonly createdAt: FieldRef<"EngagementManager", 'DateTime'>
+    readonly createdBy: FieldRef<"EngagementManager", 'String'>
+    readonly removedAt: FieldRef<"EngagementManager", 'DateTime'>
+    readonly removedBy: FieldRef<"EngagementManager", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EngagementManager findUnique
+   */
+  export type EngagementManagerFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementManager to fetch.
+     */
+    where: EngagementManagerWhereUniqueInput
+  }
+
+  /**
+   * EngagementManager findUniqueOrThrow
+   */
+  export type EngagementManagerFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementManager to fetch.
+     */
+    where: EngagementManagerWhereUniqueInput
+  }
+
+  /**
+   * EngagementManager findFirst
+   */
+  export type EngagementManagerFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementManager to fetch.
+     */
+    where?: EngagementManagerWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementManagers to fetch.
+     */
+    orderBy?: EngagementManagerOrderByWithRelationInput | EngagementManagerOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementManagers.
+     */
+    cursor?: EngagementManagerWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementManagers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementManagers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementManagers.
+     */
+    distinct?: EngagementManagerScalarFieldEnum | EngagementManagerScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementManager findFirstOrThrow
+   */
+  export type EngagementManagerFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementManager to fetch.
+     */
+    where?: EngagementManagerWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementManagers to fetch.
+     */
+    orderBy?: EngagementManagerOrderByWithRelationInput | EngagementManagerOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementManagers.
+     */
+    cursor?: EngagementManagerWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementManagers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementManagers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementManagers.
+     */
+    distinct?: EngagementManagerScalarFieldEnum | EngagementManagerScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementManager findMany
+   */
+  export type EngagementManagerFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementManagers to fetch.
+     */
+    where?: EngagementManagerWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementManagers to fetch.
+     */
+    orderBy?: EngagementManagerOrderByWithRelationInput | EngagementManagerOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EngagementManagers.
+     */
+    cursor?: EngagementManagerWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementManagers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementManagers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementManagers.
+     */
+    distinct?: EngagementManagerScalarFieldEnum | EngagementManagerScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementManager create
+   */
+  export type EngagementManagerCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * The data needed to create a EngagementManager.
+     */
+    data: XOR<EngagementManagerCreateInput, EngagementManagerUncheckedCreateInput>
+  }
+
+  /**
+   * EngagementManager createMany
+   */
+  export type EngagementManagerCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EngagementManagers.
+     */
+    data: EngagementManagerCreateManyInput | EngagementManagerCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EngagementManager createManyAndReturn
+   */
+  export type EngagementManagerCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * The data used to create many EngagementManagers.
+     */
+    data: EngagementManagerCreateManyInput | EngagementManagerCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementManager update
+   */
+  export type EngagementManagerUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * The data needed to update a EngagementManager.
+     */
+    data: XOR<EngagementManagerUpdateInput, EngagementManagerUncheckedUpdateInput>
+    /**
+     * Choose, which EngagementManager to update.
+     */
+    where: EngagementManagerWhereUniqueInput
+  }
+
+  /**
+   * EngagementManager updateMany
+   */
+  export type EngagementManagerUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EngagementManagers.
+     */
+    data: XOR<EngagementManagerUpdateManyMutationInput, EngagementManagerUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementManagers to update
+     */
+    where?: EngagementManagerWhereInput
+    /**
+     * Limit how many EngagementManagers to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementManager updateManyAndReturn
+   */
+  export type EngagementManagerUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * The data used to update EngagementManagers.
+     */
+    data: XOR<EngagementManagerUpdateManyMutationInput, EngagementManagerUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementManagers to update
+     */
+    where?: EngagementManagerWhereInput
+    /**
+     * Limit how many EngagementManagers to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementManager upsert
+   */
+  export type EngagementManagerUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * The filter to search for the EngagementManager to update in case it exists.
+     */
+    where: EngagementManagerWhereUniqueInput
+    /**
+     * In case the EngagementManager found by the `where` argument doesn't exist, create a new EngagementManager with this data.
+     */
+    create: XOR<EngagementManagerCreateInput, EngagementManagerUncheckedCreateInput>
+    /**
+     * In case the EngagementManager was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EngagementManagerUpdateInput, EngagementManagerUncheckedUpdateInput>
+  }
+
+  /**
+   * EngagementManager delete
+   */
+  export type EngagementManagerDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+    /**
+     * Filter which EngagementManager to delete.
+     */
+    where: EngagementManagerWhereUniqueInput
+  }
+
+  /**
+   * EngagementManager deleteMany
+   */
+  export type EngagementManagerDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementManagers to delete
+     */
+    where?: EngagementManagerWhereInput
+    /**
+     * Limit how many EngagementManagers to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementManager without action
+   */
+  export type EngagementManagerDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementManager
+     */
+    select?: EngagementManagerSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementManager
+     */
+    omit?: EngagementManagerOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementManagerInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -7765,9 +13377,12 @@ export namespace Prisma {
     mobileNumber: 'mobileNumber',
     coverLetter: 'coverLetter',
     resumeUrl: 'resumeUrl',
+    cvFileUrl: 'cvFileUrl',
     portfolioUrls: 'portfolioUrls',
     yearsOfExperience: 'yearsOfExperience',
     availability: 'availability',
+    expectedPayRate: 'expectedPayRate',
+    referralSource: 'referralSource',
     status: 'status',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
@@ -7787,6 +13402,7 @@ export namespace Prisma {
     ratePerHour: 'ratePerHour',
     paymentCycle: 'paymentCycle',
     standardHoursPerDay: 'standardHoursPerDay',
+    totalHours: 'totalHours',
     standardHoursPerWeek: 'standardHoursPerWeek',
     durationMonths: 'durationMonths',
     otherRemarks: 'otherRemarks',
@@ -7831,12 +13447,110 @@ export namespace Prisma {
   export type MemberExperienceScalarFieldEnum = (typeof MemberExperienceScalarFieldEnum)[keyof typeof MemberExperienceScalarFieldEnum]
 
 
+  export const EngagementLeadScalarFieldEnum: {
+    id: 'id',
+    workEmail: 'workEmail',
+    accountName: 'accountName',
+    smu: 'smu',
+    engagementModel: 'engagementModel',
+    roleTitle: 'roleTitle',
+    jobDescription: 'jobDescription',
+    requiredSkills: 'requiredSkills',
+    experienceLevel: 'experienceLevel',
+    minYearsExperience: 'minYearsExperience',
+    industryDomain: 'industryDomain',
+    resourcesRequired: 'resourcesRequired',
+    preferredStartDate: 'preferredStartDate',
+    engagementDuration: 'engagementDuration',
+    workingHoursPerDay: 'workingHoursPerDay',
+    timeZoneRequirement: 'timeZoneRequirement',
+    remoteWorkAccepted: 'remoteWorkAccepted',
+    workLocationRestrictions: 'workLocationRestrictions',
+    billRateCurrency: 'billRateCurrency',
+    billRateAmount: 'billRateAmount',
+    priority: 'priority',
+    additionalRequirements: 'additionalRequirements',
+    status: 'status',
+    convertedEngagementId: 'convertedEngagementId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    updatedBy: 'updatedBy'
+  };
+
+  export type EngagementLeadScalarFieldEnum = (typeof EngagementLeadScalarFieldEnum)[keyof typeof EngagementLeadScalarFieldEnum]
+
+
+  export const EngagementTimesheetEntryScalarFieldEnum: {
+    id: 'id',
+    engagementAssignmentId: 'engagementAssignmentId',
+    workDate: 'workDate',
+    hoursWorked: 'hoursWorked',
+    remarks: 'remarks',
+    status: 'status',
+    submittedAt: 'submittedAt',
+    submittedBy: 'submittedBy',
+    approvedAt: 'approvedAt',
+    approvedBy: 'approvedBy',
+    approvedByHandle: 'approvedByHandle',
+    approvalComment: 'approvalComment',
+    reopenedAt: 'reopenedAt',
+    paidPaymentReference: 'paidPaymentReference',
+    paidAt: 'paidAt',
+    createdAt: 'createdAt',
+    createdBy: 'createdBy',
+    updatedAt: 'updatedAt',
+    updatedBy: 'updatedBy'
+  };
+
+  export type EngagementTimesheetEntryScalarFieldEnum = (typeof EngagementTimesheetEntryScalarFieldEnum)[keyof typeof EngagementTimesheetEntryScalarFieldEnum]
+
+
+  export const EngagementTimesheetAuditScalarFieldEnum: {
+    id: 'id',
+    timesheetEntryId: 'timesheetEntryId',
+    engagementId: 'engagementId',
+    action: 'action',
+    previousValues: 'previousValues',
+    updatedValues: 'updatedValues',
+    actorUserId: 'actorUserId',
+    actorHandle: 'actorHandle',
+    actorRole: 'actorRole',
+    comment: 'comment',
+    createdAt: 'createdAt'
+  };
+
+  export type EngagementTimesheetAuditScalarFieldEnum = (typeof EngagementTimesheetAuditScalarFieldEnum)[keyof typeof EngagementTimesheetAuditScalarFieldEnum]
+
+
+  export const EngagementManagerScalarFieldEnum: {
+    id: 'id',
+    engagementId: 'engagementId',
+    managerUserId: 'managerUserId',
+    managerHandle: 'managerHandle',
+    managerName: 'managerName',
+    createdAt: 'createdAt',
+    createdBy: 'createdBy',
+    removedAt: 'removedAt',
+    removedBy: 'removedBy'
+  };
+
+  export type EngagementManagerScalarFieldEnum = (typeof EngagementManagerScalarFieldEnum)[keyof typeof EngagementManagerScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
   };
 
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
   export const QueryMode: {
@@ -7853,6 +13567,15 @@ export namespace Prisma {
   };
 
   export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
   /**
@@ -8047,6 +13770,118 @@ export namespace Prisma {
    */
   export type ListEnumAssignmentSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AssignmentSource[]'>
     
+
+
+  /**
+   * Reference to a field of type 'EngagementModel'
+   */
+  export type EnumEngagementModelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EngagementModel'>
+    
+
+
+  /**
+   * Reference to a field of type 'EngagementModel[]'
+   */
+  export type ListEnumEngagementModelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EngagementModel[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'ExperienceLevel'
+   */
+  export type EnumExperienceLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ExperienceLevel'>
+    
+
+
+  /**
+   * Reference to a field of type 'ExperienceLevel[]'
+   */
+  export type ListEnumExperienceLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ExperienceLevel[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'LeadPriority'
+   */
+  export type EnumLeadPriorityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeadPriority'>
+    
+
+
+  /**
+   * Reference to a field of type 'LeadPriority[]'
+   */
+  export type ListEnumLeadPriorityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeadPriority[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'EngagementLeadStatus'
+   */
+  export type EnumEngagementLeadStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EngagementLeadStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'EngagementLeadStatus[]'
+   */
+  export type ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EngagementLeadStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal[]'
+   */
+  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'TimesheetEntryStatus'
+   */
+  export type EnumTimesheetEntryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TimesheetEntryStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'TimesheetEntryStatus[]'
+   */
+  export type ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TimesheetEntryStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'TimesheetAuditAction'
+   */
+  export type EnumTimesheetAuditActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TimesheetAuditAction'>
+    
+
+
+  /**
+   * Reference to a field of type 'TimesheetAuditAction[]'
+   */
+  export type ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TimesheetAuditAction[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
   /**
    * Deep Input Types
    */
@@ -8085,6 +13920,8 @@ export namespace Prisma {
     updatedBy?: StringNullableFilter<"Engagement"> | string | null
     applications?: EngagementApplicationListRelationFilter
     assignments?: EngagementAssignmentListRelationFilter
+    managers?: EngagementManagerListRelationFilter
+    timesheetAudit?: EngagementTimesheetAuditListRelationFilter
   }
 
   export type EngagementOrderByWithRelationInput = {
@@ -8117,6 +13954,8 @@ export namespace Prisma {
     updatedBy?: SortOrderInput | SortOrder
     applications?: EngagementApplicationOrderByRelationAggregateInput
     assignments?: EngagementAssignmentOrderByRelationAggregateInput
+    managers?: EngagementManagerOrderByRelationAggregateInput
+    timesheetAudit?: EngagementTimesheetAuditOrderByRelationAggregateInput
   }
 
   export type EngagementWhereUniqueInput = Prisma.AtLeast<{
@@ -8152,6 +13991,8 @@ export namespace Prisma {
     updatedBy?: StringNullableFilter<"Engagement"> | string | null
     applications?: EngagementApplicationListRelationFilter
     assignments?: EngagementAssignmentListRelationFilter
+    managers?: EngagementManagerListRelationFilter
+    timesheetAudit?: EngagementTimesheetAuditListRelationFilter
   }, "id">
 
   export type EngagementOrderByWithAggregationInput = {
@@ -8236,9 +14077,12 @@ export namespace Prisma {
     mobileNumber?: StringNullableFilter<"EngagementApplication"> | string | null
     coverLetter?: StringNullableFilter<"EngagementApplication"> | string | null
     resumeUrl?: StringNullableFilter<"EngagementApplication"> | string | null
+    cvFileUrl?: StringNullableFilter<"EngagementApplication"> | string | null
     portfolioUrls?: StringNullableListFilter<"EngagementApplication">
     yearsOfExperience?: IntNullableFilter<"EngagementApplication"> | number | null
     availability?: StringNullableFilter<"EngagementApplication"> | string | null
+    expectedPayRate?: StringNullableFilter<"EngagementApplication"> | string | null
+    referralSource?: StringNullableFilter<"EngagementApplication"> | string | null
     status?: EnumApplicationStatusFilter<"EngagementApplication"> | $Enums.ApplicationStatus
     createdAt?: DateTimeFilter<"EngagementApplication"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementApplication"> | Date | string
@@ -8257,9 +14101,12 @@ export namespace Prisma {
     mobileNumber?: SortOrderInput | SortOrder
     coverLetter?: SortOrderInput | SortOrder
     resumeUrl?: SortOrderInput | SortOrder
+    cvFileUrl?: SortOrderInput | SortOrder
     portfolioUrls?: SortOrder
     yearsOfExperience?: SortOrderInput | SortOrder
     availability?: SortOrderInput | SortOrder
+    expectedPayRate?: SortOrderInput | SortOrder
+    referralSource?: SortOrderInput | SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -8282,9 +14129,12 @@ export namespace Prisma {
     mobileNumber?: StringNullableFilter<"EngagementApplication"> | string | null
     coverLetter?: StringNullableFilter<"EngagementApplication"> | string | null
     resumeUrl?: StringNullableFilter<"EngagementApplication"> | string | null
+    cvFileUrl?: StringNullableFilter<"EngagementApplication"> | string | null
     portfolioUrls?: StringNullableListFilter<"EngagementApplication">
     yearsOfExperience?: IntNullableFilter<"EngagementApplication"> | number | null
     availability?: StringNullableFilter<"EngagementApplication"> | string | null
+    expectedPayRate?: StringNullableFilter<"EngagementApplication"> | string | null
+    referralSource?: StringNullableFilter<"EngagementApplication"> | string | null
     status?: EnumApplicationStatusFilter<"EngagementApplication"> | $Enums.ApplicationStatus
     createdAt?: DateTimeFilter<"EngagementApplication"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementApplication"> | Date | string
@@ -8303,9 +14153,12 @@ export namespace Prisma {
     mobileNumber?: SortOrderInput | SortOrder
     coverLetter?: SortOrderInput | SortOrder
     resumeUrl?: SortOrderInput | SortOrder
+    cvFileUrl?: SortOrderInput | SortOrder
     portfolioUrls?: SortOrder
     yearsOfExperience?: SortOrderInput | SortOrder
     availability?: SortOrderInput | SortOrder
+    expectedPayRate?: SortOrderInput | SortOrder
+    referralSource?: SortOrderInput | SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -8331,9 +14184,12 @@ export namespace Prisma {
     mobileNumber?: StringNullableWithAggregatesFilter<"EngagementApplication"> | string | null
     coverLetter?: StringNullableWithAggregatesFilter<"EngagementApplication"> | string | null
     resumeUrl?: StringNullableWithAggregatesFilter<"EngagementApplication"> | string | null
+    cvFileUrl?: StringNullableWithAggregatesFilter<"EngagementApplication"> | string | null
     portfolioUrls?: StringNullableListFilter<"EngagementApplication">
     yearsOfExperience?: IntNullableWithAggregatesFilter<"EngagementApplication"> | number | null
     availability?: StringNullableWithAggregatesFilter<"EngagementApplication"> | string | null
+    expectedPayRate?: StringNullableWithAggregatesFilter<"EngagementApplication"> | string | null
+    referralSource?: StringNullableWithAggregatesFilter<"EngagementApplication"> | string | null
     status?: EnumApplicationStatusWithAggregatesFilter<"EngagementApplication"> | $Enums.ApplicationStatus
     createdAt?: DateTimeWithAggregatesFilter<"EngagementApplication"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"EngagementApplication"> | Date | string
@@ -8353,6 +14209,7 @@ export namespace Prisma {
     ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleFilter<"EngagementAssignment"> | $Enums.PaymentCycle
     standardHoursPerDay?: FloatNullableFilter<"EngagementAssignment"> | number | null
+    totalHours?: FloatNullableFilter<"EngagementAssignment"> | number | null
     standardHoursPerWeek?: FloatNullableFilter<"EngagementAssignment"> | number | null
     durationMonths?: IntNullableFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableFilter<"EngagementAssignment"> | string | null
@@ -8367,6 +14224,7 @@ export namespace Prisma {
     engagement?: XOR<EngagementScalarRelationFilter, EngagementWhereInput>
     feedback?: EngagementFeedbackListRelationFilter
     memberExperiences?: MemberExperienceListRelationFilter
+    timesheetEntries?: EngagementTimesheetEntryListRelationFilter
   }
 
   export type EngagementAssignmentOrderByWithRelationInput = {
@@ -8379,6 +14237,7 @@ export namespace Prisma {
     ratePerHour?: SortOrderInput | SortOrder
     paymentCycle?: SortOrder
     standardHoursPerDay?: SortOrderInput | SortOrder
+    totalHours?: SortOrderInput | SortOrder
     standardHoursPerWeek?: SortOrderInput | SortOrder
     durationMonths?: SortOrderInput | SortOrder
     otherRemarks?: SortOrderInput | SortOrder
@@ -8393,6 +14252,7 @@ export namespace Prisma {
     engagement?: EngagementOrderByWithRelationInput
     feedback?: EngagementFeedbackOrderByRelationAggregateInput
     memberExperiences?: MemberExperienceOrderByRelationAggregateInput
+    timesheetEntries?: EngagementTimesheetEntryOrderByRelationAggregateInput
   }
 
   export type EngagementAssignmentWhereUniqueInput = Prisma.AtLeast<{
@@ -8408,6 +14268,7 @@ export namespace Prisma {
     ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleFilter<"EngagementAssignment"> | $Enums.PaymentCycle
     standardHoursPerDay?: FloatNullableFilter<"EngagementAssignment"> | number | null
+    totalHours?: FloatNullableFilter<"EngagementAssignment"> | number | null
     standardHoursPerWeek?: FloatNullableFilter<"EngagementAssignment"> | number | null
     durationMonths?: IntNullableFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableFilter<"EngagementAssignment"> | string | null
@@ -8422,6 +14283,7 @@ export namespace Prisma {
     engagement?: XOR<EngagementScalarRelationFilter, EngagementWhereInput>
     feedback?: EngagementFeedbackListRelationFilter
     memberExperiences?: MemberExperienceListRelationFilter
+    timesheetEntries?: EngagementTimesheetEntryListRelationFilter
   }, "id">
 
   export type EngagementAssignmentOrderByWithAggregationInput = {
@@ -8434,6 +14296,7 @@ export namespace Prisma {
     ratePerHour?: SortOrderInput | SortOrder
     paymentCycle?: SortOrder
     standardHoursPerDay?: SortOrderInput | SortOrder
+    totalHours?: SortOrderInput | SortOrder
     standardHoursPerWeek?: SortOrderInput | SortOrder
     durationMonths?: SortOrderInput | SortOrder
     otherRemarks?: SortOrderInput | SortOrder
@@ -8465,6 +14328,7 @@ export namespace Prisma {
     ratePerHour?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleWithAggregatesFilter<"EngagementAssignment"> | $Enums.PaymentCycle
     standardHoursPerDay?: FloatNullableWithAggregatesFilter<"EngagementAssignment"> | number | null
+    totalHours?: FloatNullableWithAggregatesFilter<"EngagementAssignment"> | number | null
     standardHoursPerWeek?: FloatNullableWithAggregatesFilter<"EngagementAssignment"> | number | null
     durationMonths?: IntNullableWithAggregatesFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
@@ -8620,6 +14484,465 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"MemberExperience"> | Date | string
   }
 
+  export type EngagementLeadWhereInput = {
+    AND?: EngagementLeadWhereInput | EngagementLeadWhereInput[]
+    OR?: EngagementLeadWhereInput[]
+    NOT?: EngagementLeadWhereInput | EngagementLeadWhereInput[]
+    id?: StringFilter<"EngagementLead"> | string
+    workEmail?: StringFilter<"EngagementLead"> | string
+    accountName?: StringFilter<"EngagementLead"> | string
+    smu?: StringFilter<"EngagementLead"> | string
+    engagementModel?: EnumEngagementModelFilter<"EngagementLead"> | $Enums.EngagementModel
+    roleTitle?: StringFilter<"EngagementLead"> | string
+    jobDescription?: StringFilter<"EngagementLead"> | string
+    requiredSkills?: StringNullableListFilter<"EngagementLead">
+    experienceLevel?: EnumExperienceLevelFilter<"EngagementLead"> | $Enums.ExperienceLevel
+    minYearsExperience?: IntFilter<"EngagementLead"> | number
+    industryDomain?: StringNullableFilter<"EngagementLead"> | string | null
+    resourcesRequired?: IntFilter<"EngagementLead"> | number
+    preferredStartDate?: DateTimeFilter<"EngagementLead"> | Date | string
+    engagementDuration?: StringFilter<"EngagementLead"> | string
+    workingHoursPerDay?: FloatFilter<"EngagementLead"> | number
+    timeZoneRequirement?: StringFilter<"EngagementLead"> | string
+    remoteWorkAccepted?: BoolFilter<"EngagementLead"> | boolean
+    workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
+    billRateCurrency?: StringFilter<"EngagementLead"> | string
+    billRateAmount?: StringFilter<"EngagementLead"> | string
+    priority?: EnumLeadPriorityFilter<"EngagementLead"> | $Enums.LeadPriority
+    additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
+    status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
+    convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
+    createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
+    updatedAt?: DateTimeFilter<"EngagementLead"> | Date | string
+    updatedBy?: StringNullableFilter<"EngagementLead"> | string | null
+  }
+
+  export type EngagementLeadOrderByWithRelationInput = {
+    id?: SortOrder
+    workEmail?: SortOrder
+    accountName?: SortOrder
+    smu?: SortOrder
+    engagementModel?: SortOrder
+    roleTitle?: SortOrder
+    jobDescription?: SortOrder
+    requiredSkills?: SortOrder
+    experienceLevel?: SortOrder
+    minYearsExperience?: SortOrder
+    industryDomain?: SortOrderInput | SortOrder
+    resourcesRequired?: SortOrder
+    preferredStartDate?: SortOrder
+    engagementDuration?: SortOrder
+    workingHoursPerDay?: SortOrder
+    timeZoneRequirement?: SortOrder
+    remoteWorkAccepted?: SortOrder
+    workLocationRestrictions?: SortOrderInput | SortOrder
+    billRateCurrency?: SortOrder
+    billRateAmount?: SortOrder
+    priority?: SortOrder
+    additionalRequirements?: SortOrderInput | SortOrder
+    status?: SortOrder
+    convertedEngagementId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrderInput | SortOrder
+  }
+
+  export type EngagementLeadWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: EngagementLeadWhereInput | EngagementLeadWhereInput[]
+    OR?: EngagementLeadWhereInput[]
+    NOT?: EngagementLeadWhereInput | EngagementLeadWhereInput[]
+    workEmail?: StringFilter<"EngagementLead"> | string
+    accountName?: StringFilter<"EngagementLead"> | string
+    smu?: StringFilter<"EngagementLead"> | string
+    engagementModel?: EnumEngagementModelFilter<"EngagementLead"> | $Enums.EngagementModel
+    roleTitle?: StringFilter<"EngagementLead"> | string
+    jobDescription?: StringFilter<"EngagementLead"> | string
+    requiredSkills?: StringNullableListFilter<"EngagementLead">
+    experienceLevel?: EnumExperienceLevelFilter<"EngagementLead"> | $Enums.ExperienceLevel
+    minYearsExperience?: IntFilter<"EngagementLead"> | number
+    industryDomain?: StringNullableFilter<"EngagementLead"> | string | null
+    resourcesRequired?: IntFilter<"EngagementLead"> | number
+    preferredStartDate?: DateTimeFilter<"EngagementLead"> | Date | string
+    engagementDuration?: StringFilter<"EngagementLead"> | string
+    workingHoursPerDay?: FloatFilter<"EngagementLead"> | number
+    timeZoneRequirement?: StringFilter<"EngagementLead"> | string
+    remoteWorkAccepted?: BoolFilter<"EngagementLead"> | boolean
+    workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
+    billRateCurrency?: StringFilter<"EngagementLead"> | string
+    billRateAmount?: StringFilter<"EngagementLead"> | string
+    priority?: EnumLeadPriorityFilter<"EngagementLead"> | $Enums.LeadPriority
+    additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
+    status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
+    convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
+    createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
+    updatedAt?: DateTimeFilter<"EngagementLead"> | Date | string
+    updatedBy?: StringNullableFilter<"EngagementLead"> | string | null
+  }, "id">
+
+  export type EngagementLeadOrderByWithAggregationInput = {
+    id?: SortOrder
+    workEmail?: SortOrder
+    accountName?: SortOrder
+    smu?: SortOrder
+    engagementModel?: SortOrder
+    roleTitle?: SortOrder
+    jobDescription?: SortOrder
+    requiredSkills?: SortOrder
+    experienceLevel?: SortOrder
+    minYearsExperience?: SortOrder
+    industryDomain?: SortOrderInput | SortOrder
+    resourcesRequired?: SortOrder
+    preferredStartDate?: SortOrder
+    engagementDuration?: SortOrder
+    workingHoursPerDay?: SortOrder
+    timeZoneRequirement?: SortOrder
+    remoteWorkAccepted?: SortOrder
+    workLocationRestrictions?: SortOrderInput | SortOrder
+    billRateCurrency?: SortOrder
+    billRateAmount?: SortOrder
+    priority?: SortOrder
+    additionalRequirements?: SortOrderInput | SortOrder
+    status?: SortOrder
+    convertedEngagementId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrderInput | SortOrder
+    _count?: EngagementLeadCountOrderByAggregateInput
+    _avg?: EngagementLeadAvgOrderByAggregateInput
+    _max?: EngagementLeadMaxOrderByAggregateInput
+    _min?: EngagementLeadMinOrderByAggregateInput
+    _sum?: EngagementLeadSumOrderByAggregateInput
+  }
+
+  export type EngagementLeadScalarWhereWithAggregatesInput = {
+    AND?: EngagementLeadScalarWhereWithAggregatesInput | EngagementLeadScalarWhereWithAggregatesInput[]
+    OR?: EngagementLeadScalarWhereWithAggregatesInput[]
+    NOT?: EngagementLeadScalarWhereWithAggregatesInput | EngagementLeadScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EngagementLead"> | string
+    workEmail?: StringWithAggregatesFilter<"EngagementLead"> | string
+    accountName?: StringWithAggregatesFilter<"EngagementLead"> | string
+    smu?: StringWithAggregatesFilter<"EngagementLead"> | string
+    engagementModel?: EnumEngagementModelWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementModel
+    roleTitle?: StringWithAggregatesFilter<"EngagementLead"> | string
+    jobDescription?: StringWithAggregatesFilter<"EngagementLead"> | string
+    requiredSkills?: StringNullableListFilter<"EngagementLead">
+    experienceLevel?: EnumExperienceLevelWithAggregatesFilter<"EngagementLead"> | $Enums.ExperienceLevel
+    minYearsExperience?: IntWithAggregatesFilter<"EngagementLead"> | number
+    industryDomain?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    resourcesRequired?: IntWithAggregatesFilter<"EngagementLead"> | number
+    preferredStartDate?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
+    engagementDuration?: StringWithAggregatesFilter<"EngagementLead"> | string
+    workingHoursPerDay?: FloatWithAggregatesFilter<"EngagementLead"> | number
+    timeZoneRequirement?: StringWithAggregatesFilter<"EngagementLead"> | string
+    remoteWorkAccepted?: BoolWithAggregatesFilter<"EngagementLead"> | boolean
+    workLocationRestrictions?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    billRateCurrency?: StringWithAggregatesFilter<"EngagementLead"> | string
+    billRateAmount?: StringWithAggregatesFilter<"EngagementLead"> | string
+    priority?: EnumLeadPriorityWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority
+    additionalRequirements?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    status?: EnumEngagementLeadStatusWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
+    convertedEngagementId?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
+    updatedBy?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+  }
+
+  export type EngagementTimesheetEntryWhereInput = {
+    AND?: EngagementTimesheetEntryWhereInput | EngagementTimesheetEntryWhereInput[]
+    OR?: EngagementTimesheetEntryWhereInput[]
+    NOT?: EngagementTimesheetEntryWhereInput | EngagementTimesheetEntryWhereInput[]
+    id?: StringFilter<"EngagementTimesheetEntry"> | string
+    engagementAssignmentId?: StringFilter<"EngagementTimesheetEntry"> | string
+    workDate?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    hoursWorked?: DecimalFilter<"EngagementTimesheetEntry"> | Decimal | DecimalJsLike | number | string
+    remarks?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    status?: EnumTimesheetEntryStatusFilter<"EngagementTimesheetEntry"> | $Enums.TimesheetEntryStatus
+    submittedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    submittedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    approvedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    createdBy?: StringFilter<"EngagementTimesheetEntry"> | string
+    updatedAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    updatedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    assignment?: XOR<EngagementAssignmentScalarRelationFilter, EngagementAssignmentWhereInput>
+    auditRecords?: EngagementTimesheetAuditListRelationFilter
+  }
+
+  export type EngagementTimesheetEntryOrderByWithRelationInput = {
+    id?: SortOrder
+    engagementAssignmentId?: SortOrder
+    workDate?: SortOrder
+    hoursWorked?: SortOrder
+    remarks?: SortOrderInput | SortOrder
+    status?: SortOrder
+    submittedAt?: SortOrderInput | SortOrder
+    submittedBy?: SortOrderInput | SortOrder
+    approvedAt?: SortOrderInput | SortOrder
+    approvedBy?: SortOrderInput | SortOrder
+    approvedByHandle?: SortOrderInput | SortOrder
+    approvalComment?: SortOrderInput | SortOrder
+    reopenedAt?: SortOrderInput | SortOrder
+    paidPaymentReference?: SortOrderInput | SortOrder
+    paidAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrderInput | SortOrder
+    assignment?: EngagementAssignmentOrderByWithRelationInput
+    auditRecords?: EngagementTimesheetAuditOrderByRelationAggregateInput
+  }
+
+  export type EngagementTimesheetEntryWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    engagementAssignmentId_workDate?: EngagementTimesheetEntryEngagementAssignmentIdWorkDateCompoundUniqueInput
+    AND?: EngagementTimesheetEntryWhereInput | EngagementTimesheetEntryWhereInput[]
+    OR?: EngagementTimesheetEntryWhereInput[]
+    NOT?: EngagementTimesheetEntryWhereInput | EngagementTimesheetEntryWhereInput[]
+    engagementAssignmentId?: StringFilter<"EngagementTimesheetEntry"> | string
+    workDate?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    hoursWorked?: DecimalFilter<"EngagementTimesheetEntry"> | Decimal | DecimalJsLike | number | string
+    remarks?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    status?: EnumTimesheetEntryStatusFilter<"EngagementTimesheetEntry"> | $Enums.TimesheetEntryStatus
+    submittedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    submittedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    approvedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    createdBy?: StringFilter<"EngagementTimesheetEntry"> | string
+    updatedAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    updatedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    assignment?: XOR<EngagementAssignmentScalarRelationFilter, EngagementAssignmentWhereInput>
+    auditRecords?: EngagementTimesheetAuditListRelationFilter
+  }, "id" | "engagementAssignmentId_workDate">
+
+  export type EngagementTimesheetEntryOrderByWithAggregationInput = {
+    id?: SortOrder
+    engagementAssignmentId?: SortOrder
+    workDate?: SortOrder
+    hoursWorked?: SortOrder
+    remarks?: SortOrderInput | SortOrder
+    status?: SortOrder
+    submittedAt?: SortOrderInput | SortOrder
+    submittedBy?: SortOrderInput | SortOrder
+    approvedAt?: SortOrderInput | SortOrder
+    approvedBy?: SortOrderInput | SortOrder
+    approvedByHandle?: SortOrderInput | SortOrder
+    approvalComment?: SortOrderInput | SortOrder
+    reopenedAt?: SortOrderInput | SortOrder
+    paidPaymentReference?: SortOrderInput | SortOrder
+    paidAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrderInput | SortOrder
+    _count?: EngagementTimesheetEntryCountOrderByAggregateInput
+    _avg?: EngagementTimesheetEntryAvgOrderByAggregateInput
+    _max?: EngagementTimesheetEntryMaxOrderByAggregateInput
+    _min?: EngagementTimesheetEntryMinOrderByAggregateInput
+    _sum?: EngagementTimesheetEntrySumOrderByAggregateInput
+  }
+
+  export type EngagementTimesheetEntryScalarWhereWithAggregatesInput = {
+    AND?: EngagementTimesheetEntryScalarWhereWithAggregatesInput | EngagementTimesheetEntryScalarWhereWithAggregatesInput[]
+    OR?: EngagementTimesheetEntryScalarWhereWithAggregatesInput[]
+    NOT?: EngagementTimesheetEntryScalarWhereWithAggregatesInput | EngagementTimesheetEntryScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EngagementTimesheetEntry"> | string
+    engagementAssignmentId?: StringWithAggregatesFilter<"EngagementTimesheetEntry"> | string
+    workDate?: DateTimeWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string
+    hoursWorked?: DecimalWithAggregatesFilter<"EngagementTimesheetEntry"> | Decimal | DecimalJsLike | number | string
+    remarks?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    status?: EnumTimesheetEntryStatusWithAggregatesFilter<"EngagementTimesheetEntry"> | $Enums.TimesheetEntryStatus
+    submittedAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    submittedBy?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    approvedAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    approvedBy?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    approvedByHandle?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    approvalComment?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    reopenedAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    paidPaymentReference?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    paidAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string
+    createdBy?: StringWithAggregatesFilter<"EngagementTimesheetEntry"> | string
+    updatedAt?: DateTimeWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string
+    updatedBy?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+  }
+
+  export type EngagementTimesheetAuditWhereInput = {
+    AND?: EngagementTimesheetAuditWhereInput | EngagementTimesheetAuditWhereInput[]
+    OR?: EngagementTimesheetAuditWhereInput[]
+    NOT?: EngagementTimesheetAuditWhereInput | EngagementTimesheetAuditWhereInput[]
+    id?: StringFilter<"EngagementTimesheetAudit"> | string
+    timesheetEntryId?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    engagementId?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    action?: EnumTimesheetAuditActionFilter<"EngagementTimesheetAudit"> | $Enums.TimesheetAuditAction
+    previousValues?: JsonNullableFilter<"EngagementTimesheetAudit">
+    updatedValues?: JsonNullableFilter<"EngagementTimesheetAudit">
+    actorUserId?: StringFilter<"EngagementTimesheetAudit"> | string
+    actorHandle?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    actorRole?: StringFilter<"EngagementTimesheetAudit"> | string
+    comment?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    createdAt?: DateTimeFilter<"EngagementTimesheetAudit"> | Date | string
+    entry?: XOR<EngagementTimesheetEntryNullableScalarRelationFilter, EngagementTimesheetEntryWhereInput> | null
+    engagement?: XOR<EngagementNullableScalarRelationFilter, EngagementWhereInput> | null
+  }
+
+  export type EngagementTimesheetAuditOrderByWithRelationInput = {
+    id?: SortOrder
+    timesheetEntryId?: SortOrderInput | SortOrder
+    engagementId?: SortOrderInput | SortOrder
+    action?: SortOrder
+    previousValues?: SortOrderInput | SortOrder
+    updatedValues?: SortOrderInput | SortOrder
+    actorUserId?: SortOrder
+    actorHandle?: SortOrderInput | SortOrder
+    actorRole?: SortOrder
+    comment?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    entry?: EngagementTimesheetEntryOrderByWithRelationInput
+    engagement?: EngagementOrderByWithRelationInput
+  }
+
+  export type EngagementTimesheetAuditWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: EngagementTimesheetAuditWhereInput | EngagementTimesheetAuditWhereInput[]
+    OR?: EngagementTimesheetAuditWhereInput[]
+    NOT?: EngagementTimesheetAuditWhereInput | EngagementTimesheetAuditWhereInput[]
+    timesheetEntryId?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    engagementId?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    action?: EnumTimesheetAuditActionFilter<"EngagementTimesheetAudit"> | $Enums.TimesheetAuditAction
+    previousValues?: JsonNullableFilter<"EngagementTimesheetAudit">
+    updatedValues?: JsonNullableFilter<"EngagementTimesheetAudit">
+    actorUserId?: StringFilter<"EngagementTimesheetAudit"> | string
+    actorHandle?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    actorRole?: StringFilter<"EngagementTimesheetAudit"> | string
+    comment?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    createdAt?: DateTimeFilter<"EngagementTimesheetAudit"> | Date | string
+    entry?: XOR<EngagementTimesheetEntryNullableScalarRelationFilter, EngagementTimesheetEntryWhereInput> | null
+    engagement?: XOR<EngagementNullableScalarRelationFilter, EngagementWhereInput> | null
+  }, "id">
+
+  export type EngagementTimesheetAuditOrderByWithAggregationInput = {
+    id?: SortOrder
+    timesheetEntryId?: SortOrderInput | SortOrder
+    engagementId?: SortOrderInput | SortOrder
+    action?: SortOrder
+    previousValues?: SortOrderInput | SortOrder
+    updatedValues?: SortOrderInput | SortOrder
+    actorUserId?: SortOrder
+    actorHandle?: SortOrderInput | SortOrder
+    actorRole?: SortOrder
+    comment?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: EngagementTimesheetAuditCountOrderByAggregateInput
+    _max?: EngagementTimesheetAuditMaxOrderByAggregateInput
+    _min?: EngagementTimesheetAuditMinOrderByAggregateInput
+  }
+
+  export type EngagementTimesheetAuditScalarWhereWithAggregatesInput = {
+    AND?: EngagementTimesheetAuditScalarWhereWithAggregatesInput | EngagementTimesheetAuditScalarWhereWithAggregatesInput[]
+    OR?: EngagementTimesheetAuditScalarWhereWithAggregatesInput[]
+    NOT?: EngagementTimesheetAuditScalarWhereWithAggregatesInput | EngagementTimesheetAuditScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EngagementTimesheetAudit"> | string
+    timesheetEntryId?: StringNullableWithAggregatesFilter<"EngagementTimesheetAudit"> | string | null
+    engagementId?: StringNullableWithAggregatesFilter<"EngagementTimesheetAudit"> | string | null
+    action?: EnumTimesheetAuditActionWithAggregatesFilter<"EngagementTimesheetAudit"> | $Enums.TimesheetAuditAction
+    previousValues?: JsonNullableWithAggregatesFilter<"EngagementTimesheetAudit">
+    updatedValues?: JsonNullableWithAggregatesFilter<"EngagementTimesheetAudit">
+    actorUserId?: StringWithAggregatesFilter<"EngagementTimesheetAudit"> | string
+    actorHandle?: StringNullableWithAggregatesFilter<"EngagementTimesheetAudit"> | string | null
+    actorRole?: StringWithAggregatesFilter<"EngagementTimesheetAudit"> | string
+    comment?: StringNullableWithAggregatesFilter<"EngagementTimesheetAudit"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"EngagementTimesheetAudit"> | Date | string
+  }
+
+  export type EngagementManagerWhereInput = {
+    AND?: EngagementManagerWhereInput | EngagementManagerWhereInput[]
+    OR?: EngagementManagerWhereInput[]
+    NOT?: EngagementManagerWhereInput | EngagementManagerWhereInput[]
+    id?: StringFilter<"EngagementManager"> | string
+    engagementId?: StringFilter<"EngagementManager"> | string
+    managerUserId?: StringFilter<"EngagementManager"> | string
+    managerHandle?: StringFilter<"EngagementManager"> | string
+    managerName?: StringNullableFilter<"EngagementManager"> | string | null
+    createdAt?: DateTimeFilter<"EngagementManager"> | Date | string
+    createdBy?: StringFilter<"EngagementManager"> | string
+    removedAt?: DateTimeNullableFilter<"EngagementManager"> | Date | string | null
+    removedBy?: StringNullableFilter<"EngagementManager"> | string | null
+    engagement?: XOR<EngagementScalarRelationFilter, EngagementWhereInput>
+  }
+
+  export type EngagementManagerOrderByWithRelationInput = {
+    id?: SortOrder
+    engagementId?: SortOrder
+    managerUserId?: SortOrder
+    managerHandle?: SortOrder
+    managerName?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    removedAt?: SortOrderInput | SortOrder
+    removedBy?: SortOrderInput | SortOrder
+    engagement?: EngagementOrderByWithRelationInput
+  }
+
+  export type EngagementManagerWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    engagementId_managerUserId?: EngagementManagerEngagementIdManagerUserIdCompoundUniqueInput
+    AND?: EngagementManagerWhereInput | EngagementManagerWhereInput[]
+    OR?: EngagementManagerWhereInput[]
+    NOT?: EngagementManagerWhereInput | EngagementManagerWhereInput[]
+    engagementId?: StringFilter<"EngagementManager"> | string
+    managerUserId?: StringFilter<"EngagementManager"> | string
+    managerHandle?: StringFilter<"EngagementManager"> | string
+    managerName?: StringNullableFilter<"EngagementManager"> | string | null
+    createdAt?: DateTimeFilter<"EngagementManager"> | Date | string
+    createdBy?: StringFilter<"EngagementManager"> | string
+    removedAt?: DateTimeNullableFilter<"EngagementManager"> | Date | string | null
+    removedBy?: StringNullableFilter<"EngagementManager"> | string | null
+    engagement?: XOR<EngagementScalarRelationFilter, EngagementWhereInput>
+  }, "id" | "engagementId_managerUserId">
+
+  export type EngagementManagerOrderByWithAggregationInput = {
+    id?: SortOrder
+    engagementId?: SortOrder
+    managerUserId?: SortOrder
+    managerHandle?: SortOrder
+    managerName?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    removedAt?: SortOrderInput | SortOrder
+    removedBy?: SortOrderInput | SortOrder
+    _count?: EngagementManagerCountOrderByAggregateInput
+    _max?: EngagementManagerMaxOrderByAggregateInput
+    _min?: EngagementManagerMinOrderByAggregateInput
+  }
+
+  export type EngagementManagerScalarWhereWithAggregatesInput = {
+    AND?: EngagementManagerScalarWhereWithAggregatesInput | EngagementManagerScalarWhereWithAggregatesInput[]
+    OR?: EngagementManagerScalarWhereWithAggregatesInput[]
+    NOT?: EngagementManagerScalarWhereWithAggregatesInput | EngagementManagerScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EngagementManager"> | string
+    engagementId?: StringWithAggregatesFilter<"EngagementManager"> | string
+    managerUserId?: StringWithAggregatesFilter<"EngagementManager"> | string
+    managerHandle?: StringWithAggregatesFilter<"EngagementManager"> | string
+    managerName?: StringNullableWithAggregatesFilter<"EngagementManager"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"EngagementManager"> | Date | string
+    createdBy?: StringWithAggregatesFilter<"EngagementManager"> | string
+    removedAt?: DateTimeNullableWithAggregatesFilter<"EngagementManager"> | Date | string | null
+    removedBy?: StringNullableWithAggregatesFilter<"EngagementManager"> | string | null
+  }
+
   export type EngagementCreateInput = {
     id?: string
     projectId: string
@@ -8650,6 +14973,8 @@ export namespace Prisma {
     updatedBy?: string | null
     applications?: EngagementApplicationCreateNestedManyWithoutEngagementInput
     assignments?: EngagementAssignmentCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditCreateNestedManyWithoutEngagementInput
   }
 
   export type EngagementUncheckedCreateInput = {
@@ -8682,6 +15007,8 @@ export namespace Prisma {
     updatedBy?: string | null
     applications?: EngagementApplicationUncheckedCreateNestedManyWithoutEngagementInput
     assignments?: EngagementAssignmentUncheckedCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerUncheckedCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEngagementInput
   }
 
   export type EngagementUpdateInput = {
@@ -8714,6 +15041,8 @@ export namespace Prisma {
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: EngagementApplicationUpdateManyWithoutEngagementNestedInput
     assignments?: EngagementAssignmentUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUpdateManyWithoutEngagementNestedInput
   }
 
   export type EngagementUncheckedUpdateInput = {
@@ -8746,6 +15075,8 @@ export namespace Prisma {
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: EngagementApplicationUncheckedUpdateManyWithoutEngagementNestedInput
     assignments?: EngagementAssignmentUncheckedUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUncheckedUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedUpdateManyWithoutEngagementNestedInput
   }
 
   export type EngagementCreateManyInput = {
@@ -8848,9 +15179,12 @@ export namespace Prisma {
     mobileNumber?: string | null
     coverLetter?: string | null
     resumeUrl?: string | null
+    cvFileUrl?: string | null
     portfolioUrls?: EngagementApplicationCreateportfolioUrlsInput | string[]
     yearsOfExperience?: number | null
     availability?: string | null
+    expectedPayRate?: string | null
+    referralSource?: string | null
     status?: $Enums.ApplicationStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -8869,9 +15203,12 @@ export namespace Prisma {
     mobileNumber?: string | null
     coverLetter?: string | null
     resumeUrl?: string | null
+    cvFileUrl?: string | null
     portfolioUrls?: EngagementApplicationCreateportfolioUrlsInput | string[]
     yearsOfExperience?: number | null
     availability?: string | null
+    expectedPayRate?: string | null
+    referralSource?: string | null
     status?: $Enums.ApplicationStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -8888,9 +15225,12 @@ export namespace Prisma {
     mobileNumber?: NullableStringFieldUpdateOperationsInput | string | null
     coverLetter?: NullableStringFieldUpdateOperationsInput | string | null
     resumeUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cvFileUrl?: NullableStringFieldUpdateOperationsInput | string | null
     portfolioUrls?: EngagementApplicationUpdateportfolioUrlsInput | string[]
     yearsOfExperience?: NullableIntFieldUpdateOperationsInput | number | null
     availability?: NullableStringFieldUpdateOperationsInput | string | null
+    expectedPayRate?: NullableStringFieldUpdateOperationsInput | string | null
+    referralSource?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8909,9 +15249,12 @@ export namespace Prisma {
     mobileNumber?: NullableStringFieldUpdateOperationsInput | string | null
     coverLetter?: NullableStringFieldUpdateOperationsInput | string | null
     resumeUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cvFileUrl?: NullableStringFieldUpdateOperationsInput | string | null
     portfolioUrls?: EngagementApplicationUpdateportfolioUrlsInput | string[]
     yearsOfExperience?: NullableIntFieldUpdateOperationsInput | number | null
     availability?: NullableStringFieldUpdateOperationsInput | string | null
+    expectedPayRate?: NullableStringFieldUpdateOperationsInput | string | null
+    referralSource?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8929,9 +15272,12 @@ export namespace Prisma {
     mobileNumber?: string | null
     coverLetter?: string | null
     resumeUrl?: string | null
+    cvFileUrl?: string | null
     portfolioUrls?: EngagementApplicationCreateportfolioUrlsInput | string[]
     yearsOfExperience?: number | null
     availability?: string | null
+    expectedPayRate?: string | null
+    referralSource?: string | null
     status?: $Enums.ApplicationStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -8948,9 +15294,12 @@ export namespace Prisma {
     mobileNumber?: NullableStringFieldUpdateOperationsInput | string | null
     coverLetter?: NullableStringFieldUpdateOperationsInput | string | null
     resumeUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cvFileUrl?: NullableStringFieldUpdateOperationsInput | string | null
     portfolioUrls?: EngagementApplicationUpdateportfolioUrlsInput | string[]
     yearsOfExperience?: NullableIntFieldUpdateOperationsInput | number | null
     availability?: NullableStringFieldUpdateOperationsInput | string | null
+    expectedPayRate?: NullableStringFieldUpdateOperationsInput | string | null
+    referralSource?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8968,9 +15317,12 @@ export namespace Prisma {
     mobileNumber?: NullableStringFieldUpdateOperationsInput | string | null
     coverLetter?: NullableStringFieldUpdateOperationsInput | string | null
     resumeUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cvFileUrl?: NullableStringFieldUpdateOperationsInput | string | null
     portfolioUrls?: EngagementApplicationUpdateportfolioUrlsInput | string[]
     yearsOfExperience?: NullableIntFieldUpdateOperationsInput | number | null
     availability?: NullableStringFieldUpdateOperationsInput | string | null
+    expectedPayRate?: NullableStringFieldUpdateOperationsInput | string | null
+    referralSource?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8986,6 +15338,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -9000,6 +15353,7 @@ export namespace Prisma {
     engagement: EngagementCreateNestedOneWithoutAssignmentsInput
     feedback?: EngagementFeedbackCreateNestedManyWithoutAssignmentInput
     memberExperiences?: MemberExperienceCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentUncheckedCreateInput = {
@@ -9012,6 +15366,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -9025,6 +15380,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     feedback?: EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput
     memberExperiences?: MemberExperienceUncheckedCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentUpdateInput = {
@@ -9036,6 +15392,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -9050,6 +15407,7 @@ export namespace Prisma {
     engagement?: EngagementUpdateOneRequiredWithoutAssignmentsNestedInput
     feedback?: EngagementFeedbackUpdateManyWithoutAssignmentNestedInput
     memberExperiences?: MemberExperienceUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUpdateManyWithoutAssignmentNestedInput
   }
 
   export type EngagementAssignmentUncheckedUpdateInput = {
@@ -9062,6 +15420,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -9075,6 +15434,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput
     memberExperiences?: MemberExperienceUncheckedUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentNestedInput
   }
 
   export type EngagementAssignmentCreateManyInput = {
@@ -9087,6 +15447,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -9109,6 +15470,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -9132,6 +15494,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -9297,6 +15660,552 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type EngagementLeadCreateInput = {
+    id?: string
+    workEmail: string
+    accountName: string
+    smu: string
+    engagementModel: $Enums.EngagementModel
+    roleTitle: string
+    jobDescription: string
+    requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
+    experienceLevel: $Enums.ExperienceLevel
+    minYearsExperience: number
+    industryDomain?: string | null
+    resourcesRequired: number
+    preferredStartDate: Date | string
+    engagementDuration: string
+    workingHoursPerDay: number
+    timeZoneRequirement: string
+    remoteWorkAccepted: boolean
+    workLocationRestrictions?: string | null
+    billRateCurrency: string
+    billRateAmount: string
+    priority: $Enums.LeadPriority
+    additionalRequirements?: string | null
+    status?: $Enums.EngagementLeadStatus
+    convertedEngagementId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+  }
+
+  export type EngagementLeadUncheckedCreateInput = {
+    id?: string
+    workEmail: string
+    accountName: string
+    smu: string
+    engagementModel: $Enums.EngagementModel
+    roleTitle: string
+    jobDescription: string
+    requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
+    experienceLevel: $Enums.ExperienceLevel
+    minYearsExperience: number
+    industryDomain?: string | null
+    resourcesRequired: number
+    preferredStartDate: Date | string
+    engagementDuration: string
+    workingHoursPerDay: number
+    timeZoneRequirement: string
+    remoteWorkAccepted: boolean
+    workLocationRestrictions?: string | null
+    billRateCurrency: string
+    billRateAmount: string
+    priority: $Enums.LeadPriority
+    additionalRequirements?: string | null
+    status?: $Enums.EngagementLeadStatus
+    convertedEngagementId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+  }
+
+  export type EngagementLeadUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workEmail?: StringFieldUpdateOperationsInput | string
+    accountName?: StringFieldUpdateOperationsInput | string
+    smu?: StringFieldUpdateOperationsInput | string
+    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
+    roleTitle?: StringFieldUpdateOperationsInput | string
+    jobDescription?: StringFieldUpdateOperationsInput | string
+    requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
+    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
+    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
+    resourcesRequired?: IntFieldUpdateOperationsInput | number
+    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    engagementDuration?: StringFieldUpdateOperationsInput | string
+    workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
+    timeZoneRequirement?: StringFieldUpdateOperationsInput | string
+    remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
+    workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateCurrency?: StringFieldUpdateOperationsInput | string
+    billRateAmount?: StringFieldUpdateOperationsInput | string
+    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workEmail?: StringFieldUpdateOperationsInput | string
+    accountName?: StringFieldUpdateOperationsInput | string
+    smu?: StringFieldUpdateOperationsInput | string
+    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
+    roleTitle?: StringFieldUpdateOperationsInput | string
+    jobDescription?: StringFieldUpdateOperationsInput | string
+    requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
+    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
+    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
+    resourcesRequired?: IntFieldUpdateOperationsInput | number
+    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    engagementDuration?: StringFieldUpdateOperationsInput | string
+    workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
+    timeZoneRequirement?: StringFieldUpdateOperationsInput | string
+    remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
+    workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateCurrency?: StringFieldUpdateOperationsInput | string
+    billRateAmount?: StringFieldUpdateOperationsInput | string
+    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadCreateManyInput = {
+    id?: string
+    workEmail: string
+    accountName: string
+    smu: string
+    engagementModel: $Enums.EngagementModel
+    roleTitle: string
+    jobDescription: string
+    requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
+    experienceLevel: $Enums.ExperienceLevel
+    minYearsExperience: number
+    industryDomain?: string | null
+    resourcesRequired: number
+    preferredStartDate: Date | string
+    engagementDuration: string
+    workingHoursPerDay: number
+    timeZoneRequirement: string
+    remoteWorkAccepted: boolean
+    workLocationRestrictions?: string | null
+    billRateCurrency: string
+    billRateAmount: string
+    priority: $Enums.LeadPriority
+    additionalRequirements?: string | null
+    status?: $Enums.EngagementLeadStatus
+    convertedEngagementId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+  }
+
+  export type EngagementLeadUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workEmail?: StringFieldUpdateOperationsInput | string
+    accountName?: StringFieldUpdateOperationsInput | string
+    smu?: StringFieldUpdateOperationsInput | string
+    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
+    roleTitle?: StringFieldUpdateOperationsInput | string
+    jobDescription?: StringFieldUpdateOperationsInput | string
+    requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
+    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
+    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
+    resourcesRequired?: IntFieldUpdateOperationsInput | number
+    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    engagementDuration?: StringFieldUpdateOperationsInput | string
+    workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
+    timeZoneRequirement?: StringFieldUpdateOperationsInput | string
+    remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
+    workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateCurrency?: StringFieldUpdateOperationsInput | string
+    billRateAmount?: StringFieldUpdateOperationsInput | string
+    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workEmail?: StringFieldUpdateOperationsInput | string
+    accountName?: StringFieldUpdateOperationsInput | string
+    smu?: StringFieldUpdateOperationsInput | string
+    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
+    roleTitle?: StringFieldUpdateOperationsInput | string
+    jobDescription?: StringFieldUpdateOperationsInput | string
+    requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
+    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
+    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
+    resourcesRequired?: IntFieldUpdateOperationsInput | number
+    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    engagementDuration?: StringFieldUpdateOperationsInput | string
+    workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
+    timeZoneRequirement?: StringFieldUpdateOperationsInput | string
+    remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
+    workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateCurrency?: StringFieldUpdateOperationsInput | string
+    billRateAmount?: StringFieldUpdateOperationsInput | string
+    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementTimesheetEntryCreateInput = {
+    id?: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    assignment: EngagementAssignmentCreateNestedOneWithoutTimesheetEntriesInput
+    auditRecords?: EngagementTimesheetAuditCreateNestedManyWithoutEntryInput
+  }
+
+  export type EngagementTimesheetEntryUncheckedCreateInput = {
+    id?: string
+    engagementAssignmentId: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    auditRecords?: EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEntryInput
+  }
+
+  export type EngagementTimesheetEntryUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    assignment?: EngagementAssignmentUpdateOneRequiredWithoutTimesheetEntriesNestedInput
+    auditRecords?: EngagementTimesheetAuditUpdateManyWithoutEntryNestedInput
+  }
+
+  export type EngagementTimesheetEntryUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementAssignmentId?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    auditRecords?: EngagementTimesheetAuditUncheckedUpdateManyWithoutEntryNestedInput
+  }
+
+  export type EngagementTimesheetEntryCreateManyInput = {
+    id?: string
+    engagementAssignmentId: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+  }
+
+  export type EngagementTimesheetEntryUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementTimesheetEntryUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementAssignmentId?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementTimesheetAuditCreateInput = {
+    id?: string
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+    entry?: EngagementTimesheetEntryCreateNestedOneWithoutAuditRecordsInput
+    engagement?: EngagementCreateNestedOneWithoutTimesheetAuditInput
+  }
+
+  export type EngagementTimesheetAuditUncheckedCreateInput = {
+    id?: string
+    timesheetEntryId?: string | null
+    engagementId?: string | null
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+  }
+
+  export type EngagementTimesheetAuditUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entry?: EngagementTimesheetEntryUpdateOneWithoutAuditRecordsNestedInput
+    engagement?: EngagementUpdateOneWithoutTimesheetAuditNestedInput
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    timesheetEntryId?: NullableStringFieldUpdateOperationsInput | string | null
+    engagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EngagementTimesheetAuditCreateManyInput = {
+    id?: string
+    timesheetEntryId?: string | null
+    engagementId?: string | null
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+  }
+
+  export type EngagementTimesheetAuditUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    timesheetEntryId?: NullableStringFieldUpdateOperationsInput | string | null
+    engagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EngagementManagerCreateInput = {
+    id?: string
+    managerUserId: string
+    managerHandle: string
+    managerName?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    removedAt?: Date | string | null
+    removedBy?: string | null
+    engagement: EngagementCreateNestedOneWithoutManagersInput
+  }
+
+  export type EngagementManagerUncheckedCreateInput = {
+    id?: string
+    engagementId: string
+    managerUserId: string
+    managerHandle: string
+    managerName?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    removedAt?: Date | string | null
+    removedBy?: string | null
+  }
+
+  export type EngagementManagerUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    managerUserId?: StringFieldUpdateOperationsInput | string
+    managerHandle?: StringFieldUpdateOperationsInput | string
+    managerName?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    removedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    removedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    engagement?: EngagementUpdateOneRequiredWithoutManagersNestedInput
+  }
+
+  export type EngagementManagerUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementId?: StringFieldUpdateOperationsInput | string
+    managerUserId?: StringFieldUpdateOperationsInput | string
+    managerHandle?: StringFieldUpdateOperationsInput | string
+    managerName?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    removedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    removedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementManagerCreateManyInput = {
+    id?: string
+    engagementId: string
+    managerUserId: string
+    managerHandle: string
+    managerName?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    removedAt?: Date | string | null
+    removedBy?: string | null
+  }
+
+  export type EngagementManagerUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    managerUserId?: StringFieldUpdateOperationsInput | string
+    managerHandle?: StringFieldUpdateOperationsInput | string
+    managerName?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    removedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    removedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementManagerUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementId?: StringFieldUpdateOperationsInput | string
+    managerUserId?: StringFieldUpdateOperationsInput | string
+    managerHandle?: StringFieldUpdateOperationsInput | string
+    managerName?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    removedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    removedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -9420,6 +16329,18 @@ export namespace Prisma {
     none?: EngagementAssignmentWhereInput
   }
 
+  export type EngagementManagerListRelationFilter = {
+    every?: EngagementManagerWhereInput
+    some?: EngagementManagerWhereInput
+    none?: EngagementManagerWhereInput
+  }
+
+  export type EngagementTimesheetAuditListRelationFilter = {
+    every?: EngagementTimesheetAuditWhereInput
+    some?: EngagementTimesheetAuditWhereInput
+    none?: EngagementTimesheetAuditWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -9430,6 +16351,14 @@ export namespace Prisma {
   }
 
   export type EngagementAssignmentOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type EngagementManagerOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type EngagementTimesheetAuditOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -9695,9 +16624,12 @@ export namespace Prisma {
     mobileNumber?: SortOrder
     coverLetter?: SortOrder
     resumeUrl?: SortOrder
+    cvFileUrl?: SortOrder
     portfolioUrls?: SortOrder
     yearsOfExperience?: SortOrder
     availability?: SortOrder
+    expectedPayRate?: SortOrder
+    referralSource?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -9719,8 +16651,11 @@ export namespace Prisma {
     mobileNumber?: SortOrder
     coverLetter?: SortOrder
     resumeUrl?: SortOrder
+    cvFileUrl?: SortOrder
     yearsOfExperience?: SortOrder
     availability?: SortOrder
+    expectedPayRate?: SortOrder
+    referralSource?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -9738,8 +16673,11 @@ export namespace Prisma {
     mobileNumber?: SortOrder
     coverLetter?: SortOrder
     resumeUrl?: SortOrder
+    cvFileUrl?: SortOrder
     yearsOfExperience?: SortOrder
     availability?: SortOrder
+    expectedPayRate?: SortOrder
+    referralSource?: SortOrder
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -9804,11 +16742,21 @@ export namespace Prisma {
     none?: MemberExperienceWhereInput
   }
 
+  export type EngagementTimesheetEntryListRelationFilter = {
+    every?: EngagementTimesheetEntryWhereInput
+    some?: EngagementTimesheetEntryWhereInput
+    none?: EngagementTimesheetEntryWhereInput
+  }
+
   export type EngagementFeedbackOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
   export type MemberExperienceOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type EngagementTimesheetEntryOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -9822,6 +16770,7 @@ export namespace Prisma {
     ratePerHour?: SortOrder
     paymentCycle?: SortOrder
     standardHoursPerDay?: SortOrder
+    totalHours?: SortOrder
     standardHoursPerWeek?: SortOrder
     durationMonths?: SortOrder
     otherRemarks?: SortOrder
@@ -9837,6 +16786,7 @@ export namespace Prisma {
 
   export type EngagementAssignmentAvgOrderByAggregateInput = {
     standardHoursPerDay?: SortOrder
+    totalHours?: SortOrder
     standardHoursPerWeek?: SortOrder
     durationMonths?: SortOrder
   }
@@ -9851,6 +16801,7 @@ export namespace Prisma {
     ratePerHour?: SortOrder
     paymentCycle?: SortOrder
     standardHoursPerDay?: SortOrder
+    totalHours?: SortOrder
     standardHoursPerWeek?: SortOrder
     durationMonths?: SortOrder
     otherRemarks?: SortOrder
@@ -9874,6 +16825,7 @@ export namespace Prisma {
     ratePerHour?: SortOrder
     paymentCycle?: SortOrder
     standardHoursPerDay?: SortOrder
+    totalHours?: SortOrder
     standardHoursPerWeek?: SortOrder
     durationMonths?: SortOrder
     otherRemarks?: SortOrder
@@ -9889,6 +16841,7 @@ export namespace Prisma {
 
   export type EngagementAssignmentSumOrderByAggregateInput = {
     standardHoursPerDay?: SortOrder
+    totalHours?: SortOrder
     standardHoursPerWeek?: SortOrder
     durationMonths?: SortOrder
   }
@@ -10018,6 +16971,506 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type EnumEngagementModelFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementModelFilter<$PrismaModel> | $Enums.EngagementModel
+  }
+
+  export type EnumExperienceLevelFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    not?: NestedEnumExperienceLevelFilter<$PrismaModel> | $Enums.ExperienceLevel
+  }
+
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type FloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type EnumLeadPriorityFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    not?: NestedEnumLeadPriorityFilter<$PrismaModel> | $Enums.LeadPriority
+  }
+
+  export type EnumEngagementLeadStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadStatus | EnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadStatusFilter<$PrismaModel> | $Enums.EngagementLeadStatus
+  }
+
+  export type EngagementLeadCountOrderByAggregateInput = {
+    id?: SortOrder
+    workEmail?: SortOrder
+    accountName?: SortOrder
+    smu?: SortOrder
+    engagementModel?: SortOrder
+    roleTitle?: SortOrder
+    jobDescription?: SortOrder
+    requiredSkills?: SortOrder
+    experienceLevel?: SortOrder
+    minYearsExperience?: SortOrder
+    industryDomain?: SortOrder
+    resourcesRequired?: SortOrder
+    preferredStartDate?: SortOrder
+    engagementDuration?: SortOrder
+    workingHoursPerDay?: SortOrder
+    timeZoneRequirement?: SortOrder
+    remoteWorkAccepted?: SortOrder
+    workLocationRestrictions?: SortOrder
+    billRateCurrency?: SortOrder
+    billRateAmount?: SortOrder
+    priority?: SortOrder
+    additionalRequirements?: SortOrder
+    status?: SortOrder
+    convertedEngagementId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrder
+  }
+
+  export type EngagementLeadAvgOrderByAggregateInput = {
+    minYearsExperience?: SortOrder
+    resourcesRequired?: SortOrder
+    workingHoursPerDay?: SortOrder
+  }
+
+  export type EngagementLeadMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workEmail?: SortOrder
+    accountName?: SortOrder
+    smu?: SortOrder
+    engagementModel?: SortOrder
+    roleTitle?: SortOrder
+    jobDescription?: SortOrder
+    experienceLevel?: SortOrder
+    minYearsExperience?: SortOrder
+    industryDomain?: SortOrder
+    resourcesRequired?: SortOrder
+    preferredStartDate?: SortOrder
+    engagementDuration?: SortOrder
+    workingHoursPerDay?: SortOrder
+    timeZoneRequirement?: SortOrder
+    remoteWorkAccepted?: SortOrder
+    workLocationRestrictions?: SortOrder
+    billRateCurrency?: SortOrder
+    billRateAmount?: SortOrder
+    priority?: SortOrder
+    additionalRequirements?: SortOrder
+    status?: SortOrder
+    convertedEngagementId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrder
+  }
+
+  export type EngagementLeadMinOrderByAggregateInput = {
+    id?: SortOrder
+    workEmail?: SortOrder
+    accountName?: SortOrder
+    smu?: SortOrder
+    engagementModel?: SortOrder
+    roleTitle?: SortOrder
+    jobDescription?: SortOrder
+    experienceLevel?: SortOrder
+    minYearsExperience?: SortOrder
+    industryDomain?: SortOrder
+    resourcesRequired?: SortOrder
+    preferredStartDate?: SortOrder
+    engagementDuration?: SortOrder
+    workingHoursPerDay?: SortOrder
+    timeZoneRequirement?: SortOrder
+    remoteWorkAccepted?: SortOrder
+    workLocationRestrictions?: SortOrder
+    billRateCurrency?: SortOrder
+    billRateAmount?: SortOrder
+    priority?: SortOrder
+    additionalRequirements?: SortOrder
+    status?: SortOrder
+    convertedEngagementId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrder
+  }
+
+  export type EngagementLeadSumOrderByAggregateInput = {
+    minYearsExperience?: SortOrder
+    resourcesRequired?: SortOrder
+    workingHoursPerDay?: SortOrder
+  }
+
+  export type EnumEngagementModelWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementModelWithAggregatesFilter<$PrismaModel> | $Enums.EngagementModel
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumEngagementModelFilter<$PrismaModel>
+    _max?: NestedEnumEngagementModelFilter<$PrismaModel>
+  }
+
+  export type EnumExperienceLevelWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    not?: NestedEnumExperienceLevelWithAggregatesFilter<$PrismaModel> | $Enums.ExperienceLevel
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumExperienceLevelFilter<$PrismaModel>
+    _max?: NestedEnumExperienceLevelFilter<$PrismaModel>
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
+  }
+
+  export type EnumLeadPriorityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    not?: NestedEnumLeadPriorityWithAggregatesFilter<$PrismaModel> | $Enums.LeadPriority
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLeadPriorityFilter<$PrismaModel>
+    _max?: NestedEnumLeadPriorityFilter<$PrismaModel>
+  }
+
+  export type EnumEngagementLeadStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadStatus | EnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadStatusWithAggregatesFilter<$PrismaModel> | $Enums.EngagementLeadStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumEngagementLeadStatusFilter<$PrismaModel>
+    _max?: NestedEnumEngagementLeadStatusFilter<$PrismaModel>
+  }
+
+  export type DecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EnumTimesheetEntryStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetEntryStatus | EnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetEntryStatusFilter<$PrismaModel> | $Enums.TimesheetEntryStatus
+  }
+
+  export type EngagementTimesheetEntryEngagementAssignmentIdWorkDateCompoundUniqueInput = {
+    engagementAssignmentId: string
+    workDate: Date | string
+  }
+
+  export type EngagementTimesheetEntryCountOrderByAggregateInput = {
+    id?: SortOrder
+    engagementAssignmentId?: SortOrder
+    workDate?: SortOrder
+    hoursWorked?: SortOrder
+    remarks?: SortOrder
+    status?: SortOrder
+    submittedAt?: SortOrder
+    submittedBy?: SortOrder
+    approvedAt?: SortOrder
+    approvedBy?: SortOrder
+    approvedByHandle?: SortOrder
+    approvalComment?: SortOrder
+    reopenedAt?: SortOrder
+    paidPaymentReference?: SortOrder
+    paidAt?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrder
+  }
+
+  export type EngagementTimesheetEntryAvgOrderByAggregateInput = {
+    hoursWorked?: SortOrder
+  }
+
+  export type EngagementTimesheetEntryMaxOrderByAggregateInput = {
+    id?: SortOrder
+    engagementAssignmentId?: SortOrder
+    workDate?: SortOrder
+    hoursWorked?: SortOrder
+    remarks?: SortOrder
+    status?: SortOrder
+    submittedAt?: SortOrder
+    submittedBy?: SortOrder
+    approvedAt?: SortOrder
+    approvedBy?: SortOrder
+    approvedByHandle?: SortOrder
+    approvalComment?: SortOrder
+    reopenedAt?: SortOrder
+    paidPaymentReference?: SortOrder
+    paidAt?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrder
+  }
+
+  export type EngagementTimesheetEntryMinOrderByAggregateInput = {
+    id?: SortOrder
+    engagementAssignmentId?: SortOrder
+    workDate?: SortOrder
+    hoursWorked?: SortOrder
+    remarks?: SortOrder
+    status?: SortOrder
+    submittedAt?: SortOrder
+    submittedBy?: SortOrder
+    approvedAt?: SortOrder
+    approvedBy?: SortOrder
+    approvedByHandle?: SortOrder
+    approvalComment?: SortOrder
+    reopenedAt?: SortOrder
+    paidPaymentReference?: SortOrder
+    paidAt?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: SortOrder
+  }
+
+  export type EngagementTimesheetEntrySumOrderByAggregateInput = {
+    hoursWorked?: SortOrder
+  }
+
+  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type EnumTimesheetEntryStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetEntryStatus | EnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetEntryStatusWithAggregatesFilter<$PrismaModel> | $Enums.TimesheetEntryStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTimesheetEntryStatusFilter<$PrismaModel>
+    _max?: NestedEnumTimesheetEntryStatusFilter<$PrismaModel>
+  }
+
+  export type EnumTimesheetAuditActionFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetAuditAction | EnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetAuditActionFilter<$PrismaModel> | $Enums.TimesheetAuditAction
+  }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type EngagementTimesheetEntryNullableScalarRelationFilter = {
+    is?: EngagementTimesheetEntryWhereInput | null
+    isNot?: EngagementTimesheetEntryWhereInput | null
+  }
+
+  export type EngagementNullableScalarRelationFilter = {
+    is?: EngagementWhereInput | null
+    isNot?: EngagementWhereInput | null
+  }
+
+  export type EngagementTimesheetAuditCountOrderByAggregateInput = {
+    id?: SortOrder
+    timesheetEntryId?: SortOrder
+    engagementId?: SortOrder
+    action?: SortOrder
+    previousValues?: SortOrder
+    updatedValues?: SortOrder
+    actorUserId?: SortOrder
+    actorHandle?: SortOrder
+    actorRole?: SortOrder
+    comment?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EngagementTimesheetAuditMaxOrderByAggregateInput = {
+    id?: SortOrder
+    timesheetEntryId?: SortOrder
+    engagementId?: SortOrder
+    action?: SortOrder
+    actorUserId?: SortOrder
+    actorHandle?: SortOrder
+    actorRole?: SortOrder
+    comment?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EngagementTimesheetAuditMinOrderByAggregateInput = {
+    id?: SortOrder
+    timesheetEntryId?: SortOrder
+    engagementId?: SortOrder
+    action?: SortOrder
+    actorUserId?: SortOrder
+    actorHandle?: SortOrder
+    actorRole?: SortOrder
+    comment?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumTimesheetAuditActionWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetAuditAction | EnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetAuditActionWithAggregatesFilter<$PrismaModel> | $Enums.TimesheetAuditAction
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTimesheetAuditActionFilter<$PrismaModel>
+    _max?: NestedEnumTimesheetAuditActionFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
+  export type EngagementManagerEngagementIdManagerUserIdCompoundUniqueInput = {
+    engagementId: string
+    managerUserId: string
+  }
+
+  export type EngagementManagerCountOrderByAggregateInput = {
+    id?: SortOrder
+    engagementId?: SortOrder
+    managerUserId?: SortOrder
+    managerHandle?: SortOrder
+    managerName?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    removedAt?: SortOrder
+    removedBy?: SortOrder
+  }
+
+  export type EngagementManagerMaxOrderByAggregateInput = {
+    id?: SortOrder
+    engagementId?: SortOrder
+    managerUserId?: SortOrder
+    managerHandle?: SortOrder
+    managerName?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    removedAt?: SortOrder
+    removedBy?: SortOrder
+  }
+
+  export type EngagementManagerMinOrderByAggregateInput = {
+    id?: SortOrder
+    engagementId?: SortOrder
+    managerUserId?: SortOrder
+    managerHandle?: SortOrder
+    managerName?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+    removedAt?: SortOrder
+    removedBy?: SortOrder
+  }
+
   export type EngagementCreatetimeZonesInput = {
     set: string[]
   }
@@ -10044,6 +17497,20 @@ export namespace Prisma {
     connect?: EngagementAssignmentWhereUniqueInput | EngagementAssignmentWhereUniqueInput[]
   }
 
+  export type EngagementManagerCreateNestedManyWithoutEngagementInput = {
+    create?: XOR<EngagementManagerCreateWithoutEngagementInput, EngagementManagerUncheckedCreateWithoutEngagementInput> | EngagementManagerCreateWithoutEngagementInput[] | EngagementManagerUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementManagerCreateOrConnectWithoutEngagementInput | EngagementManagerCreateOrConnectWithoutEngagementInput[]
+    createMany?: EngagementManagerCreateManyEngagementInputEnvelope
+    connect?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+  }
+
+  export type EngagementTimesheetAuditCreateNestedManyWithoutEngagementInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEngagementInput, EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput> | EngagementTimesheetAuditCreateWithoutEngagementInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput | EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEngagementInputEnvelope
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+  }
+
   export type EngagementApplicationUncheckedCreateNestedManyWithoutEngagementInput = {
     create?: XOR<EngagementApplicationCreateWithoutEngagementInput, EngagementApplicationUncheckedCreateWithoutEngagementInput> | EngagementApplicationCreateWithoutEngagementInput[] | EngagementApplicationUncheckedCreateWithoutEngagementInput[]
     connectOrCreate?: EngagementApplicationCreateOrConnectWithoutEngagementInput | EngagementApplicationCreateOrConnectWithoutEngagementInput[]
@@ -10056,6 +17523,20 @@ export namespace Prisma {
     connectOrCreate?: EngagementAssignmentCreateOrConnectWithoutEngagementInput | EngagementAssignmentCreateOrConnectWithoutEngagementInput[]
     createMany?: EngagementAssignmentCreateManyEngagementInputEnvelope
     connect?: EngagementAssignmentWhereUniqueInput | EngagementAssignmentWhereUniqueInput[]
+  }
+
+  export type EngagementManagerUncheckedCreateNestedManyWithoutEngagementInput = {
+    create?: XOR<EngagementManagerCreateWithoutEngagementInput, EngagementManagerUncheckedCreateWithoutEngagementInput> | EngagementManagerCreateWithoutEngagementInput[] | EngagementManagerUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementManagerCreateOrConnectWithoutEngagementInput | EngagementManagerCreateOrConnectWithoutEngagementInput[]
+    createMany?: EngagementManagerCreateManyEngagementInputEnvelope
+    connect?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+  }
+
+  export type EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEngagementInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEngagementInput, EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput> | EngagementTimesheetAuditCreateWithoutEngagementInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput | EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEngagementInputEnvelope
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -10149,6 +17630,34 @@ export namespace Prisma {
     deleteMany?: EngagementAssignmentScalarWhereInput | EngagementAssignmentScalarWhereInput[]
   }
 
+  export type EngagementManagerUpdateManyWithoutEngagementNestedInput = {
+    create?: XOR<EngagementManagerCreateWithoutEngagementInput, EngagementManagerUncheckedCreateWithoutEngagementInput> | EngagementManagerCreateWithoutEngagementInput[] | EngagementManagerUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementManagerCreateOrConnectWithoutEngagementInput | EngagementManagerCreateOrConnectWithoutEngagementInput[]
+    upsert?: EngagementManagerUpsertWithWhereUniqueWithoutEngagementInput | EngagementManagerUpsertWithWhereUniqueWithoutEngagementInput[]
+    createMany?: EngagementManagerCreateManyEngagementInputEnvelope
+    set?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    disconnect?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    delete?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    connect?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    update?: EngagementManagerUpdateWithWhereUniqueWithoutEngagementInput | EngagementManagerUpdateWithWhereUniqueWithoutEngagementInput[]
+    updateMany?: EngagementManagerUpdateManyWithWhereWithoutEngagementInput | EngagementManagerUpdateManyWithWhereWithoutEngagementInput[]
+    deleteMany?: EngagementManagerScalarWhereInput | EngagementManagerScalarWhereInput[]
+  }
+
+  export type EngagementTimesheetAuditUpdateManyWithoutEngagementNestedInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEngagementInput, EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput> | EngagementTimesheetAuditCreateWithoutEngagementInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput | EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput[]
+    upsert?: EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEngagementInput | EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEngagementInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEngagementInputEnvelope
+    set?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    disconnect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    delete?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    update?: EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEngagementInput | EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEngagementInput[]
+    updateMany?: EngagementTimesheetAuditUpdateManyWithWhereWithoutEngagementInput | EngagementTimesheetAuditUpdateManyWithWhereWithoutEngagementInput[]
+    deleteMany?: EngagementTimesheetAuditScalarWhereInput | EngagementTimesheetAuditScalarWhereInput[]
+  }
+
   export type EngagementApplicationUncheckedUpdateManyWithoutEngagementNestedInput = {
     create?: XOR<EngagementApplicationCreateWithoutEngagementInput, EngagementApplicationUncheckedCreateWithoutEngagementInput> | EngagementApplicationCreateWithoutEngagementInput[] | EngagementApplicationUncheckedCreateWithoutEngagementInput[]
     connectOrCreate?: EngagementApplicationCreateOrConnectWithoutEngagementInput | EngagementApplicationCreateOrConnectWithoutEngagementInput[]
@@ -10175,6 +17684,34 @@ export namespace Prisma {
     update?: EngagementAssignmentUpdateWithWhereUniqueWithoutEngagementInput | EngagementAssignmentUpdateWithWhereUniqueWithoutEngagementInput[]
     updateMany?: EngagementAssignmentUpdateManyWithWhereWithoutEngagementInput | EngagementAssignmentUpdateManyWithWhereWithoutEngagementInput[]
     deleteMany?: EngagementAssignmentScalarWhereInput | EngagementAssignmentScalarWhereInput[]
+  }
+
+  export type EngagementManagerUncheckedUpdateManyWithoutEngagementNestedInput = {
+    create?: XOR<EngagementManagerCreateWithoutEngagementInput, EngagementManagerUncheckedCreateWithoutEngagementInput> | EngagementManagerCreateWithoutEngagementInput[] | EngagementManagerUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementManagerCreateOrConnectWithoutEngagementInput | EngagementManagerCreateOrConnectWithoutEngagementInput[]
+    upsert?: EngagementManagerUpsertWithWhereUniqueWithoutEngagementInput | EngagementManagerUpsertWithWhereUniqueWithoutEngagementInput[]
+    createMany?: EngagementManagerCreateManyEngagementInputEnvelope
+    set?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    disconnect?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    delete?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    connect?: EngagementManagerWhereUniqueInput | EngagementManagerWhereUniqueInput[]
+    update?: EngagementManagerUpdateWithWhereUniqueWithoutEngagementInput | EngagementManagerUpdateWithWhereUniqueWithoutEngagementInput[]
+    updateMany?: EngagementManagerUpdateManyWithWhereWithoutEngagementInput | EngagementManagerUpdateManyWithWhereWithoutEngagementInput[]
+    deleteMany?: EngagementManagerScalarWhereInput | EngagementManagerScalarWhereInput[]
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateManyWithoutEngagementNestedInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEngagementInput, EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput> | EngagementTimesheetAuditCreateWithoutEngagementInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput | EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput[]
+    upsert?: EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEngagementInput | EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEngagementInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEngagementInputEnvelope
+    set?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    disconnect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    delete?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    update?: EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEngagementInput | EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEngagementInput[]
+    updateMany?: EngagementTimesheetAuditUpdateManyWithWhereWithoutEngagementInput | EngagementTimesheetAuditUpdateManyWithWhereWithoutEngagementInput[]
+    deleteMany?: EngagementTimesheetAuditScalarWhereInput | EngagementTimesheetAuditScalarWhereInput[]
   }
 
   export type EngagementApplicationCreateportfolioUrlsInput = {
@@ -10224,6 +17761,13 @@ export namespace Prisma {
     connect?: MemberExperienceWhereUniqueInput | MemberExperienceWhereUniqueInput[]
   }
 
+  export type EngagementTimesheetEntryCreateNestedManyWithoutAssignmentInput = {
+    create?: XOR<EngagementTimesheetEntryCreateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput> | EngagementTimesheetEntryCreateWithoutAssignmentInput[] | EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput[]
+    connectOrCreate?: EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput | EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput[]
+    createMany?: EngagementTimesheetEntryCreateManyAssignmentInputEnvelope
+    connect?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+  }
+
   export type EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput = {
     create?: XOR<EngagementFeedbackCreateWithoutAssignmentInput, EngagementFeedbackUncheckedCreateWithoutAssignmentInput> | EngagementFeedbackCreateWithoutAssignmentInput[] | EngagementFeedbackUncheckedCreateWithoutAssignmentInput[]
     connectOrCreate?: EngagementFeedbackCreateOrConnectWithoutAssignmentInput | EngagementFeedbackCreateOrConnectWithoutAssignmentInput[]
@@ -10236,6 +17780,13 @@ export namespace Prisma {
     connectOrCreate?: MemberExperienceCreateOrConnectWithoutAssignmentInput | MemberExperienceCreateOrConnectWithoutAssignmentInput[]
     createMany?: MemberExperienceCreateManyAssignmentInputEnvelope
     connect?: MemberExperienceWhereUniqueInput | MemberExperienceWhereUniqueInput[]
+  }
+
+  export type EngagementTimesheetEntryUncheckedCreateNestedManyWithoutAssignmentInput = {
+    create?: XOR<EngagementTimesheetEntryCreateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput> | EngagementTimesheetEntryCreateWithoutAssignmentInput[] | EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput[]
+    connectOrCreate?: EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput | EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput[]
+    createMany?: EngagementTimesheetEntryCreateManyAssignmentInputEnvelope
+    connect?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
   }
 
   export type EnumAssignmentStatusFieldUpdateOperationsInput = {
@@ -10294,6 +17845,20 @@ export namespace Prisma {
     deleteMany?: MemberExperienceScalarWhereInput | MemberExperienceScalarWhereInput[]
   }
 
+  export type EngagementTimesheetEntryUpdateManyWithoutAssignmentNestedInput = {
+    create?: XOR<EngagementTimesheetEntryCreateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput> | EngagementTimesheetEntryCreateWithoutAssignmentInput[] | EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput[]
+    connectOrCreate?: EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput | EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput[]
+    upsert?: EngagementTimesheetEntryUpsertWithWhereUniqueWithoutAssignmentInput | EngagementTimesheetEntryUpsertWithWhereUniqueWithoutAssignmentInput[]
+    createMany?: EngagementTimesheetEntryCreateManyAssignmentInputEnvelope
+    set?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    disconnect?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    delete?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    connect?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    update?: EngagementTimesheetEntryUpdateWithWhereUniqueWithoutAssignmentInput | EngagementTimesheetEntryUpdateWithWhereUniqueWithoutAssignmentInput[]
+    updateMany?: EngagementTimesheetEntryUpdateManyWithWhereWithoutAssignmentInput | EngagementTimesheetEntryUpdateManyWithWhereWithoutAssignmentInput[]
+    deleteMany?: EngagementTimesheetEntryScalarWhereInput | EngagementTimesheetEntryScalarWhereInput[]
+  }
+
   export type EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput = {
     create?: XOR<EngagementFeedbackCreateWithoutAssignmentInput, EngagementFeedbackUncheckedCreateWithoutAssignmentInput> | EngagementFeedbackCreateWithoutAssignmentInput[] | EngagementFeedbackUncheckedCreateWithoutAssignmentInput[]
     connectOrCreate?: EngagementFeedbackCreateOrConnectWithoutAssignmentInput | EngagementFeedbackCreateOrConnectWithoutAssignmentInput[]
@@ -10322,6 +17887,20 @@ export namespace Prisma {
     deleteMany?: MemberExperienceScalarWhereInput | MemberExperienceScalarWhereInput[]
   }
 
+  export type EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentNestedInput = {
+    create?: XOR<EngagementTimesheetEntryCreateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput> | EngagementTimesheetEntryCreateWithoutAssignmentInput[] | EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput[]
+    connectOrCreate?: EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput | EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput[]
+    upsert?: EngagementTimesheetEntryUpsertWithWhereUniqueWithoutAssignmentInput | EngagementTimesheetEntryUpsertWithWhereUniqueWithoutAssignmentInput[]
+    createMany?: EngagementTimesheetEntryCreateManyAssignmentInputEnvelope
+    set?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    disconnect?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    delete?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    connect?: EngagementTimesheetEntryWhereUniqueInput | EngagementTimesheetEntryWhereUniqueInput[]
+    update?: EngagementTimesheetEntryUpdateWithWhereUniqueWithoutAssignmentInput | EngagementTimesheetEntryUpdateWithWhereUniqueWithoutAssignmentInput[]
+    updateMany?: EngagementTimesheetEntryUpdateManyWithWhereWithoutAssignmentInput | EngagementTimesheetEntryUpdateManyWithWhereWithoutAssignmentInput[]
+    deleteMany?: EngagementTimesheetEntryScalarWhereInput | EngagementTimesheetEntryScalarWhereInput[]
+  }
+
   export type EngagementAssignmentCreateNestedOneWithoutFeedbackInput = {
     create?: XOR<EngagementAssignmentCreateWithoutFeedbackInput, EngagementAssignmentUncheckedCreateWithoutFeedbackInput>
     connectOrCreate?: EngagementAssignmentCreateOrConnectWithoutFeedbackInput
@@ -10348,6 +17927,165 @@ export namespace Prisma {
     upsert?: EngagementAssignmentUpsertWithoutMemberExperiencesInput
     connect?: EngagementAssignmentWhereUniqueInput
     update?: XOR<XOR<EngagementAssignmentUpdateToOneWithWhereWithoutMemberExperiencesInput, EngagementAssignmentUpdateWithoutMemberExperiencesInput>, EngagementAssignmentUncheckedUpdateWithoutMemberExperiencesInput>
+  }
+
+  export type EngagementLeadCreaterequiredSkillsInput = {
+    set: string[]
+  }
+
+  export type EnumEngagementModelFieldUpdateOperationsInput = {
+    set?: $Enums.EngagementModel
+  }
+
+  export type EngagementLeadUpdaterequiredSkillsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type EnumExperienceLevelFieldUpdateOperationsInput = {
+    set?: $Enums.ExperienceLevel
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type FloatFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type EnumLeadPriorityFieldUpdateOperationsInput = {
+    set?: $Enums.LeadPriority
+  }
+
+  export type EnumEngagementLeadStatusFieldUpdateOperationsInput = {
+    set?: $Enums.EngagementLeadStatus
+  }
+
+  export type EngagementAssignmentCreateNestedOneWithoutTimesheetEntriesInput = {
+    create?: XOR<EngagementAssignmentCreateWithoutTimesheetEntriesInput, EngagementAssignmentUncheckedCreateWithoutTimesheetEntriesInput>
+    connectOrCreate?: EngagementAssignmentCreateOrConnectWithoutTimesheetEntriesInput
+    connect?: EngagementAssignmentWhereUniqueInput
+  }
+
+  export type EngagementTimesheetAuditCreateNestedManyWithoutEntryInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEntryInput, EngagementTimesheetAuditUncheckedCreateWithoutEntryInput> | EngagementTimesheetAuditCreateWithoutEntryInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEntryInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEntryInput | EngagementTimesheetAuditCreateOrConnectWithoutEntryInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEntryInputEnvelope
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+  }
+
+  export type EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEntryInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEntryInput, EngagementTimesheetAuditUncheckedCreateWithoutEntryInput> | EngagementTimesheetAuditCreateWithoutEntryInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEntryInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEntryInput | EngagementTimesheetAuditCreateOrConnectWithoutEntryInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEntryInputEnvelope
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+  }
+
+  export type DecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EnumTimesheetEntryStatusFieldUpdateOperationsInput = {
+    set?: $Enums.TimesheetEntryStatus
+  }
+
+  export type EngagementAssignmentUpdateOneRequiredWithoutTimesheetEntriesNestedInput = {
+    create?: XOR<EngagementAssignmentCreateWithoutTimesheetEntriesInput, EngagementAssignmentUncheckedCreateWithoutTimesheetEntriesInput>
+    connectOrCreate?: EngagementAssignmentCreateOrConnectWithoutTimesheetEntriesInput
+    upsert?: EngagementAssignmentUpsertWithoutTimesheetEntriesInput
+    connect?: EngagementAssignmentWhereUniqueInput
+    update?: XOR<XOR<EngagementAssignmentUpdateToOneWithWhereWithoutTimesheetEntriesInput, EngagementAssignmentUpdateWithoutTimesheetEntriesInput>, EngagementAssignmentUncheckedUpdateWithoutTimesheetEntriesInput>
+  }
+
+  export type EngagementTimesheetAuditUpdateManyWithoutEntryNestedInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEntryInput, EngagementTimesheetAuditUncheckedCreateWithoutEntryInput> | EngagementTimesheetAuditCreateWithoutEntryInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEntryInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEntryInput | EngagementTimesheetAuditCreateOrConnectWithoutEntryInput[]
+    upsert?: EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEntryInput | EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEntryInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEntryInputEnvelope
+    set?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    disconnect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    delete?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    update?: EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEntryInput | EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEntryInput[]
+    updateMany?: EngagementTimesheetAuditUpdateManyWithWhereWithoutEntryInput | EngagementTimesheetAuditUpdateManyWithWhereWithoutEntryInput[]
+    deleteMany?: EngagementTimesheetAuditScalarWhereInput | EngagementTimesheetAuditScalarWhereInput[]
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateManyWithoutEntryNestedInput = {
+    create?: XOR<EngagementTimesheetAuditCreateWithoutEntryInput, EngagementTimesheetAuditUncheckedCreateWithoutEntryInput> | EngagementTimesheetAuditCreateWithoutEntryInput[] | EngagementTimesheetAuditUncheckedCreateWithoutEntryInput[]
+    connectOrCreate?: EngagementTimesheetAuditCreateOrConnectWithoutEntryInput | EngagementTimesheetAuditCreateOrConnectWithoutEntryInput[]
+    upsert?: EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEntryInput | EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEntryInput[]
+    createMany?: EngagementTimesheetAuditCreateManyEntryInputEnvelope
+    set?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    disconnect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    delete?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    connect?: EngagementTimesheetAuditWhereUniqueInput | EngagementTimesheetAuditWhereUniqueInput[]
+    update?: EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEntryInput | EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEntryInput[]
+    updateMany?: EngagementTimesheetAuditUpdateManyWithWhereWithoutEntryInput | EngagementTimesheetAuditUpdateManyWithWhereWithoutEntryInput[]
+    deleteMany?: EngagementTimesheetAuditScalarWhereInput | EngagementTimesheetAuditScalarWhereInput[]
+  }
+
+  export type EngagementTimesheetEntryCreateNestedOneWithoutAuditRecordsInput = {
+    create?: XOR<EngagementTimesheetEntryCreateWithoutAuditRecordsInput, EngagementTimesheetEntryUncheckedCreateWithoutAuditRecordsInput>
+    connectOrCreate?: EngagementTimesheetEntryCreateOrConnectWithoutAuditRecordsInput
+    connect?: EngagementTimesheetEntryWhereUniqueInput
+  }
+
+  export type EngagementCreateNestedOneWithoutTimesheetAuditInput = {
+    create?: XOR<EngagementCreateWithoutTimesheetAuditInput, EngagementUncheckedCreateWithoutTimesheetAuditInput>
+    connectOrCreate?: EngagementCreateOrConnectWithoutTimesheetAuditInput
+    connect?: EngagementWhereUniqueInput
+  }
+
+  export type EnumTimesheetAuditActionFieldUpdateOperationsInput = {
+    set?: $Enums.TimesheetAuditAction
+  }
+
+  export type EngagementTimesheetEntryUpdateOneWithoutAuditRecordsNestedInput = {
+    create?: XOR<EngagementTimesheetEntryCreateWithoutAuditRecordsInput, EngagementTimesheetEntryUncheckedCreateWithoutAuditRecordsInput>
+    connectOrCreate?: EngagementTimesheetEntryCreateOrConnectWithoutAuditRecordsInput
+    upsert?: EngagementTimesheetEntryUpsertWithoutAuditRecordsInput
+    disconnect?: EngagementTimesheetEntryWhereInput | boolean
+    delete?: EngagementTimesheetEntryWhereInput | boolean
+    connect?: EngagementTimesheetEntryWhereUniqueInput
+    update?: XOR<XOR<EngagementTimesheetEntryUpdateToOneWithWhereWithoutAuditRecordsInput, EngagementTimesheetEntryUpdateWithoutAuditRecordsInput>, EngagementTimesheetEntryUncheckedUpdateWithoutAuditRecordsInput>
+  }
+
+  export type EngagementUpdateOneWithoutTimesheetAuditNestedInput = {
+    create?: XOR<EngagementCreateWithoutTimesheetAuditInput, EngagementUncheckedCreateWithoutTimesheetAuditInput>
+    connectOrCreate?: EngagementCreateOrConnectWithoutTimesheetAuditInput
+    upsert?: EngagementUpsertWithoutTimesheetAuditInput
+    disconnect?: EngagementWhereInput | boolean
+    delete?: EngagementWhereInput | boolean
+    connect?: EngagementWhereUniqueInput
+    update?: XOR<XOR<EngagementUpdateToOneWithWhereWithoutTimesheetAuditInput, EngagementUpdateWithoutTimesheetAuditInput>, EngagementUncheckedUpdateWithoutTimesheetAuditInput>
+  }
+
+  export type EngagementCreateNestedOneWithoutManagersInput = {
+    create?: XOR<EngagementCreateWithoutManagersInput, EngagementUncheckedCreateWithoutManagersInput>
+    connectOrCreate?: EngagementCreateOrConnectWithoutManagersInput
+    connect?: EngagementWhereUniqueInput
+  }
+
+  export type EngagementUpdateOneRequiredWithoutManagersNestedInput = {
+    create?: XOR<EngagementCreateWithoutManagersInput, EngagementUncheckedCreateWithoutManagersInput>
+    connectOrCreate?: EngagementCreateOrConnectWithoutManagersInput
+    upsert?: EngagementUpsertWithoutManagersInput
+    connect?: EngagementWhereUniqueInput
+    update?: XOR<XOR<EngagementUpdateToOneWithWhereWithoutManagersInput, EngagementUpdateWithoutManagersInput>, EngagementUncheckedUpdateWithoutManagersInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -10693,6 +18431,201 @@ export namespace Prisma {
     _max?: NestedEnumAssignmentSourceNullableFilter<$PrismaModel>
   }
 
+  export type NestedEnumEngagementModelFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementModelFilter<$PrismaModel> | $Enums.EngagementModel
+  }
+
+  export type NestedEnumExperienceLevelFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    not?: NestedEnumExperienceLevelFilter<$PrismaModel> | $Enums.ExperienceLevel
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedEnumLeadPriorityFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    not?: NestedEnumLeadPriorityFilter<$PrismaModel> | $Enums.LeadPriority
+  }
+
+  export type NestedEnumEngagementLeadStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadStatus | EnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadStatusFilter<$PrismaModel> | $Enums.EngagementLeadStatus
+  }
+
+  export type NestedEnumEngagementModelWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementModelWithAggregatesFilter<$PrismaModel> | $Enums.EngagementModel
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumEngagementModelFilter<$PrismaModel>
+    _max?: NestedEnumEngagementModelFilter<$PrismaModel>
+  }
+
+  export type NestedEnumExperienceLevelWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
+    not?: NestedEnumExperienceLevelWithAggregatesFilter<$PrismaModel> | $Enums.ExperienceLevel
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumExperienceLevelFilter<$PrismaModel>
+    _max?: NestedEnumExperienceLevelFilter<$PrismaModel>
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
+  }
+
+  export type NestedEnumLeadPriorityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
+    not?: NestedEnumLeadPriorityWithAggregatesFilter<$PrismaModel> | $Enums.LeadPriority
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLeadPriorityFilter<$PrismaModel>
+    _max?: NestedEnumLeadPriorityFilter<$PrismaModel>
+  }
+
+  export type NestedEnumEngagementLeadStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadStatus | EnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadStatus[] | ListEnumEngagementLeadStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadStatusWithAggregatesFilter<$PrismaModel> | $Enums.EngagementLeadStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumEngagementLeadStatusFilter<$PrismaModel>
+    _max?: NestedEnumEngagementLeadStatusFilter<$PrismaModel>
+  }
+
+  export type NestedDecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type NestedEnumTimesheetEntryStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetEntryStatus | EnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetEntryStatusFilter<$PrismaModel> | $Enums.TimesheetEntryStatus
+  }
+
+  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type NestedEnumTimesheetEntryStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetEntryStatus | EnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetEntryStatus[] | ListEnumTimesheetEntryStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetEntryStatusWithAggregatesFilter<$PrismaModel> | $Enums.TimesheetEntryStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTimesheetEntryStatusFilter<$PrismaModel>
+    _max?: NestedEnumTimesheetEntryStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumTimesheetAuditActionFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetAuditAction | EnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetAuditActionFilter<$PrismaModel> | $Enums.TimesheetAuditAction
+  }
+
+  export type NestedEnumTimesheetAuditActionWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TimesheetAuditAction | EnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TimesheetAuditAction[] | ListEnumTimesheetAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumTimesheetAuditActionWithAggregatesFilter<$PrismaModel> | $Enums.TimesheetAuditAction
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTimesheetAuditActionFilter<$PrismaModel>
+    _max?: NestedEnumTimesheetAuditActionFilter<$PrismaModel>
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
   export type EngagementApplicationCreateWithoutEngagementInput = {
     id?: string
     userId: string
@@ -10703,9 +18636,12 @@ export namespace Prisma {
     mobileNumber?: string | null
     coverLetter?: string | null
     resumeUrl?: string | null
+    cvFileUrl?: string | null
     portfolioUrls?: EngagementApplicationCreateportfolioUrlsInput | string[]
     yearsOfExperience?: number | null
     availability?: string | null
+    expectedPayRate?: string | null
+    referralSource?: string | null
     status?: $Enums.ApplicationStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -10722,9 +18658,12 @@ export namespace Prisma {
     mobileNumber?: string | null
     coverLetter?: string | null
     resumeUrl?: string | null
+    cvFileUrl?: string | null
     portfolioUrls?: EngagementApplicationCreateportfolioUrlsInput | string[]
     yearsOfExperience?: number | null
     availability?: string | null
+    expectedPayRate?: string | null
+    referralSource?: string | null
     status?: $Enums.ApplicationStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -10750,6 +18689,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -10763,6 +18703,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     feedback?: EngagementFeedbackCreateNestedManyWithoutAssignmentInput
     memberExperiences?: MemberExperienceCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentUncheckedCreateWithoutEngagementInput = {
@@ -10774,6 +18715,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -10787,6 +18729,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     feedback?: EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput
     memberExperiences?: MemberExperienceUncheckedCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentCreateOrConnectWithoutEngagementInput = {
@@ -10796,6 +18739,74 @@ export namespace Prisma {
 
   export type EngagementAssignmentCreateManyEngagementInputEnvelope = {
     data: EngagementAssignmentCreateManyEngagementInput | EngagementAssignmentCreateManyEngagementInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EngagementManagerCreateWithoutEngagementInput = {
+    id?: string
+    managerUserId: string
+    managerHandle: string
+    managerName?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    removedAt?: Date | string | null
+    removedBy?: string | null
+  }
+
+  export type EngagementManagerUncheckedCreateWithoutEngagementInput = {
+    id?: string
+    managerUserId: string
+    managerHandle: string
+    managerName?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    removedAt?: Date | string | null
+    removedBy?: string | null
+  }
+
+  export type EngagementManagerCreateOrConnectWithoutEngagementInput = {
+    where: EngagementManagerWhereUniqueInput
+    create: XOR<EngagementManagerCreateWithoutEngagementInput, EngagementManagerUncheckedCreateWithoutEngagementInput>
+  }
+
+  export type EngagementManagerCreateManyEngagementInputEnvelope = {
+    data: EngagementManagerCreateManyEngagementInput | EngagementManagerCreateManyEngagementInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EngagementTimesheetAuditCreateWithoutEngagementInput = {
+    id?: string
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+    entry?: EngagementTimesheetEntryCreateNestedOneWithoutAuditRecordsInput
+  }
+
+  export type EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput = {
+    id?: string
+    timesheetEntryId?: string | null
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+  }
+
+  export type EngagementTimesheetAuditCreateOrConnectWithoutEngagementInput = {
+    where: EngagementTimesheetAuditWhereUniqueInput
+    create: XOR<EngagementTimesheetAuditCreateWithoutEngagementInput, EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput>
+  }
+
+  export type EngagementTimesheetAuditCreateManyEngagementInputEnvelope = {
+    data: EngagementTimesheetAuditCreateManyEngagementInput | EngagementTimesheetAuditCreateManyEngagementInput[]
     skipDuplicates?: boolean
   }
 
@@ -10829,9 +18840,12 @@ export namespace Prisma {
     mobileNumber?: StringNullableFilter<"EngagementApplication"> | string | null
     coverLetter?: StringNullableFilter<"EngagementApplication"> | string | null
     resumeUrl?: StringNullableFilter<"EngagementApplication"> | string | null
+    cvFileUrl?: StringNullableFilter<"EngagementApplication"> | string | null
     portfolioUrls?: StringNullableListFilter<"EngagementApplication">
     yearsOfExperience?: IntNullableFilter<"EngagementApplication"> | number | null
     availability?: StringNullableFilter<"EngagementApplication"> | string | null
+    expectedPayRate?: StringNullableFilter<"EngagementApplication"> | string | null
+    referralSource?: StringNullableFilter<"EngagementApplication"> | string | null
     status?: EnumApplicationStatusFilter<"EngagementApplication"> | $Enums.ApplicationStatus
     createdAt?: DateTimeFilter<"EngagementApplication"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementApplication"> | Date | string
@@ -10867,6 +18881,7 @@ export namespace Prisma {
     ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleFilter<"EngagementAssignment"> | $Enums.PaymentCycle
     standardHoursPerDay?: FloatNullableFilter<"EngagementAssignment"> | number | null
+    totalHours?: FloatNullableFilter<"EngagementAssignment"> | number | null
     standardHoursPerWeek?: FloatNullableFilter<"EngagementAssignment"> | number | null
     durationMonths?: IntNullableFilter<"EngagementAssignment"> | number | null
     otherRemarks?: StringNullableFilter<"EngagementAssignment"> | string | null
@@ -10878,6 +18893,70 @@ export namespace Prisma {
     source?: EnumAssignmentSourceNullableFilter<"EngagementAssignment"> | $Enums.AssignmentSource | null
     createdAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementAssignment"> | Date | string
+  }
+
+  export type EngagementManagerUpsertWithWhereUniqueWithoutEngagementInput = {
+    where: EngagementManagerWhereUniqueInput
+    update: XOR<EngagementManagerUpdateWithoutEngagementInput, EngagementManagerUncheckedUpdateWithoutEngagementInput>
+    create: XOR<EngagementManagerCreateWithoutEngagementInput, EngagementManagerUncheckedCreateWithoutEngagementInput>
+  }
+
+  export type EngagementManagerUpdateWithWhereUniqueWithoutEngagementInput = {
+    where: EngagementManagerWhereUniqueInput
+    data: XOR<EngagementManagerUpdateWithoutEngagementInput, EngagementManagerUncheckedUpdateWithoutEngagementInput>
+  }
+
+  export type EngagementManagerUpdateManyWithWhereWithoutEngagementInput = {
+    where: EngagementManagerScalarWhereInput
+    data: XOR<EngagementManagerUpdateManyMutationInput, EngagementManagerUncheckedUpdateManyWithoutEngagementInput>
+  }
+
+  export type EngagementManagerScalarWhereInput = {
+    AND?: EngagementManagerScalarWhereInput | EngagementManagerScalarWhereInput[]
+    OR?: EngagementManagerScalarWhereInput[]
+    NOT?: EngagementManagerScalarWhereInput | EngagementManagerScalarWhereInput[]
+    id?: StringFilter<"EngagementManager"> | string
+    engagementId?: StringFilter<"EngagementManager"> | string
+    managerUserId?: StringFilter<"EngagementManager"> | string
+    managerHandle?: StringFilter<"EngagementManager"> | string
+    managerName?: StringNullableFilter<"EngagementManager"> | string | null
+    createdAt?: DateTimeFilter<"EngagementManager"> | Date | string
+    createdBy?: StringFilter<"EngagementManager"> | string
+    removedAt?: DateTimeNullableFilter<"EngagementManager"> | Date | string | null
+    removedBy?: StringNullableFilter<"EngagementManager"> | string | null
+  }
+
+  export type EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEngagementInput = {
+    where: EngagementTimesheetAuditWhereUniqueInput
+    update: XOR<EngagementTimesheetAuditUpdateWithoutEngagementInput, EngagementTimesheetAuditUncheckedUpdateWithoutEngagementInput>
+    create: XOR<EngagementTimesheetAuditCreateWithoutEngagementInput, EngagementTimesheetAuditUncheckedCreateWithoutEngagementInput>
+  }
+
+  export type EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEngagementInput = {
+    where: EngagementTimesheetAuditWhereUniqueInput
+    data: XOR<EngagementTimesheetAuditUpdateWithoutEngagementInput, EngagementTimesheetAuditUncheckedUpdateWithoutEngagementInput>
+  }
+
+  export type EngagementTimesheetAuditUpdateManyWithWhereWithoutEngagementInput = {
+    where: EngagementTimesheetAuditScalarWhereInput
+    data: XOR<EngagementTimesheetAuditUpdateManyMutationInput, EngagementTimesheetAuditUncheckedUpdateManyWithoutEngagementInput>
+  }
+
+  export type EngagementTimesheetAuditScalarWhereInput = {
+    AND?: EngagementTimesheetAuditScalarWhereInput | EngagementTimesheetAuditScalarWhereInput[]
+    OR?: EngagementTimesheetAuditScalarWhereInput[]
+    NOT?: EngagementTimesheetAuditScalarWhereInput | EngagementTimesheetAuditScalarWhereInput[]
+    id?: StringFilter<"EngagementTimesheetAudit"> | string
+    timesheetEntryId?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    engagementId?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    action?: EnumTimesheetAuditActionFilter<"EngagementTimesheetAudit"> | $Enums.TimesheetAuditAction
+    previousValues?: JsonNullableFilter<"EngagementTimesheetAudit">
+    updatedValues?: JsonNullableFilter<"EngagementTimesheetAudit">
+    actorUserId?: StringFilter<"EngagementTimesheetAudit"> | string
+    actorHandle?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    actorRole?: StringFilter<"EngagementTimesheetAudit"> | string
+    comment?: StringNullableFilter<"EngagementTimesheetAudit"> | string | null
+    createdAt?: DateTimeFilter<"EngagementTimesheetAudit"> | Date | string
   }
 
   export type EngagementCreateWithoutApplicationsInput = {
@@ -10909,6 +18988,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     updatedBy?: string | null
     assignments?: EngagementAssignmentCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditCreateNestedManyWithoutEngagementInput
   }
 
   export type EngagementUncheckedCreateWithoutApplicationsInput = {
@@ -10940,6 +19021,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     updatedBy?: string | null
     assignments?: EngagementAssignmentUncheckedCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerUncheckedCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEngagementInput
   }
 
   export type EngagementCreateOrConnectWithoutApplicationsInput = {
@@ -10987,6 +19070,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     assignments?: EngagementAssignmentUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUpdateManyWithoutEngagementNestedInput
   }
 
   export type EngagementUncheckedUpdateWithoutApplicationsInput = {
@@ -11018,6 +19103,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     assignments?: EngagementAssignmentUncheckedUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUncheckedUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedUpdateManyWithoutEngagementNestedInput
   }
 
   export type EngagementCreateWithoutAssignmentsInput = {
@@ -11049,6 +19136,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     updatedBy?: string | null
     applications?: EngagementApplicationCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditCreateNestedManyWithoutEngagementInput
   }
 
   export type EngagementUncheckedCreateWithoutAssignmentsInput = {
@@ -11080,6 +19169,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     updatedBy?: string | null
     applications?: EngagementApplicationUncheckedCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerUncheckedCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEngagementInput
   }
 
   export type EngagementCreateOrConnectWithoutAssignmentsInput = {
@@ -11147,6 +19238,60 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type EngagementTimesheetEntryCreateWithoutAssignmentInput = {
+    id?: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    auditRecords?: EngagementTimesheetAuditCreateNestedManyWithoutEntryInput
+  }
+
+  export type EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput = {
+    id?: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    auditRecords?: EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEntryInput
+  }
+
+  export type EngagementTimesheetEntryCreateOrConnectWithoutAssignmentInput = {
+    where: EngagementTimesheetEntryWhereUniqueInput
+    create: XOR<EngagementTimesheetEntryCreateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput>
+  }
+
+  export type EngagementTimesheetEntryCreateManyAssignmentInputEnvelope = {
+    data: EngagementTimesheetEntryCreateManyAssignmentInput | EngagementTimesheetEntryCreateManyAssignmentInput[]
+    skipDuplicates?: boolean
+  }
+
   export type EngagementUpsertWithoutAssignmentsInput = {
     update: XOR<EngagementUpdateWithoutAssignmentsInput, EngagementUncheckedUpdateWithoutAssignmentsInput>
     create: XOR<EngagementCreateWithoutAssignmentsInput, EngagementUncheckedCreateWithoutAssignmentsInput>
@@ -11187,6 +19332,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: EngagementApplicationUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUpdateManyWithoutEngagementNestedInput
   }
 
   export type EngagementUncheckedUpdateWithoutAssignmentsInput = {
@@ -11218,6 +19365,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     applications?: EngagementApplicationUncheckedUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUncheckedUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedUpdateManyWithoutEngagementNestedInput
   }
 
   export type EngagementFeedbackUpsertWithWhereUniqueWithoutAssignmentInput = {
@@ -11280,6 +19429,47 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"MemberExperience"> | Date | string
   }
 
+  export type EngagementTimesheetEntryUpsertWithWhereUniqueWithoutAssignmentInput = {
+    where: EngagementTimesheetEntryWhereUniqueInput
+    update: XOR<EngagementTimesheetEntryUpdateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedUpdateWithoutAssignmentInput>
+    create: XOR<EngagementTimesheetEntryCreateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedCreateWithoutAssignmentInput>
+  }
+
+  export type EngagementTimesheetEntryUpdateWithWhereUniqueWithoutAssignmentInput = {
+    where: EngagementTimesheetEntryWhereUniqueInput
+    data: XOR<EngagementTimesheetEntryUpdateWithoutAssignmentInput, EngagementTimesheetEntryUncheckedUpdateWithoutAssignmentInput>
+  }
+
+  export type EngagementTimesheetEntryUpdateManyWithWhereWithoutAssignmentInput = {
+    where: EngagementTimesheetEntryScalarWhereInput
+    data: XOR<EngagementTimesheetEntryUpdateManyMutationInput, EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentInput>
+  }
+
+  export type EngagementTimesheetEntryScalarWhereInput = {
+    AND?: EngagementTimesheetEntryScalarWhereInput | EngagementTimesheetEntryScalarWhereInput[]
+    OR?: EngagementTimesheetEntryScalarWhereInput[]
+    NOT?: EngagementTimesheetEntryScalarWhereInput | EngagementTimesheetEntryScalarWhereInput[]
+    id?: StringFilter<"EngagementTimesheetEntry"> | string
+    engagementAssignmentId?: StringFilter<"EngagementTimesheetEntry"> | string
+    workDate?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    hoursWorked?: DecimalFilter<"EngagementTimesheetEntry"> | Decimal | DecimalJsLike | number | string
+    remarks?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    status?: EnumTimesheetEntryStatusFilter<"EngagementTimesheetEntry"> | $Enums.TimesheetEntryStatus
+    submittedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    submittedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    approvedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    createdBy?: StringFilter<"EngagementTimesheetEntry"> | string
+    updatedAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
+    updatedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+  }
+
   export type EngagementAssignmentCreateWithoutFeedbackInput = {
     id?: string
     memberId: string
@@ -11289,6 +19479,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -11302,6 +19493,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     engagement: EngagementCreateNestedOneWithoutAssignmentsInput
     memberExperiences?: MemberExperienceCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentUncheckedCreateWithoutFeedbackInput = {
@@ -11314,6 +19506,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -11326,6 +19519,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     memberExperiences?: MemberExperienceUncheckedCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentCreateOrConnectWithoutFeedbackInput = {
@@ -11353,6 +19547,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11366,6 +19561,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     engagement?: EngagementUpdateOneRequiredWithoutAssignmentsNestedInput
     memberExperiences?: MemberExperienceUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUpdateManyWithoutAssignmentNestedInput
   }
 
   export type EngagementAssignmentUncheckedUpdateWithoutFeedbackInput = {
@@ -11378,6 +19574,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11390,6 +19587,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     memberExperiences?: MemberExperienceUncheckedUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentNestedInput
   }
 
   export type EngagementAssignmentCreateWithoutMemberExperiencesInput = {
@@ -11401,6 +19599,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -11414,6 +19613,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     engagement: EngagementCreateNestedOneWithoutAssignmentsInput
     feedback?: EngagementFeedbackCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentUncheckedCreateWithoutMemberExperiencesInput = {
@@ -11426,6 +19626,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -11438,6 +19639,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     feedback?: EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedCreateNestedManyWithoutAssignmentInput
   }
 
   export type EngagementAssignmentCreateOrConnectWithoutMemberExperiencesInput = {
@@ -11465,6 +19667,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11478,6 +19681,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     engagement?: EngagementUpdateOneRequiredWithoutAssignmentsNestedInput
     feedback?: EngagementFeedbackUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUpdateManyWithoutAssignmentNestedInput
   }
 
   export type EngagementAssignmentUncheckedUpdateWithoutMemberExperiencesInput = {
@@ -11490,6 +19694,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11502,6 +19707,579 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentNestedInput
+  }
+
+  export type EngagementAssignmentCreateWithoutTimesheetEntriesInput = {
+    id?: string
+    memberId: string
+    memberHandle: string
+    status?: $Enums.AssignmentStatus
+    agreementRate?: string | null
+    ratePerHour?: string | null
+    paymentCycle?: $Enums.PaymentCycle
+    standardHoursPerDay?: number | null
+    totalHours?: number | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
+    otherRemarks?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
+    wiproIdEndDate?: Date | string | null
+    candidateWiproId?: string | null
+    source?: $Enums.AssignmentSource | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    engagement: EngagementCreateNestedOneWithoutAssignmentsInput
+    feedback?: EngagementFeedbackCreateNestedManyWithoutAssignmentInput
+    memberExperiences?: MemberExperienceCreateNestedManyWithoutAssignmentInput
+  }
+
+  export type EngagementAssignmentUncheckedCreateWithoutTimesheetEntriesInput = {
+    id?: string
+    engagementId: string
+    memberId: string
+    memberHandle: string
+    status?: $Enums.AssignmentStatus
+    agreementRate?: string | null
+    ratePerHour?: string | null
+    paymentCycle?: $Enums.PaymentCycle
+    standardHoursPerDay?: number | null
+    totalHours?: number | null
+    standardHoursPerWeek?: number | null
+    durationMonths?: number | null
+    otherRemarks?: string | null
+    terminationReason?: string | null
+    startDate?: Date | string | null
+    endDate?: Date | string | null
+    wiproIdEndDate?: Date | string | null
+    candidateWiproId?: string | null
+    source?: $Enums.AssignmentSource | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    feedback?: EngagementFeedbackUncheckedCreateNestedManyWithoutAssignmentInput
+    memberExperiences?: MemberExperienceUncheckedCreateNestedManyWithoutAssignmentInput
+  }
+
+  export type EngagementAssignmentCreateOrConnectWithoutTimesheetEntriesInput = {
+    where: EngagementAssignmentWhereUniqueInput
+    create: XOR<EngagementAssignmentCreateWithoutTimesheetEntriesInput, EngagementAssignmentUncheckedCreateWithoutTimesheetEntriesInput>
+  }
+
+  export type EngagementTimesheetAuditCreateWithoutEntryInput = {
+    id?: string
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+    engagement?: EngagementCreateNestedOneWithoutTimesheetAuditInput
+  }
+
+  export type EngagementTimesheetAuditUncheckedCreateWithoutEntryInput = {
+    id?: string
+    engagementId?: string | null
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+  }
+
+  export type EngagementTimesheetAuditCreateOrConnectWithoutEntryInput = {
+    where: EngagementTimesheetAuditWhereUniqueInput
+    create: XOR<EngagementTimesheetAuditCreateWithoutEntryInput, EngagementTimesheetAuditUncheckedCreateWithoutEntryInput>
+  }
+
+  export type EngagementTimesheetAuditCreateManyEntryInputEnvelope = {
+    data: EngagementTimesheetAuditCreateManyEntryInput | EngagementTimesheetAuditCreateManyEntryInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EngagementAssignmentUpsertWithoutTimesheetEntriesInput = {
+    update: XOR<EngagementAssignmentUpdateWithoutTimesheetEntriesInput, EngagementAssignmentUncheckedUpdateWithoutTimesheetEntriesInput>
+    create: XOR<EngagementAssignmentCreateWithoutTimesheetEntriesInput, EngagementAssignmentUncheckedCreateWithoutTimesheetEntriesInput>
+    where?: EngagementAssignmentWhereInput
+  }
+
+  export type EngagementAssignmentUpdateToOneWithWhereWithoutTimesheetEntriesInput = {
+    where?: EngagementAssignmentWhereInput
+    data: XOR<EngagementAssignmentUpdateWithoutTimesheetEntriesInput, EngagementAssignmentUncheckedUpdateWithoutTimesheetEntriesInput>
+  }
+
+  export type EngagementAssignmentUpdateWithoutTimesheetEntriesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    memberId?: StringFieldUpdateOperationsInput | string
+    memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
+    standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    wiproIdEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    candidateWiproId?: NullableStringFieldUpdateOperationsInput | string | null
+    source?: NullableEnumAssignmentSourceFieldUpdateOperationsInput | $Enums.AssignmentSource | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    engagement?: EngagementUpdateOneRequiredWithoutAssignmentsNestedInput
+    feedback?: EngagementFeedbackUpdateManyWithoutAssignmentNestedInput
+    memberExperiences?: MemberExperienceUpdateManyWithoutAssignmentNestedInput
+  }
+
+  export type EngagementAssignmentUncheckedUpdateWithoutTimesheetEntriesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementId?: StringFieldUpdateOperationsInput | string
+    memberId?: StringFieldUpdateOperationsInput | string
+    memberHandle?: StringFieldUpdateOperationsInput | string
+    status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
+    ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
+    paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
+    standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
+    terminationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    endDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    wiproIdEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    candidateWiproId?: NullableStringFieldUpdateOperationsInput | string | null
+    source?: NullableEnumAssignmentSourceFieldUpdateOperationsInput | $Enums.AssignmentSource | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    feedback?: EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput
+    memberExperiences?: MemberExperienceUncheckedUpdateManyWithoutAssignmentNestedInput
+  }
+
+  export type EngagementTimesheetAuditUpsertWithWhereUniqueWithoutEntryInput = {
+    where: EngagementTimesheetAuditWhereUniqueInput
+    update: XOR<EngagementTimesheetAuditUpdateWithoutEntryInput, EngagementTimesheetAuditUncheckedUpdateWithoutEntryInput>
+    create: XOR<EngagementTimesheetAuditCreateWithoutEntryInput, EngagementTimesheetAuditUncheckedCreateWithoutEntryInput>
+  }
+
+  export type EngagementTimesheetAuditUpdateWithWhereUniqueWithoutEntryInput = {
+    where: EngagementTimesheetAuditWhereUniqueInput
+    data: XOR<EngagementTimesheetAuditUpdateWithoutEntryInput, EngagementTimesheetAuditUncheckedUpdateWithoutEntryInput>
+  }
+
+  export type EngagementTimesheetAuditUpdateManyWithWhereWithoutEntryInput = {
+    where: EngagementTimesheetAuditScalarWhereInput
+    data: XOR<EngagementTimesheetAuditUpdateManyMutationInput, EngagementTimesheetAuditUncheckedUpdateManyWithoutEntryInput>
+  }
+
+  export type EngagementTimesheetEntryCreateWithoutAuditRecordsInput = {
+    id?: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    assignment: EngagementAssignmentCreateNestedOneWithoutTimesheetEntriesInput
+  }
+
+  export type EngagementTimesheetEntryUncheckedCreateWithoutAuditRecordsInput = {
+    id?: string
+    engagementAssignmentId: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+  }
+
+  export type EngagementTimesheetEntryCreateOrConnectWithoutAuditRecordsInput = {
+    where: EngagementTimesheetEntryWhereUniqueInput
+    create: XOR<EngagementTimesheetEntryCreateWithoutAuditRecordsInput, EngagementTimesheetEntryUncheckedCreateWithoutAuditRecordsInput>
+  }
+
+  export type EngagementCreateWithoutTimesheetAuditInput = {
+    id?: string
+    projectId: string
+    title: string
+    description: string
+    durationStartDate?: Date | string | null
+    durationEndDate?: Date | string | null
+    durationWeeks?: number | null
+    durationMonths?: number | null
+    timeZones?: EngagementCreatetimeZonesInput | string[]
+    countries?: EngagementCreatecountriesInput | string[]
+    requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
+    anticipatedStart: $Enums.AnticipatedStart
+    status?: $Enums.EngagementStatus
+    isPrivate?: boolean
+    requiredMemberCount?: number | null
+    role?: $Enums.Role | null
+    roleLevel?: $Enums.RoleLevel | null
+    workload?: $Enums.Workload | null
+    compensationRange?: string | null
+    receivedDateFromAccount?: Date | string | null
+    account?: string | null
+    smu?: string | null
+    spoc?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    applications?: EngagementApplicationCreateNestedManyWithoutEngagementInput
+    assignments?: EngagementAssignmentCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerCreateNestedManyWithoutEngagementInput
+  }
+
+  export type EngagementUncheckedCreateWithoutTimesheetAuditInput = {
+    id?: string
+    projectId: string
+    title: string
+    description: string
+    durationStartDate?: Date | string | null
+    durationEndDate?: Date | string | null
+    durationWeeks?: number | null
+    durationMonths?: number | null
+    timeZones?: EngagementCreatetimeZonesInput | string[]
+    countries?: EngagementCreatecountriesInput | string[]
+    requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
+    anticipatedStart: $Enums.AnticipatedStart
+    status?: $Enums.EngagementStatus
+    isPrivate?: boolean
+    requiredMemberCount?: number | null
+    role?: $Enums.Role | null
+    roleLevel?: $Enums.RoleLevel | null
+    workload?: $Enums.Workload | null
+    compensationRange?: string | null
+    receivedDateFromAccount?: Date | string | null
+    account?: string | null
+    smu?: string | null
+    spoc?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    applications?: EngagementApplicationUncheckedCreateNestedManyWithoutEngagementInput
+    assignments?: EngagementAssignmentUncheckedCreateNestedManyWithoutEngagementInput
+    managers?: EngagementManagerUncheckedCreateNestedManyWithoutEngagementInput
+  }
+
+  export type EngagementCreateOrConnectWithoutTimesheetAuditInput = {
+    where: EngagementWhereUniqueInput
+    create: XOR<EngagementCreateWithoutTimesheetAuditInput, EngagementUncheckedCreateWithoutTimesheetAuditInput>
+  }
+
+  export type EngagementTimesheetEntryUpsertWithoutAuditRecordsInput = {
+    update: XOR<EngagementTimesheetEntryUpdateWithoutAuditRecordsInput, EngagementTimesheetEntryUncheckedUpdateWithoutAuditRecordsInput>
+    create: XOR<EngagementTimesheetEntryCreateWithoutAuditRecordsInput, EngagementTimesheetEntryUncheckedCreateWithoutAuditRecordsInput>
+    where?: EngagementTimesheetEntryWhereInput
+  }
+
+  export type EngagementTimesheetEntryUpdateToOneWithWhereWithoutAuditRecordsInput = {
+    where?: EngagementTimesheetEntryWhereInput
+    data: XOR<EngagementTimesheetEntryUpdateWithoutAuditRecordsInput, EngagementTimesheetEntryUncheckedUpdateWithoutAuditRecordsInput>
+  }
+
+  export type EngagementTimesheetEntryUpdateWithoutAuditRecordsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    assignment?: EngagementAssignmentUpdateOneRequiredWithoutTimesheetEntriesNestedInput
+  }
+
+  export type EngagementTimesheetEntryUncheckedUpdateWithoutAuditRecordsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementAssignmentId?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementUpsertWithoutTimesheetAuditInput = {
+    update: XOR<EngagementUpdateWithoutTimesheetAuditInput, EngagementUncheckedUpdateWithoutTimesheetAuditInput>
+    create: XOR<EngagementCreateWithoutTimesheetAuditInput, EngagementUncheckedCreateWithoutTimesheetAuditInput>
+    where?: EngagementWhereInput
+  }
+
+  export type EngagementUpdateToOneWithWhereWithoutTimesheetAuditInput = {
+    where?: EngagementWhereInput
+    data: XOR<EngagementUpdateWithoutTimesheetAuditInput, EngagementUncheckedUpdateWithoutTimesheetAuditInput>
+  }
+
+  export type EngagementUpdateWithoutTimesheetAuditInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projectId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    durationStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationWeeks?: NullableIntFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    timeZones?: EngagementUpdatetimeZonesInput | string[]
+    countries?: EngagementUpdatecountriesInput | string[]
+    requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
+    status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
+    isPrivate?: BoolFieldUpdateOperationsInput | boolean
+    requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
+    role?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
+    roleLevel?: NullableEnumRoleLevelFieldUpdateOperationsInput | $Enums.RoleLevel | null
+    workload?: NullableEnumWorkloadFieldUpdateOperationsInput | $Enums.Workload | null
+    compensationRange?: NullableStringFieldUpdateOperationsInput | string | null
+    receivedDateFromAccount?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    account?: NullableStringFieldUpdateOperationsInput | string | null
+    smu?: NullableStringFieldUpdateOperationsInput | string | null
+    spoc?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    applications?: EngagementApplicationUpdateManyWithoutEngagementNestedInput
+    assignments?: EngagementAssignmentUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUpdateManyWithoutEngagementNestedInput
+  }
+
+  export type EngagementUncheckedUpdateWithoutTimesheetAuditInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projectId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    durationStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationWeeks?: NullableIntFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    timeZones?: EngagementUpdatetimeZonesInput | string[]
+    countries?: EngagementUpdatecountriesInput | string[]
+    requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
+    status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
+    isPrivate?: BoolFieldUpdateOperationsInput | boolean
+    requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
+    role?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
+    roleLevel?: NullableEnumRoleLevelFieldUpdateOperationsInput | $Enums.RoleLevel | null
+    workload?: NullableEnumWorkloadFieldUpdateOperationsInput | $Enums.Workload | null
+    compensationRange?: NullableStringFieldUpdateOperationsInput | string | null
+    receivedDateFromAccount?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    account?: NullableStringFieldUpdateOperationsInput | string | null
+    smu?: NullableStringFieldUpdateOperationsInput | string | null
+    spoc?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    applications?: EngagementApplicationUncheckedUpdateManyWithoutEngagementNestedInput
+    assignments?: EngagementAssignmentUncheckedUpdateManyWithoutEngagementNestedInput
+    managers?: EngagementManagerUncheckedUpdateManyWithoutEngagementNestedInput
+  }
+
+  export type EngagementCreateWithoutManagersInput = {
+    id?: string
+    projectId: string
+    title: string
+    description: string
+    durationStartDate?: Date | string | null
+    durationEndDate?: Date | string | null
+    durationWeeks?: number | null
+    durationMonths?: number | null
+    timeZones?: EngagementCreatetimeZonesInput | string[]
+    countries?: EngagementCreatecountriesInput | string[]
+    requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
+    anticipatedStart: $Enums.AnticipatedStart
+    status?: $Enums.EngagementStatus
+    isPrivate?: boolean
+    requiredMemberCount?: number | null
+    role?: $Enums.Role | null
+    roleLevel?: $Enums.RoleLevel | null
+    workload?: $Enums.Workload | null
+    compensationRange?: string | null
+    receivedDateFromAccount?: Date | string | null
+    account?: string | null
+    smu?: string | null
+    spoc?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    applications?: EngagementApplicationCreateNestedManyWithoutEngagementInput
+    assignments?: EngagementAssignmentCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditCreateNestedManyWithoutEngagementInput
+  }
+
+  export type EngagementUncheckedCreateWithoutManagersInput = {
+    id?: string
+    projectId: string
+    title: string
+    description: string
+    durationStartDate?: Date | string | null
+    durationEndDate?: Date | string | null
+    durationWeeks?: number | null
+    durationMonths?: number | null
+    timeZones?: EngagementCreatetimeZonesInput | string[]
+    countries?: EngagementCreatecountriesInput | string[]
+    requiredSkills?: EngagementCreaterequiredSkillsInput | string[]
+    anticipatedStart: $Enums.AnticipatedStart
+    status?: $Enums.EngagementStatus
+    isPrivate?: boolean
+    requiredMemberCount?: number | null
+    role?: $Enums.Role | null
+    roleLevel?: $Enums.RoleLevel | null
+    workload?: $Enums.Workload | null
+    compensationRange?: string | null
+    receivedDateFromAccount?: Date | string | null
+    account?: string | null
+    smu?: string | null
+    spoc?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+    applications?: EngagementApplicationUncheckedCreateNestedManyWithoutEngagementInput
+    assignments?: EngagementAssignmentUncheckedCreateNestedManyWithoutEngagementInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedCreateNestedManyWithoutEngagementInput
+  }
+
+  export type EngagementCreateOrConnectWithoutManagersInput = {
+    where: EngagementWhereUniqueInput
+    create: XOR<EngagementCreateWithoutManagersInput, EngagementUncheckedCreateWithoutManagersInput>
+  }
+
+  export type EngagementUpsertWithoutManagersInput = {
+    update: XOR<EngagementUpdateWithoutManagersInput, EngagementUncheckedUpdateWithoutManagersInput>
+    create: XOR<EngagementCreateWithoutManagersInput, EngagementUncheckedCreateWithoutManagersInput>
+    where?: EngagementWhereInput
+  }
+
+  export type EngagementUpdateToOneWithWhereWithoutManagersInput = {
+    where?: EngagementWhereInput
+    data: XOR<EngagementUpdateWithoutManagersInput, EngagementUncheckedUpdateWithoutManagersInput>
+  }
+
+  export type EngagementUpdateWithoutManagersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projectId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    durationStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationWeeks?: NullableIntFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    timeZones?: EngagementUpdatetimeZonesInput | string[]
+    countries?: EngagementUpdatecountriesInput | string[]
+    requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
+    status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
+    isPrivate?: BoolFieldUpdateOperationsInput | boolean
+    requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
+    role?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
+    roleLevel?: NullableEnumRoleLevelFieldUpdateOperationsInput | $Enums.RoleLevel | null
+    workload?: NullableEnumWorkloadFieldUpdateOperationsInput | $Enums.Workload | null
+    compensationRange?: NullableStringFieldUpdateOperationsInput | string | null
+    receivedDateFromAccount?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    account?: NullableStringFieldUpdateOperationsInput | string | null
+    smu?: NullableStringFieldUpdateOperationsInput | string | null
+    spoc?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    applications?: EngagementApplicationUpdateManyWithoutEngagementNestedInput
+    assignments?: EngagementAssignmentUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUpdateManyWithoutEngagementNestedInput
+  }
+
+  export type EngagementUncheckedUpdateWithoutManagersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    projectId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    durationStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationEndDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    durationWeeks?: NullableIntFieldUpdateOperationsInput | number | null
+    durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
+    timeZones?: EngagementUpdatetimeZonesInput | string[]
+    countries?: EngagementUpdatecountriesInput | string[]
+    requiredSkills?: EngagementUpdaterequiredSkillsInput | string[]
+    anticipatedStart?: EnumAnticipatedStartFieldUpdateOperationsInput | $Enums.AnticipatedStart
+    status?: EnumEngagementStatusFieldUpdateOperationsInput | $Enums.EngagementStatus
+    isPrivate?: BoolFieldUpdateOperationsInput | boolean
+    requiredMemberCount?: NullableIntFieldUpdateOperationsInput | number | null
+    role?: NullableEnumRoleFieldUpdateOperationsInput | $Enums.Role | null
+    roleLevel?: NullableEnumRoleLevelFieldUpdateOperationsInput | $Enums.RoleLevel | null
+    workload?: NullableEnumWorkloadFieldUpdateOperationsInput | $Enums.Workload | null
+    compensationRange?: NullableStringFieldUpdateOperationsInput | string | null
+    receivedDateFromAccount?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    account?: NullableStringFieldUpdateOperationsInput | string | null
+    smu?: NullableStringFieldUpdateOperationsInput | string | null
+    spoc?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    applications?: EngagementApplicationUncheckedUpdateManyWithoutEngagementNestedInput
+    assignments?: EngagementAssignmentUncheckedUpdateManyWithoutEngagementNestedInput
+    timesheetAudit?: EngagementTimesheetAuditUncheckedUpdateManyWithoutEngagementNestedInput
   }
 
   export type EngagementApplicationCreateManyEngagementInput = {
@@ -11514,9 +20292,12 @@ export namespace Prisma {
     mobileNumber?: string | null
     coverLetter?: string | null
     resumeUrl?: string | null
+    cvFileUrl?: string | null
     portfolioUrls?: EngagementApplicationCreateportfolioUrlsInput | string[]
     yearsOfExperience?: number | null
     availability?: string | null
+    expectedPayRate?: string | null
+    referralSource?: string | null
     status?: $Enums.ApplicationStatus
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -11532,6 +20313,7 @@ export namespace Prisma {
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
     standardHoursPerDay?: number | null
+    totalHours?: number | null
     standardHoursPerWeek?: number | null
     durationMonths?: number | null
     otherRemarks?: string | null
@@ -11545,6 +20327,30 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type EngagementManagerCreateManyEngagementInput = {
+    id?: string
+    managerUserId: string
+    managerHandle: string
+    managerName?: string | null
+    createdAt?: Date | string
+    createdBy: string
+    removedAt?: Date | string | null
+    removedBy?: string | null
+  }
+
+  export type EngagementTimesheetAuditCreateManyEngagementInput = {
+    id?: string
+    timesheetEntryId?: string | null
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+  }
+
   export type EngagementApplicationUpdateWithoutEngagementInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
@@ -11555,9 +20361,12 @@ export namespace Prisma {
     mobileNumber?: NullableStringFieldUpdateOperationsInput | string | null
     coverLetter?: NullableStringFieldUpdateOperationsInput | string | null
     resumeUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cvFileUrl?: NullableStringFieldUpdateOperationsInput | string | null
     portfolioUrls?: EngagementApplicationUpdateportfolioUrlsInput | string[]
     yearsOfExperience?: NullableIntFieldUpdateOperationsInput | number | null
     availability?: NullableStringFieldUpdateOperationsInput | string | null
+    expectedPayRate?: NullableStringFieldUpdateOperationsInput | string | null
+    referralSource?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11574,9 +20383,12 @@ export namespace Prisma {
     mobileNumber?: NullableStringFieldUpdateOperationsInput | string | null
     coverLetter?: NullableStringFieldUpdateOperationsInput | string | null
     resumeUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cvFileUrl?: NullableStringFieldUpdateOperationsInput | string | null
     portfolioUrls?: EngagementApplicationUpdateportfolioUrlsInput | string[]
     yearsOfExperience?: NullableIntFieldUpdateOperationsInput | number | null
     availability?: NullableStringFieldUpdateOperationsInput | string | null
+    expectedPayRate?: NullableStringFieldUpdateOperationsInput | string | null
+    referralSource?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11593,9 +20405,12 @@ export namespace Prisma {
     mobileNumber?: NullableStringFieldUpdateOperationsInput | string | null
     coverLetter?: NullableStringFieldUpdateOperationsInput | string | null
     resumeUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    cvFileUrl?: NullableStringFieldUpdateOperationsInput | string | null
     portfolioUrls?: EngagementApplicationUpdateportfolioUrlsInput | string[]
     yearsOfExperience?: NullableIntFieldUpdateOperationsInput | number | null
     availability?: NullableStringFieldUpdateOperationsInput | string | null
+    expectedPayRate?: NullableStringFieldUpdateOperationsInput | string | null
+    referralSource?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumApplicationStatusFieldUpdateOperationsInput | $Enums.ApplicationStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11611,6 +20426,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11624,6 +20440,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUpdateManyWithoutAssignmentNestedInput
     memberExperiences?: MemberExperienceUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUpdateManyWithoutAssignmentNestedInput
   }
 
   export type EngagementAssignmentUncheckedUpdateWithoutEngagementInput = {
@@ -11635,6 +20452,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11648,6 +20466,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     feedback?: EngagementFeedbackUncheckedUpdateManyWithoutAssignmentNestedInput
     memberExperiences?: MemberExperienceUncheckedUpdateManyWithoutAssignmentNestedInput
+    timesheetEntries?: EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentNestedInput
   }
 
   export type EngagementAssignmentUncheckedUpdateManyWithoutEngagementInput = {
@@ -11659,6 +20478,7 @@ export namespace Prisma {
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
     standardHoursPerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    totalHours?: NullableFloatFieldUpdateOperationsInput | number | null
     standardHoursPerWeek?: NullableFloatFieldUpdateOperationsInput | number | null
     durationMonths?: NullableIntFieldUpdateOperationsInput | number | null
     otherRemarks?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11670,6 +20490,78 @@ export namespace Prisma {
     source?: NullableEnumAssignmentSourceFieldUpdateOperationsInput | $Enums.AssignmentSource | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EngagementManagerUpdateWithoutEngagementInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    managerUserId?: StringFieldUpdateOperationsInput | string
+    managerHandle?: StringFieldUpdateOperationsInput | string
+    managerName?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    removedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    removedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementManagerUncheckedUpdateWithoutEngagementInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    managerUserId?: StringFieldUpdateOperationsInput | string
+    managerHandle?: StringFieldUpdateOperationsInput | string
+    managerName?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    removedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    removedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementManagerUncheckedUpdateManyWithoutEngagementInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    managerUserId?: StringFieldUpdateOperationsInput | string
+    managerHandle?: StringFieldUpdateOperationsInput | string
+    managerName?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    removedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    removedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementTimesheetAuditUpdateWithoutEngagementInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entry?: EngagementTimesheetEntryUpdateOneWithoutAuditRecordsNestedInput
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateWithoutEngagementInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    timesheetEntryId?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateManyWithoutEngagementInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    timesheetEntryId?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type EngagementFeedbackCreateManyAssignmentInput = {
@@ -11690,6 +20582,27 @@ export namespace Prisma {
     experienceText: string
     createdAt?: Date | string
     updatedAt?: Date | string
+  }
+
+  export type EngagementTimesheetEntryCreateManyAssignmentInput = {
+    id?: string
+    workDate: Date | string
+    hoursWorked: Decimal | DecimalJsLike | number | string
+    remarks?: string | null
+    status?: $Enums.TimesheetEntryStatus
+    submittedAt?: Date | string | null
+    submittedBy?: string | null
+    approvedAt?: Date | string | null
+    approvedBy?: string | null
+    approvedByHandle?: string | null
+    approvalComment?: string | null
+    reopenedAt?: Date | string | null
+    paidPaymentReference?: string | null
+    paidAt?: Date | string | null
+    createdAt?: Date | string
+    createdBy: string
+    updatedAt?: Date | string
+    updatedBy?: string | null
   }
 
   export type EngagementFeedbackUpdateWithoutAssignmentInput = {
@@ -11750,6 +20663,123 @@ export namespace Prisma {
     experienceText?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EngagementTimesheetEntryUpdateWithoutAssignmentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    auditRecords?: EngagementTimesheetAuditUpdateManyWithoutEntryNestedInput
+  }
+
+  export type EngagementTimesheetEntryUncheckedUpdateWithoutAssignmentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    auditRecords?: EngagementTimesheetAuditUncheckedUpdateManyWithoutEntryNestedInput
+  }
+
+  export type EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    hoursWorked?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    remarks?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumTimesheetEntryStatusFieldUpdateOperationsInput | $Enums.TimesheetEntryStatus
+    submittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    submittedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
+    reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
+    paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementTimesheetAuditCreateManyEntryInput = {
+    id?: string
+    engagementId?: string | null
+    action: $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId: string
+    actorHandle?: string | null
+    actorRole: string
+    comment?: string | null
+    createdAt?: Date | string
+  }
+
+  export type EngagementTimesheetAuditUpdateWithoutEntryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    engagement?: EngagementUpdateOneWithoutTimesheetAuditNestedInput
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateWithoutEntryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EngagementTimesheetAuditUncheckedUpdateManyWithoutEntryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    action?: EnumTimesheetAuditActionFieldUpdateOperationsInput | $Enums.TimesheetAuditAction
+    previousValues?: NullableJsonNullValueInput | InputJsonValue
+    updatedValues?: NullableJsonNullValueInput | InputJsonValue
+    actorUserId?: StringFieldUpdateOperationsInput | string
+    actorHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    actorRole?: StringFieldUpdateOperationsInput | string
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

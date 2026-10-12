@@ -178,6 +178,10 @@ model EngagementApplication {
   portfolioUrls     String[]
   yearsOfExperience Int?
   availability      String?
+  /// Pay rate the applicant expects for the engagement, as entered by the applicant (e.g. "$50/hour").
+  expectedPayRate   String?
+  /// How the applicant came to know of the opportunity.
+  referralSource    String?
   status            ApplicationStatus @default(SUBMITTED)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt

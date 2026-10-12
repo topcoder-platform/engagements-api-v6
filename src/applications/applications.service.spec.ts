@@ -148,6 +148,40 @@ describe("ApplicationsService", () => {
     });
   });
 
+  it("stores the expected pay rate and referral source", async () => {
+    engagementsService.findOne.mockResolvedValue({
+      id: "eng-1",
+      status: EngagementStatus.OPEN,
+    });
+    db.engagementApplication.findUnique.mockResolvedValue(null);
+    memberService.getMemberByUserId.mockResolvedValue({
+      email: "member@example.com",
+      firstName: "Jane",
+      lastName: "Doe",
+    });
+    memberService.getMemberAddress.mockResolvedValue(null);
+    db.engagementApplication.create.mockImplementation(({ data }) => data);
+
+    await service.create(
+      "eng-1",
+      {
+        ...createDto,
+        expectedPayRate: "$50/hour",
+        referralSource: "Topcoder newsletter",
+        portfolioUrls: ["https://portfolio.example.com"],
+      },
+      { userId: "123", handle: "jane" },
+    );
+
+    expect(db.engagementApplication.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        expectedPayRate: "$50/hour",
+        referralSource: "Topcoder newsletter",
+        portfolioUrls: ["https://portfolio.example.com"],
+      }),
+    });
+  });
+
   it("sets updatedBy to system for M2M status update", async () => {
     const application = {
       id: "app-1",
