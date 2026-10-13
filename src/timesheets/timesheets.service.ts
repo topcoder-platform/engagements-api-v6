@@ -1084,6 +1084,16 @@ export class TimesheetsService {
             by: ["engagementAssignmentId", "status"],
             where: {
               engagementAssignmentId: { in: assignmentIds },
+              // The status shown has to describe the same period the list was filtered by, or an
+              // assignee matched as Approved for these dates shows Pending because of another week.
+              ...(fromDate || toDate
+                ? {
+                    workDate: {
+                      ...(fromDate ? { gte: fromDate } : {}),
+                      ...(toDate ? { lte: toDate } : {}),
+                    },
+                  }
+                : {}),
               status: {
                 in: [
                   TimesheetEntryStatus.SUBMITTED,
