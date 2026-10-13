@@ -56,7 +56,7 @@ export const ERROR_MESSAGES = {
   TimesheetSummaryNotForMembers:
     "Only an assigned manager or an administrator can read approved-hours summaries.",
   TimesheetPaymentNotForMembers:
-    "Only an assigned manager or an administrator can link timesheet entries to a payment.",
+    "Only an assigned manager, a Talent Manager or an administrator can link timesheet entries to a payment.",
   TimesheetPaymentNotApproved: "Only approved timesheet entries can be paid.",
   TimesheetPaymentAlreadyPaid:
     "One or more entries were already paid, so nothing was linked.",
