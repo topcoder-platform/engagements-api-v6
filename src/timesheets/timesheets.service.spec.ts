@@ -1883,6 +1883,49 @@ describe("TimesheetsService", () => {
       ).resolves.toEqual(expect.objectContaining({ data: [] }));
     });
 
+    it("rolls up status over the filtered dates only, so it agrees with the filter", async () => {
+      db.engagementAssignment.count.mockResolvedValue(1);
+      db.engagementAssignment.findMany.mockResolvedValue([assignmentRow()]);
+      // Only what falls inside the range comes back: the pending entry from another week does not.
+      db.engagementTimesheetEntry.groupBy.mockResolvedValue([
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 5 },
+        },
+      ]);
+
+      const result = await service.findEngagements(
+        {
+          page: 1,
+          perPage: 20,
+          status: TimesheetRollupStatus.Approved,
+          fromDate: "2026-09-01",
+          toDate: "2026-09-30",
+        },
+        admin,
+      );
+
+      const { where } = db.engagementTimesheetEntry.groupBy.mock.calls[0][0];
+      expect(where.workDate).toEqual({
+        gte: utcDate("2026-09-01"),
+        lte: utcDate("2026-09-30"),
+      });
+      expect(result.data[0].timesheetStatus).toBe(
+        TimesheetRollupStatus.Approved,
+      );
+    });
+
+    it("rolls up status over every entry when no dates are given", async () => {
+      db.engagementAssignment.count.mockResolvedValue(1);
+      db.engagementAssignment.findMany.mockResolvedValue([assignmentRow()]);
+
+      await service.findEngagements({ page: 1, perPage: 20 }, admin);
+
+      const { where } = db.engagementTimesheetEntry.groupBy.mock.calls[0][0];
+      expect(where.workDate).toBeUndefined();
+    });
+
     it("only lists assignees with something approved under the Approved filter", async () => {
       db.engagementAssignment.count.mockResolvedValue(0);
 
