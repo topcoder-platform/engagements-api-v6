@@ -89,6 +89,18 @@ export class ApplicationResponseDto {
   })
   availability?: string | null;
 
+  @ApiPropertyOptional({
+    description: "Pay rate the applicant expects for the engagement",
+    example: "$50/hour",
+  })
+  expectedPayRate?: string | null;
+
+  @ApiPropertyOptional({
+    description: "How the applicant came to know of the opportunity",
+    example: "Topcoder newsletter",
+  })
+  referralSource?: string | null;
+
   @ApiProperty({
     description: "Application status",
     enum: ApplicationStatus,

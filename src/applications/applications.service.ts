@@ -165,6 +165,8 @@ export class ApplicationsService {
         portfolioUrls: createDto.portfolioUrls ?? [],
         yearsOfExperience: createDto.yearsOfExperience,
         availability: createDto.availability,
+        expectedPayRate: createDto.expectedPayRate,
+        referralSource: createDto.referralSource,
       },
     });
   }

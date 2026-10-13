@@ -77,6 +77,30 @@ export class CreateApplicationDto {
   availability?: string;
 
   @ApiPropertyOptional({
+    description: "Pay rate the applicant expects for the engagement",
+    example: "$50/hour",
+    maxLength: 100,
+  })
+  @IsOptional()
+  @Transform(trimTransformer)
+  @ValidateIf((o) => o.expectedPayRate !== undefined)
+  @IsNotWhitespace()
+  @IsString()
+  @MaxLength(100)
+  expectedPayRate?: string;
+
+  @ApiPropertyOptional({
+    description: "How the applicant came to know of the opportunity",
+    example: "Topcoder newsletter",
+    maxLength: 500,
+  })
+  @IsOptional()
+  @Transform(trimTransformer)
+  @IsString()
+  @MaxLength(500)
+  referralSource?: string;
+
+  @ApiPropertyOptional({
     description: "Mobile phone number",
     example: "+1 (555) 123-4567",
     maxLength: 20,
