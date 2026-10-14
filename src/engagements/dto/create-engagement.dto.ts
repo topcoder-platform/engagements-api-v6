@@ -121,6 +121,25 @@ export class AssignmentDetailsDto {
 
   @ApiPropertyOptional({
     description:
+      "Total hours allocated to the assignment. Optional; when set, hours left is this minus the hours already paid.",
+    example: 480,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber(
+    { allowInfinity: false, allowNaN: false, maxDecimalPlaces: 2 },
+    {
+      message:
+        "totalHours must be a positive number with up to 2 decimal places",
+    },
+  )
+  @Min(0.01, {
+    message: "totalHours must be a positive number with up to 2 decimal places",
+  })
+  totalHours?: number;
+
+  @ApiPropertyOptional({
+    description:
       "Calculated assignment rate per week. When omitted, the API computes it from ratePerHour multiplied by standardHoursPerDay * 5.",
     example: "3020",
   })

@@ -23,6 +23,7 @@ describe("EngagementManagersService", () => {
   let db: {
     engagement: { findUnique: jest.Mock };
     engagementAssignment: { findFirst: jest.Mock };
+    engagementTimesheetAudit: { findMany: jest.Mock };
     engagementManager: {
       findUnique: jest.Mock;
       findFirst: jest.Mock;
@@ -73,6 +74,7 @@ describe("EngagementManagersService", () => {
     db = {
       engagement: { findUnique: jest.fn().mockResolvedValue({ id: "eng1" }) },
       engagementAssignment: { findFirst: jest.fn().mockResolvedValue(null) },
+      engagementTimesheetAudit: { findMany: jest.fn().mockResolvedValue([]) },
       engagementManager: {
         findUnique: jest.fn().mockResolvedValue(null),
         findFirst: jest.fn().mockResolvedValue(null),
@@ -201,9 +203,7 @@ describe("EngagementManagersService", () => {
       await expect(service.assign("eng1", selection, admin)).rejects.toThrow(
         "That member is inactive and cannot be assigned as a manager.",
       );
-      expect(memberService.isMemberActiveByUserId).toHaveBeenCalledWith(
-        "2002",
-      );
+      expect(memberService.isMemberActiveByUserId).toHaveBeenCalledWith("2002");
       expect(db.engagementManager.create).not.toHaveBeenCalled();
     });
 
@@ -242,7 +242,7 @@ describe("EngagementManagersService", () => {
       expect(memberService.getMemberHandleByUserId).not.toHaveBeenCalled();
     });
 
-    it("allows a TM to assign a manager", async () => {
+    it("allows a TM to assign a manager, and audits it as the TM", async () => {
       db.engagementManager.create.mockResolvedValue(activeManagerRow);
 
       await expect(
@@ -252,6 +252,27 @@ describe("EngagementManagersService", () => {
         handle: "maryj",
         name: "Mary Jones",
       });
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          action: TimesheetAuditAction.MANAGER_ASSIGNED,
+          actorRole: "TM",
+        }),
+      );
+    });
+
+    it("audits a machine token as MACHINE", async () => {
+      db.engagementManager.create.mockResolvedValue(activeManagerRow);
+
+      await service.assign("eng1", selection, {
+        isMachine: true,
+        scopes: ["manage:timesheets"],
+      });
+
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({ actorRole: "MACHINE" }),
+      );
     });
 
     it("refuses a project manager", async () => {
@@ -333,6 +354,13 @@ describe("EngagementManagersService", () => {
       await expect(
         service.remove("eng1", "2002", talentManager),
       ).resolves.toBeUndefined();
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          action: TimesheetAuditAction.MANAGER_REMOVED,
+          actorRole: "TM",
+        }),
+      );
     });
 
     it("refuses a project manager", async () => {
@@ -435,6 +463,78 @@ describe("EngagementManagersService", () => {
     it("refuses an unauthenticated caller", async () => {
       await expect(service.findAll("eng1", undefined)).rejects.toBeInstanceOf(
         ForbiddenException,
+      );
+    });
+  });
+
+  describe("findAudit", () => {
+    const auditRow = {
+      id: "audit1",
+      action: TimesheetAuditAction.MANAGER_ASSIGNED,
+      previousValues: null,
+      updatedValues: { managerUserId: "2002", managerHandle: "maryj" },
+      actorUserId: "3003",
+      actorHandle: "adminuser",
+      actorRole: "ADMINISTRATOR",
+      comment: null,
+      createdAt: new Date("2026-09-01T00:00:00.000Z"),
+    };
+
+    it("returns the manager history to an administrator", async () => {
+      db.engagementTimesheetAudit.findMany.mockResolvedValue([auditRow]);
+
+      const result = await service.findAudit("eng1", admin);
+
+      expect(result).toEqual([
+        expect.objectContaining({
+          id: "audit1",
+          action: TimesheetAuditAction.MANAGER_ASSIGNED,
+          actorRole: "ADMINISTRATOR",
+        }),
+      ]);
+    });
+
+    it("returns the manager history to a TM", async () => {
+      db.engagementTimesheetAudit.findMany.mockResolvedValue([auditRow]);
+
+      await expect(service.findAudit("eng1", talentManager)).resolves.toEqual([
+        expect.objectContaining({ id: "audit1" }),
+      ]);
+    });
+
+    it("refuses a project manager", async () => {
+      await expect(service.findAudit("eng1", projectManager)).rejects.toThrow(
+        "Only an administrator or Talent Manager can read manager assignment history.",
+      );
+    });
+
+    it("refuses an assigned manager of the engagement", async () => {
+      db.engagementManager.findFirst.mockResolvedValue(activeManagerRow);
+
+      await expect(
+        service.findAudit("eng1", {
+          userId: "2002",
+          handle: "maryj",
+          roles: [],
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(db.engagementTimesheetAudit.findMany).not.toHaveBeenCalled();
+    });
+
+    it("refuses the assigned member", async () => {
+      db.engagementAssignment.findFirst.mockResolvedValue({ id: "asg1" });
+
+      await expect(service.findAudit("eng1", member)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(db.engagementTimesheetAudit.findMany).not.toHaveBeenCalled();
+    });
+
+    it("404s for an unknown engagement before checking the caller", async () => {
+      db.engagement.findUnique.mockResolvedValue(null);
+
+      await expect(service.findAudit("missing", member)).rejects.toBeInstanceOf(
+        NotFoundException,
       );
     });
   });

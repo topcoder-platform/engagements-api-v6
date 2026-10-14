@@ -171,10 +171,17 @@ model EngagementApplication {
   address           String?
   mobileNumber      String?
   coverLetter       String?
+  /// Link to the applicant's resume or professional profile (LinkedIn profile, Google Drive CV, website).
   resumeUrl         String?
+  /// URL of the CV file the applicant uploaded through Filestack (stored in S3).
+  cvFileUrl         String?
   portfolioUrls     String[]
   yearsOfExperience Int?
   availability      String?
+  /// Pay rate the applicant expects for the engagement, as entered by the applicant (e.g. "$50/hour").
+  expectedPayRate   String?
+  /// How the applicant came to know of the opportunity.
+  referralSource    String?
   status            ApplicationStatus @default(SUBMITTED)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -198,6 +205,8 @@ model EngagementAssignment {
   ratePerHour          String?
   paymentCycle         PaymentCycle      @default(WEEKLY)
   standardHoursPerDay  Float?
+  /// Hours allocated to the assignment overall. Optional; hours left are derived from it.
+  totalHours           Float?
   /// @deprecated Use standardHoursPerDay instead.
   standardHoursPerWeek Float?
   durationMonths       Int?

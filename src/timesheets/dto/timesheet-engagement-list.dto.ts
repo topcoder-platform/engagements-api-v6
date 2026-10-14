@@ -1,14 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { AssignmentStatus } from "@prisma/client";
 import { Transform } from "class-transformer";
 import {
-  IsEnum,
+  IsIn,
   IsISO8601,
   IsOptional,
   IsString,
   MaxLength,
 } from "class-validator";
 import { PaginationDto } from "../../engagements/dto";
-import { TimesheetRollupStatus } from "../timesheet-constants";
+import {
+  TIMESHEET_ROLLUP_FILTER_STATUSES,
+  TimesheetRollupStatus,
+} from "../timesheet-constants";
 import { TimesheetViewerRole } from "../timesheet-roles";
 
 const trimOrUndefined = ({ value }: { value: unknown }) =>
@@ -48,13 +52,15 @@ export class TimesheetEngagementQueryDto extends PaginationDto {
   manager?: string;
 
   @ApiPropertyOptional({
-    description: "Filter by the rolled-up timesheet status",
-    enum: Object.values(TimesheetRollupStatus),
+    description:
+      "Filter by the rolled-up timesheet status. Approved means at least one approved entry and " +
+      "nothing awaiting approval.",
+    enum: TIMESHEET_ROLLUP_FILTER_STATUSES,
     example: TimesheetRollupStatus.PendingApproval,
   })
   @IsOptional()
   @Transform(trimOrUndefined)
-  @IsEnum(TimesheetRollupStatus)
+  @IsIn(TIMESHEET_ROLLUP_FILTER_STATUSES)
   status?: TimesheetRollupStatus;
 
   @ApiPropertyOptional({
@@ -117,7 +123,23 @@ export class TimesheetEngagementRowDto {
 
   @ApiProperty({
     description:
-      "Pending Approval when the assignee has any submitted entry awaiting a manager, otherwise Approved.",
+      "The assignment's own status. A manager's list only ever carries ASSIGNED and COMPLETED.",
+    enum: AssignmentStatus,
+    example: AssignmentStatus.ASSIGNED,
+  })
+  assignmentStatus: AssignmentStatus;
+
+  @ApiProperty({
+    description:
+      "True when at least one entry is submitted and awaiting approval",
+    example: true,
+  })
+  hasPendingApproval: boolean;
+
+  @ApiProperty({
+    description:
+      "Pending Approval when the assignee has any submitted entry awaiting a manager, Approved when " +
+      "nothing is awaiting approval and at least one entry is approved, otherwise Not Submitted.",
     enum: Object.values(TimesheetRollupStatus),
     example: TimesheetRollupStatus.PendingApproval,
   })

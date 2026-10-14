@@ -1,6 +1,7 @@
 /**
- * A date range may not span more than 31 days, which also caps how many entries one request can carry:
- * a timesheet is filled in a month at a time, and the cap keeps a single call bounded.
+ * A save may not span more than 31 days, which also caps how many entries one request can carry: a
+ * timesheet is filled in a month at a time, and the cap keeps a single call bounded. Read filters are
+ * not capped - reviewing and paying routinely look back further.
  */
 export const TIMESHEET_MAX_RANGE_DAYS = 31;
 
@@ -14,10 +15,18 @@ export const TIMESHEET_MAX_HOURS_PER_DAY = 24;
 export const TimesheetRollupStatus = {
   PendingApproval: "Pending Approval",
   Approved: "Approved",
+  /** Nothing awaiting approval and nothing approved yet - no entries at all, or drafts only. */
+  NotSubmitted: "Not Submitted",
 } as const;
 
 export type TimesheetRollupStatus =
   (typeof TimesheetRollupStatus)[keyof typeof TimesheetRollupStatus];
+
+/** The rolled-up statuses the landing list can be filtered by. */
+export const TIMESHEET_ROLLUP_FILTER_STATUSES: TimesheetRollupStatus[] = [
+  TimesheetRollupStatus.PendingApproval,
+  TimesheetRollupStatus.Approved,
+];
 
 /**
  * Bus topics for the timesheet lifecycle. Emitted from day one so the notification work in a later

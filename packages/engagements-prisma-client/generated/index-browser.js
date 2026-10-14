@@ -161,9 +161,12 @@ exports.Prisma.EngagementApplicationScalarFieldEnum = {
   mobileNumber: 'mobileNumber',
   coverLetter: 'coverLetter',
   resumeUrl: 'resumeUrl',
+  cvFileUrl: 'cvFileUrl',
   portfolioUrls: 'portfolioUrls',
   yearsOfExperience: 'yearsOfExperience',
   availability: 'availability',
+  expectedPayRate: 'expectedPayRate',
+  referralSource: 'referralSource',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -180,6 +183,7 @@ exports.Prisma.EngagementAssignmentScalarFieldEnum = {
   ratePerHour: 'ratePerHour',
   paymentCycle: 'paymentCycle',
   standardHoursPerDay: 'standardHoursPerDay',
+  totalHours: 'totalHours',
   standardHoursPerWeek: 'standardHoursPerWeek',
   durationMonths: 'durationMonths',
   otherRemarks: 'otherRemarks',
@@ -215,9 +219,92 @@ exports.Prisma.MemberExperienceScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.EngagementLeadScalarFieldEnum = {
+  id: 'id',
+  workEmail: 'workEmail',
+  accountName: 'accountName',
+  smu: 'smu',
+  engagementModel: 'engagementModel',
+  roleTitle: 'roleTitle',
+  jobDescription: 'jobDescription',
+  requiredSkills: 'requiredSkills',
+  experienceLevel: 'experienceLevel',
+  minYearsExperience: 'minYearsExperience',
+  industryDomain: 'industryDomain',
+  resourcesRequired: 'resourcesRequired',
+  preferredStartDate: 'preferredStartDate',
+  engagementDuration: 'engagementDuration',
+  workingHoursPerDay: 'workingHoursPerDay',
+  timeZoneRequirement: 'timeZoneRequirement',
+  remoteWorkAccepted: 'remoteWorkAccepted',
+  workLocationRestrictions: 'workLocationRestrictions',
+  billRateCurrency: 'billRateCurrency',
+  billRateAmount: 'billRateAmount',
+  priority: 'priority',
+  additionalRequirements: 'additionalRequirements',
+  status: 'status',
+  convertedEngagementId: 'convertedEngagementId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  updatedBy: 'updatedBy'
+};
+
+exports.Prisma.EngagementTimesheetEntryScalarFieldEnum = {
+  id: 'id',
+  engagementAssignmentId: 'engagementAssignmentId',
+  workDate: 'workDate',
+  hoursWorked: 'hoursWorked',
+  remarks: 'remarks',
+  status: 'status',
+  submittedAt: 'submittedAt',
+  submittedBy: 'submittedBy',
+  approvedAt: 'approvedAt',
+  approvedBy: 'approvedBy',
+  approvedByHandle: 'approvedByHandle',
+  approvalComment: 'approvalComment',
+  reopenedAt: 'reopenedAt',
+  paidPaymentReference: 'paidPaymentReference',
+  paidAt: 'paidAt',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy',
+  updatedAt: 'updatedAt',
+  updatedBy: 'updatedBy'
+};
+
+exports.Prisma.EngagementTimesheetAuditScalarFieldEnum = {
+  id: 'id',
+  timesheetEntryId: 'timesheetEntryId',
+  engagementId: 'engagementId',
+  action: 'action',
+  previousValues: 'previousValues',
+  updatedValues: 'updatedValues',
+  actorUserId: 'actorUserId',
+  actorHandle: 'actorHandle',
+  actorRole: 'actorRole',
+  comment: 'comment',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.EngagementManagerScalarFieldEnum = {
+  id: 'id',
+  engagementId: 'engagementId',
+  managerUserId: 'managerUserId',
+  managerHandle: 'managerHandle',
+  managerName: 'managerName',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy',
+  removedAt: 'removedAt',
+  removedBy: 'removedBy'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.QueryMode = {
@@ -228,6 +315,12 @@ exports.Prisma.QueryMode = {
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
+};
+
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
 };
 exports.AnticipatedStart = exports.$Enums.AnticipatedStart = {
   IMMEDIATE: 'IMMEDIATE',
@@ -292,12 +385,62 @@ exports.AssignmentSource = exports.$Enums.AssignmentSource = {
   TOPCODER_COMMUNITY: 'TOPCODER_COMMUNITY'
 };
 
+exports.EngagementModel = exports.$Enums.EngagementModel = {
+  TIME_AND_MATERIAL: 'TIME_AND_MATERIAL',
+  FIXED_PRICE: 'FIXED_PRICE'
+};
+
+exports.ExperienceLevel = exports.$Enums.ExperienceLevel = {
+  JUNIOR: 'JUNIOR',
+  MID: 'MID',
+  SENIOR: 'SENIOR',
+  LEAD_ARCHITECT: 'LEAD_ARCHITECT'
+};
+
+exports.LeadPriority = exports.$Enums.LeadPriority = {
+  CRITICAL: 'CRITICAL',
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW'
+};
+
+exports.EngagementLeadStatus = exports.$Enums.EngagementLeadStatus = {
+  SUBMITTED: 'SUBMITTED',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  QUALIFIED: 'QUALIFIED',
+  CONVERTED: 'CONVERTED',
+  REJECTED: 'REJECTED'
+};
+
+exports.TimesheetEntryStatus = exports.$Enums.TimesheetEntryStatus = {
+  DRAFT: 'DRAFT',
+  SUBMITTED: 'SUBMITTED',
+  APPROVED: 'APPROVED'
+};
+
+exports.TimesheetAuditAction = exports.$Enums.TimesheetAuditAction = {
+  CREATED: 'CREATED',
+  UPDATED: 'UPDATED',
+  SUBMITTED: 'SUBMITTED',
+  UNSUBMITTED: 'UNSUBMITTED',
+  APPROVED: 'APPROVED',
+  REOPENED: 'REOPENED',
+  ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
+  PAYMENT_LINKED: 'PAYMENT_LINKED',
+  MANAGER_ASSIGNED: 'MANAGER_ASSIGNED',
+  MANAGER_REMOVED: 'MANAGER_REMOVED'
+};
+
 exports.Prisma.ModelName = {
   Engagement: 'Engagement',
   EngagementApplication: 'EngagementApplication',
   EngagementAssignment: 'EngagementAssignment',
   EngagementFeedback: 'EngagementFeedback',
-  MemberExperience: 'MemberExperience'
+  MemberExperience: 'MemberExperience',
+  EngagementLead: 'EngagementLead',
+  EngagementTimesheetEntry: 'EngagementTimesheetEntry',
+  EngagementTimesheetAudit: 'EngagementTimesheetAudit',
+  EngagementManager: 'EngagementManager'
 };
 
 /**

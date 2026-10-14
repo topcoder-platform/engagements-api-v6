@@ -157,6 +157,30 @@ describe("Application Validation (e2e)", () => {
     }).expect(201);
   });
 
+  it("passes an uploaded CV file URL through to the service", async () => {
+    applicationsServiceMock.create.mockClear();
+
+    await postApplication({
+      coverLetter: "Cover letter is present.",
+      cvFileUrl: "https://cdn.filestackcontent.com/cv-handle",
+    }).expect(201);
+
+    expect(applicationsServiceMock.create).toHaveBeenCalledWith(
+      "eng-1",
+      expect.objectContaining({
+        cvFileUrl: "https://cdn.filestackcontent.com/cv-handle",
+      }),
+      expect.anything(),
+    );
+  });
+
+  it("rejects a CV file URL that is not a valid URL", async () => {
+    await postApplication({
+      coverLetter: "Cover letter is present.",
+      cvFileUrl: "not-a-url",
+    }).expect(400);
+  });
+
   afterAll(async () => {
     await app.close();
   });

@@ -11,6 +11,7 @@ import {
   TimesheetEntryStatus,
 } from "@prisma/client";
 import { UserRoles } from "../app-constants";
+import { FinanceService } from "../integrations/finance.service";
 import { MemberService } from "../integrations/member.service";
 import { TimesheetAccessService } from "./timesheet-access.service";
 import { TimesheetAuditService } from "./timesheet-audit.service";
@@ -19,7 +20,7 @@ import {
   TimesheetRollupStatus,
   TimesheetEventTopics,
 } from "./timesheet-constants";
-import { TimesheetViewerRole } from "./timesheet-roles";
+import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 import { TimesheetsService } from "./timesheets.service";
 
 jest.mock("nanoid", () => ({ nanoid: () => "new-entry-id" }));
@@ -33,6 +34,7 @@ describe("TimesheetsService", () => {
   let audit: { record: jest.Mock };
   let events: { emit: jest.Mock };
   let memberService: { getMemberNamesByUserIds: jest.Mock };
+  let financeService: { getProcessedPaymentHours: jest.Mock };
 
   const member = { userId: "1001", handle: "johnsmith", roles: [] };
   const manager = { userId: "2002", handle: "maryj", roles: [] };
@@ -111,6 +113,9 @@ describe("TimesheetsService", () => {
     };
     audit = { record: jest.fn().mockResolvedValue(undefined) };
     events = { emit: jest.fn().mockResolvedValue(undefined) };
+    financeService = {
+      getProcessedPaymentHours: jest.fn().mockResolvedValue(0),
+    };
     memberService = {
       getMemberNamesByUserIds: jest
         .fn()
@@ -123,6 +128,7 @@ describe("TimesheetsService", () => {
       audit as unknown as TimesheetAuditService,
       events as unknown as TimesheetEventsService,
       memberService as unknown as MemberService,
+      financeService as unknown as FinanceService,
     );
   });
 
@@ -210,6 +216,56 @@ describe("TimesheetsService", () => {
       expect(result.viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.entries[0].approvedByHandle).toBe("robertl");
       expect(result.entries[0].approvalComment).toBe("Approved for week 37");
+    });
+
+    it("reports total hours and the hours left after processed payments", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        totalHours: 480,
+      });
+      financeService.getProcessedPaymentHours.mockResolvedValue(167.5);
+      withManagerRow();
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, manager);
+
+      expect(financeService.getProcessedPaymentHours).toHaveBeenCalledWith(
+        "asg1",
+      );
+      expect(result.assignment.totalHours).toBe(480);
+      expect(result.assignment.hoursLeft).toBe(312.5);
+    });
+
+    it("does not ask finance for the member's own view", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        totalHours: 480,
+      });
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(financeService.getProcessedPaymentHours).not.toHaveBeenCalled();
+      expect(result.assignment.hoursLeft).toBeNull();
+    });
+
+    it("does not ask finance when the assignment has no total hours", async () => {
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(financeService.getProcessedPaymentHours).not.toHaveBeenCalled();
+      expect(result.assignment.totalHours).toBeNull();
+      expect(result.assignment.hoursLeft).toBeNull();
+    });
+
+    it("leaves hours left null when finance cannot be read", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        totalHours: 480,
+      });
+      financeService.getProcessedPaymentHours.mockResolvedValue(null);
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, admin);
+
+      expect(result.assignment.totalHours).toBe(480);
+      expect(result.assignment.hoursLeft).toBeNull();
     });
 
     it("shows a TM only submitted entries by default", async () => {
@@ -318,15 +374,26 @@ describe("TimesheetsService", () => {
       ).rejects.toThrow("cannot be earlier than the from date");
     });
 
-    it("rejects a range longer than 31 days", async () => {
-      await expect(
-        service.findTimesheet(
-          "eng1",
-          "asg1",
-          { fromDate: "2026-09-01", toDate: "2026-10-05" },
-          member,
-        ),
-      ).rejects.toThrow("cannot span more than 31 days");
+    it("lets a filter span more than 31 days, since reading is not capped", async () => {
+      withManagerRow();
+
+      await service.findTimesheet(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-01-01", toDate: "2026-09-30" },
+        manager,
+      );
+
+      expect(db.engagementTimesheetEntry.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            workDate: {
+              gte: utcDate("2026-01-01"),
+              lte: utcDate("2026-09-30"),
+            },
+          }),
+        }),
+      );
     });
   });
 
@@ -446,6 +513,53 @@ describe("TimesheetsService", () => {
       expect(events.emit).toHaveBeenCalledWith(
         TimesheetEventTopics.Unsubmitted,
         expect.objectContaining({ entryIds: ["edited"] }),
+      );
+    });
+
+    it("keeps a submitted entry submitted when an administrator corrects it", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          id: "edited",
+          status: TimesheetEntryStatus.SUBMITTED,
+          submittedAt: utcDate("2026-09-12"),
+          submittedBy: "1001",
+        }),
+      ]);
+      db.engagementTimesheetEntry.update.mockResolvedValue(
+        entry({
+          id: "edited",
+          hoursWorked: decimal("7.00"),
+          remarks: "Corrected",
+          status: TimesheetEntryStatus.SUBMITTED,
+        }),
+      );
+
+      await service.upsertEntries(
+        "eng1",
+        "asg1",
+        payload(
+          [{ workDate: "2026-09-07", hoursWorked: "7", remarks: "Corrected" }],
+          "Manager on leave",
+        ),
+        admin,
+      );
+
+      const { data } = db.engagementTimesheetEntry.update.mock.calls[0][0];
+      expect(data.hoursWorked.toString()).toBe("7");
+      expect(data.remarks).toBe("Corrected");
+      expect(data).not.toHaveProperty("status");
+      expect(data).not.toHaveProperty("submittedAt");
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          timesheetEntryId: "edited",
+          action: TimesheetAuditAction.UPDATED,
+          comment: "Manager on leave",
+        }),
+      );
+      expect(events.emit).not.toHaveBeenCalledWith(
+        TimesheetEventTopics.Unsubmitted,
+        expect.anything(),
       );
     });
 
@@ -668,6 +782,52 @@ describe("TimesheetsService", () => {
         ),
       ).rejects.toThrow("cannot span more than 31 days");
     });
+
+    it.each([
+      AssignmentStatus.COMPLETED,
+      AssignmentStatus.TERMINATED,
+      AssignmentStatus.SELECTED,
+    ])("refuses the member once the assignment is %s", async (status) => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        status,
+      });
+
+      await expect(
+        service.upsertEntries(
+          "eng1",
+          "asg1",
+          payload([{ workDate: "2026-09-07", hoursWorked: "8" }]),
+          member,
+        ),
+      ).rejects.toThrow(
+        "only be entered or submitted while the assignment is active",
+      );
+      expect(db.engagementTimesheetEntry.create).not.toHaveBeenCalled();
+      expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+    });
+
+    it("still lets an administrator override on a completed assignment", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        status: AssignmentStatus.COMPLETED,
+      });
+      db.engagementTimesheetEntry.create.mockResolvedValue(
+        entry({ id: "created" }),
+      );
+
+      await service.upsertEntries(
+        "eng1",
+        "asg1",
+        payload(
+          [{ workDate: "2026-09-07", hoursWorked: "8" }],
+          "Late correction",
+        ),
+        admin,
+      );
+
+      expect(db.engagementTimesheetEntry.create).toHaveBeenCalled();
+    });
   });
 
   describe("submitEntries", () => {
@@ -736,6 +896,40 @@ describe("TimesheetsService", () => {
       expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
     });
 
+    it("submits nothing when one entry has no remarks", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "ok" }),
+        entry({ id: "blank", remarks: "   " }),
+        entry({ id: "missing", remarks: null }),
+      ]);
+
+      const error = await service
+        .submitEntries(
+          "eng1",
+          "asg1",
+          { entryIds: ["ok", "blank", "missing"] },
+          member,
+        )
+        .catch((caught: BadRequestException) => caught);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect((error as BadRequestException).getResponse()).toEqual(
+        expect.objectContaining({
+          entries: [
+            expect.objectContaining({
+              id: "blank",
+              reason: "Remarks are required before submitting.",
+            }),
+            expect.objectContaining({
+              id: "missing",
+              reason: "Remarks are required before submitting.",
+            }),
+          ],
+        }),
+      );
+      expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+    });
+
     it("404s when an entry id belongs to another assignment", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
 
@@ -778,6 +972,27 @@ describe("TimesheetsService", () => {
         ),
       ).rejects.toThrow("cannot edit or submit entries");
     });
+
+    it.each([AssignmentStatus.COMPLETED, AssignmentStatus.TERMINATED])(
+      "refuses the member's submit once the assignment is %s",
+      async (status) => {
+        db.engagementAssignment.findUnique.mockResolvedValue({
+          ...assignment,
+          status,
+        });
+        db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+
+        await expect(
+          service.submitEntries(
+            "eng1",
+            "asg1",
+            { entryIds: ["entry1"] },
+            member,
+          ),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+        expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe("approveEntries", () => {
@@ -1083,14 +1298,125 @@ describe("TimesheetsService", () => {
       expect(result.alreadyPaidEntryIds).toEqual([]);
     });
 
-    it("asks the database for approved entries only", async () => {
+    it("leaves drafts and submitted entries out of the approved and payable totals", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        approved({ id: "approved", hoursWorked: decimal("8.00") }),
+        entry({ id: "draft", hoursWorked: decimal("4.00") }),
+        entry({
+          id: "submitted",
+          hoursWorked: decimal("6.00"),
+          status: TimesheetEntryStatus.SUBMITTED,
+        }),
+      ]);
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+
+      expect(result.entryIds).toEqual(["approved"]);
+      expect(result.totalHours).toBe("8.00");
+      expect(result.approvedHours).toBe("8.00");
+    });
+
+    it("reports approved hours including paid ones, and paid hours", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        approved({ id: "unpaid", hoursWorked: decimal("8.00") }),
+        approved({
+          id: "paid",
+          hoursWorked: decimal("7.50"),
+          paidPaymentReference: "win-1",
+        }),
+        // Paid, then reopened: still paid hours, no longer approved ones.
+        entry({
+          id: "reopened",
+          hoursWorked: decimal("2.00"),
+          paidPaymentReference: "win-1",
+        }),
+      ]);
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+
+      expect(result.approvedHours).toBe("15.50");
+      expect(result.paidHours).toBe("9.50");
+      expect(result.totalHours).toBe("8.00");
+    });
+
+    it("expects standard hours for each weekday of the assignment inside the period", async () => {
       withManagerRow();
       db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
 
-      await service.findPaymentSummary("eng1", "asg1", {}, manager);
+      // The assignment starts on Tuesday 2026-09-01, so only 1-4 and 7-8 September count: six
+      // weekdays at 8 hours.
+      const clamped = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-08-25", toDate: "2026-09-08" },
+        manager,
+      );
+      expect(clamped.expectedHours).toBe("48.00");
 
-      const { where } = db.engagementTimesheetEntry.findMany.mock.calls[0][0];
-      expect(where.status).toBe(TimesheetEntryStatus.APPROVED);
+      const fullMonth = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+      expect(fullMonth.expectedHours).toBe("176.00");
+    });
+
+    it("has no expected hours without standard hours or a closed period", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
+
+      const openEnded = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01" },
+        manager,
+      );
+      expect(openEnded.expectedHours).toBeNull();
+
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        standardHoursPerDay: null,
+        standardHoursPerWeek: null,
+      });
+      const noStandard = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-01", toDate: "2026-09-30" },
+        manager,
+      );
+      expect(noStandard.expectedHours).toBeNull();
+    });
+
+    it("falls back to the deprecated weekly standard hours", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([]);
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        standardHoursPerDay: null,
+        standardHoursPerWeek: 20,
+      });
+
+      const result = await service.findPaymentSummary(
+        "eng1",
+        "asg1",
+        { fromDate: "2026-09-07", toDate: "2026-09-11" },
+        manager,
+      );
+
+      expect(result.expectedHours).toBe("20.00");
     });
 
     it("excludes already-paid entries from the totals and reports them separately", async () => {
@@ -1236,10 +1562,43 @@ describe("TimesheetsService", () => {
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it("refuses a TM", async () => {
+    it("lets a TM pay approved entries", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.APPROVED }),
+      ]);
+
+      const result = await service.linkPayment(
+        "eng1",
+        "asg1",
+        linkDto,
+        talentManager,
+      );
+
+      expect(db.engagementTimesheetEntry.updateMany).toHaveBeenCalledWith({
+        where: { id: "e1", paidPaymentReference: null },
+        data: expect.objectContaining({ paidPaymentReference: "win-1" }),
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          action: TimesheetAuditAction.PAYMENT_LINKED,
+          actorRole: TimesheetActorRole.Tm,
+        }),
+      );
+      expect(result).toEqual([
+        expect.objectContaining({ id: "e1", paymentReference: "win-1" }),
+      ]);
+    });
+
+    it("refuses a TM paying entries that are not approved", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", status: TimesheetEntryStatus.SUBMITTED }),
+      ]);
+
       await expect(
         service.linkPayment("eng1", "asg1", linkDto, talentManager),
-      ).rejects.toThrow("cannot edit or submit entries");
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
     });
 
     it("404s for an entry on another assignment", async () => {
@@ -1288,6 +1647,28 @@ describe("TimesheetsService", () => {
       await expect(
         service.findEntriesByPaymentReference("eng1", "asg1", "win-1", member),
       ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("lets a TM reconcile a payment", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          id: "e1",
+          status: TimesheetEntryStatus.APPROVED,
+          paidPaymentReference: "win-1",
+          paidAt: utcDate("2026-09-20"),
+        }),
+      ]);
+
+      await expect(
+        service.findEntriesByPaymentReference(
+          "eng1",
+          "asg1",
+          "win-1",
+          talentManager,
+        ),
+      ).resolves.toEqual([
+        expect.objectContaining({ id: "e1", paymentReference: "win-1" }),
+      ]);
     });
   });
 
@@ -1363,6 +1744,7 @@ describe("TimesheetsService", () => {
       engagementId: "eng1",
       memberId: "1001",
       memberHandle: "johnsmith",
+      status: AssignmentStatus.ASSIGNED,
       engagement: { id: "eng1", title: "Senior Frontend Engineer" },
       ...overrides,
     });
@@ -1380,6 +1762,10 @@ describe("TimesheetsService", () => {
       expect(where.engagement.managers.some).toEqual({
         managerUserId: "2002",
         removedAt: null,
+      });
+      // Pending offers, rejections, and terminations are not on a manager's list.
+      expect(where.status).toEqual({
+        in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
       });
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.meta).toEqual({
@@ -1403,6 +1789,7 @@ describe("TimesheetsService", () => {
 
       const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
       expect(where.engagement).toBeUndefined();
+      expect(where.status).toBeUndefined();
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Administrator);
     });
 
@@ -1436,13 +1823,28 @@ describe("TimesheetsService", () => {
     });
 
     it("rolls up status from one grouped query rather than a query per assignee", async () => {
-      db.engagementAssignment.count.mockResolvedValue(2);
+      db.engagementAssignment.count.mockResolvedValue(3);
       db.engagementAssignment.findMany.mockResolvedValue([
         assignmentRow(),
         assignmentRow({ id: "asg2", memberHandle: "janedoe" }),
+        assignmentRow({ id: "asg3", memberHandle: "newhire" }),
       ]);
       db.engagementTimesheetEntry.groupBy.mockResolvedValue([
-        { engagementAssignmentId: "asg1", _count: { _all: 3 } },
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.SUBMITTED,
+          _count: { _all: 3 },
+        },
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 2 },
+        },
+        {
+          engagementAssignmentId: "asg2",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 5 },
+        },
       ]);
 
       const result = await service.findEngagements(
@@ -1454,7 +1856,99 @@ describe("TimesheetsService", () => {
       expect(result.data.map((row) => row.timesheetStatus)).toEqual([
         TimesheetRollupStatus.PendingApproval,
         TimesheetRollupStatus.Approved,
+        // No approved or submitted entries is not "Approved".
+        TimesheetRollupStatus.NotSubmitted,
       ]);
+      expect(result.data.map((row) => row.hasPendingApproval)).toEqual([
+        true,
+        false,
+        false,
+      ]);
+      expect(result.data[0].assignmentStatus).toBe(AssignmentStatus.ASSIGNED);
+    });
+
+    it("accepts a landing-list date filter longer than 31 days", async () => {
+      db.engagementAssignment.count.mockResolvedValue(0);
+
+      await expect(
+        service.findEngagements(
+          {
+            page: 1,
+            perPage: 20,
+            fromDate: "2026-01-01",
+            toDate: "2026-09-30",
+          },
+          admin,
+        ),
+      ).resolves.toEqual(expect.objectContaining({ data: [] }));
+    });
+
+    it("rolls up status over the filtered dates only, so it agrees with the filter", async () => {
+      db.engagementAssignment.count.mockResolvedValue(1);
+      db.engagementAssignment.findMany.mockResolvedValue([assignmentRow()]);
+      // Only what falls inside the range comes back: the pending entry from another week does not.
+      db.engagementTimesheetEntry.groupBy.mockResolvedValue([
+        {
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.APPROVED,
+          _count: { _all: 5 },
+        },
+      ]);
+
+      const result = await service.findEngagements(
+        {
+          page: 1,
+          perPage: 20,
+          status: TimesheetRollupStatus.Approved,
+          fromDate: "2026-09-01",
+          toDate: "2026-09-30",
+        },
+        admin,
+      );
+
+      const { where } = db.engagementTimesheetEntry.groupBy.mock.calls[0][0];
+      expect(where.workDate).toEqual({
+        gte: utcDate("2026-09-01"),
+        lte: utcDate("2026-09-30"),
+      });
+      expect(result.data[0].timesheetStatus).toBe(
+        TimesheetRollupStatus.Approved,
+      );
+    });
+
+    it("rolls up status over every entry when no dates are given", async () => {
+      db.engagementAssignment.count.mockResolvedValue(1);
+      db.engagementAssignment.findMany.mockResolvedValue([assignmentRow()]);
+
+      await service.findEngagements({ page: 1, perPage: 20 }, admin);
+
+      const { where } = db.engagementTimesheetEntry.groupBy.mock.calls[0][0];
+      expect(where.workDate).toBeUndefined();
+    });
+
+    it("only lists assignees with something approved under the Approved filter", async () => {
+      db.engagementAssignment.count.mockResolvedValue(0);
+
+      await service.findEngagements(
+        {
+          page: 1,
+          perPage: 20,
+          status: TimesheetRollupStatus.Approved,
+          fromDate: "2026-09-01",
+          toDate: "2026-09-30",
+        },
+        admin,
+      );
+
+      const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
+      const workDate = {
+        gte: utcDate("2026-09-01"),
+        lte: utcDate("2026-09-30"),
+      };
+      expect(where.timesheetEntries).toEqual({
+        some: { workDate, status: TimesheetEntryStatus.APPROVED },
+        none: { workDate, status: TimesheetEntryStatus.SUBMITTED },
+      });
     });
 
     it("applies every administrator filter", async () => {

@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import {
+  AssignmentStatus,
   EngagementAssignment,
   EngagementTimesheetEntry,
   Prisma,
@@ -20,6 +21,7 @@ import {
 } from "../common/constants";
 import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
+import { FinanceService } from "../integrations/finance.service";
 import { MemberService } from "../integrations/member.service";
 import {
   ApproveTimesheetEntriesDto,
@@ -56,6 +58,12 @@ import {
 import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+/** Assignment statuses a manager's landing list shows. */
+const MANAGER_LIST_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
+  AssignmentStatus.ASSIGNED,
+  AssignmentStatus.COMPLETED,
+];
 
 type AssignmentWithEngagement = EngagementAssignment & {
   engagement: { id: string; title: string };
@@ -114,6 +122,7 @@ export class TimesheetsService {
     private readonly audit: TimesheetAuditService,
     private readonly events: TimesheetEventsService,
     private readonly memberService: MemberService,
+    private readonly financeService: FinanceService,
   ) {}
 
   /**
@@ -169,6 +178,10 @@ export class TimesheetsService {
    * the client is ignored outright: the edit-after-submit reset and the immutability of approved
    * entries are only enforceable if the server decides, so a stale client cannot talk its way into an
    * illegal state.
+   *
+   * The reset applies to members only. An administrator correcting a submitted entry is reviewing it,
+   * not changing the member's claim, so the entry stays submitted and can be approved as corrected -
+   * sending it back to draft would leave nothing to approve.
    */
   async upsertEntries(
     engagementId: string,
@@ -192,6 +205,8 @@ export class TimesheetsService {
           : ERROR_MESSAGES.TimesheetManagerCannotEdit,
       );
     }
+
+    this.assertMemberAssignmentActive(context);
 
     const parsed = this.parseUpsertEntries(dto.entries);
     const existingEntries = await this.db.engagementTimesheetEntry.findMany({
@@ -305,7 +320,8 @@ export class TimesheetsService {
         }
 
         const resetsToDraft =
-          existing.status === TimesheetEntryStatus.SUBMITTED;
+          existing.status === TimesheetEntryStatus.SUBMITTED &&
+          !context.isAdministrator;
         const updated = await tx.engagementTimesheetEntry.update({
           where: { id: existing.id },
           data: {
@@ -396,6 +412,8 @@ export class TimesheetsService {
       );
     }
 
+    this.assertMemberAssignmentActive(context);
+
     if (context.isAdministrator && !dto.overrideReason) {
       throw new BadRequestException(
         ERROR_MESSAGES.TimesheetOverrideReasonRequired,
@@ -403,20 +421,31 @@ export class TimesheetsService {
     }
 
     const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+    // Drafts may be saved without remarks, but a manager approving hours needs to know what they
+    // were for, so remarks are required by the time an entry is submitted.
+    const submitProblem = (entry: EngagementTimesheetEntry): string | null => {
+      if (entry.status !== TimesheetEntryStatus.DRAFT) {
+        return `Only draft entries can be submitted; this entry is ${entry.status}.`;
+      }
+
+      if (entry.hoursWorked.lessThanOrEqualTo(0)) {
+        return "Hours worked must be greater than zero.";
+      }
+
+      if (!entry.remarks?.trim()) {
+        return ERROR_MESSAGES.TimesheetRemarksRequired;
+      }
+
+      return null;
+    };
     const problems = entries
-      .filter(
-        (entry) =>
-          entry.status !== TimesheetEntryStatus.DRAFT ||
-          entry.hoursWorked.lessThanOrEqualTo(0),
-      )
-      .map((entry) => ({
+      .map((entry) => ({ entry, reason: submitProblem(entry) }))
+      .filter(({ reason }) => reason !== null)
+      .map(({ entry, reason }) => ({
         id: entry.id,
         workDate: toDateString(entry.workDate),
         currentStatus: entry.status,
-        reason:
-          entry.status === TimesheetEntryStatus.DRAFT
-            ? "Hours worked must be greater than zero."
-            : `Only draft entries can be submitted; this entry is ${entry.status}.`,
+        reason,
       }));
 
     if (problems.length) {
@@ -496,9 +525,7 @@ export class TimesheetsService {
     );
 
     if (context.viewerRole === TimesheetViewerRole.Member) {
-      throw new ForbiddenException(
-        ERROR_MESSAGES.TimesheetMemberCannotApprove,
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.TimesheetMemberCannotApprove);
     }
 
     if (context.isAdministrator && !dto.overrideReason) {
@@ -713,10 +740,11 @@ export class TimesheetsService {
       : undefined;
     this.assertValidRange(fromDate, toDate);
 
+    // Every entry in the period, not just approved ones: paid hours count whatever an entry's status
+    // is now, e.g. one reopened after it was paid.
     const entries = await this.db.engagementTimesheetEntry.findMany({
       where: {
         engagementAssignmentId: assignmentId,
-        status: TimesheetEntryStatus.APPROVED,
         ...(fromDate || toDate
           ? {
               workDate: {
@@ -729,23 +757,80 @@ export class TimesheetsService {
       orderBy: { workDate: "asc" },
     });
 
-    const payable = entries.filter((entry) => !entry.paidPaymentReference);
-    const alreadyPaid = entries.filter((entry) => entry.paidPaymentReference);
-
-    // Summed as Decimal rather than with floats: this number is multiplied by an hourly rate and
-    // becomes money.
-    const totalHours = payable.reduce(
-      (total, entry) => total.plus(entry.hoursWorked),
-      new Prisma.Decimal(0),
+    const approved = entries.filter(
+      (entry) => entry.status === TimesheetEntryStatus.APPROVED,
     );
+    const payable = approved.filter((entry) => !entry.paidPaymentReference);
+    const alreadyPaid = approved.filter((entry) => entry.paidPaymentReference);
+    const paid = entries.filter((entry) => entry.paidPaymentReference);
+
+    // Summed as Decimal rather than with floats: these numbers are multiplied by an hourly rate and
+    // become money.
+    const sumHours = (rows: EngagementTimesheetEntry[]) =>
+      rows
+        .reduce(
+          (total, entry) => total.plus(entry.hoursWorked),
+          new Prisma.Decimal(0),
+        )
+        .toFixed(2);
 
     return {
       totalDays: payable.length,
-      totalHours: totalHours.toFixed(2),
+      totalHours: sumHours(payable),
       ratePerHour: context.assignment.ratePerHour ?? null,
       entryIds: payable.map((entry) => entry.id),
       alreadyPaidEntryIds: alreadyPaid.map((entry) => entry.id),
+      approvedHours: sumHours(approved),
+      paidHours: sumHours(paid),
+      expectedHours: this.expectedHours(context.assignment, fromDate, toDate),
     };
+  }
+
+  /**
+   * Standard hours per day times the weekdays (Monday to Friday) in the period, counting only days
+   * inside the assignment's start and end dates.
+   */
+  private expectedHours(
+    assignment: EngagementAssignment,
+    fromDate?: Date,
+    toDate?: Date,
+  ): string | null {
+    // Older assignments only carry the deprecated weekly figure; a working week is five days.
+    const hoursPerDay =
+      assignment.standardHoursPerDay ??
+      (assignment.standardHoursPerWeek
+        ? assignment.standardHoursPerWeek / 5
+        : null);
+
+    if (!fromDate || !toDate || !hoursPerDay || hoursPerDay <= 0) {
+      return null;
+    }
+
+    const assignmentStart = assignment.startDate
+      ? toWorkDate(toDateString(assignment.startDate))
+      : undefined;
+    const assignmentEnd = assignment.endDate
+      ? toWorkDate(toDateString(assignment.endDate))
+      : undefined;
+    const start = Math.max(fromDate.getTime(), assignmentStart?.getTime() ?? 0);
+    const end = Math.min(
+      toDate.getTime(),
+      assignmentEnd?.getTime() ?? Number.POSITIVE_INFINITY,
+    );
+
+    if (start > end) {
+      return null;
+    }
+
+    let weekdays = 0;
+    for (let day = start; day <= end; day += DAY_IN_MS) {
+      const dayOfWeek = new Date(day).getUTCDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        weekdays += 1;
+      }
+    }
+
+    return new Prisma.Decimal(hoursPerDay).times(weekdays).toFixed(2);
   }
 
   /**
@@ -767,14 +852,9 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (
-      context.viewerRole === TimesheetViewerRole.Member ||
-      context.viewerRole === TimesheetViewerRole.Tm
-    ) {
+    if (context.viewerRole === TimesheetViewerRole.Member) {
       throw new ForbiddenException(
-        context.viewerRole === TimesheetViewerRole.Tm
-          ? ERROR_MESSAGES.TimesheetTmReadOnly
-          : ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
       );
     }
 
@@ -880,14 +960,9 @@ export class TimesheetsService {
       authUser,
     );
 
-    if (
-      context.viewerRole === TimesheetViewerRole.Member ||
-      context.viewerRole === TimesheetViewerRole.Tm
-    ) {
+    if (context.viewerRole === TimesheetViewerRole.Member) {
       throw new ForbiddenException(
-        context.viewerRole === TimesheetViewerRole.Tm
-          ? ERROR_MESSAGES.TimesheetTmReadOnly
-          : ERROR_MESSAGES.TimesheetPaymentNotForMembers,
+        ERROR_MESSAGES.TimesheetPaymentNotForMembers,
       );
     }
 
@@ -1003,24 +1078,62 @@ export class TimesheetsService {
 
     // One grouped query for the rolled-up status, and one batched member lookup for names. Both keep
     // the list off an N+1 as the assignee count grows.
-    const [pendingGroups, nameByUserId] = await Promise.all([
+    const [statusGroups, nameByUserId] = await Promise.all([
       assignmentIds.length
         ? this.db.engagementTimesheetEntry.groupBy({
-            by: ["engagementAssignmentId"],
+            by: ["engagementAssignmentId", "status"],
             where: {
               engagementAssignmentId: { in: assignmentIds },
-              status: TimesheetEntryStatus.SUBMITTED,
+              // The status shown has to describe the same period the list was filtered by, or an
+              // assignee matched as Approved for these dates shows Pending because of another week.
+              ...(fromDate || toDate
+                ? {
+                    workDate: {
+                      ...(fromDate ? { gte: fromDate } : {}),
+                      ...(toDate ? { lte: toDate } : {}),
+                    },
+                  }
+                : {}),
+              status: {
+                in: [
+                  TimesheetEntryStatus.SUBMITTED,
+                  TimesheetEntryStatus.APPROVED,
+                ],
+              },
             },
             _count: { _all: true },
           })
-        : Promise.resolve([]),
+        : Promise.resolve(
+            [] as Array<{
+              engagementAssignmentId: string;
+              status: TimesheetEntryStatus;
+            }>,
+          ),
       this.resolveMemberNames(
         assignments.map((assignment) => assignment.memberId),
       ),
     ]);
-    const pendingAssignmentIds = new Set(
-      pendingGroups.map((group) => group.engagementAssignmentId),
+    const assignmentIdsWithStatus = (status: TimesheetEntryStatus) =>
+      new Set(
+        statusGroups
+          .filter((group) => group.status === status)
+          .map((group) => group.engagementAssignmentId),
+      );
+    const pendingAssignmentIds = assignmentIdsWithStatus(
+      TimesheetEntryStatus.SUBMITTED,
     );
+    const approvedAssignmentIds = assignmentIdsWithStatus(
+      TimesheetEntryStatus.APPROVED,
+    );
+    const toRollupStatus = (assignmentId: string): TimesheetRollupStatus => {
+      if (pendingAssignmentIds.has(assignmentId)) {
+        return TimesheetRollupStatus.PendingApproval;
+      }
+
+      return approvedAssignmentIds.has(assignmentId)
+        ? TimesheetRollupStatus.Approved
+        : TimesheetRollupStatus.NotSubmitted;
+    };
 
     const data: TimesheetEngagementRowDto[] = assignments.map((assignment) => ({
       engagementId: assignment.engagementId,
@@ -1029,9 +1142,9 @@ export class TimesheetsService {
       assigneeId: assignment.memberId,
       assigneeHandle: assignment.memberHandle,
       assigneeName: nameByUserId.get(assignment.memberId) ?? null,
-      timesheetStatus: pendingAssignmentIds.has(assignment.id)
-        ? TimesheetRollupStatus.PendingApproval
-        : TimesheetRollupStatus.Approved,
+      assignmentStatus: assignment.status,
+      hasPendingApproval: pendingAssignmentIds.has(assignment.id),
+      timesheetStatus: toRollupStatus(assignment.id),
       viewerRole: isAdministrator
         ? TimesheetViewerRole.Administrator
         : isTm
@@ -1090,6 +1203,9 @@ export class TimesheetsService {
       engagementFilters.managers = {
         some: { managerUserId: callerUserId, removedAt: null },
       };
+      // A manager reviews people who are working or have worked; pending offers, rejections, and
+      // terminations are not theirs to review.
+      where.status = { in: MANAGER_LIST_ASSIGNMENT_STATUSES };
     } else if (query.manager) {
       engagementFilters.managers = {
         some: {
@@ -1123,8 +1239,13 @@ export class TimesheetsService {
         },
       };
     } else if (query.status === TimesheetRollupStatus.Approved) {
+      // "Nothing pending" alone would also match assignees with no entries or only drafts, so require
+      // something to actually have been approved.
       where.timesheetEntries = {
-        ...(entryDateFilter ? { some: entryDateFilter } : {}),
+        some: {
+          ...(entryDateFilter ?? {}),
+          status: TimesheetEntryStatus.APPROVED,
+        },
         none: {
           ...(entryDateFilter ?? {}),
           status: TimesheetEntryStatus.SUBMITTED,
@@ -1167,6 +1288,22 @@ export class TimesheetsService {
       actorHandle: authUser?.handle ?? null,
       isAdministrator: viewerRole === TimesheetViewerRole.Administrator,
     };
+  }
+
+  /**
+   * Members may only write to their timesheet while they are actively assigned. A completed or
+   * terminated assignee keeps read access to what they logged, but the UI hiding the controls is not
+   * enough - the page is still reachable by URL - so the API refuses the write. Administrators are
+   * not held to this: their overrides carry a reason and an audit record, and they are how a late
+   * correction on a closed assignment gets made.
+   */
+  private assertMemberAssignmentActive(context: TimesheetContext): void {
+    if (
+      context.viewerRole === TimesheetViewerRole.Member &&
+      context.assignment.status !== AssignmentStatus.ASSIGNED
+    ) {
+      throw new ForbiddenException(ERROR_MESSAGES.TimesheetAssignmentNotActive);
+    }
   }
 
   /**
@@ -1252,6 +1389,11 @@ export class TimesheetsService {
     return hours;
   }
 
+  /**
+   * Checks a read filter's range. There is no length cap here: managers, TMs, and administrators
+   * review and pay across months. The 31-day cap belongs to saving entries, which
+   * `parseUpsertEntries` enforces.
+   */
   private assertValidRange(fromDate?: Date, toDate?: Date): void {
     if (!fromDate || !toDate) {
       return;
@@ -1259,11 +1401,6 @@ export class TimesheetsService {
 
     if (toDate.getTime() < fromDate.getTime()) {
       throw new BadRequestException(ERROR_MESSAGES.TimesheetRangeInverted);
-    }
-
-    const spanDays = (toDate.getTime() - fromDate.getTime()) / DAY_IN_MS + 1;
-    if (spanDays > TIMESHEET_MAX_RANGE_DAYS) {
-      throw new BadRequestException(ERROR_MESSAGES.TimesheetRangeTooLong);
     }
   }
 
@@ -1295,6 +1432,34 @@ export class TimesheetsService {
     return context.viewerRole;
   }
 
+  /**
+   * Total hours minus the hours finance has processed for payment, for the people who review and pay
+   * the timesheet. Finance is only asked when the assignment has a total, since there is nothing to
+   * subtract from otherwise, and never on the member's own view, which does not show it.
+   */
+  private async resolveHoursLeft(
+    context: TimesheetContext,
+  ): Promise<number | null> {
+    const { assignment } = context;
+    const totalHours = assignment.totalHours;
+
+    if (
+      context.viewerRole === TimesheetViewerRole.Member ||
+      !totalHours ||
+      totalHours <= 0
+    ) {
+      return null;
+    }
+
+    const processedHours = await this.financeService.getProcessedPaymentHours(
+      assignment.id,
+    );
+
+    return processedHours === null
+      ? null
+      : Math.round((totalHours - processedHours) * 100) / 100;
+  }
+
   private async resolveMemberNames(
     userIds: string[],
   ): Promise<Map<string, string>> {
@@ -1323,9 +1488,12 @@ export class TimesheetsService {
     const managerUserIdsMissingNames = managers
       .filter((manager) => !(manager.name ?? "").trim())
       .map((manager) => manager.userId);
-    const nameByUserId = await this.resolveMemberNames([
-      assignment.memberId,
-      ...managerUserIdsMissingNames,
+    const [nameByUserId, hoursLeft] = await Promise.all([
+      this.resolveMemberNames([
+        assignment.memberId,
+        ...managerUserIdsMissingNames,
+      ]),
+      this.resolveHoursLeft(context),
     ]);
     const hydratedManagers = managers.map((manager) => ({
       ...manager,
@@ -1343,6 +1511,8 @@ export class TimesheetsService {
         memberName: nameByUserId.get(assignment.memberId) ?? null,
         status: assignment.status,
         standardHoursPerDay: assignment.standardHoursPerDay ?? null,
+        totalHours: assignment.totalHours ?? null,
+        hoursLeft,
         startDate: assignment.startDate ?? null,
         endDate: assignment.endDate ?? null,
       },

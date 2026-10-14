@@ -3,7 +3,7 @@ import { Scopes, TalentManagerRoles, UserRoles } from "../app-constants";
 import { ERROR_MESSAGES } from "../common/constants";
 import { getUserRoles, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
-import { TimesheetViewerRole } from "./timesheet-roles";
+import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 /** A manager as displayed alongside a timesheet or an engagement. */
 export interface EngagementManagerSummary {
@@ -112,6 +112,27 @@ export class TimesheetAccessService {
   /** True when the caller may assign or remove engagement managers for timesheets. */
   canManageEngagementManagers(authUser?: Record<string, any>): boolean {
     return this.isTimesheetAdmin(authUser) || this.isTimesheetTm(authUser);
+  }
+
+  /**
+   * The role to audit an engagement-level change under, such as assigning or removing a manager.
+   * Administrators and TMs can both make those changes, so the audit has to say which one did.
+   * A machine token is recorded as MACHINE, and a caller holding both roles as ADMINISTRATOR.
+   */
+  resolveEngagementActorRole(
+    authUser?: Record<string, any>,
+  ): TimesheetActorRole {
+    if (authUser?.isMachine) {
+      return TimesheetActorRole.Machine;
+    }
+
+    if (this.isTimesheetAdmin(authUser)) {
+      return TimesheetActorRole.Administrator;
+    }
+
+    return this.isTimesheetTm(authUser)
+      ? TimesheetActorRole.Tm
+      : TimesheetActorRole.Manager;
   }
 
   /**

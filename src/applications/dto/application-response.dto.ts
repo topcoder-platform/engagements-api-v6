@@ -58,10 +58,18 @@ export class ApplicationResponseDto {
   coverLetter?: string | null;
 
   @ApiPropertyOptional({
-    description: "Resume URL",
-    example: "https://example.com/resume.pdf",
+    description:
+      "Link to the applicant's resume or professional profile, such as a LinkedIn profile, a CV shared on Google Drive, or a personal website",
+    example: "https://www.linkedin.com/in/jane-doe",
   })
   resumeUrl?: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      "URL of the CV file the applicant uploaded through Filestack (stored in S3)",
+    example: "https://cdn.filestackcontent.com/AbCdEfGhIjKlMnOpQrSt",
+  })
+  cvFileUrl?: string | null;
 
   @ApiProperty({
     description: "Portfolio URLs",
@@ -80,6 +88,18 @@ export class ApplicationResponseDto {
     example: "Available to start within two weeks.",
   })
   availability?: string | null;
+
+  @ApiPropertyOptional({
+    description: "Pay rate the applicant expects for the engagement",
+    example: "$50/hour",
+  })
+  expectedPayRate?: string | null;
+
+  @ApiPropertyOptional({
+    description: "How the applicant came to know of the opportunity",
+    example: "Topcoder newsletter",
+  })
+  referralSource?: string | null;
 
   @ApiProperty({
     description: "Application status",

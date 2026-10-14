@@ -80,6 +80,30 @@ export class TimesheetSummaryResponseDto {
     isArray: true,
   })
   alreadyPaidEntryIds: string[];
+
+  @ApiProperty({
+    description:
+      "Every approved hour in the period, paid or not, as an exact decimal string",
+    example: "80.00",
+  })
+  approvedHours: string;
+
+  @ApiProperty({
+    description:
+      "Hours in the period that a payment already consumed, as an exact decimal string",
+    example: "37.50",
+  })
+  paidHours: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Standard hours per day times the weekdays in the period that fall inside the assignment's " +
+      "dates. Null when the assignment has no standard hours, or the period is open-ended or " +
+      "outside the assignment.",
+    example: "176.00",
+    nullable: true,
+  })
+  expectedHours: string | null;
 }
 
 export class LinkTimesheetPaymentDto {
