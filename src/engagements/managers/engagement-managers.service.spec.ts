@@ -12,6 +12,7 @@ import {
   TimesheetAccessService,
   TimesheetAuditService,
 } from "../../timesheets";
+import { TimesheetEmailService } from "../../timesheets/timesheet-email.service";
 import { EngagementManagersService } from "./engagement-managers.service";
 
 jest.mock("nanoid", () => ({
@@ -38,6 +39,7 @@ describe("EngagementManagersService", () => {
     getMemberNamesByUserIds: jest.Mock;
     isMemberActiveByUserId: jest.Mock;
   };
+  let emails: { sendManagerAssignedEmail: jest.Mock };
   let audit: { record: jest.Mock };
 
   const admin = {
@@ -72,7 +74,11 @@ describe("EngagementManagersService", () => {
 
   beforeEach(() => {
     db = {
-      engagement: { findUnique: jest.fn().mockResolvedValue({ id: "eng1" }) },
+      engagement: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: "eng1", title: "Senior Frontend Engineer" }),
+      },
       engagementAssignment: { findFirst: jest.fn().mockResolvedValue(null) },
       engagementTimesheetAudit: { findMany: jest.fn().mockResolvedValue([]) },
       engagementManager: {
@@ -95,12 +101,16 @@ describe("EngagementManagersService", () => {
       isMemberActiveByUserId: jest.fn().mockResolvedValue(true),
     };
     audit = { record: jest.fn().mockResolvedValue(undefined) };
+    emails = {
+      sendManagerAssignedEmail: jest.fn().mockResolvedValue(undefined),
+    };
 
     service = new EngagementManagersService(
       db as unknown as DbService,
       memberService as unknown as MemberService,
       new TimesheetAccessService(db as unknown as DbService),
       audit as unknown as TimesheetAuditService,
+      emails as unknown as TimesheetEmailService,
     );
   });
 
@@ -136,6 +146,20 @@ describe("EngagementManagersService", () => {
           actorRole: "ADMINISTRATOR",
         }),
       );
+    });
+
+    it("emails the newly assigned manager", async () => {
+      db.engagementManager.create.mockResolvedValue(activeManagerRow);
+
+      await service.assign("eng1", selection, admin);
+
+      expect(emails.sendManagerAssignedEmail).toHaveBeenCalledWith({
+        engagementId: "eng1",
+        engagementTitle: "Senior Frontend Engineer",
+        managerUserId: "2002",
+        managerHandle: "maryj",
+        actorHandle: "adminuser",
+      });
     });
 
     it("does not call the member API when the caller already resolved the member", async () => {

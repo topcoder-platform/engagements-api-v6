@@ -3,6 +3,7 @@ import { DbModule } from "../db/db.module";
 import { IntegrationsModule } from "../integrations/integrations.module";
 import { TimesheetAccessService } from "./timesheet-access.service";
 import { TimesheetAuditService } from "./timesheet-audit.service";
+import { TimesheetEmailService } from "./timesheet-email.service";
 import { TimesheetEventsService } from "./timesheet-events.service";
 import { TimesheetEngagementsController } from "./timesheet-engagements.controller";
 import { TimesheetsController } from "./timesheets.controller";
@@ -18,9 +19,15 @@ import { TimesheetsService } from "./timesheets.service";
   providers: [
     TimesheetAccessService,
     TimesheetAuditService,
+    TimesheetEmailService,
     TimesheetEventsService,
     TimesheetsService,
   ],
-  exports: [TimesheetAccessService, TimesheetAuditService, TimesheetsService],
+  exports: [
+    TimesheetAccessService,
+    TimesheetAuditService,
+    TimesheetEmailService,
+    TimesheetsService,
+  ],
 })
 export class TimesheetsModule {}
