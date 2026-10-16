@@ -1,8 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { EventBusService } from "../integrations/event-bus.service";
+import { TimesheetEmailService } from "./timesheet-email.service";
 
 export interface TimesheetEventPayload {
   engagementId: string;
+  engagementTitle: string;
   assignmentId: string;
   memberId: string;
   memberHandle: string;
@@ -19,14 +21,17 @@ export interface TimesheetEventPayload {
 export class TimesheetEventsService {
   private readonly logger = new Logger(TimesheetEventsService.name);
 
-  constructor(private readonly eventBusService: EventBusService) {}
+  constructor(
+    private readonly eventBusService: EventBusService,
+    private readonly emails: TimesheetEmailService,
+  ) {}
 
   /**
-   * Emits a timesheet lifecycle event.
+   * Emits a timesheet lifecycle event and sends the email that goes with it.
    *
-   * Never throws: a bus failure is logged and swallowed. The workflow mutation has already committed
-   * by the time this runs, and losing a notification is not a reason to fail a member's submission or
-   * a manager's approval.
+   * Never throws: a bus or email failure is logged and swallowed. The workflow mutation has already
+   * committed by the time this runs, and losing a notification is not a reason to fail a member's
+   * submission or a manager's approval.
    */
   async emit(topic: string, payload: TimesheetEventPayload): Promise<void> {
     try {
@@ -41,5 +46,7 @@ export class TimesheetEventsService {
         }`,
       );
     }
+
+    await this.emails.sendForEvent(topic, payload);
   }
 }

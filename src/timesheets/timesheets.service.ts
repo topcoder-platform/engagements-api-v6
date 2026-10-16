@@ -1579,6 +1579,7 @@ export class TimesheetsService {
 
       const payload: TimesheetEventPayload = {
         engagementId: context.assignment.engagementId,
+        engagementTitle: context.assignment.engagement.title,
         assignmentId: context.assignment.id,
         memberId: context.assignment.memberId,
         memberHandle: context.assignment.memberHandle,

@@ -93,6 +93,11 @@ Set the following environment variables (see `.env.example` for defaults):
 | `SENDGRID_ASSIGNMENT_OFFER_REJECTED_TEMPLATE_ID` | SendGrid template ID for assignment offer rejected emails. |
 | `SENDGRID_UNDER_REVIEW_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application is under review. |
 | `SENDGRID_REJECTED_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application was not selected. |
+| `SENDGRID_TIMESHEET_SUBMITTED_TEMPLATE_ID` | SendGrid template ID for telling engagement managers a timesheet was submitted for approval. |
+| `SENDGRID_TIMESHEET_RESUBMISSION_REQUIRED_TEMPLATE_ID` | SendGrid template ID for telling a member that edited submitted entries went back to draft and need resubmitting. |
+| `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` | SendGrid template ID for telling a member their timesheet entries were approved. |
+| `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` | SendGrid template ID for telling a member an administrator reopened or modified approved entries. |
+| `SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID` | SendGrid template ID for telling a member they were made a manager of an engagement. |
 
 ## Authentication
 
