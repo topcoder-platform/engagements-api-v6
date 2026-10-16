@@ -169,7 +169,8 @@ Assigning a manager to an engagement emails that manager (`SENDGRID_ENGAGEMENT_M
 Removing one sends nothing.
 
 Timesheet template data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `memberHandle`,
-`actorHandle`, `entryCount`, `totalHours`, `workDates` (`DD-MM-YYYY` list), `fromDate`, `toDate`, `comment`
+`actorHandle`, `memberDisplayName`, `managerDisplayNames` and `actorDisplayName` (`Name (handle)` as on the timesheet
+page; the managers are comma-separated), `entryCount`, `totalHours`, `workDates` (`DD-MM-YYYY` list), `fromDate`, `toDate`, `comment`
 (approval comment or override reason, empty otherwise), `timesheetUrl`, and `changeType` on the administrator
 template. Manager-assigned data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `actorHandle`,
 `timesheetsUrl`.

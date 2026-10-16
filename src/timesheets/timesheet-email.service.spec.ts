@@ -5,7 +5,10 @@ import type { TimesheetEventPayload } from "./timesheet-events.service";
 describe("TimesheetEmailService", () => {
   let service: TimesheetEmailService;
   let access: { findActiveManagers: jest.Mock };
-  let memberService: { getMemberByUserId: jest.Mock };
+  let memberService: {
+    getMemberByUserId: jest.Mock;
+    getMemberNamesByUserIds: jest.Mock;
+  };
   let eventBusService: { postEvent: jest.Mock };
   let configService: { get: jest.Mock };
   let config: Record<string, string | undefined>;
@@ -62,6 +65,9 @@ describe("TimesheetEmailService", () => {
       getMemberByUserId: jest.fn((userId: string) =>
         Promise.resolve(members[userId] ?? null),
       ),
+      getMemberNamesByUserIds: jest
+        .fn()
+        .mockResolvedValue(new Map([["1001", "John Smith"]])),
     };
     eventBusService = { postEvent: jest.fn().mockResolvedValue(undefined) };
     configService = { get: jest.fn((key: string) => config[key]) };
@@ -87,6 +93,9 @@ describe("TimesheetEmailService", () => {
           assignmentId: "asg1",
           memberHandle: "johns",
           actorHandle: "johns",
+          memberDisplayName: "John Smith (johns)",
+          managerDisplayNames: "Mary Jones (maryj), petek",
+          actorDisplayName: "John Smith (johns)",
           entryCount: 2,
           totalHours: "15.50",
           workDates: ["14-09-2026", "15-09-2026"],
@@ -127,7 +136,7 @@ describe("TimesheetEmailService", () => {
       comment: "Corrected per client",
     });
 
-    expect(access.findActiveManagers).not.toHaveBeenCalled();
+    expect(access.findActiveManagers).toHaveBeenCalledWith(["eng1"]);
     expect(eventBusService.postEvent).toHaveBeenCalledTimes(1);
 
     const [, message] = eventBusService.postEvent.mock.calls[0];
@@ -141,6 +150,44 @@ describe("TimesheetEmailService", () => {
       }),
     );
     expect(message.data.changeType).toBe(changeType);
+  });
+
+  it("uses a manager's stored name and only looks up the names it is missing", async () => {
+    await service.sendForEvent(TimesheetEventTopics.Approved, {
+      ...payload,
+      actorUserId: "2002",
+      actorHandle: "maryj",
+    });
+
+    expect(memberService.getMemberNamesByUserIds).toHaveBeenCalledWith([
+      "1001",
+      "2003",
+    ]);
+    const [, message] = eventBusService.postEvent.mock.calls[0];
+    expect(message.data).toEqual(
+      expect.objectContaining({
+        memberDisplayName: "John Smith (johns)",
+        managerDisplayNames: "Mary Jones (maryj), petek",
+        actorDisplayName: "Mary Jones (maryj)",
+      }),
+    );
+  });
+
+  it("falls back to handles when the name lookup fails", async () => {
+    memberService.getMemberNamesByUserIds.mockRejectedValue(
+      new Error("member api down"),
+    );
+
+    await service.sendForEvent(TimesheetEventTopics.Approved, payload);
+
+    const [, message] = eventBusService.postEvent.mock.calls[0];
+    expect(message.data).toEqual(
+      expect.objectContaining({
+        memberDisplayName: "johns",
+        managerDisplayNames: "Mary Jones (maryj), petek",
+        actorDisplayName: "johns",
+      }),
+    );
   });
 
   it("skips quietly when the template id is not configured", async () => {
