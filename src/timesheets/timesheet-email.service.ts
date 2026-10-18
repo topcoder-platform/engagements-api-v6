@@ -2,7 +2,10 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { EventBusService } from "../integrations/event-bus.service";
 import { MemberService } from "../integrations/member.service";
-import { TimesheetAccessService } from "./timesheet-access.service";
+import {
+  EngagementManagerSummary,
+  TimesheetAccessService,
+} from "./timesheet-access.service";
 import { TimesheetEventTopics } from "./timesheet-constants";
 import type { TimesheetEventPayload } from "./timesheet-events.service";
 
@@ -50,6 +53,13 @@ const TIMESHEET_EMAIL_ROUTES: Record<string, TimesheetEmailRoute> = {
 
 const MANAGER_ASSIGNED_TEMPLATE_KEY =
   "SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID";
+
+/** Pre-formatted people lines, in the same `Name (handle)` form the timesheet header shows. */
+interface TimesheetPeople {
+  memberDisplayName: string;
+  managerDisplayNames: string;
+  actorDisplayName: string;
+}
 
 interface EmailRecipient {
   userId: string;
@@ -105,9 +115,15 @@ export class TimesheetEmailService {
         return;
       }
 
+      // The managers are the recipients of a submitted email, so a failed lookup has to stop it. A
+      // member email only lists them, and is still worth sending without that line.
+      const managers =
+        route.audience === "managers"
+          ? await this.findManagers(payload.engagementId)
+          : await this.findManagersForDisplay(payload);
       const recipients =
         route.audience === "managers"
-          ? await this.resolveManagerRecipients(payload.engagementId)
+          ? await this.resolveManagerRecipients(managers)
           : await this.resolveMemberRecipients(
               payload.memberId,
               payload.memberHandle,
@@ -120,7 +136,8 @@ export class TimesheetEmailService {
         return;
       }
 
-      const data = this.buildTimesheetData(topic, payload);
+      const people = await this.resolvePeople(payload, managers);
+      const data = this.buildTimesheetData(topic, payload, people);
 
       await Promise.all(
         recipients.map((recipient) =>
@@ -211,18 +228,38 @@ export class TimesheetEmailService {
     return templateId;
   }
 
+  private async findManagers(
+    engagementId: string,
+  ): Promise<EngagementManagerSummary[]> {
+    return (
+      (await this.access.findActiveManagers([engagementId])).get(
+        engagementId,
+      ) ?? []
+    );
+  }
+
+  private async findManagersForDisplay(
+    payload: TimesheetEventPayload,
+  ): Promise<EngagementManagerSummary[]> {
+    try {
+      return await this.findManagers(payload.engagementId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to load managers for timesheet email (assignment ${payload.assignmentId}): ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      );
+      return [];
+    }
+  }
+
   /**
    * One email per manager rather than one email to all of them, so managers - who may be on the
    * client side - do not see each other's addresses.
    */
   private async resolveManagerRecipients(
-    engagementId: string,
+    managers: EngagementManagerSummary[],
   ): Promise<EmailRecipient[]> {
-    const managers =
-      (await this.access.findActiveManagers([engagementId])).get(
-        engagementId,
-      ) ?? [];
-
     if (!managers.length) {
       return [];
     }
@@ -272,9 +309,59 @@ export class TimesheetEmailService {
     }
   }
 
+  /**
+   * Names for the assignee, the managers, and whoever acted, in one batched member lookup. A manager's
+   * stored name wins, as it does on the timesheet page. A failed lookup is not worth losing the email
+   * over: everyone falls back to their handle.
+   */
+  private async resolvePeople(
+    payload: TimesheetEventPayload,
+    managers: EngagementManagerSummary[],
+  ): Promise<TimesheetPeople> {
+    const managerNames = new Map(
+      managers
+        .filter((manager) => manager.name?.trim())
+        .map((manager) => [manager.userId, manager.name!.trim()]),
+    );
+    const userIdsToResolve = [
+      payload.memberId,
+      payload.actorUserId,
+      ...managers.map((manager) => manager.userId),
+    ].filter((userId) => userId && !managerNames.has(userId));
+
+    let resolvedNames = new Map<string, string>();
+    try {
+      resolvedNames =
+        await this.memberService.getMemberNamesByUserIds(userIdsToResolve);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to resolve names for timesheet email (assignment ${payload.assignmentId}): ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      );
+    }
+
+    const nameOf = (userId: string): string | undefined =>
+      managerNames.get(userId) ?? resolvedNames.get(userId)?.trim();
+
+    return {
+      memberDisplayName: withHandle(
+        nameOf(payload.memberId),
+        payload.memberHandle,
+      ),
+      managerDisplayNames: managers
+        .map((manager) => withHandle(nameOf(manager.userId), manager.handle))
+        .join(", "),
+      actorDisplayName: payload.actorHandle
+        ? withHandle(nameOf(payload.actorUserId), payload.actorHandle)
+        : "",
+    };
+  }
+
   private buildTimesheetData(
     topic: string,
     payload: TimesheetEventPayload,
+    people: TimesheetPeople,
   ): Record<string, unknown> {
     const workDates = [...payload.workDates].sort().map(formatWorkDate);
 
@@ -284,6 +371,7 @@ export class TimesheetEmailService {
       assignmentId: payload.assignmentId,
       memberHandle: payload.memberHandle,
       actorHandle: payload.actorHandle ?? "",
+      ...people,
       entryCount: workDates.length,
       totalHours: payload.totalHours,
       workDates,
@@ -356,6 +444,11 @@ export class TimesheetEmailService {
       .replace(/^engagements\./, "");
     return `https://engagements.${baseHost || "topcoder-dev.com"}/${path}`;
   }
+}
+
+/** `Name (handle)`, or the bare handle when there is no name - the timesheet header's format. */
+function withHandle(name: string | null | undefined, handle: string): string {
+  return name ? `${name} (${handle})` : handle;
 }
 
 /** `YYYY-MM-DD` to the `DD-MM-YYYY` the timesheet pages display. */
