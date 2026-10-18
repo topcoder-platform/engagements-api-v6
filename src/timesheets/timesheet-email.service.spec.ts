@@ -173,6 +173,17 @@ describe("TimesheetEmailService", () => {
     );
   });
 
+  it("still emails the member when the manager lookup fails", async () => {
+    access.findActiveManagers.mockRejectedValue(new Error("db down"));
+
+    await service.sendForEvent(TimesheetEventTopics.Approved, payload);
+
+    expect(eventBusService.postEvent).toHaveBeenCalledTimes(1);
+    const [, message] = eventBusService.postEvent.mock.calls[0];
+    expect(message.recipients).toEqual(["john@example.com"]);
+    expect(message.data.managerDisplayNames).toBe("");
+  });
+
   it("falls back to handles when the name lookup fails", async () => {
     memberService.getMemberNamesByUserIds.mockRejectedValue(
       new Error("member api down"),

@@ -115,7 +115,12 @@ export class TimesheetEmailService {
         return;
       }
 
-      const managers = await this.findManagers(payload.engagementId);
+      // The managers are the recipients of a submitted email, so a failed lookup has to stop it. A
+      // member email only lists them, and is still worth sending without that line.
+      const managers =
+        route.audience === "managers"
+          ? await this.findManagers(payload.engagementId)
+          : await this.findManagersForDisplay(payload);
       const recipients =
         route.audience === "managers"
           ? await this.resolveManagerRecipients(managers)
@@ -231,6 +236,21 @@ export class TimesheetEmailService {
         engagementId,
       ) ?? []
     );
+  }
+
+  private async findManagersForDisplay(
+    payload: TimesheetEventPayload,
+  ): Promise<EngagementManagerSummary[]> {
+    try {
+      return await this.findManagers(payload.engagementId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to load managers for timesheet email (assignment ${payload.assignmentId}): ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      );
+      return [];
+    }
   }
 
   /**
