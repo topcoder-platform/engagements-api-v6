@@ -4759,6 +4759,7 @@ export namespace Prisma {
     memberId: string | null
     memberHandle: string | null
     status: $Enums.AssignmentStatus | null
+    acceptedAt: Date | null
     agreementRate: string | null
     ratePerHour: string | null
     paymentCycle: $Enums.PaymentCycle | null
@@ -4783,6 +4784,7 @@ export namespace Prisma {
     memberId: string | null
     memberHandle: string | null
     status: $Enums.AssignmentStatus | null
+    acceptedAt: Date | null
     agreementRate: string | null
     ratePerHour: string | null
     paymentCycle: $Enums.PaymentCycle | null
@@ -4807,6 +4809,7 @@ export namespace Prisma {
     memberId: number
     memberHandle: number
     status: number
+    acceptedAt: number
     agreementRate: number
     ratePerHour: number
     paymentCycle: number
@@ -4847,6 +4850,7 @@ export namespace Prisma {
     memberId?: true
     memberHandle?: true
     status?: true
+    acceptedAt?: true
     agreementRate?: true
     ratePerHour?: true
     paymentCycle?: true
@@ -4871,6 +4875,7 @@ export namespace Prisma {
     memberId?: true
     memberHandle?: true
     status?: true
+    acceptedAt?: true
     agreementRate?: true
     ratePerHour?: true
     paymentCycle?: true
@@ -4895,6 +4900,7 @@ export namespace Prisma {
     memberId?: true
     memberHandle?: true
     status?: true
+    acceptedAt?: true
     agreementRate?: true
     ratePerHour?: true
     paymentCycle?: true
@@ -5006,6 +5012,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status: $Enums.AssignmentStatus
+    acceptedAt: Date | null
     agreementRate: string | null
     ratePerHour: string | null
     paymentCycle: $Enums.PaymentCycle
@@ -5049,6 +5056,7 @@ export namespace Prisma {
     memberId?: boolean
     memberHandle?: boolean
     status?: boolean
+    acceptedAt?: boolean
     agreementRate?: boolean
     ratePerHour?: boolean
     paymentCycle?: boolean
@@ -5078,6 +5086,7 @@ export namespace Prisma {
     memberId?: boolean
     memberHandle?: boolean
     status?: boolean
+    acceptedAt?: boolean
     agreementRate?: boolean
     ratePerHour?: boolean
     paymentCycle?: boolean
@@ -5103,6 +5112,7 @@ export namespace Prisma {
     memberId?: boolean
     memberHandle?: boolean
     status?: boolean
+    acceptedAt?: boolean
     agreementRate?: boolean
     ratePerHour?: boolean
     paymentCycle?: boolean
@@ -5128,6 +5138,7 @@ export namespace Prisma {
     memberId?: boolean
     memberHandle?: boolean
     status?: boolean
+    acceptedAt?: boolean
     agreementRate?: boolean
     ratePerHour?: boolean
     paymentCycle?: boolean
@@ -5146,7 +5157,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "status" | "agreementRate" | "ratePerHour" | "paymentCycle" | "standardHoursPerDay" | "totalHours" | "standardHoursPerWeek" | "durationMonths" | "otherRemarks" | "terminationReason" | "startDate" | "endDate" | "wiproIdEndDate" | "candidateWiproId" | "source" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
+  export type EngagementAssignmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementId" | "memberId" | "memberHandle" | "status" | "acceptedAt" | "agreementRate" | "ratePerHour" | "paymentCycle" | "standardHoursPerDay" | "totalHours" | "standardHoursPerWeek" | "durationMonths" | "otherRemarks" | "terminationReason" | "startDate" | "endDate" | "wiproIdEndDate" | "candidateWiproId" | "source" | "createdAt" | "updatedAt", ExtArgs["result"]["engagementAssignment"]>
   export type EngagementAssignmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     engagement?: boolean | EngagementDefaultArgs<ExtArgs>
     feedback?: boolean | EngagementAssignment$feedbackArgs<ExtArgs>
@@ -5175,6 +5186,10 @@ export namespace Prisma {
       memberId: string
       memberHandle: string
       status: $Enums.AssignmentStatus
+      /**
+       * First recorded acceptance; null for legacy assignments without a known acceptance date.
+       */
+      acceptedAt: Date | null
       agreementRate: string | null
       ratePerHour: string | null
       paymentCycle: $Enums.PaymentCycle
@@ -5629,6 +5644,7 @@ export namespace Prisma {
     readonly memberId: FieldRef<"EngagementAssignment", 'String'>
     readonly memberHandle: FieldRef<"EngagementAssignment", 'String'>
     readonly status: FieldRef<"EngagementAssignment", 'AssignmentStatus'>
+    readonly acceptedAt: FieldRef<"EngagementAssignment", 'DateTime'>
     readonly agreementRate: FieldRef<"EngagementAssignment", 'String'>
     readonly ratePerHour: FieldRef<"EngagementAssignment", 'String'>
     readonly paymentCycle: FieldRef<"EngagementAssignment", 'PaymentCycle'>
@@ -13398,6 +13414,7 @@ export namespace Prisma {
     memberId: 'memberId',
     memberHandle: 'memberHandle',
     status: 'status',
+    acceptedAt: 'acceptedAt',
     agreementRate: 'agreementRate',
     ratePerHour: 'ratePerHour',
     paymentCycle: 'paymentCycle',
@@ -14205,6 +14222,7 @@ export namespace Prisma {
     memberId?: StringFilter<"EngagementAssignment"> | string
     memberHandle?: StringFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    acceptedAt?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
     agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
     ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleFilter<"EngagementAssignment"> | $Enums.PaymentCycle
@@ -14233,6 +14251,7 @@ export namespace Prisma {
     memberId?: SortOrder
     memberHandle?: SortOrder
     status?: SortOrder
+    acceptedAt?: SortOrderInput | SortOrder
     agreementRate?: SortOrderInput | SortOrder
     ratePerHour?: SortOrderInput | SortOrder
     paymentCycle?: SortOrder
@@ -14264,6 +14283,7 @@ export namespace Prisma {
     memberId?: StringFilter<"EngagementAssignment"> | string
     memberHandle?: StringFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    acceptedAt?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
     agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
     ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleFilter<"EngagementAssignment"> | $Enums.PaymentCycle
@@ -14292,6 +14312,7 @@ export namespace Prisma {
     memberId?: SortOrder
     memberHandle?: SortOrder
     status?: SortOrder
+    acceptedAt?: SortOrderInput | SortOrder
     agreementRate?: SortOrderInput | SortOrder
     ratePerHour?: SortOrderInput | SortOrder
     paymentCycle?: SortOrder
@@ -14324,6 +14345,7 @@ export namespace Prisma {
     memberId?: StringWithAggregatesFilter<"EngagementAssignment"> | string
     memberHandle?: StringWithAggregatesFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusWithAggregatesFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    acceptedAt?: DateTimeNullableWithAggregatesFilter<"EngagementAssignment"> | Date | string | null
     agreementRate?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
     ratePerHour?: StringNullableWithAggregatesFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleWithAggregatesFilter<"EngagementAssignment"> | $Enums.PaymentCycle
@@ -15334,6 +15356,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -15362,6 +15385,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -15388,6 +15412,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -15416,6 +15441,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -15443,6 +15469,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -15466,6 +15493,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -15490,6 +15518,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -16766,6 +16795,7 @@ export namespace Prisma {
     memberId?: SortOrder
     memberHandle?: SortOrder
     status?: SortOrder
+    acceptedAt?: SortOrder
     agreementRate?: SortOrder
     ratePerHour?: SortOrder
     paymentCycle?: SortOrder
@@ -16797,6 +16827,7 @@ export namespace Prisma {
     memberId?: SortOrder
     memberHandle?: SortOrder
     status?: SortOrder
+    acceptedAt?: SortOrder
     agreementRate?: SortOrder
     ratePerHour?: SortOrder
     paymentCycle?: SortOrder
@@ -16821,6 +16852,7 @@ export namespace Prisma {
     memberId?: SortOrder
     memberHandle?: SortOrder
     status?: SortOrder
+    acceptedAt?: SortOrder
     agreementRate?: SortOrder
     ratePerHour?: SortOrder
     paymentCycle?: SortOrder
@@ -18685,6 +18717,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -18711,6 +18744,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -18877,6 +18911,7 @@ export namespace Prisma {
     memberId?: StringFilter<"EngagementAssignment"> | string
     memberHandle?: StringFilter<"EngagementAssignment"> | string
     status?: EnumAssignmentStatusFilter<"EngagementAssignment"> | $Enums.AssignmentStatus
+    acceptedAt?: DateTimeNullableFilter<"EngagementAssignment"> | Date | string | null
     agreementRate?: StringNullableFilter<"EngagementAssignment"> | string | null
     ratePerHour?: StringNullableFilter<"EngagementAssignment"> | string | null
     paymentCycle?: EnumPaymentCycleFilter<"EngagementAssignment"> | $Enums.PaymentCycle
@@ -19475,6 +19510,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -19502,6 +19538,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -19543,6 +19580,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -19570,6 +19608,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -19595,6 +19634,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -19622,6 +19662,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -19663,6 +19704,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -19690,6 +19732,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -19715,6 +19758,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -19742,6 +19786,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -19819,6 +19864,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -19846,6 +19892,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -20309,6 +20356,7 @@ export namespace Prisma {
     memberId: string
     memberHandle: string
     status?: $Enums.AssignmentStatus
+    acceptedAt?: Date | string | null
     agreementRate?: string | null
     ratePerHour?: string | null
     paymentCycle?: $Enums.PaymentCycle
@@ -20422,6 +20470,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -20448,6 +20497,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle
@@ -20474,6 +20524,7 @@ export namespace Prisma {
     memberId?: StringFieldUpdateOperationsInput | string
     memberHandle?: StringFieldUpdateOperationsInput | string
     status?: EnumAssignmentStatusFieldUpdateOperationsInput | $Enums.AssignmentStatus
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     agreementRate?: NullableStringFieldUpdateOperationsInput | string | null
     ratePerHour?: NullableStringFieldUpdateOperationsInput | string | null
     paymentCycle?: EnumPaymentCycleFieldUpdateOperationsInput | $Enums.PaymentCycle

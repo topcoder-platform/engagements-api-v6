@@ -2160,6 +2160,17 @@ export class EngagementsService {
     });
   }
 
+  /**
+   * Updates assignment status while preserving its first recorded acceptance date.
+   * @param engagementId Owning engagement ID.
+   * @param assignmentId Assignment to update.
+   * @param status Requested assignment status.
+   * @param terminationReason Optional reason for termination.
+   * @param otherRemarks Optional assignment remarks.
+   * @returns Updated assignment, with acceptedAt set only on its first transition to ASSIGNED.
+   * @throws NotFoundException for missing records, BadRequestException for mismatched
+   * engagement ownership, or database errors.
+   */
   updateAssignmentStatus(
     engagementId: string,
     assignmentId: string,
@@ -2205,6 +2216,13 @@ export class EngagementsService {
         typeof otherRemarks === "string" ? otherRemarks.trim() : otherRemarks;
       const data: Prisma.EngagementAssignmentUpdateInput = { status };
       if (
+        status === AssignmentStatus.ASSIGNED &&
+        assignment.status !== AssignmentStatus.ASSIGNED &&
+        !assignment.acceptedAt
+      ) {
+        data.acceptedAt = new Date();
+      }
+      if (
         status === AssignmentStatus.TERMINATED ||
         status === AssignmentStatus.COMPLETED
       ) {
@@ -2249,6 +2267,17 @@ export class EngagementsService {
     );
   }
 
+  /**
+   * Records a member's offer decision and its first acceptance timestamp.
+   * Used by the accept/reject endpoints; later assignment edits preserve acceptedAt.
+   * @param engagementId Engagement owning the assignment.
+   * @param assignmentId Assignment whose offer is being answered.
+   * @param authUser Member identity used to check ownership.
+   * @param nextStatus ASSIGNED for acceptance or OFFER_REJECTED for rejection.
+   * @returns Updated assignment after the decision is committed.
+   * @throws NotFoundException for missing records, BadRequestException for an invalid
+   * offer state, ForbiddenException for unauthorized callers, or database errors.
+   */
   private async respondToAssignmentOffer(
     engagementId: string,
     assignmentId: string,
@@ -2304,7 +2333,13 @@ export class EngagementsService {
 
       return tx.engagementAssignment.update({
         where: { id: assignmentId },
-        data: { status: nextStatus },
+        data: {
+          status: nextStatus,
+          ...(nextStatus === AssignmentStatus.ASSIGNED &&
+          !assignment.acceptedAt
+            ? { acceptedAt: new Date() }
+            : {}),
+        },
       });
     });
 

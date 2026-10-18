@@ -254,3 +254,14 @@ All Flexi Talent routes live under `/engagements/flexi-talent`, require bearer a
 | `GET` | `/engagements/flexi-talent/members` | Flat-paginated `ASSIGNED`/`COMPLETED` member list grouped by `memberId`, with primary assignment context. |
 | `GET` | `/engagements/flexi-talent/members/:memberId` | Member right-rail detail restricted to qualifying `ASSIGNED`/`COMPLETED` assignments. |
 | `GET` | `/engagements/flexi-talent/members/:memberId/history` | Full unpaginated `ASSIGNED`/`COMPLETED` assignment history with current rows first. |
+
+## Assignment acceptance dates
+
+Assignments record `acceptedAt` on the first offer acceptance or administrative
+transition to `ASSIGNED`. Later edits, completion, termination, and rejection do
+not overwrite it. The Active Members dashboard uses this timestamp so activity
+stays in its original UTC month. Run the
+`20261019000000_record_assignment_acceptance` migration before deploying this
+version. Existing assignments retain null because their true acceptance dates
+cannot be recovered from `createdAt` or the mutable `updatedAt`; their application
+and payment activity can still appear in reporting.
