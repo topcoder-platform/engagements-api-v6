@@ -201,6 +201,8 @@ model EngagementAssignment {
   memberId             String
   memberHandle         String
   status               AssignmentStatus  @default(SELECTED)
+  /// First recorded acceptance; null for legacy assignments without a known acceptance date.
+  acceptedAt           DateTime?
   agreementRate        String?
   ratePerHour          String?
   paymentCycle         PaymentCycle      @default(WEEKLY)
