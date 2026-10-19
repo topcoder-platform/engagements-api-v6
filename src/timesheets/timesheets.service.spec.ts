@@ -107,6 +107,9 @@ describe("TimesheetsService", () => {
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         groupBy: jest.fn().mockResolvedValue([]),
       },
+      engagementTimesheetAudit: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
         Promise.resolve(callback(db)),
       ),
@@ -133,6 +136,42 @@ describe("TimesheetsService", () => {
   });
 
   describe("findTimesheet", () => {
+    it("shows the member the latest note an administrator left when reopening an entry", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ reopenedAt: utcDate("2026-09-10") }),
+        entry({ id: "entry2", workDate: utcDate("2026-09-08") }),
+      ]);
+      db.engagementTimesheetAudit.findMany.mockResolvedValue([
+        { timesheetEntryId: "entry1", comment: "Wrong engagement" },
+        { timesheetEntryId: "entry1", comment: "Older reopen note" },
+      ]);
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(db.engagementTimesheetAudit.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            timesheetEntryId: { in: ["entry1"] },
+            action: TimesheetAuditAction.REOPENED,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      );
+      expect(result.entries.map((row) => row.reopenComment)).toEqual([
+        "Wrong engagement",
+        null,
+      ]);
+    });
+
+    it("skips the audit lookup when nothing was reopened", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(db.engagementTimesheetAudit.findMany).not.toHaveBeenCalled();
+      expect(result.entries[0].reopenComment).toBeNull();
+    });
+
     it("returns the header, managers, and viewerRole for the assignee", async () => {
       db.engagementManager.findMany.mockResolvedValue([
         {
@@ -1864,6 +1903,9 @@ describe("TimesheetsService", () => {
         false,
         false,
       ]);
+      expect(result.data.map((row) => row.pendingEntryCount)).toEqual([
+        3, 0, 0,
+      ]);
       expect(result.data[0].assignmentStatus).toBe(AssignmentStatus.ASSIGNED);
     });
 
@@ -2001,7 +2043,7 @@ describe("TimesheetsService", () => {
       expect(where.OR).toEqual([
         {
           status: {
-            in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
+            in: [AssignmentStatus.ASSIGNED],
           },
         },
         { timesheetEntries: { some: {} } },

@@ -1122,6 +1122,7 @@ export class TimesheetsService {
             [] as Array<{
               engagementAssignmentId: string;
               status: TimesheetEntryStatus;
+              _count: { _all: number };
             }>,
           ),
       this.resolveMemberNames(
@@ -1136,6 +1137,11 @@ export class TimesheetsService {
       );
     const pendingAssignmentIds = assignmentIdsWithStatus(
       TimesheetEntryStatus.SUBMITTED,
+    );
+    const pendingCountByAssignmentId = new Map(
+      statusGroups
+        .filter((group) => group.status === TimesheetEntryStatus.SUBMITTED)
+        .map((group) => [group.engagementAssignmentId, group._count._all]),
     );
     const approvedAssignmentIds = assignmentIdsWithStatus(
       TimesheetEntryStatus.APPROVED,
@@ -1159,6 +1165,7 @@ export class TimesheetsService {
       assigneeName: nameByUserId.get(assignment.memberId) ?? null,
       assignmentStatus: assignment.status,
       hasPendingApproval: pendingAssignmentIds.has(assignment.id),
+      pendingEntryCount: pendingCountByAssignmentId.get(assignment.id) ?? 0,
       timesheetStatus: toRollupStatus(assignment.id),
       viewerRole: isAdministrator
         ? TimesheetViewerRole.Administrator
@@ -1508,13 +1515,16 @@ export class TimesheetsService {
     const managerUserIdsMissingNames = managers
       .filter((manager) => !(manager.name ?? "").trim())
       .map((manager) => manager.userId);
-    const [nameByUserId, hoursLeft] = await Promise.all([
-      this.resolveMemberNames([
-        assignment.memberId,
-        ...managerUserIdsMissingNames,
-      ]),
-      this.resolveHoursLeft(context),
-    ]);
+    const [nameByUserId, hoursLeft, reopenCommentByEntryId] = await Promise.all(
+      [
+        this.resolveMemberNames([
+          assignment.memberId,
+          ...managerUserIdsMissingNames,
+        ]),
+        this.resolveHoursLeft(context),
+        this.resolveReopenComments(entries),
+      ],
+    );
     const hydratedManagers = managers.map((manager) => ({
       ...manager,
       name: manager.name ?? nameByUserId.get(manager.userId) ?? null,
@@ -1537,13 +1547,59 @@ export class TimesheetsService {
         endDate: assignment.endDate ?? null,
       },
       managers: hydratedManagers,
-      entries: entries.map((entry) => this.toEntryDto(assignment, entry)),
+      entries: entries.map((entry) =>
+        this.toEntryDto(
+          assignment,
+          entry,
+          reopenCommentByEntryId.get(entry.id) ?? null,
+        ),
+      ),
     };
+  }
+
+  /**
+   * The note an administrator left when reopening each entry. It lives only on the REOPENED audit
+   * record, so the latest one per entry is read back - which also covers entries reopened before the
+   * note was shown to members.
+   */
+  private async resolveReopenComments(
+    entries: EngagementTimesheetEntry[],
+  ): Promise<Map<string, string>> {
+    const reopenedEntryIds = entries
+      .filter((entry) => entry.reopenedAt)
+      .map((entry) => entry.id);
+
+    if (!reopenedEntryIds.length) {
+      return new Map();
+    }
+
+    const records = await this.db.engagementTimesheetAudit.findMany({
+      where: {
+        timesheetEntryId: { in: reopenedEntryIds },
+        action: TimesheetAuditAction.REOPENED,
+      },
+      select: { timesheetEntryId: true, comment: true },
+      orderBy: { createdAt: "desc" },
+    });
+    const commentByEntryId = new Map<string, string>();
+
+    records.forEach((record) => {
+      if (
+        record.timesheetEntryId &&
+        record.comment &&
+        !commentByEntryId.has(record.timesheetEntryId)
+      ) {
+        commentByEntryId.set(record.timesheetEntryId, record.comment);
+      }
+    });
+
+    return commentByEntryId;
   }
 
   private toEntryDto(
     assignment: EngagementAssignment,
     entry: EngagementTimesheetEntry,
+    reopenComment: string | null,
   ): TimesheetEntryResponseDto {
     return {
       id: entry.id,
@@ -1556,6 +1612,7 @@ export class TimesheetsService {
       approvedAt: entry.approvedAt ?? null,
       approvalComment: entry.approvalComment ?? null,
       reopenedAt: entry.reopenedAt ?? null,
+      reopenComment,
       outsideAssignmentWindow: this.isOutsideAssignmentWindow(
         assignment,
         entry.workDate,
