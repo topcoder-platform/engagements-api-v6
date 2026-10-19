@@ -1122,6 +1122,7 @@ export class TimesheetsService {
             [] as Array<{
               engagementAssignmentId: string;
               status: TimesheetEntryStatus;
+              _count: { _all: number };
             }>,
           ),
       this.resolveMemberNames(
@@ -1136,6 +1137,11 @@ export class TimesheetsService {
       );
     const pendingAssignmentIds = assignmentIdsWithStatus(
       TimesheetEntryStatus.SUBMITTED,
+    );
+    const pendingCountByAssignmentId = new Map(
+      statusGroups
+        .filter((group) => group.status === TimesheetEntryStatus.SUBMITTED)
+        .map((group) => [group.engagementAssignmentId, group._count._all]),
     );
     const approvedAssignmentIds = assignmentIdsWithStatus(
       TimesheetEntryStatus.APPROVED,
@@ -1159,6 +1165,7 @@ export class TimesheetsService {
       assigneeName: nameByUserId.get(assignment.memberId) ?? null,
       assignmentStatus: assignment.status,
       hasPendingApproval: pendingAssignmentIds.has(assignment.id),
+      pendingEntryCount: pendingCountByAssignmentId.get(assignment.id) ?? 0,
       timesheetStatus: toRollupStatus(assignment.id),
       viewerRole: isAdministrator
         ? TimesheetViewerRole.Administrator

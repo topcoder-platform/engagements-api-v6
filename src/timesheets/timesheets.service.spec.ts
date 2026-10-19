@@ -1864,6 +1864,9 @@ describe("TimesheetsService", () => {
         false,
         false,
       ]);
+      expect(result.data.map((row) => row.pendingEntryCount)).toEqual([
+        3, 0, 0,
+      ]);
       expect(result.data[0].assignmentStatus).toBe(AssignmentStatus.ASSIGNED);
     });
 
@@ -2001,7 +2004,7 @@ describe("TimesheetsService", () => {
       expect(where.OR).toEqual([
         {
           status: {
-            in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
+            in: [AssignmentStatus.ASSIGNED],
           },
         },
         { timesheetEntries: { some: {} } },

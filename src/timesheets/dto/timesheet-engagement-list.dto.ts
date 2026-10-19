@@ -138,6 +138,13 @@ export class TimesheetEngagementRowDto {
 
   @ApiProperty({
     description:
+      "Number of submitted entries awaiting approval, over the same dates the list was filtered by",
+    example: 3,
+  })
+  pendingEntryCount: number;
+
+  @ApiProperty({
+    description:
       "Pending Approval when the assignee has any submitted entry awaiting a manager, Approved when " +
       "nothing is awaiting approval and at least one entry is approved, otherwise Not Submitted.",
     enum: Object.values(TimesheetRollupStatus),
