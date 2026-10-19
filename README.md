@@ -83,6 +83,7 @@ Set the following environment variables (see `.env.example` for defaults):
 | `TOPCODER_API_URL_BASE` | Base URL for Topcoder API services. |
 | `PLATFORM_UI_BASE_URL` | Platform UI base URL used to generate anonymous feedback links. |
 | `FLEXI_TALENT_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs excluded from all Flexi Talent engagement and member responses. |
+| `TIMESHEET_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs (e.g. test projects) excluded from the timesheet landing list (`GET /timesheets/engagements`) for every viewer. |
 | `AUTH0_URL` | Auth0 token endpoint for M2M client credentials. |
 | `M2M_CLIENT_ID` | Auth0 M2M client ID. |
 | `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |

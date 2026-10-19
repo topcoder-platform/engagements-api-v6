@@ -107,6 +107,18 @@ function toWorkDate(value: string, field = "workDate"): Date {
   return parsed;
 }
 
+/** Splits a comma-separated project ID list, dropping blanks and duplicates. */
+function parseProjectIds(rawValue?: string): string[] {
+  return Array.from(
+    new Set(
+      (rawValue ?? "")
+        .split(",")
+        .map((projectId) => projectId.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
 /** Formats a stored date column back to the YYYY-MM-DD the API speaks. */
 function toDateString(value: Date): string {
   return value.toISOString().slice(0, 10);
@@ -115,6 +127,9 @@ function toDateString(value: Date): string {
 @Injectable()
 export class TimesheetsService {
   private readonly logger = new Logger(TimesheetsService.name);
+  private readonly ignoredProjectIds = parseProjectIds(
+    process.env.TIMESHEET_IGNORED_PROJECT_IDS,
+  );
 
   constructor(
     private readonly db: DbService,
@@ -1217,6 +1232,11 @@ export class TimesheetsService {
 
     if (query.title) {
       engagementFilters.title = { contains: query.title, mode: "insensitive" };
+    }
+
+    // Test projects are blocked by ID for every viewer, administrators included.
+    if (this.ignoredProjectIds.length) {
+      engagementFilters.projectId = { notIn: this.ignoredProjectIds };
     }
 
     if (Object.keys(engagementFilters).length) {
