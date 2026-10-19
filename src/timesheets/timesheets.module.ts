@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { DbModule } from "../db/db.module";
 import { IntegrationsModule } from "../integrations/integrations.module";
+import { ApprovedTimesheetsController } from "./approved-timesheets.controller";
+import { ApprovedTimesheetsService } from "./approved-timesheets.service";
 import { TimesheetAccessService } from "./timesheet-access.service";
 import { TimesheetAuditService } from "./timesheet-audit.service";
 import { TimesheetEmailService } from "./timesheet-email.service";
@@ -15,8 +17,13 @@ import { TimesheetsService } from "./timesheets.service";
  */
 @Module({
   imports: [DbModule, IntegrationsModule],
-  controllers: [TimesheetsController, TimesheetEngagementsController],
+  controllers: [
+    TimesheetsController,
+    TimesheetEngagementsController,
+    ApprovedTimesheetsController,
+  ],
   providers: [
+    ApprovedTimesheetsService,
     TimesheetAccessService,
     TimesheetAuditService,
     TimesheetEmailService,
