@@ -2008,6 +2008,50 @@ describe("TimesheetsService", () => {
       ]);
     });
 
+    it("excludes projects listed in TIMESHEET_IGNORED_PROJECT_IDS", async () => {
+      const original = process.env.TIMESHEET_IGNORED_PROJECT_IDS;
+      process.env.TIMESHEET_IGNORED_PROJECT_IDS = " 1001006, ,38965,1001006 ";
+
+      try {
+        const blockingService = new TimesheetsService(
+          db,
+          new TimesheetAccessService(db),
+          audit as unknown as TimesheetAuditService,
+          events as unknown as TimesheetEventsService,
+          memberService as unknown as MemberService,
+          financeService as unknown as FinanceService,
+        );
+
+        await blockingService.findEngagements({ page: 1, perPage: 20 }, admin);
+        await blockingService.findEngagements(
+          { page: 1, perPage: 20 },
+          manager,
+        );
+      } finally {
+        if (original === undefined) {
+          delete process.env.TIMESHEET_IGNORED_PROJECT_IDS;
+        } else {
+          process.env.TIMESHEET_IGNORED_PROJECT_IDS = original;
+        }
+      }
+
+      db.engagementAssignment.findMany.mock.calls.forEach(([{ where }]) => {
+        expect(where.engagement.projectId).toEqual({
+          notIn: ["1001006", "38965"],
+        });
+      });
+      expect(db.engagementAssignment.count.mock.calls[0][0].where).toEqual(
+        db.engagementAssignment.findMany.mock.calls[0][0].where,
+      );
+    });
+
+    it("does not filter by project when no project IDs are blocked", async () => {
+      await service.findEngagements({ page: 1, perPage: 20 }, admin);
+
+      const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
+      expect(where.engagement?.projectId).toBeUndefined();
+    });
+
     it("refuses a caller who is neither an administrator nor identifiable", async () => {
       await expect(
         service.findEngagements(
