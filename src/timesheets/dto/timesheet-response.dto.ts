@@ -69,6 +69,14 @@ export class TimesheetEntryResponseDto {
   })
   reopenedAt: Date | null;
 
+  @ApiPropertyOptional({
+    description:
+      "The note the administrator left when last reopening the entry. Null when it was never reopened.",
+    example: "Hours on this day were billed to the wrong engagement",
+    nullable: true,
+  })
+  reopenComment: string | null;
+
   @ApiProperty({
     description:
       "True when the work date falls outside the assignment's start/end dates. Such entries are " +
