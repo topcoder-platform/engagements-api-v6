@@ -1802,10 +1802,7 @@ describe("TimesheetsService", () => {
         managerUserId: "2002",
         removedAt: null,
       });
-      // Pending offers, rejections, and terminations are not on a manager's list.
-      expect(where.status).toEqual({
-        in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
-      });
+      expect(where.status).toBe(AssignmentStatus.ASSIGNED);
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.meta).toEqual({
         page: 1,
@@ -1828,7 +1825,7 @@ describe("TimesheetsService", () => {
 
       const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
       expect(where.engagement).toBeUndefined();
-      expect(where.status).toBeUndefined();
+      expect(where.status).toBe(AssignmentStatus.ASSIGNED);
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Administrator);
     });
 
@@ -2034,20 +2031,14 @@ describe("TimesheetsService", () => {
       });
     });
 
-    it("limits rows to assignments that are active or already have entries", async () => {
+    it("limits rows to active assignments, even ones that already have entries", async () => {
       db.engagementAssignment.count.mockResolvedValue(0);
 
       await service.findEngagements({ page: 1, perPage: 20 }, admin);
 
       const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
-      expect(where.OR).toEqual([
-        {
-          status: {
-            in: [AssignmentStatus.ASSIGNED],
-          },
-        },
-        { timesheetEntries: { some: {} } },
-      ]);
+      expect(where.status).toBe(AssignmentStatus.ASSIGNED);
+      expect(where.OR).toBeUndefined();
     });
 
     it("excludes projects listed in TIMESHEET_IGNORED_PROJECT_IDS", async () => {
