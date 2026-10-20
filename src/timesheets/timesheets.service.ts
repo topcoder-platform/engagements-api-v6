@@ -15,10 +15,7 @@ import {
   TimesheetEntryStatus,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
-import {
-  ACTIVE_ASSIGNMENT_STATUSES,
-  ERROR_MESSAGES,
-} from "../common/constants";
+import { ERROR_MESSAGES } from "../common/constants";
 import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
 import { FinanceService } from "../integrations/finance.service";
@@ -62,7 +59,6 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 /** Assignment statuses a manager's landing list shows. */
 const MANAGER_LIST_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
   AssignmentStatus.ASSIGNED,
-  AssignmentStatus.COMPLETED,
 ];
 
 type AssignmentWithEngagement = EngagementAssignment & {
@@ -1205,7 +1201,7 @@ export class TimesheetsService {
     // entries has no timesheet to manage.
     const where: Prisma.EngagementAssignmentWhereInput = {
       OR: [
-        { status: { in: ACTIVE_ASSIGNMENT_STATUSES } },
+        { status: { in: [AssignmentStatus.ASSIGNED] } },
         { timesheetEntries: { some: {} } },
       ],
     };
