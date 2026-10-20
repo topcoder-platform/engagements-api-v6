@@ -62,7 +62,6 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 /** Assignment statuses a manager's landing list shows. */
 const MANAGER_LIST_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
   AssignmentStatus.ASSIGNED,
-  AssignmentStatus.COMPLETED,
 ];
 
 type AssignmentWithEngagement = EngagementAssignment & {
