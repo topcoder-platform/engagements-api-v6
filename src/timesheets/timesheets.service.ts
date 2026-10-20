@@ -56,11 +56,6 @@ import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-/** Assignment statuses a manager's landing list shows. */
-const MANAGER_LIST_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
-  AssignmentStatus.ASSIGNED,
-];
-
 type AssignmentWithEngagement = EngagementAssignment & {
   engagement: { id: string; title: string };
 };
@@ -1196,14 +1191,10 @@ export class TimesheetsService {
     fromDate?: Date,
     toDate?: Date,
   ): Prisma.EngagementAssignmentWhereInput {
-    // "Eligible for timesheet management" means an assignment someone could still be logging hours
-    // against, or one that already has entries worth reviewing or paying. A rejected offer with no
-    // entries has no timesheet to manage.
+    // The list shows active assignments only, for every viewer. Pending offers, rejections,
+    // completions, and terminations are left off even when they carry entries.
     const where: Prisma.EngagementAssignmentWhereInput = {
-      OR: [
-        { status: { in: [AssignmentStatus.ASSIGNED] } },
-        { timesheetEntries: { some: {} } },
-      ],
+      status: AssignmentStatus.ASSIGNED,
     };
     const engagementFilters: Prisma.EngagementWhereInput = {};
     const entryDateFilter =
@@ -1221,9 +1212,6 @@ export class TimesheetsService {
       engagementFilters.managers = {
         some: { managerUserId: callerUserId, removedAt: null },
       };
-      // A manager reviews people who are working or have worked; pending offers, rejections, and
-      // terminations are not theirs to review.
-      where.status = { in: MANAGER_LIST_ASSIGNMENT_STATUSES };
     } else if (query.manager) {
       engagementFilters.managers = {
         some: {
