@@ -39,6 +39,7 @@ describe("PermissionsGuard", () => {
     it("allows access when M2M token has required scope", () => {
       setRequiredScopes(["read:engagements"]);
       const context = makeContext({
+        kind: "service",
         isMachine: true,
         scopes: ["read:engagements"],
       });
@@ -49,6 +50,7 @@ describe("PermissionsGuard", () => {
     it("denies access when M2M token lacks required scope", () => {
       setRequiredScopes(["read:engagements"]);
       const context = makeContext({
+        kind: "service",
         isMachine: true,
         scopes: ["write:engagements"],
       });
@@ -56,19 +58,21 @@ describe("PermissionsGuard", () => {
       expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
     });
 
-    it("handles case-insensitive scope matching for M2M tokens", () => {
+    it("rejects differently cased machine scope strings", () => {
       setRequiredScopes(["read:engagements"]);
       const context = makeContext({
+        kind: "service",
         isMachine: true,
         scopes: ["READ:ENGAGEMENTS"],
       });
 
-      expect(guard.canActivate(context)).toBe(true);
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
     });
 
     it("allows access with multiple scopes when any matches", () => {
       setRequiredScopes(["write:engagements", "read:applications"]);
       const context = makeContext({
+        kind: "service",
         isMachine: true,
         scopes: ["read:applications"],
       });
@@ -81,6 +85,7 @@ describe("PermissionsGuard", () => {
     it("allows access when user has admin role", () => {
       setRequiredScopes(["write:engagements"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         roles: [UserRoles.Admin],
       });
@@ -91,6 +96,7 @@ describe("PermissionsGuard", () => {
     it("allows access when user has PM role", () => {
       setRequiredScopes(["write:engagements"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         roles: [UserRoles.ProjectManager],
       });
@@ -101,6 +107,7 @@ describe("PermissionsGuard", () => {
     it("allows access when user has Task Manager role", () => {
       setRequiredScopes(["write:engagements"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         role: UserRoles.TaskManager,
       });
@@ -111,6 +118,7 @@ describe("PermissionsGuard", () => {
     it("allows access when user has Talent Manager role", () => {
       setRequiredScopes(["write:engagements"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         role: UserRoles.TalentManager,
       });
@@ -118,19 +126,21 @@ describe("PermissionsGuard", () => {
       expect(guard.canActivate(context)).toBe(true);
     });
 
-    it("allows access when user has required scope", () => {
+    it("denies machine permissions from a user scope", () => {
       setRequiredScopes(["read:engagements"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         scopes: ["read:engagements"],
       });
 
-      expect(guard.canActivate(context)).toBe(true);
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
     });
 
     it("denies access when user lacks both role and scope", () => {
       setRequiredScopes(["write:engagements"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         roles: ["Member"],
         scopes: ["read:engagements"],
@@ -142,6 +152,7 @@ describe("PermissionsGuard", () => {
     it("handles case-insensitive role matching", () => {
       setRequiredScopes(["write:engagements"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         roles: [UserRoles.Admin.toLowerCase()],
       });
@@ -174,7 +185,8 @@ describe("PermissionsGuard", () => {
 
     it("allows access when authenticated and no scopes are required", () => {
       setRequiredScopes([]);
-      const context = makeContext({ isMachine: false, userId: "123" });
+      const context = makeContext({ kind: "user",
+        isMachine: false, userId: "123" });
 
       expect(guard.canActivate(context)).toBe(true);
     });
@@ -182,6 +194,7 @@ describe("PermissionsGuard", () => {
     it("throws ForbiddenException when authenticated but unauthorized", () => {
       setRequiredScopes(["read:applications"]);
       const context = makeContext({
+        kind: "user",
         isMachine: false,
         roles: [],
         scopes: [],
@@ -193,6 +206,7 @@ describe("PermissionsGuard", () => {
     it("handles null or undefined scopes", () => {
       setRequiredScopes(["read:engagements"]);
       const nullContext = makeContext({
+        kind: "service",
         isMachine: true,
         scopes: null,
       });
@@ -200,6 +214,7 @@ describe("PermissionsGuard", () => {
       expect(() => guard.canActivate(nullContext)).toThrow(ForbiddenException);
 
       const undefinedContext = makeContext({
+        kind: "service",
         isMachine: true,
       });
 

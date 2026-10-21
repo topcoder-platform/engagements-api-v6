@@ -32,21 +32,22 @@ export class EventBusService {
     const tokenCacheTime = Number(tokenCacheTimeRaw);
 
     try {
+      // The wrapper uses legacy option names; values and its pinned core are Keycloak-only.
       this.busApiClient = busApi({
-        AUTH0_URL: this.configService.get<string>("AUTH0_URL"),
-        AUTH0_AUDIENCE: this.configService.get<string>("AUTH0_AUDIENCE"),
+        AUTH0_URL: this.configService.get<string>("KEYCLOAK_TOKEN_URL"),
+        AUTH0_AUDIENCE: this.configService.get<string>("KEYCLOAK_AUDIENCE"),
         TOKEN_CACHE_TIME: Number.isFinite(tokenCacheTime)
           ? tokenCacheTime
           : undefined,
-        AUTH0_CLIENT_ID: this.configService.get<string>("M2M_CLIENT_ID"),
+        AUTH0_CLIENT_ID: this.configService.get<string>("KEYCLOAK_CLIENT_ID"),
         AUTH0_CLIENT_SECRET:
-          this.configService.get<string>("M2M_CLIENT_SECRET"),
+          this.configService.get<string>("KEYCLOAK_CLIENT_SECRET"),
         BUSAPI_URL: busApiUrl,
         KAFKA_ERROR_TOPIC:
           this.configService.get<string>("KAFKA_ERROR_TOPIC") ||
           "common.error.reporting",
         AUTH0_PROXY_SERVER_URL: this.configService.get<string>(
-          "AUTH0_PROXY_SERVER_URL",
+          "KEYCLOAK_TOKEN_URL",
         ),
       });
     } catch (error) {

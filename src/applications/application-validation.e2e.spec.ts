@@ -16,6 +16,7 @@ jest.mock("nanoid", () => ({
 
 const tokenFixtures: Record<string, Record<string, any>> = {
   "bare-user": {
+    kind: "user",
     isMachine: false,
     userId: "123456",
   },

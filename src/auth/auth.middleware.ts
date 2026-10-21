@@ -11,6 +11,7 @@ const { jwtAuthenticator: authenticator } = middleware;
 
 const logger = new Logger("AuthMiddleware");
 
+/** Resolve supported gateway header aliases; returns the first string header or an empty string. */
 function resolveAuthorizationHeader(headers: Record<string, unknown>): string {
   const headerCandidates = [
     headers["authorization"],
@@ -37,30 +38,13 @@ function resolveAuthorizationHeader(headers: Record<string, unknown>): string {
   return "";
 }
 
-function decodeTokenPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) {
-      return null;
-    }
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-    const decoded = Buffer.from(padded, "base64").toString("utf8");
-    return JSON.parse(decoded);
-  } catch {
-    return null;
-  }
-}
-
+/** Applies the shared core validator to optional bearer requests; endpoint guards retain authorization. */
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   private jwtAuthenticator;
 
   constructor(private configService: ConfigService) {
-    const authSecret = this.configService.get<string>(
-      "AUTH_SECRET",
-      "mysecret",
-    );
+    const authSecret = this.configService.get<string>("AUTH_SECRET");
     let issuersValue = this.configService.get<string>(
       "VALID_ISSUERS",
       '["https://api.topcoder.com","https://api.topcoder-dev.com","https://topcoder-dev.auth0.com/","https://auth.topcoder-dev.com/","https://topcoder.auth0.com/","https://auth.topcoder.com/"]',
@@ -96,15 +80,7 @@ export class AuthMiddleware implements NestMiddleware {
       req.headers.authorization = authorizationHeader;
       this.jwtAuthenticator(req, res, (err) => {
         if (err) {
-          const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
-          const payload = token ? decodeTokenPayload(token) : null;
-          logger.warn({
-            message: "JWT authentication failed",
-            error: err?.message,
-            tokenIss: payload?.["iss"],
-            tokenAud: payload?.["aud"],
-            validIssuers: this.configService.get<string>("VALID_ISSUERS"),
-          });
+          logger.warn("JWT authentication failed");
           return next(new UnauthorizedException(err.message));
         }
         next();

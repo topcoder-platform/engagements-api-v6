@@ -29,19 +29,7 @@ export class SkillsService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    const authUrl = this.configService.get<string>(
-      "AUTH0_URL",
-      "https://topcoder-dev.auth0.com/oauth/token",
-    );
-    const audience = this.configService.get<string>(
-      "AUTH0_AUDIENCE",
-      "https://api.topcoder-dev.com",
-    );
-
-    this.m2m = core.auth.m2m({
-      AUTH0_URL: authUrl,
-      AUTH0_AUDIENCE: audience,
-    });
+    this.m2m = core.auth.m2m();
   }
 
   async validateSkillsExist(skillIds: string[]): Promise<{
@@ -390,18 +378,9 @@ export class SkillsService {
     return skillNamesById;
   }
 
+  /** Return this workload's verified Keycloak token; rejects if issuance or configuration fails. */
   private async getM2MToken(): Promise<string> {
-    const clientId = this.configService.get<string>("M2M_CLIENT_ID");
-    const clientSecret = this.configService.get<string>("M2M_CLIENT_SECRET");
-
-    if (!clientId || !clientSecret) {
-      this.logger.error(
-        "M2M credentials are not configured. Set M2M_CLIENT_ID and M2M_CLIENT_SECRET.",
-      );
-      throw new Error("M2M credentials are not configured.");
-    }
-
-    return (await this.m2m.getMachineToken(clientId, clientSecret)) as string;
+    return this.m2m.getMachineToken();
   }
 
   private extractSkillList(data: unknown): SkillResponse[] {

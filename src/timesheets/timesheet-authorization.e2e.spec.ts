@@ -37,8 +37,10 @@ const tokens: Record<string, Record<string, any>> = {
     handle: "pmuser",
     roles: [UserRoles.ProjectManager],
   },
-  "m2m-read": { isMachine: true, scopes: ["read:timesheets"] },
-  "m2m-manage": { isMachine: true, scopes: ["manage:timesheets"] },
+  "m2m-read": { kind: "service",
+    isMachine: true, scopes: ["read:timesheets"] },
+  "m2m-manage": { kind: "service",
+    isMachine: true, scopes: ["manage:timesheets"] },
 };
 
 const BASE = "/v6/engagements/engagements/eng-1/assignments/asg-1/timesheets";

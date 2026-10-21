@@ -17,6 +17,7 @@ jest.mock("nanoid", () => ({
 
 const tokenFixtures: Record<string, Record<string, any>> = {
   "m2m-read": {
+    kind: "service",
     isMachine: true,
     scopes: ["read:engagements"],
   },

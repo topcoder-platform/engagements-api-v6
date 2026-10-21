@@ -5,11 +5,13 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from "@nestjs/common";
+import { auth } from "tc-core-library-js";
 import { Reflector } from "@nestjs/core";
 import { SCOPES_KEY } from "../decorators/scopes.decorator";
 import { PrivilegedUserRoles } from "../../app-constants";
 import { getUserRoles } from "../../common/user.util";
 
+/** Authorizes verified services by shared exact scopes and members by existing privileged roles. */
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   private static readonly adminRoles = new Set(
@@ -18,6 +20,7 @@ export class PermissionsGuard implements CanActivate {
 
   constructor(private reflector: Reflector) {}
 
+  /** Evaluate route metadata and verified identity; returns true or throws Unauthorized/ForbiddenException. */
   canActivate(context: ExecutionContext): boolean {
     const requiredScopes = this.reflector.getAllAndOverride<string[]>(
       SCOPES_KEY,
@@ -34,21 +37,11 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    if (authUser.isMachine) {
-      const scopes: string[] = authUser.scopes ?? [];
-      if (this.hasRequiredScope(scopes, requiredScopes)) {
-        return true;
-      }
-    } else {
-      const roles = getUserRoles(authUser);
-      if (this.isAdmin(roles)) {
-        return true;
-      }
-
-      const scopes: string[] = authUser.scopes ?? [];
-      if (this.hasRequiredScope(scopes, requiredScopes)) {
-        return true;
-      }
+    if (authUser.kind === "service" && auth.hasScopes(authUser, requiredScopes, "any")) {
+      return true;
+    }
+    if (authUser.kind === "user" && !authUser.isMachine && this.isAdmin(getUserRoles(authUser))) {
+      return true;
     }
 
     throw new ForbiddenException(
@@ -56,20 +49,7 @@ export class PermissionsGuard implements CanActivate {
     );
   }
 
-  private hasRequiredScope(
-    scopes: string[],
-    requiredScopes: string[],
-  ): boolean {
-    if (!scopes?.length) {
-      return false;
-    }
-
-    const normalizedScopes = scopes.map((scope) => scope?.toLowerCase());
-    return requiredScopes.some((scope) =>
-      normalizedScopes.includes(scope?.toLowerCase()),
-    );
-  }
-
+  /** Return whether the verified member roles include an existing privileged role; no I/O or exceptions. */
   private isAdmin(roles: string[]): boolean {
     return roles.some((role) =>
       PermissionsGuard.adminRoles.has(role?.toLowerCase()),
