@@ -268,6 +268,53 @@ describe("EngagementsService", () => {
     jest.useRealTimers();
   });
 
+  it.each([true, false])("records an acceptance date only when the member accepts (accept=%s)", async (accept) => {
+    const now = new Date("2026-10-19T12:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(now);
+    const tx = {
+      engagement: { findUnique: jest.fn().mockResolvedValue({ id: "eng-1" }) },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue({ id: "assignment-1", engagementId: "eng-1", memberId: "123", status: AssignmentStatus.SELECTED, acceptedAt: null }),
+        update: jest.fn().mockResolvedValue({ id: "assignment-1" }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+    if (accept) {
+      await service.acceptAssignmentOffer("eng-1", "assignment-1", { userId: "123", roles: ["User"] });
+    } else {
+      await service.rejectAssignmentOffer("eng-1", "assignment-1", { userId: "123", roles: ["User"] });
+    }
+    expect(tx.engagementAssignment.update).toHaveBeenCalledWith({
+      where: { id: "assignment-1" },
+      data: accept ? { status: AssignmentStatus.ASSIGNED, acceptedAt: now } : { status: AssignmentStatus.OFFER_REJECTED },
+    });
+  });
+
+  it.each([
+    [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED, null, true],
+    [AssignmentStatus.ASSIGNED, AssignmentStatus.ASSIGNED, null, false],
+    [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED, new Date("2026-09-01"), false],
+    [AssignmentStatus.COMPLETED, AssignmentStatus.ASSIGNED, new Date("2026-09-01"), false],
+  ])("preserves acceptance history on status change %s -> %s", async (previous, next, acceptedAt, recordsDate) => {
+    const now = new Date("2026-10-19T12:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(now);
+    const tx = {
+      engagement: { findUnique: jest.fn().mockResolvedValue({ id: "eng-1" }) },
+      engagementAssignment: {
+        findUnique: jest.fn().mockResolvedValue({ id: "assignment-1", engagementId: "eng-1", status: previous, acceptedAt }),
+        update: jest.fn().mockResolvedValue({ id: "assignment-1" }),
+      },
+    };
+    db.$transaction.mockImplementation((callback: any) => callback(tx));
+    await service.updateAssignmentStatus("eng-1", "assignment-1", next as AssignmentStatus);
+    const data = tx.engagementAssignment.update.mock.calls[0][0].data;
+    if (recordsDate) {
+      expect(data.acceptedAt).toEqual(now);
+    } else {
+      expect(data).not.toHaveProperty("acceptedAt");
+    }
+  });
+
   it("sets createdBy to system for M2M tokens", async () => {
     const engagement = { id: "eng-1" };
     const engagementWithAssignments = {

@@ -83,6 +83,7 @@ Set the following environment variables (see `.env.example` for defaults):
 | `TOPCODER_API_URL_BASE` | Base URL for Topcoder API services. |
 | `PLATFORM_UI_BASE_URL` | Platform UI base URL used to generate anonymous feedback links. |
 | `FLEXI_TALENT_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs excluded from all Flexi Talent engagement and member responses. |
+| `TIMESHEET_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs (e.g. test projects) excluded from the timesheet landing list (`GET /timesheets/engagements`) for every viewer. |
 | `AUTH0_URL` | Auth0 token endpoint for M2M client credentials. |
 | `M2M_CLIENT_ID` | Auth0 M2M client ID. |
 | `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |
@@ -93,6 +94,11 @@ Set the following environment variables (see `.env.example` for defaults):
 | `SENDGRID_ASSIGNMENT_OFFER_REJECTED_TEMPLATE_ID` | SendGrid template ID for assignment offer rejected emails. |
 | `SENDGRID_UNDER_REVIEW_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application is under review. |
 | `SENDGRID_REJECTED_TEMPLATE_ID` | SendGrid template ID for notifying applicants their application was not selected. |
+| `SENDGRID_TIMESHEET_SUBMITTED_TEMPLATE_ID` | SendGrid template ID for telling engagement managers a timesheet was submitted for approval. |
+| `SENDGRID_TIMESHEET_RESUBMISSION_REQUIRED_TEMPLATE_ID` | SendGrid template ID for telling a member that edited submitted entries went back to draft and need resubmitting. |
+| `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` | SendGrid template ID for telling a member their timesheet entries were approved. |
+| `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` | SendGrid template ID for telling a member an administrator reopened or modified approved entries. |
+| `SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID` | SendGrid template ID for telling a member they were made a manager of an engagement. |
 
 ## Authentication
 
@@ -249,3 +255,14 @@ All Flexi Talent routes live under `/engagements/flexi-talent`, require bearer a
 | `GET` | `/engagements/flexi-talent/members` | Flat-paginated `ASSIGNED`/`COMPLETED` member list grouped by `memberId`, with primary assignment context. |
 | `GET` | `/engagements/flexi-talent/members/:memberId` | Member right-rail detail restricted to qualifying `ASSIGNED`/`COMPLETED` assignments. |
 | `GET` | `/engagements/flexi-talent/members/:memberId/history` | Full unpaginated `ASSIGNED`/`COMPLETED` assignment history with current rows first. |
+
+## Assignment acceptance dates
+
+Assignments record `acceptedAt` on the first offer acceptance or administrative
+transition to `ASSIGNED`. Later edits, completion, termination, and rejection do
+not overwrite it. The Active Members dashboard uses this timestamp so activity
+stays in its original UTC month. Run the
+`20261019000000_record_assignment_acceptance` migration before deploying this
+version. Existing assignments retain null because their true acceptance dates
+cannot be recovered from `createdAt` or the mutable `updatedAt`; their application
+and payment activity can still appear in reporting.

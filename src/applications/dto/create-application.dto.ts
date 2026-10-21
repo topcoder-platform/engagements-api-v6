@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import {
   IsArray,
@@ -14,17 +14,19 @@ import {
 import { IsNotWhitespace, trimTransformer } from "../../common/validation.util";
 
 export class CreateApplicationDto {
-  @ApiProperty({
-    description: "Cover letter",
+  @ApiPropertyOptional({
+    description:
+      "Cover letter. No longer collected by the application form; kept for API clients that still send it",
     example: "I am excited to apply for this engagement.",
     maxLength: 5000,
-    required: true,
   })
+  @IsOptional()
   @Transform(trimTransformer)
+  @ValidateIf((o) => o.coverLetter !== undefined)
   @IsNotWhitespace()
   @IsString()
   @MaxLength(5000)
-  coverLetter: string;
+  coverLetter?: string;
 
   @ApiPropertyOptional({
     description:

@@ -153,17 +153,27 @@ Entry-scoped rows carry `timesheetEntryId`; manager assignment and removal are e
 
 ## Lifecycle events
 
-Emitted on the bus as each mutation commits. Emails are a later release, but the emit points are the same lines
-the audit writer already touches, so adding them now avoided reopening every mutation later. An event failure is
-logged and never fails the mutation.
+Emitted on the bus as each mutation commits, and each one sends an email (`TimesheetEmailService`, published as
+`external.action.email`). One action sends one email per recipient, covering every entry it touched. An event or
+email failure is logged and never fails the mutation; an email whose template ID is not configured is skipped.
 
-| Topic | When |
-| --- | --- |
-| `engagement.timesheet.submitted` | entries submitted, including on a member's behalf |
-| `engagement.timesheet.unsubmitted` | a submitted entry was edited and reset to draft |
-| `engagement.timesheet.approved` | entries approved |
-| `engagement.timesheet.reopened` | an administrator reopened approved entries |
-| `engagement.timesheet.overridden` | an administrator changed an approved entry |
+| Topic | When | Emailed to | Template env var |
+| --- | --- | --- | --- |
+| `engagement.timesheet.submitted` | entries submitted, including on a member's behalf | every current manager, separately | `SENDGRID_TIMESHEET_SUBMITTED_TEMPLATE_ID` |
+| `engagement.timesheet.unsubmitted` | a submitted entry was edited and reset to draft | the member | `SENDGRID_TIMESHEET_RESUBMISSION_REQUIRED_TEMPLATE_ID` |
+| `engagement.timesheet.approved` | entries approved | the member | `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` |
+| `engagement.timesheet.reopened` | an administrator reopened approved entries | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "reopened"`) |
+| `engagement.timesheet.overridden` | an administrator changed an approved entry | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "modified"`) |
+
+Assigning a manager to an engagement emails that manager (`SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID`).
+Removing one sends nothing.
+
+Timesheet template data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `memberHandle`,
+`actorHandle`, `memberDisplayName`, `managerDisplayNames` and `actorDisplayName` (`Name (handle)` as on the timesheet
+page; the managers are comma-separated), `entryCount`, `totalHours`, `workDates` (`DD-MM-YYYY` list), `fromDate`, `toDate`, `comment`
+(approval comment or override reason, empty otherwise), `timesheetUrl`, and `changeType` on the administrator
+template. Manager-assigned data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `actorHandle`,
+`timesheetsUrl`.
 
 ## Endpoints
 

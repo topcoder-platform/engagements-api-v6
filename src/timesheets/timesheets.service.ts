@@ -15,10 +15,7 @@ import {
   TimesheetEntryStatus,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
-import {
-  ACTIVE_ASSIGNMENT_STATUSES,
-  ERROR_MESSAGES,
-} from "../common/constants";
+import { ERROR_MESSAGES } from "../common/constants";
 import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
 import { FinanceService } from "../integrations/finance.service";
@@ -58,12 +55,6 @@ import {
 import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-/** Assignment statuses a manager's landing list shows. */
-const MANAGER_LIST_ASSIGNMENT_STATUSES: AssignmentStatus[] = [
-  AssignmentStatus.ASSIGNED,
-  AssignmentStatus.COMPLETED,
-];
 
 type AssignmentWithEngagement = EngagementAssignment & {
   engagement: { id: string; title: string };
@@ -107,6 +98,18 @@ function toWorkDate(value: string, field = "workDate"): Date {
   return parsed;
 }
 
+/** Splits a comma-separated project ID list, dropping blanks and duplicates. */
+function parseProjectIds(rawValue?: string): string[] {
+  return Array.from(
+    new Set(
+      (rawValue ?? "")
+        .split(",")
+        .map((projectId) => projectId.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
 /** Formats a stored date column back to the YYYY-MM-DD the API speaks. */
 function toDateString(value: Date): string {
   return value.toISOString().slice(0, 10);
@@ -115,6 +118,9 @@ function toDateString(value: Date): string {
 @Injectable()
 export class TimesheetsService {
   private readonly logger = new Logger(TimesheetsService.name);
+  private readonly ignoredProjectIds = parseProjectIds(
+    process.env.TIMESHEET_IGNORED_PROJECT_IDS,
+  );
 
   constructor(
     private readonly db: DbService,
@@ -1107,6 +1113,7 @@ export class TimesheetsService {
             [] as Array<{
               engagementAssignmentId: string;
               status: TimesheetEntryStatus;
+              _count: { _all: number };
             }>,
           ),
       this.resolveMemberNames(
@@ -1121,6 +1128,11 @@ export class TimesheetsService {
       );
     const pendingAssignmentIds = assignmentIdsWithStatus(
       TimesheetEntryStatus.SUBMITTED,
+    );
+    const pendingCountByAssignmentId = new Map(
+      statusGroups
+        .filter((group) => group.status === TimesheetEntryStatus.SUBMITTED)
+        .map((group) => [group.engagementAssignmentId, group._count._all]),
     );
     const approvedAssignmentIds = assignmentIdsWithStatus(
       TimesheetEntryStatus.APPROVED,
@@ -1144,6 +1156,7 @@ export class TimesheetsService {
       assigneeName: nameByUserId.get(assignment.memberId) ?? null,
       assignmentStatus: assignment.status,
       hasPendingApproval: pendingAssignmentIds.has(assignment.id),
+      pendingEntryCount: pendingCountByAssignmentId.get(assignment.id) ?? 0,
       timesheetStatus: toRollupStatus(assignment.id),
       viewerRole: isAdministrator
         ? TimesheetViewerRole.Administrator
@@ -1178,14 +1191,10 @@ export class TimesheetsService {
     fromDate?: Date,
     toDate?: Date,
   ): Prisma.EngagementAssignmentWhereInput {
-    // "Eligible for timesheet management" means an assignment someone could still be logging hours
-    // against, or one that already has entries worth reviewing or paying. A rejected offer with no
-    // entries has no timesheet to manage.
+    // The list shows active assignments only, for every viewer. Pending offers, rejections,
+    // completions, and terminations are left off even when they carry entries.
     const where: Prisma.EngagementAssignmentWhereInput = {
-      OR: [
-        { status: { in: ACTIVE_ASSIGNMENT_STATUSES } },
-        { timesheetEntries: { some: {} } },
-      ],
+      status: AssignmentStatus.ASSIGNED,
     };
     const engagementFilters: Prisma.EngagementWhereInput = {};
     const entryDateFilter =
@@ -1203,9 +1212,6 @@ export class TimesheetsService {
       engagementFilters.managers = {
         some: { managerUserId: callerUserId, removedAt: null },
       };
-      // A manager reviews people who are working or have worked; pending offers, rejections, and
-      // terminations are not theirs to review.
-      where.status = { in: MANAGER_LIST_ASSIGNMENT_STATUSES };
     } else if (query.manager) {
       engagementFilters.managers = {
         some: {
@@ -1217,6 +1223,11 @@ export class TimesheetsService {
 
     if (query.title) {
       engagementFilters.title = { contains: query.title, mode: "insensitive" };
+    }
+
+    // Test projects are blocked by ID for every viewer, administrators included.
+    if (this.ignoredProjectIds.length) {
+      engagementFilters.projectId = { notIn: this.ignoredProjectIds };
     }
 
     if (Object.keys(engagementFilters).length) {
@@ -1488,13 +1499,16 @@ export class TimesheetsService {
     const managerUserIdsMissingNames = managers
       .filter((manager) => !(manager.name ?? "").trim())
       .map((manager) => manager.userId);
-    const [nameByUserId, hoursLeft] = await Promise.all([
-      this.resolveMemberNames([
-        assignment.memberId,
-        ...managerUserIdsMissingNames,
-      ]),
-      this.resolveHoursLeft(context),
-    ]);
+    const [nameByUserId, hoursLeft, reopenCommentByEntryId] = await Promise.all(
+      [
+        this.resolveMemberNames([
+          assignment.memberId,
+          ...managerUserIdsMissingNames,
+        ]),
+        this.resolveHoursLeft(context),
+        this.resolveReopenComments(entries),
+      ],
+    );
     const hydratedManagers = managers.map((manager) => ({
       ...manager,
       name: manager.name ?? nameByUserId.get(manager.userId) ?? null,
@@ -1517,13 +1531,59 @@ export class TimesheetsService {
         endDate: assignment.endDate ?? null,
       },
       managers: hydratedManagers,
-      entries: entries.map((entry) => this.toEntryDto(assignment, entry)),
+      entries: entries.map((entry) =>
+        this.toEntryDto(
+          assignment,
+          entry,
+          reopenCommentByEntryId.get(entry.id) ?? null,
+        ),
+      ),
     };
+  }
+
+  /**
+   * The note an administrator left when reopening each entry. It lives only on the REOPENED audit
+   * record, so the latest one per entry is read back - which also covers entries reopened before the
+   * note was shown to members.
+   */
+  private async resolveReopenComments(
+    entries: EngagementTimesheetEntry[],
+  ): Promise<Map<string, string>> {
+    const reopenedEntryIds = entries
+      .filter((entry) => entry.reopenedAt)
+      .map((entry) => entry.id);
+
+    if (!reopenedEntryIds.length) {
+      return new Map();
+    }
+
+    const records = await this.db.engagementTimesheetAudit.findMany({
+      where: {
+        timesheetEntryId: { in: reopenedEntryIds },
+        action: TimesheetAuditAction.REOPENED,
+      },
+      select: { timesheetEntryId: true, comment: true },
+      orderBy: { createdAt: "desc" },
+    });
+    const commentByEntryId = new Map<string, string>();
+
+    records.forEach((record) => {
+      if (
+        record.timesheetEntryId &&
+        record.comment &&
+        !commentByEntryId.has(record.timesheetEntryId)
+      ) {
+        commentByEntryId.set(record.timesheetEntryId, record.comment);
+      }
+    });
+
+    return commentByEntryId;
   }
 
   private toEntryDto(
     assignment: EngagementAssignment,
     entry: EngagementTimesheetEntry,
+    reopenComment: string | null,
   ): TimesheetEntryResponseDto {
     return {
       id: entry.id,
@@ -1536,6 +1596,7 @@ export class TimesheetsService {
       approvedAt: entry.approvedAt ?? null,
       approvalComment: entry.approvalComment ?? null,
       reopenedAt: entry.reopenedAt ?? null,
+      reopenComment,
       outsideAssignmentWindow: this.isOutsideAssignmentWindow(
         assignment,
         entry.workDate,
@@ -1579,6 +1640,7 @@ export class TimesheetsService {
 
       const payload: TimesheetEventPayload = {
         engagementId: context.assignment.engagementId,
+        engagementTitle: context.assignment.engagement.title,
         assignmentId: context.assignment.id,
         memberId: context.assignment.memberId,
         memberHandle: context.assignment.memberHandle,

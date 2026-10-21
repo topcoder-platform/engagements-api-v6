@@ -80,6 +80,8 @@ export const ERROR_MESSAGES = {
     "Timesheet entries saved at once cannot span more than 31 days.",
   UnauthorizedTimesheetList:
     "You do not have permission to list timesheet engagements.",
+  UnauthorizedApprovedTimesheetList:
+    "Only administrators and talent managers can list approved timesheets.",
   EngagementNotFound: "Engagement not found",
   ManagerUserIdRequired: "A Topcoder user id is required.",
   ManagerHandleUnresolved:

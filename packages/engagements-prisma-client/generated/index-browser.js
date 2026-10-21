@@ -179,6 +179,7 @@ exports.Prisma.EngagementAssignmentScalarFieldEnum = {
   memberId: 'memberId',
   memberHandle: 'memberHandle',
   status: 'status',
+  acceptedAt: 'acceptedAt',
   agreementRate: 'agreementRate',
   ratePerHour: 'ratePerHour',
   paymentCycle: 'paymentCycle',

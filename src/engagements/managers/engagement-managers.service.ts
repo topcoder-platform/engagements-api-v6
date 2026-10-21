@@ -19,6 +19,7 @@ import { MemberService } from "../../integrations/member.service";
 import {
   TimesheetAccessService,
   TimesheetAuditService,
+  TimesheetEmailService,
 } from "../../timesheets";
 import { TimesheetAuditRecordDto } from "../../timesheets/dto/timesheet-audit-response.dto";
 import { EngagementManagerResponseDto } from "./dto";
@@ -32,6 +33,7 @@ export class EngagementManagersService {
     private readonly memberService: MemberService,
     private readonly access: TimesheetAccessService,
     private readonly audit: TimesheetAuditService,
+    private readonly emails: TimesheetEmailService,
   ) {}
 
   /**
@@ -64,8 +66,7 @@ export class EngagementManagersService {
             managerUserIdsMissingNames,
           );
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error ? error.message : String(error);
         this.logger.warn(
           `Failed to resolve manager names for engagement ${engagementId}: ${message}`,
         );
@@ -128,7 +129,7 @@ export class EngagementManagersService {
     input: { userId: string; handle?: string; name?: string },
     authUser?: Record<string, any>,
   ): Promise<EngagementManagerResponseDto> {
-    await this.assertEngagementExists(engagementId);
+    const engagement = await this.assertEngagementExists(engagementId);
     this.assertCanChange(authUser);
 
     const managerUserId = normalizeUserId(input.userId?.trim());
@@ -205,6 +206,14 @@ export class EngagementManagersService {
     this.logger.log(
       `Assigned manager ${manager.managerHandle} to engagement ${engagementId}`,
     );
+
+    await this.emails.sendManagerAssignedEmail({
+      engagementId,
+      engagementTitle: engagement.title,
+      managerUserId: manager.managerUserId,
+      managerHandle: manager.managerHandle,
+      actorHandle,
+    });
 
     return this.toResponseDto(manager);
   }
@@ -310,9 +319,8 @@ export class EngagementManagersService {
     managerUserId: string,
     input: { handle?: string; name?: string },
   ): Promise<{ handle: string; name: string | null }> {
-    const isActive = await this.memberService.isMemberActiveByUserId(
-      managerUserId,
-    );
+    const isActive =
+      await this.memberService.isMemberActiveByUserId(managerUserId);
 
     if (isActive === false) {
       throw new BadRequestException(ERROR_MESSAGES.ManagerInactive);
@@ -340,15 +348,19 @@ export class EngagementManagersService {
     };
   }
 
-  private async assertEngagementExists(engagementId: string): Promise<void> {
+  private async assertEngagementExists(
+    engagementId: string,
+  ): Promise<{ id: string; title: string }> {
     const engagement = await this.db.engagement.findUnique({
       where: { id: engagementId },
-      select: { id: true },
+      select: { id: true, title: true },
     });
 
     if (!engagement) {
       throw new NotFoundException(ERROR_MESSAGES.EngagementNotFound);
     }
+
+    return engagement;
   }
 
   private assertCanChange(authUser?: Record<string, any>): void {

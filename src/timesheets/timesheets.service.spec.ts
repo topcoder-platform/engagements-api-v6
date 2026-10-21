@@ -107,6 +107,9 @@ describe("TimesheetsService", () => {
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         groupBy: jest.fn().mockResolvedValue([]),
       },
+      engagementTimesheetAudit: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       $transaction: jest.fn((callback: (tx: unknown) => unknown) =>
         Promise.resolve(callback(db)),
       ),
@@ -133,6 +136,42 @@ describe("TimesheetsService", () => {
   });
 
   describe("findTimesheet", () => {
+    it("shows the member the latest note an administrator left when reopening an entry", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ reopenedAt: utcDate("2026-09-10") }),
+        entry({ id: "entry2", workDate: utcDate("2026-09-08") }),
+      ]);
+      db.engagementTimesheetAudit.findMany.mockResolvedValue([
+        { timesheetEntryId: "entry1", comment: "Wrong engagement" },
+        { timesheetEntryId: "entry1", comment: "Older reopen note" },
+      ]);
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(db.engagementTimesheetAudit.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            timesheetEntryId: { in: ["entry1"] },
+            action: TimesheetAuditAction.REOPENED,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      );
+      expect(result.entries.map((row) => row.reopenComment)).toEqual([
+        "Wrong engagement",
+        null,
+      ]);
+    });
+
+    it("skips the audit lookup when nothing was reopened", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+
+      const result = await service.findTimesheet("eng1", "asg1", {}, member);
+
+      expect(db.engagementTimesheetAudit.findMany).not.toHaveBeenCalled();
+      expect(result.entries[0].reopenComment).toBeNull();
+    });
+
     it("returns the header, managers, and viewerRole for the assignee", async () => {
       db.engagementManager.findMany.mockResolvedValue([
         {
@@ -1763,10 +1802,7 @@ describe("TimesheetsService", () => {
         managerUserId: "2002",
         removedAt: null,
       });
-      // Pending offers, rejections, and terminations are not on a manager's list.
-      expect(where.status).toEqual({
-        in: [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED],
-      });
+      expect(where.status).toBe(AssignmentStatus.ASSIGNED);
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Manager);
       expect(result.meta).toEqual({
         page: 1,
@@ -1789,7 +1825,7 @@ describe("TimesheetsService", () => {
 
       const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
       expect(where.engagement).toBeUndefined();
-      expect(where.status).toBeUndefined();
+      expect(where.status).toBe(AssignmentStatus.ASSIGNED);
       expect(result.data[0].viewerRole).toBe(TimesheetViewerRole.Administrator);
     });
 
@@ -1863,6 +1899,9 @@ describe("TimesheetsService", () => {
         true,
         false,
         false,
+      ]);
+      expect(result.data.map((row) => row.pendingEntryCount)).toEqual([
+        3, 0, 0,
       ]);
       expect(result.data[0].assignmentStatus).toBe(AssignmentStatus.ASSIGNED);
     });
@@ -1992,20 +2031,58 @@ describe("TimesheetsService", () => {
       });
     });
 
-    it("limits rows to assignments that are active or already have entries", async () => {
+    it("limits rows to active assignments, even ones that already have entries", async () => {
       db.engagementAssignment.count.mockResolvedValue(0);
 
       await service.findEngagements({ page: 1, perPage: 20 }, admin);
 
       const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
-      expect(where.OR).toEqual([
-        {
-          status: {
-            in: [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED],
-          },
-        },
-        { timesheetEntries: { some: {} } },
-      ]);
+      expect(where.status).toBe(AssignmentStatus.ASSIGNED);
+      expect(where.OR).toBeUndefined();
+    });
+
+    it("excludes projects listed in TIMESHEET_IGNORED_PROJECT_IDS", async () => {
+      const original = process.env.TIMESHEET_IGNORED_PROJECT_IDS;
+      process.env.TIMESHEET_IGNORED_PROJECT_IDS = " 1001006, ,38965,1001006 ";
+
+      try {
+        const blockingService = new TimesheetsService(
+          db,
+          new TimesheetAccessService(db),
+          audit as unknown as TimesheetAuditService,
+          events as unknown as TimesheetEventsService,
+          memberService as unknown as MemberService,
+          financeService as unknown as FinanceService,
+        );
+
+        await blockingService.findEngagements({ page: 1, perPage: 20 }, admin);
+        await blockingService.findEngagements(
+          { page: 1, perPage: 20 },
+          manager,
+        );
+      } finally {
+        if (original === undefined) {
+          delete process.env.TIMESHEET_IGNORED_PROJECT_IDS;
+        } else {
+          process.env.TIMESHEET_IGNORED_PROJECT_IDS = original;
+        }
+      }
+
+      db.engagementAssignment.findMany.mock.calls.forEach(([{ where }]) => {
+        expect(where.engagement.projectId).toEqual({
+          notIn: ["1001006", "38965"],
+        });
+      });
+      expect(db.engagementAssignment.count.mock.calls[0][0].where).toEqual(
+        db.engagementAssignment.findMany.mock.calls[0][0].where,
+      );
+    });
+
+    it("does not filter by project when no project IDs are blocked", async () => {
+      await service.findEngagements({ page: 1, perPage: 20 }, admin);
+
+      const { where } = db.engagementAssignment.findMany.mock.calls[0][0];
+      expect(where.engagement?.projectId).toBeUndefined();
     });
 
     it("refuses a caller who is neither an administrator nor identifiable", async () => {
