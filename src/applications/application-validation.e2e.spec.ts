@@ -110,7 +110,7 @@ describe("Application Validation (e2e)", () => {
     }).expect(201);
   });
 
-  it("rejects empty coverLetter", async () => {
+  it("rejects empty coverLetter when provided", async () => {
     const response = await postApplication({
       coverLetter: "",
     }).expect(400);
@@ -118,7 +118,7 @@ describe("Application Validation (e2e)", () => {
     expectValidationMessage(response.body);
   });
 
-  it("rejects whitespace-only coverLetter", async () => {
+  it("rejects whitespace-only coverLetter when provided", async () => {
     const response = await postApplication({
       coverLetter: "   ",
     }).expect(400);
@@ -126,10 +126,8 @@ describe("Application Validation (e2e)", () => {
     expectValidationMessage(response.body);
   });
 
-  it("rejects missing coverLetter", async () => {
-    const response = await postApplication({}).expect(400);
-
-    expectValidationMessage(response.body);
+  it("accepts an application without coverLetter", async () => {
+    await postApplication({}).expect(201);
   });
 
   it("rejects empty availability when provided", async () => {
