@@ -12,7 +12,7 @@ User JWTs are issued by Auth0 and represent a member identity. User tokens can i
 
 ### M2M Tokens
 
-M2M tokens are issued via the Auth0 client credentials flow. These tokens do not include a user identity and rely on scopes for authorization.
+M2M tokens are issued via the client credentials flow, by Keycloak when `USE_KEYCLOAK=true` and by Auth0 otherwise (see `docs/keycloak-m2m.md`). These tokens do not include a user identity and rely on scopes for authorization.
 
 ## Scopes Reference
 

@@ -4,6 +4,7 @@ import { ConfigService } from "@nestjs/config";
 import { firstValueFrom } from "rxjs";
 import { isAxiosError } from "axios";
 import * as core from "tc-core-library-js";
+import { auth0M2mOptions } from "./m2m-options";
 
 type ProjectUser = {
   userId?: string | number | null;
@@ -46,7 +47,8 @@ export class ProjectService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.m2m = core.auth.m2m();
+    // USE_KEYCLOAK=true uses KEYCLOAK_*; otherwise the pre-migration Auth0 settings.
+    this.m2m = core.auth.m2m(auth0M2mOptions(this.configService));
   }
 
   async validateProjectExists(projectId: string): Promise<boolean> {
@@ -324,7 +326,12 @@ export class ProjectService {
     return Array.from(projectIds);
   }
 
-  /** Return this workload's verified Keycloak token; rejects if issuance or configuration fails. */
+  /**
+   * Return this workload's M2M token from the provider selected by `USE_KEYCLOAK`:
+   * a verified Keycloak token (`KEYCLOAK_CLIENT_ID`/`SECRET`) when `true`, otherwise an
+   * Auth0 token for `M2M_CLIENT_ID`/`M2M_CLIENT_SECRET` (see `auth0M2mOptions`).
+   * Takes no parameters; rejects if the credentials are missing or issuance fails.
+   */
   private async getM2MToken(): Promise<string> {
     return this.m2m.getMachineToken();
   }

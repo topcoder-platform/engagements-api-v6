@@ -84,10 +84,14 @@ Set the following environment variables (see `.env.example` for defaults):
 | `PLATFORM_UI_BASE_URL` | Platform UI base URL used to generate anonymous feedback links. |
 | `FLEXI_TALENT_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs excluded from all Flexi Talent engagement and member responses. |
 | `TIMESHEET_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs (e.g. test projects) excluded from the timesheet landing list (`GET /timesheets/engagements`) for every viewer. |
-| `AUTH0_URL` | Auth0 token endpoint for M2M client credentials. |
-| `M2M_CLIENT_ID` | Auth0 M2M client ID. |
-| `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |
-| `AUTH0_AUDIENCE` | Auth0 audience for M2M tokens. |
+| `USE_KEYCLOAK` | `true` gets M2M tokens from Keycloak (`KEYCLOAK_*`); unset or `false` uses Auth0 (the `AUTH0_*`/`M2M_CLIENT_*` settings). Any other value fails at startup. See [docs/keycloak-m2m.md](docs/keycloak-m2m.md). |
+| `AUTH0_URL` | Auth0 token endpoint for M2M client credentials (when `USE_KEYCLOAK` is not `true`). |
+| `M2M_CLIENT_ID` | Auth0 M2M client ID (when `USE_KEYCLOAK` is not `true`). |
+| `M2M_CLIENT_SECRET` | Auth0 M2M client secret (when `USE_KEYCLOAK` is not `true`). |
+| `AUTH0_AUDIENCE` | Auth0 audience for M2M tokens (when `USE_KEYCLOAK` is not `true`). |
+| `AUTH0_PROXY_SERVER_URL` | Optional Auth0 proxy used by the Bus client (when `USE_KEYCLOAK` is not `true`). |
+| `KEYCLOAK_ISSUER`, `KEYCLOAK_AUDIENCE`, `KEYCLOAK_TOKEN_URL` | Keycloak realm, audience and token endpoint (required when `USE_KEYCLOAK=true`). |
+| `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET` | Keycloak M2M credentials (when `USE_KEYCLOAK=true`); optional `KEYCLOAK_SCOPE` narrows the client's defaults. |
 | `SENDGRID_ASSIGNMENT_OFFER_TEMPLATE_ID` | SendGrid template ID for assignment offer emails. |
 | `SENDGRID_ENGAGEMENT_ASSIGNMENT_UPDATED_TEMPLATE_ID` | SendGrid template ID for engagement assignment update emails. |
 | `SENDGRID_ASSIGNMENT_OFFER_ACCEPTED_TEMPLATE_ID` | SendGrid template ID for assignment offer accepted emails. |
@@ -118,7 +122,7 @@ The API supports both user JWTs and machine-to-machine (M2M) tokens. User tokens
 
 ## M2M Token Configuration
 
-M2M access uses Auth0 client credentials. Ensure the client is configured with the required scopes for the endpoints it calls. Tokens are validated by `tc-core-library-js` before being processed by the service.
+M2M access uses Keycloak client credentials when `USE_KEYCLOAK=true` and Auth0 client credentials otherwise (see [docs/keycloak-m2m.md](docs/keycloak-m2m.md)). Ensure the client is configured with the required scopes for the endpoints it calls. Tokens are validated by `tc-core-library-js` before being processed by the service.
 
 ## Role-Based Access
 
