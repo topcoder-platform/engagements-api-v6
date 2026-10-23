@@ -9,7 +9,7 @@ blockExoticSubdeps: false
 autoInstallPeers: false
 
 overrides:
-  tc-core-library-js: github:topcoder-platform/tc-core-library-js#e844764e1c2cadcc01fd5e05029590319802af09
+  tc-core-library-js: github:topcoder-platform/tc-core-library-js#112d54a3ed66423e7305e94e174937823e76124e
   '@babel/core@<=7.29.0': 7.29.6
   '@hono/node-server@<2.0.11': 2.0.11
   '@prisma/streams-local>ajv': 8.18.0
