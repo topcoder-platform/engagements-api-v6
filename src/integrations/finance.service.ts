@@ -38,7 +38,7 @@ export class FinanceService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.m2m = core.auth.m2m({
+    this.m2m = core.createM2MClient({
       AUTH0_URL: this.configService.get<string>(
         "AUTH0_URL",
         "https://topcoder-dev.auth0.com/oauth/token",

@@ -55,7 +55,7 @@ export class ProjectService {
       "https://api.topcoder-dev.com",
     );
 
-    this.m2m = core.auth.m2m({
+    this.m2m = core.createM2MClient({
       AUTH0_URL: authUrl,
       AUTH0_AUDIENCE: audience,
     });

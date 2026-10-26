@@ -2,9 +2,7 @@ import { of, throwError } from "rxjs";
 import { FinanceService } from "./finance.service";
 
 jest.mock("tc-core-library-js", () => ({
-  auth: {
-    m2m: () => ({ getMachineToken: jest.fn().mockResolvedValue("m2m-token") }),
-  },
+  createM2MClient: () => ({ getMachineToken: jest.fn().mockResolvedValue("m2m-token") }),
 }));
 
 describe("FinanceService", () => {
