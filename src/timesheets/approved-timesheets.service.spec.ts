@@ -129,6 +129,55 @@ describe("ApprovedTimesheetsService", () => {
     });
   });
 
+  describe("excludeTestProjects", () => {
+    const originalTestProjectIds = process.env.TEST_PROJECT_IDS;
+
+    beforeEach(() => {
+      process.env.TEST_PROJECT_IDS = "900, 901";
+    });
+
+    afterEach(() => {
+      if (originalTestProjectIds === undefined) {
+        delete process.env.TEST_PROJECT_IDS;
+      } else {
+        process.env.TEST_PROJECT_IDS = originalTestProjectIds;
+      }
+    });
+
+    it("leaves out the configured test projects when asked", async () => {
+      await service.findApprovedTimesheets(
+        { page: 1, perPage: 20, excludeTestProjects: true },
+        admin,
+      );
+
+      const { where } = db.engagementTimesheetEntry.findMany.mock.calls[0][0];
+      expect(where.assignment).toEqual({
+        engagement: { projectId: { notIn: ["900", "901"] } },
+      });
+    });
+
+    it("keeps a TM's project scope alongside the exclusion", async () => {
+      await service.findApprovedTimesheets(
+        { page: 1, perPage: 20, excludeTestProjects: true },
+        talentManager,
+        "Bearer tm-token",
+      );
+
+      const { where } = db.engagementTimesheetEntry.findMany.mock.calls[0][0];
+      expect(where.assignment.engagement.projectId).toEqual({
+        in: ["100"],
+        notIn: ["900", "901"],
+      });
+    });
+
+    it("lists test projects unless asked to hide them", async () => {
+      await service.findApprovedTimesheets({ page: 1, perPage: 20 }, admin);
+
+      const { where } = db.engagementTimesheetEntry.findMany.mock.calls[0][0];
+      expect(where.assignment).toBeUndefined();
+    });
+  });
+
   it("returns nothing for a TM whose projects cannot be resolved", async () => {
     projectService.getMemberProjectIdsForUser.mockResolvedValue([]);
 

@@ -16,6 +16,7 @@ import {
 } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { ERROR_MESSAGES } from "../common/constants";
+import { parseProjectIds } from "../common/project-ids.util";
 import { getUserIdentifier, normalizeUserId } from "../common/user.util";
 import { DbService } from "../db/db.service";
 import { FinanceService } from "../integrations/finance.service";
@@ -97,18 +98,6 @@ function toWorkDate(value: string, field = "workDate"): Date {
   }
 
   return parsed;
-}
-
-/** Splits a comma-separated project ID list, dropping blanks and duplicates. */
-function parseProjectIds(rawValue?: string): string[] {
-  return Array.from(
-    new Set(
-      (rawValue ?? "")
-        .split(",")
-        .map((projectId) => projectId.trim())
-        .filter(Boolean),
-    ),
-  );
 }
 
 /** Formats a stored date column back to the YYYY-MM-DD the API speaks. */

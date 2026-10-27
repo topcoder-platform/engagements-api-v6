@@ -141,6 +141,26 @@ export class EngagementQueryDto extends PaginationDto {
   appliedByMe?: boolean;
 
   @ApiPropertyOptional({
+    description:
+      "When true, leave out engagements on the test projects configured in TEST_PROJECT_IDS.",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(transformBoolean)
+  excludeTestProjects?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      "When true with includePrivate=true, add lastPaidAt to each assignment: when its latest processed payment was created, read from the finance API. lastPaidAt is null for an assignment never paid, and left out entirely when finance could not be read.",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(transformBoolean)
+  includeLastPaidAt?: boolean;
+
+  @ApiPropertyOptional({
     description: "Sort field",
     enum: EngagementSortBy,
     default: EngagementSortBy.CreatedAt,
