@@ -1,5 +1,5 @@
 # Keep build tooling aligned with the version used by local development.
-ARG NODE_VERSION=26.5.1
+ARG NODE_VERSION=26.12.1
 
 # ---- Base Stage ----
 FROM node:${NODE_VERSION}-alpine AS base
