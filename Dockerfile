@@ -42,8 +42,11 @@ RUN pnpm install --prod --frozen-lockfile --ignore-scripts \
 # distribution-patched OpenSSL libraries instead of Node's bundled copy.
 FROM alpine:3.24 AS production
 ARG NODE_VERSION
+# Alpine replaces old APK patch versions. Keep the configured Node major while
+# accepting maintained patch releases and verify the selected runtime below.
 RUN apk upgrade --no-cache \
-  && apk add --no-cache nodejs-current=${NODE_VERSION}-r0 \
+  && apk add --no-cache "nodejs-current~${NODE_VERSION%%.*}" \
+  && test "$(node -p 'process.versions.node.split(".")[0]')" = "${NODE_VERSION%%.*}" \
   && addgroup -S app \
   && adduser -S -D -H -u 10001 -G app app
 WORKDIR /usr/src/app
