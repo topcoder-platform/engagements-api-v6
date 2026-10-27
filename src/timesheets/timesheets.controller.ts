@@ -25,6 +25,7 @@ import { PermissionsGuard } from "../auth/guards/permissions.guard";
 import {
   ApproveTimesheetEntriesDto,
   ApproveTimesheetEntriesResultDto,
+  DeleteTimesheetEntriesDto,
   LinkTimesheetPaymentDto,
   LinkedTimesheetPaymentDto,
   TimesheetAuditRecordDto,
@@ -39,7 +40,7 @@ import {
 import { TimesheetsService } from "./timesheets.service";
 
 /**
- * One assignment's timesheet: read, write, submit, approve, reopen.
+ * One assignment's timesheet: read, write, delete, submit, approve, reopen.
  *
  * Every endpoint resolves the caller's relationship to the assignment before touching anything, and
  * returns it as `viewerRole`. A caller with no relationship gets a `404` rather than a `403`, so
@@ -277,6 +278,43 @@ export class TimesheetsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<TimesheetViewResponseDto> {
     return this.timesheetsService.submitEntries(
+      engagementId,
+      assignmentId,
+      body,
+      req.authUser,
+    );
+  }
+
+  @Post("entries/delete")
+  @ApiOperation({
+    summary: "Delete draft timesheet entries",
+    description:
+      "Deletes unpaid draft entries, for days logged by mistake. Callable by the member while the assignment is active, or by an administrator. Atomic: an entry that is submitted, approved, or paid fails the whole call with per-entry detail. The deletion is recorded on the engagement's audit trail with each entry's last values, since an entry's own audit records go with it.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Entries deleted; the refreshed timesheet is returned.",
+    type: TimesheetViewResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      "One or more entries are not unpaid drafts. Nothing is deleted.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Managers cannot delete entries, and a member cannot once the assignment is no longer active.",
+  })
+  @ApiConflictResponse({
+    description:
+      "An entry changed status while the delete was running. Nothing is deleted.",
+  })
+  async deleteEntries(
+    @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
+    @Body() body: DeleteTimesheetEntriesDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<TimesheetViewResponseDto> {
+    return this.timesheetsService.deleteEntries(
       engagementId,
       assignmentId,
       body,

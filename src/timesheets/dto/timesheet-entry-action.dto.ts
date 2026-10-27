@@ -40,6 +40,8 @@ export class SubmitTimesheetEntriesDto extends TimesheetEntryIdsDto {
   overrideReason?: string;
 }
 
+export class DeleteTimesheetEntriesDto extends TimesheetEntryIdsDto {}
+
 export class ApproveTimesheetEntriesDto extends TimesheetEntryIdsDto {
   @ApiProperty({
     description: "Approval comment, stored against every approved entry",

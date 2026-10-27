@@ -105,6 +105,7 @@ describe("TimesheetsService", () => {
         create: jest.fn(),
         update: jest.fn(),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
         groupBy: jest.fn().mockResolvedValue([]),
       },
       engagementTimesheetAudit: {
@@ -866,6 +867,136 @@ describe("TimesheetsService", () => {
       );
 
       expect(db.engagementTimesheetEntry.create).toHaveBeenCalled();
+    });
+  });
+
+  describe("deleteEntries", () => {
+    it("deletes a member's drafts, recording each one against the engagement", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+      db.engagementTimesheetEntry.deleteMany.mockResolvedValue({ count: 1 });
+
+      await service.deleteEntries(
+        "eng1",
+        "asg1",
+        { entryIds: ["entry1"] },
+        member,
+      );
+
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          engagementId: "eng1",
+          action: TimesheetAuditAction.DELETED,
+          actorRole: TimesheetActorRole.Member,
+          previousValues: expect.objectContaining({
+            entryId: "entry1",
+            assignmentId: "asg1",
+            workDate: "2026-09-07",
+            remarks: "Sprint planning",
+          }),
+        }),
+      );
+      expect(db.engagementTimesheetEntry.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ["entry1"] },
+          engagementAssignmentId: "asg1",
+          status: TimesheetEntryStatus.DRAFT,
+          paidPaymentReference: null,
+        },
+      });
+    });
+
+    it("lets an administrator delete a member's drafts without a reason", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([entry()]);
+      db.engagementTimesheetEntry.deleteMany.mockResolvedValue({ count: 1 });
+
+      await service.deleteEntries(
+        "eng1",
+        "asg1",
+        { entryIds: ["entry1"] },
+        admin,
+      );
+
+      expect(db.engagementTimesheetEntry.deleteMany).toHaveBeenCalled();
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          actorRole: TimesheetActorRole.Administrator,
+        }),
+      );
+    });
+
+    it("deletes nothing when one entry is submitted or paid", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "ok" }),
+        entry({ id: "submitted", status: TimesheetEntryStatus.SUBMITTED }),
+        entry({
+          id: "paid",
+          paidPaymentReference: "pay-1",
+          reopenedAt: utcDate("2026-09-20"),
+        }),
+      ]);
+
+      const error = await service
+        .deleteEntries(
+          "eng1",
+          "asg1",
+          { entryIds: ["ok", "submitted", "paid"] },
+          member,
+        )
+        .catch((caught: BadRequestException) => caught);
+
+      expect(error).toBeInstanceOf(BadRequestException);
+      expect((error as BadRequestException).getResponse()).toEqual(
+        expect.objectContaining({
+          entries: [
+            expect.objectContaining({ id: "submitted" }),
+            expect.objectContaining({
+              id: "paid",
+              reason: "Paid entries cannot be deleted.",
+            }),
+          ],
+        }),
+      );
+      expect(db.engagementTimesheetEntry.deleteMany).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it("rolls back when an entry stopped being a draft mid-delete", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "a" }),
+        entry({ id: "b" }),
+      ]);
+      db.engagementTimesheetEntry.deleteMany.mockResolvedValue({ count: 1 });
+
+      await expect(
+        service.deleteEntries("eng1", "asg1", { entryIds: ["a", "b"] }, member),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it("refuses a manager", async () => {
+      withManagerRow();
+
+      await expect(
+        service.deleteEntries(
+          "eng1",
+          "asg1",
+          { entryIds: ["entry1"] },
+          manager,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(db.engagementTimesheetEntry.findMany).not.toHaveBeenCalled();
+    });
+
+    it("refuses a member whose assignment is no longer active", async () => {
+      db.engagementAssignment.findUnique.mockResolvedValue({
+        ...assignment,
+        status: AssignmentStatus.COMPLETED,
+      });
+
+      await expect(
+        service.deleteEntries("eng1", "asg1", { entryIds: ["entry1"] }, member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 
