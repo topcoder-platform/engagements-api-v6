@@ -66,6 +66,9 @@ export const ERROR_MESSAGES = {
     "Only an administrator can reopen approved timesheet entries.",
   TimesheetReopenNotApproved:
     "Only approved timesheet entries can be reopened.",
+  TimesheetManagerCannotDelete: "Managers cannot delete timesheet entries.",
+  TimesheetDeleteRejected:
+    "Only unpaid draft entries can be deleted, so nothing was deleted.",
   TimesheetSubmitRejected:
     "Some entries cannot be submitted, so nothing was submitted.",
   TimesheetDuplicateWorkDate:

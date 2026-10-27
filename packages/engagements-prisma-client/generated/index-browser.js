@@ -429,7 +429,8 @@ exports.TimesheetAuditAction = exports.$Enums.TimesheetAuditAction = {
   ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
   PAYMENT_LINKED: 'PAYMENT_LINKED',
   MANAGER_ASSIGNED: 'MANAGER_ASSIGNED',
-  MANAGER_REMOVED: 'MANAGER_REMOVED'
+  MANAGER_REMOVED: 'MANAGER_REMOVED',
+  DELETED: 'DELETED'
 };
 
 exports.Prisma.ModelName = {

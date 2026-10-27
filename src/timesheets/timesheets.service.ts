@@ -23,6 +23,7 @@ import { MemberService } from "../integrations/member.service";
 import {
   ApproveTimesheetEntriesDto,
   ApproveTimesheetEntriesResultDto,
+  DeleteTimesheetEntriesDto,
   LinkTimesheetPaymentDto,
   LinkedTimesheetPaymentDto,
   ReopenTimesheetEntriesDto,
@@ -506,6 +507,102 @@ export class TimesheetsService {
         comment: dto.overrideReason,
       },
     ]);
+
+    return this.findTimesheet(engagementId, assignmentId, {}, authUser);
+  }
+
+  /**
+   * Deletes draft entries, for a day logged by mistake. Callable by the member on an active
+   * assignment, or by an administrator.
+   *
+   * Atomic, like submit: anything that is not an unpaid draft fails the whole call with per-entry
+   * detail. A paid entry stays even once reopened to draft, since the payment still points at it.
+   * Deleting an entry cascades to its own audit records, so the deletion - with the entry's last
+   * values - is recorded against the engagement instead.
+   */
+  async deleteEntries(
+    engagementId: string,
+    assignmentId: string,
+    dto: DeleteTimesheetEntriesDto,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetViewResponseDto> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (
+      context.viewerRole === TimesheetViewerRole.Manager ||
+      context.viewerRole === TimesheetViewerRole.Tm
+    ) {
+      throw new ForbiddenException(
+        context.viewerRole === TimesheetViewerRole.Tm
+          ? ERROR_MESSAGES.TimesheetTmReadOnly
+          : ERROR_MESSAGES.TimesheetManagerCannotDelete,
+      );
+    }
+
+    this.assertMemberAssignmentActive(context);
+
+    const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+    const problems = entries
+      .filter(
+        (entry) =>
+          entry.status !== TimesheetEntryStatus.DRAFT ||
+          entry.paidPaymentReference,
+      )
+      .map((entry) => ({
+        id: entry.id,
+        workDate: toDateString(entry.workDate),
+        currentStatus: entry.status,
+        reason: entry.paidPaymentReference
+          ? "Paid entries cannot be deleted."
+          : `Only draft entries can be deleted; this entry is ${entry.status}.`,
+      }));
+
+    if (problems.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetDeleteRejected,
+        entries: problems,
+      });
+    }
+
+    await this.db.$transaction(async (tx) => {
+      for (const entry of entries) {
+        await this.audit.record(tx, {
+          engagementId: context.assignment.engagementId,
+          action: TimesheetAuditAction.DELETED,
+          previousValues: {
+            entryId: entry.id,
+            assignmentId: context.assignment.id,
+            memberHandle: context.assignment.memberHandle,
+            workDate: toDateString(entry.workDate),
+            status: entry.status,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+            reopenedAt: entry.reopenedAt?.toISOString() ?? null,
+          },
+          actorUserId: context.actorUserId,
+          actorHandle: context.actorHandle,
+          actorRole: this.toActorRole(context),
+        });
+      }
+
+      // Guarded on the status the checks above saw, so an entry submitted in the meantime survives.
+      const deleted = await tx.engagementTimesheetEntry.deleteMany({
+        where: {
+          id: { in: entries.map((entry) => entry.id) },
+          engagementAssignmentId: assignmentId,
+          status: TimesheetEntryStatus.DRAFT,
+          paidPaymentReference: null,
+        },
+      });
+
+      if (deleted.count !== entries.length) {
+        throw new ConflictException(ERROR_MESSAGES.TimesheetDeleteRejected);
+      }
+    });
 
     return this.findTimesheet(engagementId, assignmentId, {}, authUser);
   }
