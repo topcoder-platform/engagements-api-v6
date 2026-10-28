@@ -15,19 +15,27 @@ type ProjectUsers = {
   invites: ProjectUser[];
 };
 
-type ProjectSummary = {
+export type ProjectSummary = {
   id: string;
   name: string;
+  /** Customer from the project details, when the project has one. */
+  customer?: string;
 };
 
-type CachedProjectName = {
+type CachedProjectSummary = {
   expiresAt: number;
-  name: string;
+  summary: ProjectSummary;
+  /**
+   * False for entries seeded from the project search, which only reads names: they serve name
+   * lookups, but a customer lookup still has to fetch the project.
+   */
+  hasDetails: boolean;
 };
 
 type ProjectResponse = {
   billingAccountId?: unknown;
   id?: string | number | null;
+  details?: { customer?: unknown } | null;
   invites?: ProjectUser[] | null;
   members?: ProjectUser[] | null;
   name?: string | null;
@@ -37,7 +45,10 @@ type ProjectResponse = {
 export class ProjectService {
   private readonly logger = new Logger(ProjectService.name);
   private readonly m2m;
-  private readonly projectNameCache = new Map<string, CachedProjectName>();
+  private readonly projectSummaryCache = new Map<
+    string,
+    CachedProjectSummary
+  >();
   private readonly projectNameCacheTtlMs = 5 * 60 * 1000;
   private readonly projectLookupBatchSize = 10;
   private readonly flexiProjectSearchCap = 50;
@@ -140,6 +151,32 @@ export class ProjectService {
   async getProjectNamesByIds(
     projectIds: string[],
   ): Promise<Map<string, string>> {
+    const summaries = await this.resolveProjectSummaries(projectIds, false);
+
+    return new Map(
+      Array.from(summaries, ([projectId, summary]) => [
+        projectId,
+        summary.name,
+      ]),
+    );
+  }
+
+  /**
+   * Resolves the name and customer of each project.
+   *
+   * @param projectIds Project ids to resolve; blanks and duplicates are ignored.
+   * @returns Summaries keyed by project id. Projects that could not be read are left out.
+   */
+  async getProjectSummariesByIds(
+    projectIds: string[],
+  ): Promise<Map<string, ProjectSummary>> {
+    return this.resolveProjectSummaries(projectIds, true);
+  }
+
+  private async resolveProjectSummaries(
+    projectIds: string[],
+    requireDetails: boolean,
+  ): Promise<Map<string, ProjectSummary>> {
     const normalizedProjectIds = Array.from(
       new Set(
         projectIds
@@ -148,18 +185,22 @@ export class ProjectService {
       ),
     );
 
+    const summariesById = new Map<string, ProjectSummary>();
+
     if (!normalizedProjectIds.length) {
-      return new Map<string, string>();
+      return summariesById;
     }
 
-    const projectNamesById = new Map<string, string>();
     const uncachedProjectIds: string[] = [];
 
     normalizedProjectIds.forEach((projectId) => {
-      const cachedProjectName = this.getCachedProjectName(projectId);
+      const cachedSummary = this.getCachedProjectSummary(
+        projectId,
+        requireDetails,
+      );
 
-      if (cachedProjectName) {
-        projectNamesById.set(projectId, cachedProjectName);
+      if (cachedSummary) {
+        summariesById.set(projectId, cachedSummary);
         return;
       }
 
@@ -167,7 +208,7 @@ export class ProjectService {
     });
 
     if (!uncachedProjectIds.length) {
-      return projectNamesById;
+      return summariesById;
     }
 
     const token = await this.getM2MToken();
@@ -193,12 +234,12 @@ export class ProjectService {
           return;
         }
 
-        projectNamesById.set(projectSummary.id, projectSummary.name);
-        this.setCachedProjectName(projectSummary.id, projectSummary.name);
+        summariesById.set(projectSummary.id, projectSummary);
+        this.setCachedProjectSummary(projectSummary, true);
       });
     }
 
-    return projectNamesById;
+    return summariesById;
   }
 
   /**
@@ -243,7 +284,10 @@ export class ProjectService {
 
         const projectName = this.normalizeProjectName(project.name);
         if (projectName) {
-          this.setCachedProjectName(projectId, projectName);
+          this.setCachedProjectSummary(
+            { id: projectId, name: projectName },
+            false,
+          );
         }
       });
 
@@ -483,24 +527,46 @@ export class ProjectService {
     return [];
   }
 
-  private getCachedProjectName(projectId: string): string | undefined {
-    const cacheEntry = this.projectNameCache.get(projectId);
+  private getCachedProjectSummary(
+    projectId: string,
+    requireDetails: boolean,
+  ): ProjectSummary | undefined {
+    const cacheEntry = this.projectSummaryCache.get(projectId);
     if (!cacheEntry) {
       return undefined;
     }
 
     if (cacheEntry.expiresAt <= Date.now()) {
-      this.projectNameCache.delete(projectId);
+      this.projectSummaryCache.delete(projectId);
       return undefined;
     }
 
-    return cacheEntry.name;
+    if (requireDetails && !cacheEntry.hasDetails) {
+      return undefined;
+    }
+
+    return cacheEntry.summary;
   }
 
-  private setCachedProjectName(projectId: string, projectName: string): void {
-    this.projectNameCache.set(projectId, {
+  private setCachedProjectSummary(
+    summary: ProjectSummary,
+    hasDetails: boolean,
+  ): void {
+    const cacheEntry = this.projectSummaryCache.get(summary.id);
+
+    // A name-only entry must not replace one that already carries the customer.
+    if (
+      !hasDetails &&
+      cacheEntry?.hasDetails &&
+      cacheEntry.expiresAt > Date.now()
+    ) {
+      return;
+    }
+
+    this.projectSummaryCache.set(summary.id, {
       expiresAt: Date.now() + this.projectNameCacheTtlMs,
-      name: projectName,
+      summary,
+      hasDetails,
     });
   }
 
@@ -508,6 +574,7 @@ export class ProjectService {
     projectId: string,
     token: string,
   ): Promise<ProjectSummary | null> {
+    // Fields only selects relations; the project's own columns, details included, always return.
     const project = await this.fetchProjectById(projectId, token, [
       "id",
       "name",
@@ -521,9 +588,12 @@ export class ProjectService {
       return null;
     }
 
+    const customer = this.normalizeProjectName(project.details?.customer);
+
     return {
       id: projectId,
       name: normalizedProjectName,
+      ...(customer ? { customer } : {}),
     };
   }
 

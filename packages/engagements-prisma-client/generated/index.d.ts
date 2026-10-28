@@ -165,7 +165,8 @@ export const TimesheetAuditAction: {
   ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
   PAYMENT_LINKED: 'PAYMENT_LINKED',
   MANAGER_ASSIGNED: 'MANAGER_ASSIGNED',
-  MANAGER_REMOVED: 'MANAGER_REMOVED'
+  MANAGER_REMOVED: 'MANAGER_REMOVED',
+  DELETED: 'DELETED'
 };
 
 export type TimesheetAuditAction = (typeof TimesheetAuditAction)[keyof typeof TimesheetAuditAction]

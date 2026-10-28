@@ -86,6 +86,7 @@ enum TimesheetAuditAction {
   PAYMENT_LINKED
   MANAGER_ASSIGNED
   MANAGER_REMOVED
+  DELETED
 }
 
 enum RoleLevel {

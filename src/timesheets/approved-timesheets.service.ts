@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, Logger } from "@nestjs/common";
 import { Prisma, TimesheetEntryStatus } from "@prisma/client";
 import { ERROR_MESSAGES } from "../common/constants";
+import { getTestProjectIds } from "../common/project-ids.util";
 import { DbService } from "../db/db.service";
 import { FinanceService } from "../integrations/finance.service";
 import { MemberService } from "../integrations/member.service";
@@ -112,8 +113,12 @@ export class ApprovedTimesheetsService {
         mode: "insensitive",
       };
     }
-    if (projectIds) {
-      engagementFilters.projectId = { in: projectIds };
+    const testProjectIds = query.excludeTestProjects ? getTestProjectIds() : [];
+    if (projectIds || testProjectIds.length) {
+      engagementFilters.projectId = {
+        ...(projectIds ? { in: projectIds } : {}),
+        ...(testProjectIds.length ? { notIn: testProjectIds } : {}),
+      };
     }
 
     const assignmentFilters: Prisma.EngagementAssignmentWhereInput = {};
