@@ -74,6 +74,7 @@ describe("EngagementsService", () => {
     getMemberProjectIdsForUser: jest.Mock;
     getProjectBillingAccountId: jest.Mock;
     getProjectNamesByIds: jest.Mock;
+    getProjectSummariesByIds: jest.Mock;
     hasBillingAccountAssigned: jest.Mock;
     searchFlexiProjectIdsByName: jest.Mock;
     validateProjectExists: jest.Mock;
@@ -96,6 +97,7 @@ describe("EngagementsService", () => {
     sendAssignmentOfferResponseEmails: jest.Mock;
   };
   let managersService: { findByEngagementIds: jest.Mock };
+  let financeService: { getLastPaidAtByAssignmentIds: jest.Mock };
 
   /**
    * Creates the service with the current mocks and environment.
@@ -115,6 +117,7 @@ describe("EngagementsService", () => {
       assignmentOfferEmailService as any,
       assignmentOfferResponseEmailService as any,
       managersService as any,
+      financeService as any,
     );
 
   const createDto = {
@@ -224,6 +227,7 @@ describe("EngagementsService", () => {
       getMemberProjectIdsForUser: jest.fn().mockResolvedValue([]),
       getProjectBillingAccountId: jest.fn().mockResolvedValue(null),
       getProjectNamesByIds: jest.fn().mockResolvedValue(new Map()),
+      getProjectSummariesByIds: jest.fn().mockResolvedValue(new Map()),
       hasBillingAccountAssigned: jest.fn().mockResolvedValue(false),
       searchFlexiProjectIdsByName: jest.fn().mockResolvedValue([]),
       validateProjectExists: jest.fn().mockResolvedValue(true),
@@ -253,6 +257,9 @@ describe("EngagementsService", () => {
     };
     managersService = {
       findByEngagementIds: jest.fn().mockResolvedValue(new Map()),
+    };
+    financeService = {
+      getLastPaidAtByAssignmentIds: jest.fn().mockResolvedValue(new Map()),
     };
     service = createService();
   });
@@ -1452,6 +1459,157 @@ describe("EngagementsService", () => {
       "createdByEmail",
       "creator@example.com",
     );
+  });
+
+  describe("assignments listing extras", () => {
+    const originalTestProjectIds = process.env.TEST_PROJECT_IDS;
+    const privateEngagement = () => ({
+      id: "eng-1",
+      projectId: "project-1",
+      title: "Private engagement",
+      description: "Private description",
+      timeZones: ["UTC"],
+      countries: ["US"],
+      requiredSkills: [],
+      anticipatedStart: "IMMEDIATE",
+      status: "ACTIVE",
+      createdAt: new Date("2026-02-11T10:00:00.000Z"),
+      updatedAt: new Date("2026-02-11T10:00:00.000Z"),
+      createdBy: "123456",
+      isPrivate: true,
+      assignments: [
+        {
+          id: "assignment-1",
+          engagementId: "eng-1",
+          memberId: "100000",
+          memberHandle: "member1",
+          status: AssignmentStatus.ASSIGNED,
+          createdAt: new Date("2026-02-11T11:00:00.000Z"),
+          updatedAt: new Date("2026-02-11T11:00:00.000Z"),
+        },
+        {
+          id: "assignment-2",
+          engagementId: "eng-1",
+          memberId: "100001",
+          memberHandle: "member2",
+          status: AssignmentStatus.SELECTED,
+          createdAt: new Date("2026-02-11T12:00:00.000Z"),
+          updatedAt: new Date("2026-02-11T12:00:00.000Z"),
+        },
+      ],
+      _count: { applications: 1 },
+    });
+    const listQuery = (overrides: Record<string, unknown> = {}) =>
+      ({
+        page: 1,
+        perPage: 20,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        ...overrides,
+      }) as any;
+
+    beforeEach(() => {
+      db.engagement.findMany.mockResolvedValue([privateEngagement()]);
+      db.engagement.count.mockResolvedValue(1);
+    });
+
+    afterEach(() => {
+      if (originalTestProjectIds === undefined) {
+        delete process.env.TEST_PROJECT_IDS;
+      } else {
+        process.env.TEST_PROJECT_IDS = originalTestProjectIds;
+      }
+    });
+
+    it("adds the project customer to privileged listings", async () => {
+      projectService.getProjectSummariesByIds.mockResolvedValue(
+        new Map([
+          [
+            "project-1",
+            { id: "project-1", name: "Platform", customer: "Acme Corp" },
+          ],
+        ]),
+      );
+
+      const result = await service.findAll(listQuery({ includePrivate: true }));
+
+      expect(result.data[0]).toMatchObject({
+        project: { id: "project-1", name: "Platform", customer: "Acme Corp" },
+        projectName: "Platform",
+      });
+      expect(projectService.getProjectNamesByIds).not.toHaveBeenCalled();
+    });
+
+    it("keeps the customer out of public listings", async () => {
+      db.engagement.findMany.mockResolvedValue([
+        { ...privateEngagement(), assignments: undefined, isPrivate: false },
+      ]);
+
+      await service.findAll(listQuery());
+
+      expect(projectService.getProjectSummariesByIds).not.toHaveBeenCalled();
+      expect(projectService.getProjectNamesByIds).toHaveBeenCalled();
+    });
+
+    it("adds lastPaidAt to every assignment when asked", async () => {
+      financeService.getLastPaidAtByAssignmentIds.mockResolvedValue(
+        new Map([["assignment-1", new Date("2026-10-01T00:00:00.000Z")]]),
+      );
+
+      const result = await service.findAll(
+        listQuery({ includePrivate: true, includeLastPaidAt: true }),
+      );
+
+      expect(financeService.getLastPaidAtByAssignmentIds).toHaveBeenCalledWith([
+        "assignment-1",
+        "assignment-2",
+      ]);
+      const assignments = (result.data[0] as any).assignments;
+      expect(assignments[0].lastPaidAt).toEqual(
+        new Date("2026-10-01T00:00:00.000Z"),
+      );
+      expect(assignments[1].lastPaidAt).toBeNull();
+    });
+
+    it("leaves lastPaidAt out when finance cannot be read", async () => {
+      financeService.getLastPaidAtByAssignmentIds.mockResolvedValue(null);
+
+      const result = await service.findAll(
+        listQuery({ includePrivate: true, includeLastPaidAt: true }),
+      );
+
+      expect((result.data[0] as any).assignments[0]).not.toHaveProperty(
+        "lastPaidAt",
+      );
+    });
+
+    it("does not call finance unless lastPaidAt is requested", async () => {
+      await service.findAll(listQuery({ includePrivate: true }));
+
+      expect(
+        financeService.getLastPaidAtByAssignmentIds,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("excludes the configured test projects when asked", async () => {
+      process.env.TEST_PROJECT_IDS = "900,901";
+
+      await service.findAll(listQuery({ excludeTestProjects: true }));
+
+      const { where } = db.engagement.findMany.mock.calls[0][0];
+      expect(where.AND).toEqual(
+        expect.arrayContaining([{ projectId: { notIn: ["900", "901"] } }]),
+      );
+    });
+
+    it("lists test projects unless asked to hide them", async () => {
+      process.env.TEST_PROJECT_IDS = "900,901";
+
+      await service.findAll(listQuery());
+
+      const { where } = db.engagement.findMany.mock.calls[0][0];
+      expect(JSON.stringify(where)).not.toContain('notIn":["900');
+    });
   });
 
   it("does not scope Talent Manager listings to member projects", async () => {

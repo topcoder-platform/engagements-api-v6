@@ -6,6 +6,8 @@ import * as core from "tc-core-library-js";
 
 /** The parts of a finance winning this service reads. */
 type FinancePayment = {
+  createdAt?: string | null;
+  externalId?: string | null;
   hoursWorked?: number | string | null;
   status?: string | null;
   details?: Array<{ status?: string | null }> | null;
@@ -22,6 +24,21 @@ const UNPROCESSED_PAYMENT_STATUSES = new Set([
   "FAILED",
   "RETURNED",
 ]);
+
+function isProcessedPayment(payment: FinancePayment): boolean {
+  // Finance reports status per installment; an engagement payment has exactly one.
+  const status = String(payment.details?.[0]?.status ?? payment.status ?? "")
+    .trim()
+    .toUpperCase();
+
+  return !UNPROCESSED_PAYMENT_STATUSES.has(status);
+}
+
+/** External ids sent per finance search, which keeps each request body small. */
+const LAST_PAID_LOOKUP_BATCH_SIZE = 100;
+
+/** Winnings read per finance search page. */
+const LAST_PAID_LOOKUP_PAGE_SIZE = 500;
 
 /**
  * Reads engagement payments from the finance API.
@@ -82,19 +99,102 @@ export class FinanceService {
     }
   }
 
+  /**
+   * When each assignment was last paid: the creation date of its latest processed payment, under
+   * the same status rule as {@link getProcessedPaymentHours}.
+   *
+   * @param assignmentIds engagement assignment ids, which finance stores as winning external ids.
+   * @returns last paid dates keyed by assignment id; assignments never paid are left out. `null` when
+   *   finance could not be read, so the caller can show the dates as unavailable rather than as
+   *   never paid.
+   */
+  async getLastPaidAtByAssignmentIds(
+    assignmentIds: string[],
+  ): Promise<Map<string, Date> | null> {
+    const uniqueAssignmentIds = Array.from(
+      new Set(assignmentIds.map((id) => id.trim()).filter(Boolean)),
+    );
+    const lastPaidAt = new Map<string, Date>();
+
+    if (!uniqueAssignmentIds.length) {
+      return lastPaidAt;
+    }
+
+    try {
+      const token = await this.getM2MToken();
+
+      for (
+        let batchStart = 0;
+        batchStart < uniqueAssignmentIds.length;
+        batchStart += LAST_PAID_LOOKUP_BATCH_SIZE
+      ) {
+        const payments = await this.searchPaymentsByExternalIds(
+          uniqueAssignmentIds.slice(
+            batchStart,
+            batchStart + LAST_PAID_LOOKUP_BATCH_SIZE,
+          ),
+          token,
+        );
+
+        payments.filter(isProcessedPayment).forEach((payment) => {
+          const assignmentId = String(payment.externalId ?? "").trim();
+          const createdAt = new Date(String(payment.createdAt ?? ""));
+
+          if (!assignmentId || Number.isNaN(createdAt.getTime())) {
+            return;
+          }
+
+          const current = lastPaidAt.get(assignmentId);
+          if (!current || createdAt > current) {
+            lastPaidAt.set(assignmentId, createdAt);
+          }
+        });
+      }
+
+      return lastPaidAt;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to read finance payments for ${uniqueAssignmentIds.length} assignments: ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      );
+      return null;
+    }
+  }
+
+  private async searchPaymentsByExternalIds(
+    externalIds: string[],
+    token: string,
+  ): Promise<FinancePayment[]> {
+    const payments: FinancePayment[] = [];
+
+    for (let offset = 0; ; offset += LAST_PAID_LOOKUP_PAGE_SIZE) {
+      const response = await firstValueFrom(
+        this.httpService.post<{ data?: FinancePayment[] }>(
+          `${this.getFinanceApiUrl()}/winnings/list`,
+          {
+            externalIds,
+            type: "PAYMENT",
+            limit: LAST_PAID_LOOKUP_PAGE_SIZE,
+            offset,
+          },
+          { headers: { Authorization: `Bearer ${token}` } },
+        ),
+      );
+      const page = response.data?.data ?? [];
+
+      payments.push(...page);
+
+      if (page.length < LAST_PAID_LOOKUP_PAGE_SIZE) {
+        return payments;
+      }
+    }
+  }
+
   private sumProcessedHours(payments: FinancePayment[]): number {
     // Summed in hundredths so 0.1 + 0.2 style float drift cannot leak into an hours figure.
     const totalHundredths = payments
-      .filter((payment) => {
-        // Finance reports status per installment; an engagement payment has exactly one.
-        const status = String(
-          payment.details?.[0]?.status ?? payment.status ?? "",
-        )
-          .trim()
-          .toUpperCase();
-
-        return !UNPROCESSED_PAYMENT_STATUSES.has(status);
-      })
+      .filter(isProcessedPayment)
       .reduce((total, payment) => {
         const hours = Number(payment.hoursWorked);
 

@@ -16,7 +16,7 @@ describe("FinanceService", () => {
   const configService = {
     get: jest.fn((key: string, fallback?: string) => config[key] ?? fallback),
   };
-  let httpService: { get: jest.Mock };
+  let httpService: { get: jest.Mock; post: jest.Mock };
   let service: FinanceService;
 
   const payment = (hoursWorked: number, status: string) => ({
@@ -25,7 +25,7 @@ describe("FinanceService", () => {
   });
 
   beforeEach(() => {
-    httpService = { get: jest.fn() };
+    httpService = { get: jest.fn(), post: jest.fn() };
     service = new FinanceService(httpService as never, configService as never);
   });
 
@@ -72,5 +72,90 @@ describe("FinanceService", () => {
     httpService.get.mockReturnValue(throwError(() => new Error("503")));
 
     await expect(service.getProcessedPaymentHours("asg-1")).resolves.toBeNull();
+  });
+
+  describe("getLastPaidAtByAssignmentIds", () => {
+    const winning = (
+      externalId: string,
+      createdAt: string,
+      status = "PAID",
+    ) => ({ externalId, createdAt, details: [{ status }] });
+
+    it("returns each assignment's latest processed payment date", async () => {
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            data: [
+              winning("asg-1", "2026-09-01T10:00:00.000Z"),
+              winning("asg-1", "2026-10-01T10:00:00.000Z", "ON_HOLD_ADMIN"),
+              winning("asg-1", "2026-10-20T10:00:00.000Z", "CANCELLED"),
+              winning("asg-2", "2026-08-15T10:00:00.000Z"),
+            ],
+          },
+        }),
+      );
+
+      const result = await service.getLastPaidAtByAssignmentIds([
+        "asg-1",
+        "asg-2",
+        "asg-3",
+        "asg-1",
+      ]);
+
+      expect(result).toEqual(
+        new Map([
+          ["asg-1", new Date("2026-10-01T10:00:00.000Z")],
+          ["asg-2", new Date("2026-08-15T10:00:00.000Z")],
+        ]),
+      );
+      expect(httpService.post).toHaveBeenCalledWith(
+        "https://api.example.com/v6/finance/winnings/list",
+        {
+          externalIds: ["asg-1", "asg-2", "asg-3"],
+          type: "PAYMENT",
+          limit: 500,
+          offset: 0,
+        },
+        { headers: { Authorization: "Bearer m2m-token" } },
+      );
+    });
+
+    it("reads every page of a batch", async () => {
+      const fullPage = Array.from({ length: 500 }, () =>
+        winning("asg-1", "2026-09-01T10:00:00.000Z"),
+      );
+      httpService.post
+        .mockReturnValueOnce(of({ data: { data: fullPage } }))
+        .mockReturnValueOnce(
+          of({
+            data: { data: [winning("asg-1", "2026-10-05T10:00:00.000Z")] },
+          }),
+        );
+
+      const result = await service.getLastPaidAtByAssignmentIds(["asg-1"]);
+
+      expect(httpService.post).toHaveBeenCalledTimes(2);
+      expect(httpService.post.mock.calls[1][1]).toEqual(
+        expect.objectContaining({ offset: 500 }),
+      );
+      expect(result?.get("asg-1")).toEqual(
+        new Date("2026-10-05T10:00:00.000Z"),
+      );
+    });
+
+    it("does not call finance without assignments", async () => {
+      await expect(service.getLastPaidAtByAssignmentIds([])).resolves.toEqual(
+        new Map(),
+      );
+      expect(httpService.post).not.toHaveBeenCalled();
+    });
+
+    it("returns null when finance cannot be read", async () => {
+      httpService.post.mockReturnValue(throwError(() => new Error("503")));
+
+      await expect(
+        service.getLastPaidAtByAssignmentIds(["asg-1"]),
+      ).resolves.toBeNull();
+    });
   });
 });
