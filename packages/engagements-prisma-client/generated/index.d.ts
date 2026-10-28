@@ -8713,7 +8713,7 @@ export namespace Prisma {
     workLocationRestrictions: string | null
     billRateCurrency: string
     billRateAmount: string
-    priority: $Enums.LeadPriority
+    priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus
     convertedEngagementId: string | null
@@ -8887,7 +8887,7 @@ export namespace Prisma {
       workLocationRestrictions: string | null
       billRateCurrency: string
       billRateAmount: string
-      priority: $Enums.LeadPriority
+      priority: $Enums.LeadPriority | null
       additionalRequirements: string | null
       status: $Enums.EngagementLeadStatus
       convertedEngagementId: string | null
@@ -14531,7 +14531,7 @@ export namespace Prisma {
     workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
     billRateCurrency?: StringFilter<"EngagementLead"> | string
     billRateAmount?: StringFilter<"EngagementLead"> | string
-    priority?: EnumLeadPriorityFilter<"EngagementLead"> | $Enums.LeadPriority
+    priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
@@ -14561,7 +14561,7 @@ export namespace Prisma {
     workLocationRestrictions?: SortOrderInput | SortOrder
     billRateCurrency?: SortOrder
     billRateAmount?: SortOrder
-    priority?: SortOrder
+    priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
@@ -14594,7 +14594,7 @@ export namespace Prisma {
     workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
     billRateCurrency?: StringFilter<"EngagementLead"> | string
     billRateAmount?: StringFilter<"EngagementLead"> | string
-    priority?: EnumLeadPriorityFilter<"EngagementLead"> | $Enums.LeadPriority
+    priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
@@ -14624,7 +14624,7 @@ export namespace Prisma {
     workLocationRestrictions?: SortOrderInput | SortOrder
     billRateCurrency?: SortOrder
     billRateAmount?: SortOrder
-    priority?: SortOrder
+    priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
@@ -14662,7 +14662,7 @@ export namespace Prisma {
     workLocationRestrictions?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     billRateCurrency?: StringWithAggregatesFilter<"EngagementLead"> | string
     billRateAmount?: StringWithAggregatesFilter<"EngagementLead"> | string
-    priority?: EnumLeadPriorityWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority
+    priority?: EnumLeadPriorityNullableWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
@@ -15711,7 +15711,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency: string
     billRateAmount: string
-    priority: $Enums.LeadPriority
+    priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
@@ -15741,7 +15741,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency: string
     billRateAmount: string
-    priority: $Enums.LeadPriority
+    priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
@@ -15771,7 +15771,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: StringFieldUpdateOperationsInput | string
     billRateAmount?: StringFieldUpdateOperationsInput | string
-    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15801,7 +15801,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: StringFieldUpdateOperationsInput | string
     billRateAmount?: StringFieldUpdateOperationsInput | string
-    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15831,7 +15831,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency: string
     billRateAmount: string
-    priority: $Enums.LeadPriority
+    priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
@@ -15861,7 +15861,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: StringFieldUpdateOperationsInput | string
     billRateAmount?: StringFieldUpdateOperationsInput | string
-    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15891,7 +15891,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: StringFieldUpdateOperationsInput | string
     billRateAmount?: StringFieldUpdateOperationsInput | string
-    priority?: EnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority
+    priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -17040,11 +17040,11 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
-  export type EnumLeadPriorityFilter<$PrismaModel = never> = {
-    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    not?: NestedEnumLeadPriorityFilter<$PrismaModel> | $Enums.LeadPriority
+  export type EnumLeadPriorityNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumLeadPriorityNullableFilter<$PrismaModel> | $Enums.LeadPriority | null
   }
 
   export type EnumEngagementLeadStatusFilter<$PrismaModel = never> = {
@@ -17206,14 +17206,14 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
-  export type EnumLeadPriorityWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    not?: NestedEnumLeadPriorityWithAggregatesFilter<$PrismaModel> | $Enums.LeadPriority
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumLeadPriorityFilter<$PrismaModel>
-    _max?: NestedEnumLeadPriorityFilter<$PrismaModel>
+  export type EnumLeadPriorityNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumLeadPriorityNullableWithAggregatesFilter<$PrismaModel> | $Enums.LeadPriority | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumLeadPriorityNullableFilter<$PrismaModel>
+    _max?: NestedEnumLeadPriorityNullableFilter<$PrismaModel>
   }
 
   export type EnumEngagementLeadStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -17995,8 +17995,8 @@ export namespace Prisma {
     divide?: number
   }
 
-  export type EnumLeadPriorityFieldUpdateOperationsInput = {
-    set?: $Enums.LeadPriority
+  export type NullableEnumLeadPriorityFieldUpdateOperationsInput = {
+    set?: $Enums.LeadPriority | null
   }
 
   export type EnumEngagementLeadStatusFieldUpdateOperationsInput = {
@@ -18489,11 +18489,11 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
-  export type NestedEnumLeadPriorityFilter<$PrismaModel = never> = {
-    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    not?: NestedEnumLeadPriorityFilter<$PrismaModel> | $Enums.LeadPriority
+  export type NestedEnumLeadPriorityNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumLeadPriorityNullableFilter<$PrismaModel> | $Enums.LeadPriority | null
   }
 
   export type NestedEnumEngagementLeadStatusFilter<$PrismaModel = never> = {
@@ -18555,14 +18555,14 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
-  export type NestedEnumLeadPriorityWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel>
-    not?: NestedEnumLeadPriorityWithAggregatesFilter<$PrismaModel> | $Enums.LeadPriority
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumLeadPriorityFilter<$PrismaModel>
-    _max?: NestedEnumLeadPriorityFilter<$PrismaModel>
+  export type NestedEnumLeadPriorityNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LeadPriority | EnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    in?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.LeadPriority[] | ListEnumLeadPriorityFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumLeadPriorityNullableWithAggregatesFilter<$PrismaModel> | $Enums.LeadPriority | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumLeadPriorityNullableFilter<$PrismaModel>
+    _max?: NestedEnumLeadPriorityNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumEngagementLeadStatusWithAggregatesFilter<$PrismaModel = never> = {

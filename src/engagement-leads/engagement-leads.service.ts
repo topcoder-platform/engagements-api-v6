@@ -91,7 +91,7 @@ export class EngagementLeadsService {
           intakeDto.workLocationRestrictions?.trim() || null,
         billRateCurrency: intakeDto.billRateCurrency.trim().toUpperCase(),
         billRateAmount: intakeDto.billRateAmount.trim(),
-        priority: intakeDto.priority,
+        priority: intakeDto.priority ?? null,
         additionalRequirements:
           intakeDto.additionalRequirements?.trim() || null,
         status: EngagementLeadStatus.SUBMITTED,
@@ -158,14 +158,14 @@ export class EngagementLeadsService {
     }
 
     if (query.priority) {
-      where.priority = query.priority as Prisma.EnumLeadPriorityFilter["equals"];
+      where.priority = query.priority;
     }
 
     const sortBy = query.sortBy ?? EngagementLeadSortField.CREATED_AT;
     const sortOrder = query.sortOrder ?? "desc";
     const orderBy: Prisma.EngagementLeadOrderByWithRelationInput =
       sortBy === EngagementLeadSortField.PRIORITY
-        ? { priority: sortOrder }
+        ? { priority: { sort: sortOrder, nulls: "last" } }
         : sortBy === EngagementLeadSortField.PREFERRED_START_DATE
           ? { preferredStartDate: sortOrder }
           : { createdAt: sortOrder };

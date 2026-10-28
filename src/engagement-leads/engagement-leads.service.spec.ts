@@ -22,6 +22,7 @@ describe("EngagementLeadsService", () => {
     engagementLead: {
       findMany: jest.Mock;
       count: jest.Mock;
+      create: jest.Mock;
     };
   };
 
@@ -30,6 +31,11 @@ describe("EngagementLeadsService", () => {
       engagementLead: {
         findMany: jest.fn().mockResolvedValue([]),
         count: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockImplementation(({ data }) => ({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })),
       },
     };
     service = new EngagementLeadsService(db as any);
@@ -146,6 +152,50 @@ describe("EngagementLeadsService", () => {
           orderBy: { preferredStartDate: "asc" },
         }),
       );
+    });
+
+    it("sorts leads without a priority last", async () => {
+      await service.findAll({
+        page: 1,
+        perPage: 10,
+        sortBy: EngagementLeadSortField.PRIORITY,
+        sortOrder: "desc",
+      } as EngagementLeadQueryDto);
+
+      expect(db.engagementLead.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { priority: { sort: "desc", nulls: "last" } },
+        }),
+      );
+    });
+  });
+
+  describe("createFromIntake", () => {
+    it("stores a null priority when the intake does not provide one", async () => {
+      const result = await service.createFromIntake({
+        workEmail: "john.doe@wipro.com",
+        accountName: "ABC Bank",
+        smu: "EURP",
+        engagementModel: EngagementModel.TIME_AND_MATERIAL,
+        roleTitle: "QA Engineer",
+        jobDescription: "Test the product.",
+        requiredSkills: ["Java"],
+        experienceLevel: ExperienceLevel.MID,
+        minYearsExperience: 3,
+        resourcesRequired: 1,
+        preferredStartDate: "2026-11-01T00:00:00.000Z",
+        engagementDuration: "6 months",
+        workingHoursPerDay: 8,
+        timeZoneRequirement: "IST",
+        remoteWorkAccepted: true,
+        billRateCurrency: "USD",
+        billRateAmount: "100",
+      });
+
+      expect(db.engagementLead.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ priority: null }),
+      });
+      expect(result.priority).toBeNull();
     });
   });
 });

@@ -200,13 +200,14 @@ export class CreateEngagementLeadIntakeDto {
   @MaxLength(50)
   billRateAmount: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: "Priority of the request",
     enum: LeadPriority,
     example: LeadPriority.HIGH,
   })
+  @IsOptional()
   @IsEnum(LeadPriority)
-  priority: LeadPriority;
+  priority?: LeadPriority;
 
   @ApiPropertyOptional({
     description: "Additional requirements or constraints",
