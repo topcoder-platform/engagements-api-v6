@@ -23,7 +23,9 @@ builddeploy_steps: &builddeploy_steps
   - setup_remote_docker
   - run: *install_dependency
   - run: *install_deploysuite
-  - run: docker buildx build --no-cache=true -t ${APPNAME}:latest .
+  - run:
+      name: Build image with Prisma startup migrations.
+      command: docker buildx build --load --no-cache=true -t ${APPNAME}:latest .
   - run:
       name: Running MasterScript.
       command: |
