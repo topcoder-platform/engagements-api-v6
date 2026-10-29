@@ -122,6 +122,11 @@ enum LeadPriority {
   LOW
 }
 
+enum EngagementLeadType {
+  WIPRO_CONSUMPTION
+  WIPRO_DIRECT
+}
+
 model Engagement {
   id                      String           @id @default(uuid())
   projectId               String
@@ -266,27 +271,31 @@ model MemberExperience {
 
 model EngagementLead {
   id                       String               @id @default(uuid())
+  leadType                 EngagementLeadType   @default(WIPRO_CONSUMPTION)
   workEmail                String
   accountName              String
   smu                      String
-  engagementModel          EngagementModel
-  roleTitle                String
+  engagementModel          EngagementModel?
+  roleTitle                String?
   jobDescription           String
   requiredSkills           String[]
-  experienceLevel          ExperienceLevel
-  minYearsExperience       Int
+  experienceLevel          ExperienceLevel?
+  minYearsExperience       Int?
   industryDomain           String?
   resourcesRequired        Int
-  preferredStartDate       DateTime
+  preferredStartDate       DateTime?
   engagementDuration       String
   workingHoursPerDay       Float
   timeZoneRequirement      String
   remoteWorkAccepted       Boolean
   workLocationRestrictions String?
-  billRateCurrency         String
-  billRateAmount           String
-  priority                 LeadPriority
+  billRateCurrency         String?
+  billRateAmount           String?
+  priority                 LeadPriority?
   additionalRequirements   String?
+  notes                    String?
+  notesUpdatedAt           DateTime?
+  notesUpdatedBy           String?
   status                   EngagementLeadStatus @default(SUBMITTED)
   convertedEngagementId    String?
   createdAt                DateTime             @default(now())
@@ -294,6 +303,7 @@ model EngagementLead {
   updatedBy                String?
 
   @@index([status])
+  @@index([leadType])
   @@index([workEmail])
   @@index([accountName])
   @@index([createdAt])

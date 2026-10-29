@@ -9,6 +9,7 @@ import {
 } from "class-validator";
 import {
   EngagementLeadStatus,
+  EngagementLeadType,
   EngagementModel,
   ExperienceLevel,
   LeadPriority,
@@ -17,6 +18,7 @@ import { PaginationDto } from "../../engagements/dto";
 
 export enum EngagementLeadStatusGroup {
   NEW = "NEW",
+  IN_PROGRESS = "IN_PROGRESS",
   CONVERTED = "CONVERTED",
   DECLINED = "DECLINED",
 }
@@ -28,6 +30,14 @@ export enum EngagementLeadSortField {
 }
 
 export class EngagementLeadQueryDto extends PaginationDto {
+  @ApiPropertyOptional({
+    description: "Filter by the intake form the lead was submitted through",
+    enum: EngagementLeadType,
+  })
+  @IsOptional()
+  @IsEnum(EngagementLeadType)
+  leadType?: EngagementLeadType;
+
   @ApiPropertyOptional({
     description: "Filter by account or customer name",
   })
@@ -119,6 +129,17 @@ export class UpdateEngagementLeadStatusDto {
   status: EngagementLeadStatus;
 }
 
+export class UpdateEngagementLeadNotesDto {
+  @ApiProperty({
+    description:
+      "Talent Manager notes for the lead. An empty value clears the notes.",
+    example: "Customer prefers candidates with banking experience.",
+  })
+  @IsString()
+  @MaxLength(5000)
+  notes: string;
+}
+
 export class MarkEngagementLeadConvertedDto {
   @ApiProperty({
     description: "ID of the engagement created from this lead",
@@ -133,6 +154,9 @@ export class EngagementLeadResponseDto {
   @ApiProperty()
   id: string;
 
+  @ApiProperty({ enum: EngagementLeadType })
+  leadType: string;
+
   @ApiProperty()
   workEmail: string;
 
@@ -142,11 +166,11 @@ export class EngagementLeadResponseDto {
   @ApiProperty()
   smu: string;
 
-  @ApiProperty()
-  engagementModel: string;
+  @ApiPropertyOptional()
+  engagementModel?: string | null;
 
-  @ApiProperty()
-  roleTitle: string;
+  @ApiPropertyOptional()
+  roleTitle?: string | null;
 
   @ApiProperty()
   jobDescription: string;
@@ -154,11 +178,11 @@ export class EngagementLeadResponseDto {
   @ApiProperty({ type: [String] })
   requiredSkills: string[];
 
-  @ApiProperty()
-  experienceLevel: string;
+  @ApiPropertyOptional()
+  experienceLevel?: string | null;
 
-  @ApiProperty()
-  minYearsExperience: number;
+  @ApiPropertyOptional()
+  minYearsExperience?: number | null;
 
   @ApiPropertyOptional()
   industryDomain?: string | null;
@@ -166,8 +190,8 @@ export class EngagementLeadResponseDto {
   @ApiProperty()
   resourcesRequired: number;
 
-  @ApiProperty()
-  preferredStartDate: Date;
+  @ApiPropertyOptional()
+  preferredStartDate?: Date | null;
 
   @ApiProperty()
   engagementDuration: string;
@@ -184,17 +208,26 @@ export class EngagementLeadResponseDto {
   @ApiPropertyOptional()
   workLocationRestrictions?: string | null;
 
-  @ApiProperty()
-  billRateCurrency: string;
+  @ApiPropertyOptional()
+  billRateCurrency?: string | null;
 
-  @ApiProperty()
-  billRateAmount: string;
+  @ApiPropertyOptional()
+  billRateAmount?: string | null;
 
-  @ApiProperty()
-  priority: string;
+  @ApiPropertyOptional()
+  priority?: string | null;
 
   @ApiPropertyOptional()
   additionalRequirements?: string | null;
+
+  @ApiPropertyOptional()
+  notes?: string | null;
+
+  @ApiPropertyOptional()
+  notesUpdatedAt?: Date | null;
+
+  @ApiPropertyOptional()
+  notesUpdatedBy?: string | null;
 
   @ApiProperty()
   status: string;

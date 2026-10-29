@@ -34,11 +34,13 @@ import { PaginatedResponse } from "../engagements/dto";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
 import {
   CreateEngagementLeadIntakeDto,
+  CreateWiproDirectEngagementLeadIntakeDto,
   EngagementLeadIntakeResponseDto,
   EngagementLeadPrefillDto,
   EngagementLeadQueryDto,
   EngagementLeadResponseDto,
   MarkEngagementLeadConvertedDto,
+  UpdateEngagementLeadNotesDto,
   UpdateEngagementLeadStatusDto,
 } from "./dto";
 import { EngagementLeadsService } from "./engagement-leads.service";
@@ -50,7 +52,9 @@ export class EngagementLeadsController {
     [UserRoles.Admin, ...TalentManagerRoles].map((role) => role.toLowerCase()),
   );
 
-  constructor(private readonly engagementLeadsService: EngagementLeadsService) {}
+  constructor(
+    private readonly engagementLeadsService: EngagementLeadsService,
+  ) {}
 
   @Post("intake")
   @ApiOperation({
@@ -70,6 +74,33 @@ export class EngagementLeadsController {
     @Body() intakeDto: CreateEngagementLeadIntakeDto,
   ): Promise<EngagementLeadIntakeResponseDto> {
     const lead = await this.engagementLeadsService.createFromIntake(intakeDto);
+
+    return {
+      id: lead.id,
+      message:
+        "Your engagement request has been submitted successfully. A Talent Manager will review it shortly.",
+    };
+  }
+
+  @Post("intake/wipro-direct")
+  @ApiOperation({
+    summary: "Submit Wipro Direct engagement lead intake form",
+    description:
+      "Public endpoint for Wipro Direct customers to submit engagement requirements without authentication.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Engagement lead submitted.",
+    type: EngagementLeadIntakeResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid request payload.",
+  })
+  async submitWiproDirectIntake(
+    @Body() intakeDto: CreateWiproDirectEngagementLeadIntakeDto,
+  ): Promise<EngagementLeadIntakeResponseDto> {
+    const lead =
+      await this.engagementLeadsService.createFromWiproDirectIntake(intakeDto);
 
     return {
       id: lead.id,
@@ -180,6 +211,42 @@ export class EngagementLeadsController {
     this.assertLeadManager(req.authUser);
     const updatedBy = getUserIdentifier(req.authUser);
     return this.engagementLeadsService.updateStatus(id, updateDto, updatedBy);
+  }
+
+  @Patch(":id/notes")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Update engagement lead notes",
+    description:
+      "Saves Talent Manager notes on an engagement lead. Notes cannot be changed once the lead is converted.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Engagement lead notes updated.",
+    type: EngagementLeadResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "The lead has been converted.",
+  })
+  async updateNotes(
+    @Param("id") id: string,
+    @Body() updateDto: UpdateEngagementLeadNotesDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementLeadResponseDto> {
+    this.assertLeadManager(req.authUser);
+    // Notes show who last edited them, so prefer the readable handle over the user ID.
+    const handle =
+      typeof req.authUser?.handle === "string"
+        ? req.authUser.handle.trim()
+        : "";
+    const updatedBy = handle || getUserIdentifier(req.authUser);
+    return this.engagementLeadsService.updateNotes(
+      id,
+      updateDto.notes,
+      updatedBy,
+    );
   }
 
   @Patch(":id/convert")
