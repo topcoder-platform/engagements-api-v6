@@ -8450,6 +8450,9 @@ export namespace Prisma {
     billRateAmount: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
+    notes: string | null
+    notesUpdatedAt: Date | null
+    notesUpdatedBy: string | null
     status: $Enums.EngagementLeadStatus | null
     convertedEngagementId: string | null
     createdAt: Date | null
@@ -8480,6 +8483,9 @@ export namespace Prisma {
     billRateAmount: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
+    notes: string | null
+    notesUpdatedAt: Date | null
+    notesUpdatedBy: string | null
     status: $Enums.EngagementLeadStatus | null
     convertedEngagementId: string | null
     createdAt: Date | null
@@ -8511,6 +8517,9 @@ export namespace Prisma {
     billRateAmount: number
     priority: number
     additionalRequirements: number
+    notes: number
+    notesUpdatedAt: number
+    notesUpdatedBy: number
     status: number
     convertedEngagementId: number
     createdAt: number
@@ -8555,6 +8564,9 @@ export namespace Prisma {
     billRateAmount?: true
     priority?: true
     additionalRequirements?: true
+    notes?: true
+    notesUpdatedAt?: true
+    notesUpdatedBy?: true
     status?: true
     convertedEngagementId?: true
     createdAt?: true
@@ -8585,6 +8597,9 @@ export namespace Prisma {
     billRateAmount?: true
     priority?: true
     additionalRequirements?: true
+    notes?: true
+    notesUpdatedAt?: true
+    notesUpdatedBy?: true
     status?: true
     convertedEngagementId?: true
     createdAt?: true
@@ -8616,6 +8631,9 @@ export namespace Prisma {
     billRateAmount?: true
     priority?: true
     additionalRequirements?: true
+    notes?: true
+    notesUpdatedAt?: true
+    notesUpdatedBy?: true
     status?: true
     convertedEngagementId?: true
     createdAt?: true
@@ -8734,6 +8752,9 @@ export namespace Prisma {
     billRateAmount: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
+    notes: string | null
+    notesUpdatedAt: Date | null
+    notesUpdatedBy: string | null
     status: $Enums.EngagementLeadStatus
     convertedEngagementId: string | null
     createdAt: Date
@@ -8784,6 +8805,9 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
+    notes?: boolean
+    notesUpdatedAt?: boolean
+    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
@@ -8815,6 +8839,9 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
+    notes?: boolean
+    notesUpdatedAt?: boolean
+    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
@@ -8846,6 +8873,9 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
+    notes?: boolean
+    notesUpdatedAt?: boolean
+    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
@@ -8877,6 +8907,9 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
+    notes?: boolean
+    notesUpdatedAt?: boolean
+    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
@@ -8884,7 +8917,7 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
+  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "notes" | "notesUpdatedAt" | "notesUpdatedBy" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
 
   export type $EngagementLeadPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EngagementLead"
@@ -8913,6 +8946,9 @@ export namespace Prisma {
       billRateAmount: string | null
       priority: $Enums.LeadPriority | null
       additionalRequirements: string | null
+      notes: string | null
+      notesUpdatedAt: Date | null
+      notesUpdatedBy: string | null
       status: $Enums.EngagementLeadStatus
       convertedEngagementId: string | null
       createdAt: Date
@@ -9364,6 +9400,9 @@ export namespace Prisma {
     readonly billRateAmount: FieldRef<"EngagementLead", 'String'>
     readonly priority: FieldRef<"EngagementLead", 'LeadPriority'>
     readonly additionalRequirements: FieldRef<"EngagementLead", 'String'>
+    readonly notes: FieldRef<"EngagementLead", 'String'>
+    readonly notesUpdatedAt: FieldRef<"EngagementLead", 'DateTime'>
+    readonly notesUpdatedBy: FieldRef<"EngagementLead", 'String'>
     readonly status: FieldRef<"EngagementLead", 'EngagementLeadStatus'>
     readonly convertedEngagementId: FieldRef<"EngagementLead", 'String'>
     readonly createdAt: FieldRef<"EngagementLead", 'DateTime'>
@@ -13514,6 +13553,9 @@ export namespace Prisma {
     billRateAmount: 'billRateAmount',
     priority: 'priority',
     additionalRequirements: 'additionalRequirements',
+    notes: 'notes',
+    notesUpdatedAt: 'notesUpdatedAt',
+    notesUpdatedBy: 'notesUpdatedBy',
     status: 'status',
     convertedEngagementId: 'convertedEngagementId',
     createdAt: 'createdAt',
@@ -14574,6 +14616,9 @@ export namespace Prisma {
     billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
+    notes?: StringNullableFilter<"EngagementLead"> | string | null
+    notesUpdatedAt?: DateTimeNullableFilter<"EngagementLead"> | Date | string | null
+    notesUpdatedBy?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
@@ -14605,6 +14650,9 @@ export namespace Prisma {
     billRateAmount?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
+    notes?: SortOrderInput | SortOrder
+    notesUpdatedAt?: SortOrderInput | SortOrder
+    notesUpdatedBy?: SortOrderInput | SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -14639,6 +14687,9 @@ export namespace Prisma {
     billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
+    notes?: StringNullableFilter<"EngagementLead"> | string | null
+    notesUpdatedAt?: DateTimeNullableFilter<"EngagementLead"> | Date | string | null
+    notesUpdatedBy?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
@@ -14670,6 +14721,9 @@ export namespace Prisma {
     billRateAmount?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
+    notes?: SortOrderInput | SortOrder
+    notesUpdatedAt?: SortOrderInput | SortOrder
+    notesUpdatedBy?: SortOrderInput | SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -14709,6 +14763,9 @@ export namespace Prisma {
     billRateAmount?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    notes?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    notesUpdatedAt?: DateTimeNullableWithAggregatesFilter<"EngagementLead"> | Date | string | null
+    notesUpdatedBy?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
@@ -15759,6 +15816,9 @@ export namespace Prisma {
     billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
+    notes?: string | null
+    notesUpdatedAt?: Date | string | null
+    notesUpdatedBy?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
     createdAt?: Date | string
@@ -15790,6 +15850,9 @@ export namespace Prisma {
     billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
+    notes?: string | null
+    notesUpdatedAt?: Date | string | null
+    notesUpdatedBy?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
     createdAt?: Date | string
@@ -15821,6 +15884,9 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15852,6 +15918,9 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15883,6 +15952,9 @@ export namespace Prisma {
     billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
+    notes?: string | null
+    notesUpdatedAt?: Date | string | null
+    notesUpdatedBy?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
     createdAt?: Date | string
@@ -15914,6 +15986,9 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15945,6 +16020,9 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17137,6 +17215,9 @@ export namespace Prisma {
     billRateAmount?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
+    notes?: SortOrder
+    notesUpdatedAt?: SortOrder
+    notesUpdatedBy?: SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
@@ -17173,6 +17254,9 @@ export namespace Prisma {
     billRateAmount?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
+    notes?: SortOrder
+    notesUpdatedAt?: SortOrder
+    notesUpdatedBy?: SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
@@ -17203,6 +17287,9 @@ export namespace Prisma {
     billRateAmount?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
+    notes?: SortOrder
+    notesUpdatedAt?: SortOrder
+    notesUpdatedBy?: SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder

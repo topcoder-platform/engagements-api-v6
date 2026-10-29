@@ -293,6 +293,9 @@ model EngagementLead {
   billRateAmount           String?
   priority                 LeadPriority?
   additionalRequirements   String?
+  notes                    String?
+  notesUpdatedAt           DateTime?
+  notesUpdatedBy           String?
   status                   EngagementLeadStatus @default(SUBMITTED)
   convertedEngagementId    String?
   createdAt                DateTime             @default(now())

@@ -31,7 +31,9 @@ export class EngagementLeadsService {
 
   constructor(private readonly db: DbService) {}
 
-  private transformToResponseDto(lead: EngagementLead): EngagementLeadResponseDto {
+  private transformToResponseDto(
+    lead: EngagementLead,
+  ): EngagementLeadResponseDto {
     return {
       id: lead.id,
       leadType: lead.leadType,
@@ -56,6 +58,9 @@ export class EngagementLeadsService {
       billRateAmount: lead.billRateAmount,
       priority: lead.priority,
       additionalRequirements: lead.additionalRequirements,
+      notes: lead.notes,
+      notesUpdatedAt: lead.notesUpdatedAt,
+      notesUpdatedBy: lead.notesUpdatedBy,
       status: lead.status,
       convertedEngagementId: lead.convertedEngagementId,
       createdAt: lead.createdAt,
@@ -178,9 +183,10 @@ export class EngagementLeadsService {
 
     if (query.statusGroup) {
       if (query.statusGroup === EngagementLeadStatusGroup.NEW) {
+        where.status = EngagementLeadStatus.SUBMITTED;
+      } else if (query.statusGroup === EngagementLeadStatusGroup.IN_PROGRESS) {
         where.status = {
           in: [
-            EngagementLeadStatus.SUBMITTED,
             EngagementLeadStatus.UNDER_REVIEW,
             EngagementLeadStatus.QUALIFIED,
           ],
@@ -264,6 +270,37 @@ export class EngagementLeadsService {
       data: {
         status: updateDto.status,
         updatedBy: updatedBy ?? null,
+      },
+    });
+
+    return this.transformToResponseDto(updated);
+  }
+
+  async updateNotes(
+    id: string,
+    notes: string,
+    updatedBy?: string,
+  ): Promise<EngagementLeadResponseDto> {
+    const lead = await this.db.engagementLead.findUnique({
+      where: { id },
+    });
+
+    if (!lead) {
+      throw new NotFoundException("Engagement lead not found.");
+    }
+
+    if (lead.status === EngagementLeadStatus.CONVERTED) {
+      throw new BadRequestException(
+        "Cannot update notes of a converted engagement lead.",
+      );
+    }
+
+    const updated = await this.db.engagementLead.update({
+      where: { id },
+      data: {
+        notes: notes.trim() || null,
+        notesUpdatedAt: new Date(),
+        notesUpdatedBy: updatedBy ?? null,
       },
     });
 

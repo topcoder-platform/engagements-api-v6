@@ -18,6 +18,7 @@ import { PaginationDto } from "../../engagements/dto";
 
 export enum EngagementLeadStatusGroup {
   NEW = "NEW",
+  IN_PROGRESS = "IN_PROGRESS",
   CONVERTED = "CONVERTED",
   DECLINED = "DECLINED",
 }
@@ -128,6 +129,17 @@ export class UpdateEngagementLeadStatusDto {
   status: EngagementLeadStatus;
 }
 
+export class UpdateEngagementLeadNotesDto {
+  @ApiProperty({
+    description:
+      "Talent Manager notes for the lead. An empty value clears the notes.",
+    example: "Customer prefers candidates with banking experience.",
+  })
+  @IsString()
+  @MaxLength(5000)
+  notes: string;
+}
+
 export class MarkEngagementLeadConvertedDto {
   @ApiProperty({
     description: "ID of the engagement created from this lead",
@@ -207,6 +219,15 @@ export class EngagementLeadResponseDto {
 
   @ApiPropertyOptional()
   additionalRequirements?: string | null;
+
+  @ApiPropertyOptional()
+  notes?: string | null;
+
+  @ApiPropertyOptional()
+  notesUpdatedAt?: Date | null;
+
+  @ApiPropertyOptional()
+  notesUpdatedBy?: string | null;
 
   @ApiProperty()
   status: string;

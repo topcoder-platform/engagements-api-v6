@@ -1,4 +1,8 @@
-import { ValidationPipe } from "@nestjs/common";
+import {
+  BadRequestException,
+  NotFoundException,
+  ValidationPipe,
+} from "@nestjs/common";
 import {
   EngagementLeadStatus,
   EngagementLeadType,
@@ -26,6 +30,7 @@ describe("EngagementLeadsService", () => {
       count: jest.Mock;
       create: jest.Mock;
       findUnique: jest.Mock;
+      update: jest.Mock;
     };
   };
 
@@ -40,6 +45,10 @@ describe("EngagementLeadsService", () => {
           updatedAt: new Date(),
         })),
         findUnique: jest.fn(),
+        update: jest.fn().mockImplementation(({ where, data }) => ({
+          id: where.id,
+          ...data,
+        })),
       },
     };
     service = new EngagementLeadsService(db as any);
@@ -115,7 +124,7 @@ describe("EngagementLeadsService", () => {
       );
     });
 
-    it("applies statusGroup NEW filter", async () => {
+    it("applies statusGroup NEW filter to submitted leads only", async () => {
       await service.findAll({
         page: 1,
         perPage: 10,
@@ -124,10 +133,23 @@ describe("EngagementLeadsService", () => {
 
       expect(db.engagementLead.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { status: EngagementLeadStatus.SUBMITTED },
+        }),
+      );
+    });
+
+    it("applies statusGroup IN_PROGRESS filter to leads under review or qualified", async () => {
+      await service.findAll({
+        page: 1,
+        perPage: 10,
+        statusGroup: EngagementLeadStatusGroup.IN_PROGRESS,
+      });
+
+      expect(db.engagementLead.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
           where: {
             status: {
               in: [
-                EngagementLeadStatus.SUBMITTED,
                 EngagementLeadStatus.UNDER_REVIEW,
                 EngagementLeadStatus.QUALIFIED,
               ],
@@ -217,6 +239,66 @@ describe("EngagementLeadsService", () => {
         }),
       });
       expect(result.priority).toBeNull();
+    });
+  });
+
+  describe("updateNotes", () => {
+    it("saves trimmed notes with who changed them", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: EngagementLeadStatus.UNDER_REVIEW,
+      });
+
+      const result = await service.updateNotes(
+        "lead-1",
+        "  Call back next week.  ",
+        "tm-handle",
+      );
+
+      expect(db.engagementLead.update).toHaveBeenCalledWith({
+        where: { id: "lead-1" },
+        data: {
+          notes: "Call back next week.",
+          notesUpdatedAt: expect.any(Date),
+          notesUpdatedBy: "tm-handle",
+        },
+      });
+      expect(result.notes).toBe("Call back next week.");
+    });
+
+    it("clears the notes when given only whitespace", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: EngagementLeadStatus.SUBMITTED,
+      });
+
+      await service.updateNotes("lead-1", "   ");
+
+      expect(db.engagementLead.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ notes: null }),
+        }),
+      );
+    });
+
+    it("rejects notes changes on a converted lead", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: EngagementLeadStatus.CONVERTED,
+      });
+
+      await expect(
+        service.updateNotes("lead-1", "Too late."),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(db.engagementLead.update).not.toHaveBeenCalled();
+    });
+
+    it("throws when the lead does not exist", async () => {
+      db.engagementLead.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.updateNotes("missing", "Note"),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
