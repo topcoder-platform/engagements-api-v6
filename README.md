@@ -37,6 +37,19 @@ pnpm prisma:migrate
 pnpm start:dev
 ```
 
+## Deployment
+
+CircleCI builds and deploys the service to ECS on every push matching the
+branch or tag filters in `.circleci/config.yml`. Both development and production
+images run `appStartUp.sh`, which applies committed Prisma migrations with
+`prisma migrate deploy` before starting the API. It uses the deployed
+`DATABASE_URL`; a failed migration stops the container before the API starts.
+Container restarts run the same check and skip migrations already applied.
+
+The production image includes the Prisma CLI, schema, configuration, and
+`prisma/migrations` directory. To apply the same migrations manually with the
+appropriate `DATABASE_URL` configured, run `pnpm prisma:migrate:deploy`.
+
 ## External Prisma client
 
 Services that aggregate engagement data directly can install the
