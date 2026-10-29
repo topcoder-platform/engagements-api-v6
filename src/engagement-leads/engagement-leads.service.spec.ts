@@ -33,6 +33,7 @@ describe("EngagementLeadsService", () => {
       update: jest.Mock;
     };
   };
+  let skillsService: { resolveSkillFilterValues: jest.Mock };
 
   beforeEach(() => {
     db = {
@@ -51,7 +52,14 @@ describe("EngagementLeadsService", () => {
         })),
       },
     };
-    service = new EngagementLeadsService(db as any);
+    skillsService = {
+      resolveSkillFilterValues: jest.fn().mockResolvedValue({
+        skillIds: [],
+        skillNamesById: new Map(),
+        unresolvedNames: [],
+      }),
+    };
+    service = new EngagementLeadsService(db as any, skillsService as any);
   });
 
   describe("findAll", () => {
@@ -348,36 +356,38 @@ describe("EngagementLeadsService", () => {
   });
 
   describe("getEngagementPrefill", () => {
+    const directLead = {
+      id: "lead-1",
+      leadType: EngagementLeadType.WIPRO_DIRECT,
+      workEmail: "jane.doe@customer.com",
+      accountName: "ABC Bank",
+      smu: "AMR1",
+      engagementModel: null,
+      roleTitle: null,
+      jobDescription: "Build the product.",
+      requiredSkills: ["React"],
+      experienceLevel: null,
+      minYearsExperience: null,
+      industryDomain: null,
+      resourcesRequired: 2,
+      preferredStartDate: null,
+      engagementDuration: "3 months",
+      workingHoursPerDay: 8,
+      timeZoneRequirement: "EST",
+      remoteWorkAccepted: true,
+      workLocationRestrictions: null,
+      billRateCurrency: null,
+      billRateAmount: null,
+      priority: null,
+      additionalRequirements: null,
+      status: EngagementLeadStatus.QUALIFIED,
+      convertedEngagementId: null,
+      createdAt: new Date("2026-10-28T00:00:00.000Z"),
+      updatedAt: new Date("2026-10-28T00:00:00.000Z"),
+    };
+
     it("maps a Wipro Direct lead without the consumption-only fields", async () => {
-      db.engagementLead.findUnique.mockResolvedValue({
-        id: "lead-1",
-        leadType: EngagementLeadType.WIPRO_DIRECT,
-        workEmail: "jane.doe@customer.com",
-        accountName: "ABC Bank",
-        smu: "AMR1",
-        engagementModel: null,
-        roleTitle: null,
-        jobDescription: "Build the product.",
-        requiredSkills: ["React"],
-        experienceLevel: null,
-        minYearsExperience: null,
-        industryDomain: null,
-        resourcesRequired: 2,
-        preferredStartDate: null,
-        engagementDuration: "3 months",
-        workingHoursPerDay: 8,
-        timeZoneRequirement: "EST",
-        remoteWorkAccepted: true,
-        workLocationRestrictions: null,
-        billRateCurrency: null,
-        billRateAmount: null,
-        priority: null,
-        additionalRequirements: null,
-        status: EngagementLeadStatus.QUALIFIED,
-        convertedEngagementId: null,
-        createdAt: new Date("2026-10-28T00:00:00.000Z"),
-        updatedAt: new Date("2026-10-28T00:00:00.000Z"),
-      });
+      db.engagementLead.findUnique.mockResolvedValue(directLead);
 
       const prefill = await service.getEngagementPrefill("lead-1");
 
@@ -396,6 +406,39 @@ describe("EngagementLeadsService", () => {
         timeZones: ["EST"],
         countries: ["ANY"],
       });
+    });
+
+    it("matches the intake skill names to standardized skills", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        ...directLead,
+        requiredSkills: ["React", "Node.js", "Legacy Skill"],
+      });
+      skillsService.resolveSkillFilterValues.mockResolvedValue({
+        skillIds: ["skill-react", "skill-node"],
+        skillNamesById: new Map([
+          ["skill-react", "React"],
+          ["skill-node", "Node.js"],
+        ]),
+        unresolvedNames: ["Legacy Skill"],
+      });
+
+      const prefill = await service.getEngagementPrefill("lead-1");
+
+      expect(skillsService.resolveSkillFilterValues).toHaveBeenCalledWith([
+        "React",
+        "Node.js",
+        "Legacy Skill",
+      ]);
+      expect(prefill.requiredSkills).toEqual([
+        { id: "skill-react", name: "React" },
+        { id: "skill-node", name: "Node.js" },
+      ]);
+      expect(prefill.unresolvedSkillNames).toEqual(["Legacy Skill"]);
+      expect(prefill.requiredSkillNames).toEqual([
+        "React",
+        "Node.js",
+        "Legacy Skill",
+      ]);
     });
   });
 });

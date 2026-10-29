@@ -250,6 +250,14 @@ export class EngagementLeadIntakeResponseDto {
   message: string;
 }
 
+export class EngagementLeadPrefillSkillDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+}
+
 export class EngagementLeadPrefillDto {
   @ApiProperty()
   account: string;
@@ -268,6 +276,20 @@ export class EngagementLeadPrefillDto {
 
   @ApiProperty({ type: [String] })
   requiredSkillNames: string[];
+
+  @ApiProperty({
+    description:
+      "Standardized skills matched to the intake form's skill names, ready to use as engagement skills.",
+    type: [EngagementLeadPrefillSkillDto],
+  })
+  requiredSkills: EngagementLeadPrefillSkillDto[];
+
+  @ApiProperty({
+    description:
+      "Intake form skill names that did not match a standardized skill and must be added by hand.",
+    type: [String],
+  })
+  unresolvedSkillNames: string[];
 
   @ApiPropertyOptional()
   roleLevel?: string | null;

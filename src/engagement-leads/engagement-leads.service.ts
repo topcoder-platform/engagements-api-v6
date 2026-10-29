@@ -13,6 +13,7 @@ import {
 } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { DbService } from "../db/db.service";
+import { SkillsService } from "../integrations/skills.service";
 import { PaginatedResponse } from "../engagements/dto";
 import {
   CreateEngagementLeadIntakeDto,
@@ -29,7 +30,10 @@ import {
 export class EngagementLeadsService {
   private readonly logger = new Logger(EngagementLeadsService.name);
 
-  constructor(private readonly db: DbService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly skillsService: SkillsService,
+  ) {}
 
   private transformToResponseDto(
     lead: EngagementLead,
@@ -336,13 +340,27 @@ export class EngagementLeadsService {
     return this.transformToResponseDto(updated);
   }
 
-  getEngagementPrefill(id: string): Promise<EngagementLeadPrefillDto> {
-    return this.findOne(id).then((lead) => this.mapLeadToPrefill(lead));
+  async getEngagementPrefill(id: string): Promise<EngagementLeadPrefillDto> {
+    const lead = await this.findOne(id);
+    // Leads keep the skill names picked on the intake form, while engagements need standardized
+    // skill ids, so the names are matched here and only the misses are left for the TM.
+    const skillResolution = await this.skillsService.resolveSkillFilterValues(
+      lead.requiredSkills,
+    );
+
+    return {
+      ...this.mapLeadToPrefill(lead),
+      requiredSkills: skillResolution.skillIds.map((skillId) => ({
+        id: skillId,
+        name: skillResolution.skillNamesById.get(skillId) ?? skillId,
+      })),
+      unresolvedSkillNames: skillResolution.unresolvedNames,
+    };
   }
 
   private mapLeadToPrefill(
     lead: EngagementLeadResponseDto,
-  ): EngagementLeadPrefillDto {
+  ): Omit<EngagementLeadPrefillDto, "requiredSkills" | "unresolvedSkillNames"> {
     const descriptionParts = [lead.jobDescription];
 
     if (lead.industryDomain) {
