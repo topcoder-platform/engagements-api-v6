@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { PaymentCycle } from "@prisma/client";
 import { Transform } from "class-transformer";
-import { IsOptional, IsString, MaxLength } from "class-validator";
+import { IsBoolean, IsOptional, IsString, MaxLength } from "class-validator";
+import { transformBoolean } from "../../common/validation.util";
 import { PaginationDto } from "../../engagements/dto";
 
 const trimOrUndefined = ({ value }: { value: unknown }) =>
@@ -27,6 +28,16 @@ export class ApprovedTimesheetQueryDto extends PaginationDto {
   @IsString()
   @MaxLength(100)
   assignee?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "When true, leave out timesheets on the test projects configured in TEST_PROJECT_IDS.",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(transformBoolean)
+  excludeTestProjects?: boolean;
 }
 
 export class ApprovedTimesheetRowDto {

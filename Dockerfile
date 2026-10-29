@@ -1,15 +1,15 @@
 # Keep build tooling aligned with the version used by local development.
-ARG NODE_VERSION=26.5.1
+ARG NODE_VERSION=26.12.1
 
 # ---- Base Stage ----
 FROM node:${NODE_VERSION}-alpine AS base
-RUN apk upgrade --no-cache
+RUN apk upgrade --no-cache && apk add --no-cache openssl
 WORKDIR /usr/src/app
 
 # ---- Tooling Stage ----
 FROM base AS tooling
 # Pin build tooling so dependency resolution remains reproducible.
-RUN npm install -g pnpm@11.15.1 prisma@7.8.0
+RUN npm install -g pnpm@11.15.1
 
 # ---- Dependencies Stage ----
 FROM tooling AS deps
@@ -32,10 +32,13 @@ RUN pnpm build
 FROM tooling AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 # Install into a clean virtual store so build-only packages are absent from the
-# final image, then generate the Prisma client with builder-only tooling.
+# final image. Download the migration engine during the build and generate the
+# client with the same locked Prisma CLI that runs startup migrations.
 RUN pnpm install --prod --frozen-lockfile --ignore-scripts \
-  && prisma generate --schema prisma/schema.prisma
+  && pnpm rebuild @prisma/engines \
+  && pnpm exec prisma generate --schema prisma/schema.prisma
 
 # ---- Production Stage ----
 # Install Alpine's dynamically linked Node.js build so the runtime uses the
@@ -45,7 +48,7 @@ ARG NODE_VERSION
 # Alpine replaces old APK patch versions. Keep the configured Node major while
 # accepting maintained patch releases and verify the selected runtime below.
 RUN apk upgrade --no-cache \
-  && apk add --no-cache "nodejs-current~${NODE_VERSION%%.*}" \
+  && apk add --no-cache "nodejs-current~${NODE_VERSION%%.*}" openssl \
   && test "$(node -p 'process.versions.node.split(".")[0]')" = "${NODE_VERSION%%.*}" \
   && addgroup -S app \
   && adduser -S -D -H -u 10001 -G app app
@@ -55,11 +58,15 @@ ENV NODE_ENV=production
 COPY --chown=app:app --from=build /usr/src/app/dist ./dist
 # Copy production dependencies from the deps stage
 COPY --chown=app:app --from=prod-deps /usr/src/app/node_modules ./node_modules
+COPY --chown=app:app --from=build /usr/src/app/package.json ./package.json
+COPY --chown=app:app --from=build /usr/src/app/prisma ./prisma
+COPY --chown=app:app --from=build /usr/src/app/prisma.config.ts ./prisma.config.ts
+COPY --chown=app:app --chmod=755 appStartUp.sh ./appStartUp.sh
 
 USER app
 
 # Expose the application port
 EXPOSE 3000
 
-# The command to run the application
-CMD ["node", "dist/src/main.js"]
+# Apply pending migrations before starting the application.
+CMD ["./appStartUp.sh"]

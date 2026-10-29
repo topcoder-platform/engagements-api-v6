@@ -37,6 +37,19 @@ pnpm prisma:migrate
 pnpm start:dev
 ```
 
+## Deployment
+
+CircleCI builds and deploys the service to ECS on every push matching the
+branch or tag filters in `.circleci/config.yml`. Both development and production
+images run `appStartUp.sh`, which applies committed Prisma migrations with
+`prisma migrate deploy` before starting the API. It uses the deployed
+`DATABASE_URL`; a failed migration stops the container before the API starts.
+Container restarts run the same check and skip migrations already applied.
+
+The production image includes the Prisma CLI, schema, configuration, and
+`prisma/migrations` directory. To apply the same migrations manually with the
+appropriate `DATABASE_URL` configured, run `pnpm prisma:migrate:deploy`.
+
 ## External Prisma client
 
 Services that aggregate engagement data directly can install the
@@ -84,6 +97,7 @@ Set the following environment variables (see `.env.example` for defaults):
 | `PLATFORM_UI_BASE_URL` | Platform UI base URL used to generate anonymous feedback links. |
 | `FLEXI_TALENT_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs excluded from all Flexi Talent engagement and member responses. |
 | `TIMESHEET_IGNORED_PROJECT_IDS` | Comma-separated Work project IDs (e.g. test projects) excluded from the timesheet landing list (`GET /timesheets/engagements`) for every viewer. |
+| `TEST_PROJECT_IDS` | Comma-separated Work project IDs treated as test projects. Left out of `GET /engagements` and `GET /timesheets/approved` only when the caller passes `excludeTestProjects=true` (the Work App "Hide test projects" checkbox). |
 | `AUTH0_URL` | Auth0 token endpoint for M2M client credentials. |
 | `M2M_CLIENT_ID` | Auth0 M2M client ID. |
 | `M2M_CLIENT_SECRET` | Auth0 M2M client secret. |

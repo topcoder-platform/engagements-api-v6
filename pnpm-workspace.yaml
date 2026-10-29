@@ -4,8 +4,7 @@ packages:
 
 # The existing bus wrapper intentionally consumes tc-core-library-js from GitHub.
 blockExoticSubdeps: false
-# Prisma is a build-time peer of @prisma/client; do not auto-install it in the
-# production-only dependency stage.
+# Keep production dependencies explicit, including Prisma for startup migrations.
 autoInstallPeers: false
 
 overrides:

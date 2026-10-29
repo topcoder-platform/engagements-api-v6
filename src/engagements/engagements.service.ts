@@ -24,6 +24,7 @@ import { nanoid } from "nanoid";
 import { PrivilegedUserRoles } from "../app-constants";
 import { DbService } from "../db/db.service";
 import { EventBusService } from "../integrations/event-bus.service";
+import { FinanceService } from "../integrations/finance.service";
 import { MemberService } from "../integrations/member.service";
 import { ProjectService } from "../integrations/project.service";
 import { SkillsService } from "../integrations/skills.service";
@@ -62,6 +63,7 @@ import {
   ERROR_MESSAGES,
   MY_ASSIGNMENTS_STATUSES,
 } from "../common/constants";
+import { getTestProjectIds } from "../common/project-ids.util";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
 import { EngagementManagerResponseDto } from "./managers/dto";
 import { EngagementManagersService } from "./managers/engagement-managers.service";
@@ -134,6 +136,8 @@ type PlannedAssignmentMutation = {
 type EngagementProjectReference = {
   id: string;
   name?: string;
+  /** Customer from the project details; only added to privileged reads. */
+  customer?: string;
 };
 
 type EngagementSkillReference = {
@@ -316,6 +320,7 @@ export class EngagementsService {
     private readonly assignmentOfferEmailService: AssignmentOfferEmailService,
     private readonly assignmentOfferResponseEmailService: AssignmentOfferResponseEmailService,
     private readonly managersService: EngagementManagersService,
+    private readonly financeService: FinanceService,
   ) {}
 
   async create(
@@ -794,6 +799,11 @@ export class EngagementsService {
       andFilters.push({ role: query.role });
     }
 
+    const testProjectIds = query.excludeTestProjects ? getTestProjectIds() : [];
+    if (testProjectIds.length) {
+      andFilters.push({ projectId: { notIn: testProjectIds } });
+    }
+
     const includeAssignments = query.includePrivate === true;
     const includeApplicantStatus =
       query.appliedByMe === true && Boolean(normalizedAppliedByUserId);
@@ -937,12 +947,15 @@ export class EngagementsService {
         : engagementWithCount;
     });
     const isMemberScopedPrivateFeed = includeAssignmentScopedAppliedByMe;
+    const isPrivilegedFeed = includeAssignments && !isMemberScopedPrivateFeed;
     const engagementsWithProjectDetails = await this.hydrateProjectDetails(
-      isMemberScopedPrivateFeed
-        ? engagements
-        : includeAssignments
-          ? await this.hydrateCreatorEmails(engagements)
-          : engagements,
+      isPrivilegedFeed
+        ? await this.hydrateAssignmentLastPaidAt(
+            await this.hydrateCreatorEmails(engagements),
+            query.includeLastPaidAt === true,
+          )
+        : engagements,
+      { includeCustomer: isPrivilegedFeed },
     );
     const engagementsWithSkills =
       isMemberScopedPrivateFeed || !includeAssignments
@@ -4741,6 +4754,49 @@ export class EngagementsService {
     return normalizedProjectName || undefined;
   }
 
+  /**
+   * Adds `lastPaidAt` to every assignment, from the finance API.
+   *
+   * @param engagements Engagements whose assignments were loaded.
+   * @param enabled Whether the caller asked for the dates; finance is not called otherwise.
+   * @returns The engagements, assignments carrying `lastPaidAt` (null when never paid). Unchanged
+   *   when finance could not be read, so a missing date is not mistaken for "never paid".
+   */
+  private async hydrateAssignmentLastPaidAt<
+    T extends { assignments?: EngagementAssignment[] },
+  >(engagements: T[], enabled: boolean): Promise<T[]> {
+    if (!enabled) {
+      return engagements;
+    }
+
+    const assignmentIds = engagements.flatMap((engagement) =>
+      (engagement.assignments ?? []).map((assignment) => assignment.id),
+    );
+
+    if (!assignmentIds.length) {
+      return engagements;
+    }
+
+    const lastPaidAtByAssignmentId =
+      await this.financeService.getLastPaidAtByAssignmentIds(assignmentIds);
+
+    if (!lastPaidAtByAssignmentId) {
+      return engagements;
+    }
+
+    return engagements.map((engagement) =>
+      engagement.assignments?.length
+        ? {
+            ...engagement,
+            assignments: engagement.assignments.map((assignment) => ({
+              ...assignment,
+              lastPaidAt: lastPaidAtByAssignmentId.get(assignment.id) ?? null,
+            })),
+          }
+        : engagement,
+    );
+  }
+
   private async hydrateProjectDetails<
     T extends {
       project?: {
@@ -4752,6 +4808,7 @@ export class EngagementsService {
     },
   >(
     engagements: T[],
+    options: { includeCustomer?: boolean } = {},
   ): Promise<
     Array<
       T & {
@@ -4787,10 +4844,23 @@ export class EngagementsService {
     }
 
     let projectNameByProjectId = new Map<string, string>();
+    const customerByProjectId = new Map<string, string>();
 
     try {
-      projectNameByProjectId =
-        await this.projectService.getProjectNamesByIds(projectIds);
+      if (options.includeCustomer) {
+        const summaries =
+          await this.projectService.getProjectSummariesByIds(projectIds);
+
+        summaries.forEach((summary, projectId) => {
+          projectNameByProjectId.set(projectId, summary.name);
+          if (summary.customer) {
+            customerByProjectId.set(projectId, summary.customer);
+          }
+        });
+      } else {
+        projectNameByProjectId =
+          await this.projectService.getProjectNamesByIds(projectIds);
+      }
     } catch (error) {
       this.logger.warn("Failed to hydrate engagement project names.", {
         error: error instanceof Error ? error.message : error,
@@ -4822,6 +4892,11 @@ export class EngagementsService {
 
       if (resolvedProjectName) {
         project.name = resolvedProjectName;
+      }
+
+      const customer = customerByProjectId.get(normalizedProjectId);
+      if (customer) {
+        project.customer = customer;
       }
 
       return {
