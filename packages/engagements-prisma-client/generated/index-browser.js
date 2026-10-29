@@ -222,6 +222,7 @@ exports.Prisma.MemberExperienceScalarFieldEnum = {
 
 exports.Prisma.EngagementLeadScalarFieldEnum = {
   id: 'id',
+  leadType: 'leadType',
   workEmail: 'workEmail',
   accountName: 'accountName',
   smu: 'smu',
@@ -384,6 +385,11 @@ exports.AssignmentSource = exports.$Enums.AssignmentSource = {
   WIPRO_REFERRAL: 'WIPRO_REFERRAL',
   CUSTOMER_REFERRAL: 'CUSTOMER_REFERRAL',
   TOPCODER_COMMUNITY: 'TOPCODER_COMMUNITY'
+};
+
+exports.EngagementLeadType = exports.$Enums.EngagementLeadType = {
+  WIPRO_CONSUMPTION: 'WIPRO_CONSUMPTION',
+  WIPRO_DIRECT: 'WIPRO_DIRECT'
 };
 
 exports.EngagementModel = exports.$Enums.EngagementModel = {

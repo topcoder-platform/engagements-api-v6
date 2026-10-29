@@ -219,6 +219,14 @@ export const LeadPriority: {
 
 export type LeadPriority = (typeof LeadPriority)[keyof typeof LeadPriority]
 
+
+export const EngagementLeadType: {
+  WIPRO_CONSUMPTION: 'WIPRO_CONSUMPTION',
+  WIPRO_DIRECT: 'WIPRO_DIRECT'
+};
+
+export type EngagementLeadType = (typeof EngagementLeadType)[keyof typeof EngagementLeadType]
+
 }
 
 export type EngagementStatus = $Enums.EngagementStatus
@@ -280,6 +288,10 @@ export const ExperienceLevel: typeof $Enums.ExperienceLevel
 export type LeadPriority = $Enums.LeadPriority
 
 export const LeadPriority: typeof $Enums.LeadPriority
+
+export type EngagementLeadType = $Enums.EngagementLeadType
+
+export const EngagementLeadType: typeof $Enums.EngagementLeadType
 
 /**
  * ##  Prisma Client ʲˢ
@@ -8417,6 +8429,7 @@ export namespace Prisma {
 
   export type EngagementLeadMinAggregateOutputType = {
     id: string | null
+    leadType: $Enums.EngagementLeadType | null
     workEmail: string | null
     accountName: string | null
     smu: string | null
@@ -8446,6 +8459,7 @@ export namespace Prisma {
 
   export type EngagementLeadMaxAggregateOutputType = {
     id: string | null
+    leadType: $Enums.EngagementLeadType | null
     workEmail: string | null
     accountName: string | null
     smu: string | null
@@ -8475,6 +8489,7 @@ export namespace Prisma {
 
   export type EngagementLeadCountAggregateOutputType = {
     id: number
+    leadType: number
     workEmail: number
     accountName: number
     smu: number
@@ -8519,6 +8534,7 @@ export namespace Prisma {
 
   export type EngagementLeadMinAggregateInputType = {
     id?: true
+    leadType?: true
     workEmail?: true
     accountName?: true
     smu?: true
@@ -8548,6 +8564,7 @@ export namespace Prisma {
 
   export type EngagementLeadMaxAggregateInputType = {
     id?: true
+    leadType?: true
     workEmail?: true
     accountName?: true
     smu?: true
@@ -8577,6 +8594,7 @@ export namespace Prisma {
 
   export type EngagementLeadCountAggregateInputType = {
     id?: true
+    leadType?: true
     workEmail?: true
     accountName?: true
     smu?: true
@@ -8694,25 +8712,26 @@ export namespace Prisma {
 
   export type EngagementLeadGroupByOutputType = {
     id: string
+    leadType: $Enums.EngagementLeadType
     workEmail: string
     accountName: string
     smu: string
-    engagementModel: $Enums.EngagementModel
-    roleTitle: string
+    engagementModel: $Enums.EngagementModel | null
+    roleTitle: string | null
     jobDescription: string
     requiredSkills: string[]
-    experienceLevel: $Enums.ExperienceLevel
-    minYearsExperience: number
+    experienceLevel: $Enums.ExperienceLevel | null
+    minYearsExperience: number | null
     industryDomain: string | null
     resourcesRequired: number
-    preferredStartDate: Date
+    preferredStartDate: Date | null
     engagementDuration: string
     workingHoursPerDay: number
     timeZoneRequirement: string
     remoteWorkAccepted: boolean
     workLocationRestrictions: string | null
-    billRateCurrency: string
-    billRateAmount: string
+    billRateCurrency: string | null
+    billRateAmount: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus
@@ -8743,6 +8762,7 @@ export namespace Prisma {
 
   export type EngagementLeadSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    leadType?: boolean
     workEmail?: boolean
     accountName?: boolean
     smu?: boolean
@@ -8773,6 +8793,7 @@ export namespace Prisma {
 
   export type EngagementLeadSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    leadType?: boolean
     workEmail?: boolean
     accountName?: boolean
     smu?: boolean
@@ -8803,6 +8824,7 @@ export namespace Prisma {
 
   export type EngagementLeadSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    leadType?: boolean
     workEmail?: boolean
     accountName?: boolean
     smu?: boolean
@@ -8833,6 +8855,7 @@ export namespace Prisma {
 
   export type EngagementLeadSelectScalar = {
     id?: boolean
+    leadType?: boolean
     workEmail?: boolean
     accountName?: boolean
     smu?: boolean
@@ -8861,32 +8884,33 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
+  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
 
   export type $EngagementLeadPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EngagementLead"
     objects: {}
     scalars: $Extensions.GetPayloadResult<{
       id: string
+      leadType: $Enums.EngagementLeadType
       workEmail: string
       accountName: string
       smu: string
-      engagementModel: $Enums.EngagementModel
-      roleTitle: string
+      engagementModel: $Enums.EngagementModel | null
+      roleTitle: string | null
       jobDescription: string
       requiredSkills: string[]
-      experienceLevel: $Enums.ExperienceLevel
-      minYearsExperience: number
+      experienceLevel: $Enums.ExperienceLevel | null
+      minYearsExperience: number | null
       industryDomain: string | null
       resourcesRequired: number
-      preferredStartDate: Date
+      preferredStartDate: Date | null
       engagementDuration: string
       workingHoursPerDay: number
       timeZoneRequirement: string
       remoteWorkAccepted: boolean
       workLocationRestrictions: string | null
-      billRateCurrency: string
-      billRateAmount: string
+      billRateCurrency: string | null
+      billRateAmount: string | null
       priority: $Enums.LeadPriority | null
       additionalRequirements: string | null
       status: $Enums.EngagementLeadStatus
@@ -9318,6 +9342,7 @@ export namespace Prisma {
    */
   interface EngagementLeadFieldRefs {
     readonly id: FieldRef<"EngagementLead", 'String'>
+    readonly leadType: FieldRef<"EngagementLead", 'EngagementLeadType'>
     readonly workEmail: FieldRef<"EngagementLead", 'String'>
     readonly accountName: FieldRef<"EngagementLead", 'String'>
     readonly smu: FieldRef<"EngagementLead", 'String'>
@@ -13467,6 +13492,7 @@ export namespace Prisma {
 
   export const EngagementLeadScalarFieldEnum: {
     id: 'id',
+    leadType: 'leadType',
     workEmail: 'workEmail',
     accountName: 'accountName',
     smu: 'smu',
@@ -13787,6 +13813,20 @@ export namespace Prisma {
    * Reference to a field of type 'AssignmentSource[]'
    */
   export type ListEnumAssignmentSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AssignmentSource[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'EngagementLeadType'
+   */
+  export type EnumEngagementLeadTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EngagementLeadType'>
+    
+
+
+  /**
+   * Reference to a field of type 'EngagementLeadType[]'
+   */
+  export type ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EngagementLeadType[]'>
     
 
 
@@ -14512,25 +14552,26 @@ export namespace Prisma {
     OR?: EngagementLeadWhereInput[]
     NOT?: EngagementLeadWhereInput | EngagementLeadWhereInput[]
     id?: StringFilter<"EngagementLead"> | string
+    leadType?: EnumEngagementLeadTypeFilter<"EngagementLead"> | $Enums.EngagementLeadType
     workEmail?: StringFilter<"EngagementLead"> | string
     accountName?: StringFilter<"EngagementLead"> | string
     smu?: StringFilter<"EngagementLead"> | string
-    engagementModel?: EnumEngagementModelFilter<"EngagementLead"> | $Enums.EngagementModel
-    roleTitle?: StringFilter<"EngagementLead"> | string
+    engagementModel?: EnumEngagementModelNullableFilter<"EngagementLead"> | $Enums.EngagementModel | null
+    roleTitle?: StringNullableFilter<"EngagementLead"> | string | null
     jobDescription?: StringFilter<"EngagementLead"> | string
     requiredSkills?: StringNullableListFilter<"EngagementLead">
-    experienceLevel?: EnumExperienceLevelFilter<"EngagementLead"> | $Enums.ExperienceLevel
-    minYearsExperience?: IntFilter<"EngagementLead"> | number
+    experienceLevel?: EnumExperienceLevelNullableFilter<"EngagementLead"> | $Enums.ExperienceLevel | null
+    minYearsExperience?: IntNullableFilter<"EngagementLead"> | number | null
     industryDomain?: StringNullableFilter<"EngagementLead"> | string | null
     resourcesRequired?: IntFilter<"EngagementLead"> | number
-    preferredStartDate?: DateTimeFilter<"EngagementLead"> | Date | string
+    preferredStartDate?: DateTimeNullableFilter<"EngagementLead"> | Date | string | null
     engagementDuration?: StringFilter<"EngagementLead"> | string
     workingHoursPerDay?: FloatFilter<"EngagementLead"> | number
     timeZoneRequirement?: StringFilter<"EngagementLead"> | string
     remoteWorkAccepted?: BoolFilter<"EngagementLead"> | boolean
     workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
-    billRateCurrency?: StringFilter<"EngagementLead"> | string
-    billRateAmount?: StringFilter<"EngagementLead"> | string
+    billRateCurrency?: StringNullableFilter<"EngagementLead"> | string | null
+    billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
@@ -14542,25 +14583,26 @@ export namespace Prisma {
 
   export type EngagementLeadOrderByWithRelationInput = {
     id?: SortOrder
+    leadType?: SortOrder
     workEmail?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
-    engagementModel?: SortOrder
-    roleTitle?: SortOrder
+    engagementModel?: SortOrderInput | SortOrder
+    roleTitle?: SortOrderInput | SortOrder
     jobDescription?: SortOrder
     requiredSkills?: SortOrder
-    experienceLevel?: SortOrder
-    minYearsExperience?: SortOrder
+    experienceLevel?: SortOrderInput | SortOrder
+    minYearsExperience?: SortOrderInput | SortOrder
     industryDomain?: SortOrderInput | SortOrder
     resourcesRequired?: SortOrder
-    preferredStartDate?: SortOrder
+    preferredStartDate?: SortOrderInput | SortOrder
     engagementDuration?: SortOrder
     workingHoursPerDay?: SortOrder
     timeZoneRequirement?: SortOrder
     remoteWorkAccepted?: SortOrder
     workLocationRestrictions?: SortOrderInput | SortOrder
-    billRateCurrency?: SortOrder
-    billRateAmount?: SortOrder
+    billRateCurrency?: SortOrderInput | SortOrder
+    billRateAmount?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
@@ -14575,25 +14617,26 @@ export namespace Prisma {
     AND?: EngagementLeadWhereInput | EngagementLeadWhereInput[]
     OR?: EngagementLeadWhereInput[]
     NOT?: EngagementLeadWhereInput | EngagementLeadWhereInput[]
+    leadType?: EnumEngagementLeadTypeFilter<"EngagementLead"> | $Enums.EngagementLeadType
     workEmail?: StringFilter<"EngagementLead"> | string
     accountName?: StringFilter<"EngagementLead"> | string
     smu?: StringFilter<"EngagementLead"> | string
-    engagementModel?: EnumEngagementModelFilter<"EngagementLead"> | $Enums.EngagementModel
-    roleTitle?: StringFilter<"EngagementLead"> | string
+    engagementModel?: EnumEngagementModelNullableFilter<"EngagementLead"> | $Enums.EngagementModel | null
+    roleTitle?: StringNullableFilter<"EngagementLead"> | string | null
     jobDescription?: StringFilter<"EngagementLead"> | string
     requiredSkills?: StringNullableListFilter<"EngagementLead">
-    experienceLevel?: EnumExperienceLevelFilter<"EngagementLead"> | $Enums.ExperienceLevel
-    minYearsExperience?: IntFilter<"EngagementLead"> | number
+    experienceLevel?: EnumExperienceLevelNullableFilter<"EngagementLead"> | $Enums.ExperienceLevel | null
+    minYearsExperience?: IntNullableFilter<"EngagementLead"> | number | null
     industryDomain?: StringNullableFilter<"EngagementLead"> | string | null
     resourcesRequired?: IntFilter<"EngagementLead"> | number
-    preferredStartDate?: DateTimeFilter<"EngagementLead"> | Date | string
+    preferredStartDate?: DateTimeNullableFilter<"EngagementLead"> | Date | string | null
     engagementDuration?: StringFilter<"EngagementLead"> | string
     workingHoursPerDay?: FloatFilter<"EngagementLead"> | number
     timeZoneRequirement?: StringFilter<"EngagementLead"> | string
     remoteWorkAccepted?: BoolFilter<"EngagementLead"> | boolean
     workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
-    billRateCurrency?: StringFilter<"EngagementLead"> | string
-    billRateAmount?: StringFilter<"EngagementLead"> | string
+    billRateCurrency?: StringNullableFilter<"EngagementLead"> | string | null
+    billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
@@ -14605,25 +14648,26 @@ export namespace Prisma {
 
   export type EngagementLeadOrderByWithAggregationInput = {
     id?: SortOrder
+    leadType?: SortOrder
     workEmail?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
-    engagementModel?: SortOrder
-    roleTitle?: SortOrder
+    engagementModel?: SortOrderInput | SortOrder
+    roleTitle?: SortOrderInput | SortOrder
     jobDescription?: SortOrder
     requiredSkills?: SortOrder
-    experienceLevel?: SortOrder
-    minYearsExperience?: SortOrder
+    experienceLevel?: SortOrderInput | SortOrder
+    minYearsExperience?: SortOrderInput | SortOrder
     industryDomain?: SortOrderInput | SortOrder
     resourcesRequired?: SortOrder
-    preferredStartDate?: SortOrder
+    preferredStartDate?: SortOrderInput | SortOrder
     engagementDuration?: SortOrder
     workingHoursPerDay?: SortOrder
     timeZoneRequirement?: SortOrder
     remoteWorkAccepted?: SortOrder
     workLocationRestrictions?: SortOrderInput | SortOrder
-    billRateCurrency?: SortOrder
-    billRateAmount?: SortOrder
+    billRateCurrency?: SortOrderInput | SortOrder
+    billRateAmount?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
@@ -14643,25 +14687,26 @@ export namespace Prisma {
     OR?: EngagementLeadScalarWhereWithAggregatesInput[]
     NOT?: EngagementLeadScalarWhereWithAggregatesInput | EngagementLeadScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"EngagementLead"> | string
+    leadType?: EnumEngagementLeadTypeWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadType
     workEmail?: StringWithAggregatesFilter<"EngagementLead"> | string
     accountName?: StringWithAggregatesFilter<"EngagementLead"> | string
     smu?: StringWithAggregatesFilter<"EngagementLead"> | string
-    engagementModel?: EnumEngagementModelWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementModel
-    roleTitle?: StringWithAggregatesFilter<"EngagementLead"> | string
+    engagementModel?: EnumEngagementModelNullableWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementModel | null
+    roleTitle?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     jobDescription?: StringWithAggregatesFilter<"EngagementLead"> | string
     requiredSkills?: StringNullableListFilter<"EngagementLead">
-    experienceLevel?: EnumExperienceLevelWithAggregatesFilter<"EngagementLead"> | $Enums.ExperienceLevel
-    minYearsExperience?: IntWithAggregatesFilter<"EngagementLead"> | number
+    experienceLevel?: EnumExperienceLevelNullableWithAggregatesFilter<"EngagementLead"> | $Enums.ExperienceLevel | null
+    minYearsExperience?: IntNullableWithAggregatesFilter<"EngagementLead"> | number | null
     industryDomain?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     resourcesRequired?: IntWithAggregatesFilter<"EngagementLead"> | number
-    preferredStartDate?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
+    preferredStartDate?: DateTimeNullableWithAggregatesFilter<"EngagementLead"> | Date | string | null
     engagementDuration?: StringWithAggregatesFilter<"EngagementLead"> | string
     workingHoursPerDay?: FloatWithAggregatesFilter<"EngagementLead"> | number
     timeZoneRequirement?: StringWithAggregatesFilter<"EngagementLead"> | string
     remoteWorkAccepted?: BoolWithAggregatesFilter<"EngagementLead"> | boolean
     workLocationRestrictions?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
-    billRateCurrency?: StringWithAggregatesFilter<"EngagementLead"> | string
-    billRateAmount?: StringWithAggregatesFilter<"EngagementLead"> | string
+    billRateCurrency?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    billRateAmount?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
@@ -15692,25 +15737,26 @@ export namespace Prisma {
 
   export type EngagementLeadCreateInput = {
     id?: string
+    leadType?: $Enums.EngagementLeadType
     workEmail: string
     accountName: string
     smu: string
-    engagementModel: $Enums.EngagementModel
-    roleTitle: string
+    engagementModel?: $Enums.EngagementModel | null
+    roleTitle?: string | null
     jobDescription: string
     requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
-    experienceLevel: $Enums.ExperienceLevel
-    minYearsExperience: number
+    experienceLevel?: $Enums.ExperienceLevel | null
+    minYearsExperience?: number | null
     industryDomain?: string | null
     resourcesRequired: number
-    preferredStartDate: Date | string
+    preferredStartDate?: Date | string | null
     engagementDuration: string
     workingHoursPerDay: number
     timeZoneRequirement: string
     remoteWorkAccepted: boolean
     workLocationRestrictions?: string | null
-    billRateCurrency: string
-    billRateAmount: string
+    billRateCurrency?: string | null
+    billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -15722,25 +15768,26 @@ export namespace Prisma {
 
   export type EngagementLeadUncheckedCreateInput = {
     id?: string
+    leadType?: $Enums.EngagementLeadType
     workEmail: string
     accountName: string
     smu: string
-    engagementModel: $Enums.EngagementModel
-    roleTitle: string
+    engagementModel?: $Enums.EngagementModel | null
+    roleTitle?: string | null
     jobDescription: string
     requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
-    experienceLevel: $Enums.ExperienceLevel
-    minYearsExperience: number
+    experienceLevel?: $Enums.ExperienceLevel | null
+    minYearsExperience?: number | null
     industryDomain?: string | null
     resourcesRequired: number
-    preferredStartDate: Date | string
+    preferredStartDate?: Date | string | null
     engagementDuration: string
     workingHoursPerDay: number
     timeZoneRequirement: string
     remoteWorkAccepted: boolean
     workLocationRestrictions?: string | null
-    billRateCurrency: string
-    billRateAmount: string
+    billRateCurrency?: string | null
+    billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -15752,25 +15799,26 @@ export namespace Prisma {
 
   export type EngagementLeadUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    leadType?: EnumEngagementLeadTypeFieldUpdateOperationsInput | $Enums.EngagementLeadType
     workEmail?: StringFieldUpdateOperationsInput | string
     accountName?: StringFieldUpdateOperationsInput | string
     smu?: StringFieldUpdateOperationsInput | string
-    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
-    roleTitle?: StringFieldUpdateOperationsInput | string
+    engagementModel?: NullableEnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel | null
+    roleTitle?: NullableStringFieldUpdateOperationsInput | string | null
     jobDescription?: StringFieldUpdateOperationsInput | string
     requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
-    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
-    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    experienceLevel?: NullableEnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel | null
+    minYearsExperience?: NullableIntFieldUpdateOperationsInput | number | null
     industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
     resourcesRequired?: IntFieldUpdateOperationsInput | number
-    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    preferredStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     engagementDuration?: StringFieldUpdateOperationsInput | string
     workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
     timeZoneRequirement?: StringFieldUpdateOperationsInput | string
     remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
-    billRateCurrency?: StringFieldUpdateOperationsInput | string
-    billRateAmount?: StringFieldUpdateOperationsInput | string
+    billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -15782,25 +15830,26 @@ export namespace Prisma {
 
   export type EngagementLeadUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    leadType?: EnumEngagementLeadTypeFieldUpdateOperationsInput | $Enums.EngagementLeadType
     workEmail?: StringFieldUpdateOperationsInput | string
     accountName?: StringFieldUpdateOperationsInput | string
     smu?: StringFieldUpdateOperationsInput | string
-    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
-    roleTitle?: StringFieldUpdateOperationsInput | string
+    engagementModel?: NullableEnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel | null
+    roleTitle?: NullableStringFieldUpdateOperationsInput | string | null
     jobDescription?: StringFieldUpdateOperationsInput | string
     requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
-    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
-    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    experienceLevel?: NullableEnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel | null
+    minYearsExperience?: NullableIntFieldUpdateOperationsInput | number | null
     industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
     resourcesRequired?: IntFieldUpdateOperationsInput | number
-    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    preferredStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     engagementDuration?: StringFieldUpdateOperationsInput | string
     workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
     timeZoneRequirement?: StringFieldUpdateOperationsInput | string
     remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
-    billRateCurrency?: StringFieldUpdateOperationsInput | string
-    billRateAmount?: StringFieldUpdateOperationsInput | string
+    billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -15812,25 +15861,26 @@ export namespace Prisma {
 
   export type EngagementLeadCreateManyInput = {
     id?: string
+    leadType?: $Enums.EngagementLeadType
     workEmail: string
     accountName: string
     smu: string
-    engagementModel: $Enums.EngagementModel
-    roleTitle: string
+    engagementModel?: $Enums.EngagementModel | null
+    roleTitle?: string | null
     jobDescription: string
     requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
-    experienceLevel: $Enums.ExperienceLevel
-    minYearsExperience: number
+    experienceLevel?: $Enums.ExperienceLevel | null
+    minYearsExperience?: number | null
     industryDomain?: string | null
     resourcesRequired: number
-    preferredStartDate: Date | string
+    preferredStartDate?: Date | string | null
     engagementDuration: string
     workingHoursPerDay: number
     timeZoneRequirement: string
     remoteWorkAccepted: boolean
     workLocationRestrictions?: string | null
-    billRateCurrency: string
-    billRateAmount: string
+    billRateCurrency?: string | null
+    billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -15842,25 +15892,26 @@ export namespace Prisma {
 
   export type EngagementLeadUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
+    leadType?: EnumEngagementLeadTypeFieldUpdateOperationsInput | $Enums.EngagementLeadType
     workEmail?: StringFieldUpdateOperationsInput | string
     accountName?: StringFieldUpdateOperationsInput | string
     smu?: StringFieldUpdateOperationsInput | string
-    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
-    roleTitle?: StringFieldUpdateOperationsInput | string
+    engagementModel?: NullableEnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel | null
+    roleTitle?: NullableStringFieldUpdateOperationsInput | string | null
     jobDescription?: StringFieldUpdateOperationsInput | string
     requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
-    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
-    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    experienceLevel?: NullableEnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel | null
+    minYearsExperience?: NullableIntFieldUpdateOperationsInput | number | null
     industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
     resourcesRequired?: IntFieldUpdateOperationsInput | number
-    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    preferredStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     engagementDuration?: StringFieldUpdateOperationsInput | string
     workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
     timeZoneRequirement?: StringFieldUpdateOperationsInput | string
     remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
-    billRateCurrency?: StringFieldUpdateOperationsInput | string
-    billRateAmount?: StringFieldUpdateOperationsInput | string
+    billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -15872,25 +15923,26 @@ export namespace Prisma {
 
   export type EngagementLeadUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
+    leadType?: EnumEngagementLeadTypeFieldUpdateOperationsInput | $Enums.EngagementLeadType
     workEmail?: StringFieldUpdateOperationsInput | string
     accountName?: StringFieldUpdateOperationsInput | string
     smu?: StringFieldUpdateOperationsInput | string
-    engagementModel?: EnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel
-    roleTitle?: StringFieldUpdateOperationsInput | string
+    engagementModel?: NullableEnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel | null
+    roleTitle?: NullableStringFieldUpdateOperationsInput | string | null
     jobDescription?: StringFieldUpdateOperationsInput | string
     requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
-    experienceLevel?: EnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel
-    minYearsExperience?: IntFieldUpdateOperationsInput | number
+    experienceLevel?: NullableEnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel | null
+    minYearsExperience?: NullableIntFieldUpdateOperationsInput | number | null
     industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
     resourcesRequired?: IntFieldUpdateOperationsInput | number
-    preferredStartDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    preferredStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     engagementDuration?: StringFieldUpdateOperationsInput | string
     workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
     timeZoneRequirement?: StringFieldUpdateOperationsInput | string
     remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
-    billRateCurrency?: StringFieldUpdateOperationsInput | string
-    billRateAmount?: StringFieldUpdateOperationsInput | string
+    billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -17004,18 +17056,25 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
-  export type EnumEngagementModelFilter<$PrismaModel = never> = {
-    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
-    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    not?: NestedEnumEngagementModelFilter<$PrismaModel> | $Enums.EngagementModel
+  export type EnumEngagementLeadTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadType | EnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadTypeFilter<$PrismaModel> | $Enums.EngagementLeadType
   }
 
-  export type EnumExperienceLevelFilter<$PrismaModel = never> = {
-    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
-    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    not?: NestedEnumExperienceLevelFilter<$PrismaModel> | $Enums.ExperienceLevel
+  export type EnumEngagementModelNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumEngagementModelNullableFilter<$PrismaModel> | $Enums.EngagementModel | null
+  }
+
+  export type EnumExperienceLevelNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumExperienceLevelNullableFilter<$PrismaModel> | $Enums.ExperienceLevel | null
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -17056,6 +17115,7 @@ export namespace Prisma {
 
   export type EngagementLeadCountOrderByAggregateInput = {
     id?: SortOrder
+    leadType?: SortOrder
     workEmail?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
@@ -17092,6 +17152,7 @@ export namespace Prisma {
 
   export type EngagementLeadMaxOrderByAggregateInput = {
     id?: SortOrder
+    leadType?: SortOrder
     workEmail?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
@@ -17121,6 +17182,7 @@ export namespace Prisma {
 
   export type EngagementLeadMinOrderByAggregateInput = {
     id?: SortOrder
+    leadType?: SortOrder
     workEmail?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
@@ -17154,24 +17216,34 @@ export namespace Prisma {
     workingHoursPerDay?: SortOrder
   }
 
-  export type EnumEngagementModelWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
-    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    not?: NestedEnumEngagementModelWithAggregatesFilter<$PrismaModel> | $Enums.EngagementModel
+  export type EnumEngagementLeadTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadType | EnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadTypeWithAggregatesFilter<$PrismaModel> | $Enums.EngagementLeadType
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEngagementModelFilter<$PrismaModel>
-    _max?: NestedEnumEngagementModelFilter<$PrismaModel>
+    _min?: NestedEnumEngagementLeadTypeFilter<$PrismaModel>
+    _max?: NestedEnumEngagementLeadTypeFilter<$PrismaModel>
   }
 
-  export type EnumExperienceLevelWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
-    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    not?: NestedEnumExperienceLevelWithAggregatesFilter<$PrismaModel> | $Enums.ExperienceLevel
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumExperienceLevelFilter<$PrismaModel>
-    _max?: NestedEnumExperienceLevelFilter<$PrismaModel>
+  export type EnumEngagementModelNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumEngagementModelNullableWithAggregatesFilter<$PrismaModel> | $Enums.EngagementModel | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumEngagementModelNullableFilter<$PrismaModel>
+    _max?: NestedEnumEngagementModelNullableFilter<$PrismaModel>
+  }
+
+  export type EnumExperienceLevelNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumExperienceLevelNullableWithAggregatesFilter<$PrismaModel> | $Enums.ExperienceLevel | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumExperienceLevelNullableFilter<$PrismaModel>
+    _max?: NestedEnumExperienceLevelNullableFilter<$PrismaModel>
   }
 
   export type IntWithAggregatesFilter<$PrismaModel = never> = {
@@ -17966,8 +18038,12 @@ export namespace Prisma {
     set: string[]
   }
 
-  export type EnumEngagementModelFieldUpdateOperationsInput = {
-    set?: $Enums.EngagementModel
+  export type EnumEngagementLeadTypeFieldUpdateOperationsInput = {
+    set?: $Enums.EngagementLeadType
+  }
+
+  export type NullableEnumEngagementModelFieldUpdateOperationsInput = {
+    set?: $Enums.EngagementModel | null
   }
 
   export type EngagementLeadUpdaterequiredSkillsInput = {
@@ -17975,8 +18051,8 @@ export namespace Prisma {
     push?: string | string[]
   }
 
-  export type EnumExperienceLevelFieldUpdateOperationsInput = {
-    set?: $Enums.ExperienceLevel
+  export type NullableEnumExperienceLevelFieldUpdateOperationsInput = {
+    set?: $Enums.ExperienceLevel | null
   }
 
   export type IntFieldUpdateOperationsInput = {
@@ -18464,18 +18540,25 @@ export namespace Prisma {
     _max?: NestedEnumAssignmentSourceNullableFilter<$PrismaModel>
   }
 
-  export type NestedEnumEngagementModelFilter<$PrismaModel = never> = {
-    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
-    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    not?: NestedEnumEngagementModelFilter<$PrismaModel> | $Enums.EngagementModel
+  export type NestedEnumEngagementLeadTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadType | EnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadTypeFilter<$PrismaModel> | $Enums.EngagementLeadType
   }
 
-  export type NestedEnumExperienceLevelFilter<$PrismaModel = never> = {
-    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
-    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    not?: NestedEnumExperienceLevelFilter<$PrismaModel> | $Enums.ExperienceLevel
+  export type NestedEnumEngagementModelNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumEngagementModelNullableFilter<$PrismaModel> | $Enums.EngagementModel | null
+  }
+
+  export type NestedEnumExperienceLevelNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumExperienceLevelNullableFilter<$PrismaModel> | $Enums.ExperienceLevel | null
   }
 
   export type NestedFloatFilter<$PrismaModel = never> = {
@@ -18503,24 +18586,34 @@ export namespace Prisma {
     not?: NestedEnumEngagementLeadStatusFilter<$PrismaModel> | $Enums.EngagementLeadStatus
   }
 
-  export type NestedEnumEngagementModelWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel>
-    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel>
-    not?: NestedEnumEngagementModelWithAggregatesFilter<$PrismaModel> | $Enums.EngagementModel
+  export type NestedEnumEngagementLeadTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementLeadType | EnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EngagementLeadType[] | ListEnumEngagementLeadTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumEngagementLeadTypeWithAggregatesFilter<$PrismaModel> | $Enums.EngagementLeadType
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEngagementModelFilter<$PrismaModel>
-    _max?: NestedEnumEngagementModelFilter<$PrismaModel>
+    _min?: NestedEnumEngagementLeadTypeFilter<$PrismaModel>
+    _max?: NestedEnumEngagementLeadTypeFilter<$PrismaModel>
   }
 
-  export type NestedEnumExperienceLevelWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel>
-    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel>
-    not?: NestedEnumExperienceLevelWithAggregatesFilter<$PrismaModel> | $Enums.ExperienceLevel
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumExperienceLevelFilter<$PrismaModel>
-    _max?: NestedEnumExperienceLevelFilter<$PrismaModel>
+  export type NestedEnumEngagementModelNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EngagementModel | EnumEngagementModelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.EngagementModel[] | ListEnumEngagementModelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumEngagementModelNullableWithAggregatesFilter<$PrismaModel> | $Enums.EngagementModel | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumEngagementModelNullableFilter<$PrismaModel>
+    _max?: NestedEnumEngagementModelNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumExperienceLevelNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ExperienceLevel | EnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ExperienceLevel[] | ListEnumExperienceLevelFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumExperienceLevelNullableWithAggregatesFilter<$PrismaModel> | $Enums.ExperienceLevel | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumExperienceLevelNullableFilter<$PrismaModel>
+    _max?: NestedEnumExperienceLevelNullableFilter<$PrismaModel>
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {

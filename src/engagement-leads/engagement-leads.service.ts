@@ -7,6 +7,7 @@ import {
 import {
   EngagementLead,
   EngagementLeadStatus,
+  EngagementLeadType,
   ExperienceLevel,
   Prisma,
 } from "@prisma/client";
@@ -15,6 +16,7 @@ import { DbService } from "../db/db.service";
 import { PaginatedResponse } from "../engagements/dto";
 import {
   CreateEngagementLeadIntakeDto,
+  CreateWiproDirectEngagementLeadIntakeDto,
   EngagementLeadPrefillDto,
   EngagementLeadQueryDto,
   EngagementLeadResponseDto,
@@ -32,6 +34,7 @@ export class EngagementLeadsService {
   private transformToResponseDto(lead: EngagementLead): EngagementLeadResponseDto {
     return {
       id: lead.id,
+      leadType: lead.leadType,
       workEmail: lead.workEmail,
       accountName: lead.accountName,
       smu: lead.smu,
@@ -70,35 +73,65 @@ export class EngagementLeadsService {
 
     const lead = await this.db.engagementLead.create({
       data: {
-        id: nanoid(),
-        workEmail: intakeDto.workEmail.trim().toLowerCase(),
-        accountName: intakeDto.accountName.trim(),
-        smu: intakeDto.smu.trim(),
+        ...this.buildCommonLeadData(intakeDto),
+        leadType: EngagementLeadType.WIPRO_CONSUMPTION,
         engagementModel: intakeDto.engagementModel,
         roleTitle: intakeDto.roleTitle.trim(),
-        jobDescription: intakeDto.jobDescription.trim(),
-        requiredSkills: intakeDto.requiredSkills,
         experienceLevel: intakeDto.experienceLevel,
         minYearsExperience: intakeDto.minYearsExperience,
         industryDomain: intakeDto.industryDomain?.trim() || null,
-        resourcesRequired: intakeDto.resourcesRequired,
         preferredStartDate: new Date(intakeDto.preferredStartDate),
-        engagementDuration: intakeDto.engagementDuration.trim(),
-        workingHoursPerDay: intakeDto.workingHoursPerDay,
-        timeZoneRequirement: intakeDto.timeZoneRequirement.trim(),
-        remoteWorkAccepted: intakeDto.remoteWorkAccepted,
-        workLocationRestrictions:
-          intakeDto.workLocationRestrictions?.trim() || null,
         billRateCurrency: intakeDto.billRateCurrency.trim().toUpperCase(),
         billRateAmount: intakeDto.billRateAmount.trim(),
         priority: intakeDto.priority ?? null,
         additionalRequirements:
           intakeDto.additionalRequirements?.trim() || null,
-        status: EngagementLeadStatus.SUBMITTED,
       },
     });
 
     return this.transformToResponseDto(lead);
+  }
+
+  async createFromWiproDirectIntake(
+    intakeDto: CreateWiproDirectEngagementLeadIntakeDto,
+  ): Promise<EngagementLeadResponseDto> {
+    this.logger.debug("Creating engagement lead from Wipro Direct intake", {
+      workEmail: intakeDto.workEmail,
+      accountName: intakeDto.accountName,
+    });
+
+    const lead = await this.db.engagementLead.create({
+      data: {
+        ...this.buildCommonLeadData(intakeDto),
+        leadType: EngagementLeadType.WIPRO_DIRECT,
+        preferredStartDate: intakeDto.preferredStartDate
+          ? new Date(intakeDto.preferredStartDate)
+          : null,
+      },
+    });
+
+    return this.transformToResponseDto(lead);
+  }
+
+  private buildCommonLeadData(
+    intakeDto: CreateWiproDirectEngagementLeadIntakeDto,
+  ) {
+    return {
+      id: nanoid(),
+      workEmail: intakeDto.workEmail.trim().toLowerCase(),
+      accountName: intakeDto.accountName.trim(),
+      smu: intakeDto.smu.trim(),
+      jobDescription: intakeDto.jobDescription.trim(),
+      requiredSkills: intakeDto.requiredSkills,
+      resourcesRequired: intakeDto.resourcesRequired,
+      engagementDuration: intakeDto.engagementDuration.trim(),
+      workingHoursPerDay: intakeDto.workingHoursPerDay,
+      timeZoneRequirement: intakeDto.timeZoneRequirement.trim(),
+      remoteWorkAccepted: intakeDto.remoteWorkAccepted,
+      workLocationRestrictions:
+        intakeDto.workLocationRestrictions?.trim() || null,
+      status: EngagementLeadStatus.SUBMITTED,
+    };
   }
 
   async findAll(
@@ -109,6 +142,10 @@ export class EngagementLeadsService {
     const skip = (page - 1) * perPage;
 
     const where: Prisma.EngagementLeadWhereInput = {};
+
+    if (query.leadType) {
+      where.leadType = query.leadType;
+    }
 
     if (query.accountName?.trim()) {
       where.accountName = {
@@ -167,7 +204,7 @@ export class EngagementLeadsService {
       sortBy === EngagementLeadSortField.PRIORITY
         ? { priority: { sort: sortOrder, nulls: "last" } }
         : sortBy === EngagementLeadSortField.PREFERRED_START_DATE
-          ? { preferredStartDate: sortOrder }
+          ? { preferredStartDate: { sort: sortOrder, nulls: "last" } }
           : { createdAt: sortOrder };
 
     const [leads, totalCount] = await Promise.all([
@@ -285,7 +322,7 @@ export class EngagementLeadsService {
       descriptionParts.push(`\n\nEngagement Model: ${modelLabel}`);
     }
 
-    if (lead.minYearsExperience > 0) {
+    if (lead.minYearsExperience) {
       descriptionParts.push(
         `\n\nMinimum Years of Experience: ${lead.minYearsExperience}`,
       );
@@ -313,14 +350,17 @@ export class EngagementLeadsService {
       account: lead.accountName,
       smu: lead.smu,
       spoc: lead.workEmail,
-      title: lead.roleTitle,
+      title: lead.roleTitle ?? "",
       description: descriptionParts.join(""),
       requiredSkillNames: lead.requiredSkills,
       roleLevel: this.mapExperienceLevelToRoleLevel(lead.experienceLevel),
       requiredMemberCount: lead.resourcesRequired,
-      durationStartDate: lead.preferredStartDate.toISOString(),
+      durationStartDate: lead.preferredStartDate?.toISOString() ?? null,
       durationMonths: this.parseDurationMonths(lead.engagementDuration),
-      compensationRange: `${lead.billRateCurrency} ${lead.billRateAmount}/hour`,
+      compensationRange:
+        lead.billRateCurrency && lead.billRateAmount
+          ? `${lead.billRateCurrency} ${lead.billRateAmount}/hour`
+          : null,
       timeZones: this.parseTimeZones(lead.timeZoneRequirement),
       countries: this.parseCountries(lead.workLocationRestrictions),
       receivedDateFromAccount: lead.createdAt.toISOString(),
@@ -329,7 +369,7 @@ export class EngagementLeadsService {
   }
 
   private mapExperienceLevelToRoleLevel(
-    experienceLevel: string,
+    experienceLevel?: string | null,
   ): string | null {
     switch (experienceLevel as ExperienceLevel) {
       case ExperienceLevel.JUNIOR:

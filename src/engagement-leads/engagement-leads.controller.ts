@@ -34,6 +34,7 @@ import { PaginatedResponse } from "../engagements/dto";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
 import {
   CreateEngagementLeadIntakeDto,
+  CreateWiproDirectEngagementLeadIntakeDto,
   EngagementLeadIntakeResponseDto,
   EngagementLeadPrefillDto,
   EngagementLeadQueryDto,
@@ -70,6 +71,33 @@ export class EngagementLeadsController {
     @Body() intakeDto: CreateEngagementLeadIntakeDto,
   ): Promise<EngagementLeadIntakeResponseDto> {
     const lead = await this.engagementLeadsService.createFromIntake(intakeDto);
+
+    return {
+      id: lead.id,
+      message:
+        "Your engagement request has been submitted successfully. A Talent Manager will review it shortly.",
+    };
+  }
+
+  @Post("intake/wipro-direct")
+  @ApiOperation({
+    summary: "Submit Wipro Direct engagement lead intake form",
+    description:
+      "Public endpoint for Wipro Direct customers to submit engagement requirements without authentication.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Engagement lead submitted.",
+    type: EngagementLeadIntakeResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Invalid request payload.",
+  })
+  async submitWiproDirectIntake(
+    @Body() intakeDto: CreateWiproDirectEngagementLeadIntakeDto,
+  ): Promise<EngagementLeadIntakeResponseDto> {
+    const lead =
+      await this.engagementLeadsService.createFromWiproDirectIntake(intakeDto);
 
     return {
       id: lead.id,

@@ -1,12 +1,14 @@
 import { ValidationPipe } from "@nestjs/common";
 import {
   EngagementLeadStatus,
+  EngagementLeadType,
   EngagementModel,
   ExperienceLevel,
   LeadPriority,
 } from "@prisma/client";
 import { EngagementLeadsService } from "./engagement-leads.service";
 import {
+  CreateWiproDirectEngagementLeadIntakeDto,
   EngagementLeadQueryDto,
   EngagementLeadSortField,
   EngagementLeadStatusGroup,
@@ -23,6 +25,7 @@ describe("EngagementLeadsService", () => {
       findMany: jest.Mock;
       count: jest.Mock;
       create: jest.Mock;
+      findUnique: jest.Mock;
     };
   };
 
@@ -36,6 +39,7 @@ describe("EngagementLeadsService", () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         })),
+        findUnique: jest.fn(),
       },
     };
     service = new EngagementLeadsService(db as any);
@@ -97,6 +101,20 @@ describe("EngagementLeadsService", () => {
       );
     });
 
+    it("applies leadType filter", async () => {
+      await service.findAll({
+        page: 1,
+        perPage: 10,
+        leadType: EngagementLeadType.WIPRO_DIRECT,
+      });
+
+      expect(db.engagementLead.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { leadType: EngagementLeadType.WIPRO_DIRECT },
+        }),
+      );
+    });
+
     it("applies statusGroup NEW filter", async () => {
       await service.findAll({
         page: 1,
@@ -149,7 +167,7 @@ describe("EngagementLeadsService", () => {
 
       expect(db.engagementLead.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: { preferredStartDate: "asc" },
+          orderBy: { preferredStartDate: { sort: "asc", nulls: "last" } },
         }),
       );
     });
@@ -160,7 +178,7 @@ describe("EngagementLeadsService", () => {
         perPage: 10,
         sortBy: EngagementLeadSortField.PRIORITY,
         sortOrder: "desc",
-      } as EngagementLeadQueryDto);
+      });
 
       expect(db.engagementLead.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -193,9 +211,109 @@ describe("EngagementLeadsService", () => {
       });
 
       expect(db.engagementLead.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ priority: null }),
+        data: expect.objectContaining({
+          leadType: EngagementLeadType.WIPRO_CONSUMPTION,
+          priority: null,
+        }),
       });
       expect(result.priority).toBeNull();
+    });
+  });
+
+  describe("createFromWiproDirectIntake", () => {
+    const directIntake = {
+      workEmail: " Jane.Doe@Customer.com ",
+      accountName: "ABC Bank",
+      smu: "AMR1",
+      jobDescription: "Build the product.",
+      requiredSkills: ["React"],
+      resourcesRequired: 2,
+      engagementDuration: "3 months",
+      workingHoursPerDay: 8,
+      timeZoneRequirement: "EST",
+      remoteWorkAccepted: true,
+    };
+
+    it("stores a Wipro Direct lead without the consumption-only fields", async () => {
+      const result = await service.createFromWiproDirectIntake(directIntake);
+
+      const data = db.engagementLead.create.mock.calls[0][0].data;
+      expect(data).toMatchObject({
+        leadType: EngagementLeadType.WIPRO_DIRECT,
+        workEmail: "jane.doe@customer.com",
+        smu: "AMR1",
+        preferredStartDate: null,
+        workLocationRestrictions: null,
+        status: EngagementLeadStatus.SUBMITTED,
+      });
+      expect(data).not.toHaveProperty("roleTitle");
+      expect(data).not.toHaveProperty("billRateAmount");
+      expect(result.leadType).toBe(EngagementLeadType.WIPRO_DIRECT);
+    });
+
+    it("stores the preferred start date when provided", async () => {
+      await service.createFromWiproDirectIntake({
+        ...directIntake,
+        preferredStartDate: "2026-11-01T00:00:00.000Z",
+      });
+
+      expect(db.engagementLead.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          preferredStartDate: new Date("2026-11-01T00:00:00.000Z"),
+        }),
+      });
+    });
+  });
+
+  describe("getEngagementPrefill", () => {
+    it("maps a Wipro Direct lead without the consumption-only fields", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        leadType: EngagementLeadType.WIPRO_DIRECT,
+        workEmail: "jane.doe@customer.com",
+        accountName: "ABC Bank",
+        smu: "AMR1",
+        engagementModel: null,
+        roleTitle: null,
+        jobDescription: "Build the product.",
+        requiredSkills: ["React"],
+        experienceLevel: null,
+        minYearsExperience: null,
+        industryDomain: null,
+        resourcesRequired: 2,
+        preferredStartDate: null,
+        engagementDuration: "3 months",
+        workingHoursPerDay: 8,
+        timeZoneRequirement: "EST",
+        remoteWorkAccepted: true,
+        workLocationRestrictions: null,
+        billRateCurrency: null,
+        billRateAmount: null,
+        priority: null,
+        additionalRequirements: null,
+        status: EngagementLeadStatus.QUALIFIED,
+        convertedEngagementId: null,
+        createdAt: new Date("2026-10-28T00:00:00.000Z"),
+        updatedAt: new Date("2026-10-28T00:00:00.000Z"),
+      });
+
+      const prefill = await service.getEngagementPrefill("lead-1");
+
+      expect(prefill).toMatchObject({
+        account: "ABC Bank",
+        smu: "AMR1",
+        spoc: "jane.doe@customer.com",
+        title: "",
+        description: "Build the product.",
+        requiredSkillNames: ["React"],
+        roleLevel: null,
+        requiredMemberCount: 2,
+        durationStartDate: null,
+        durationMonths: 3,
+        compensationRange: null,
+        timeZones: ["EST"],
+        countries: ["ANY"],
+      });
     });
   });
 });
@@ -228,5 +346,42 @@ describe("EngagementLeadQueryDto validation", () => {
       sortBy: EngagementLeadSortField.CREATED_AT,
       sortOrder: "desc",
     });
+  });
+});
+
+describe("CreateWiproDirectEngagementLeadIntakeDto validation", () => {
+  const pipe = new ValidationPipe({ transform: true, whitelist: true });
+  const validIntake = {
+    workEmail: "jane.doe@customer.com",
+    accountName: "ABC Bank",
+    smu: "AMR1",
+    jobDescription: "Build the product.",
+    requiredSkills: ["React"],
+    resourcesRequired: 2,
+    engagementDuration: "3 months",
+    workingHoursPerDay: 8,
+    timeZoneRequirement: "EST",
+    remoteWorkAccepted: true,
+  };
+
+  it("accepts an intake without a preferred start date", async () => {
+    await expect(
+      pipe.transform(validIntake, {
+        type: "body",
+        metatype: CreateWiproDirectEngagementLeadIntakeDto,
+      }),
+    ).resolves.toMatchObject(validIntake);
+  });
+
+  it("rejects an intake missing a mandatory field", async () => {
+    await expect(
+      pipe.transform(
+        { ...validIntake, jobDescription: undefined },
+        {
+          type: "body",
+          metatype: CreateWiproDirectEngagementLeadIntakeDto,
+        },
+      ),
+    ).rejects.toThrow();
   });
 });
