@@ -12,6 +12,7 @@ import {
 } from "@prisma/client";
 import { EngagementLeadsService } from "./engagement-leads.service";
 import {
+  CreateEngagementLeadIntakeDto,
   CreateWiproDirectEngagementLeadIntakeDto,
   EngagementLeadQueryDto,
   EngagementLeadSortField,
@@ -250,6 +251,33 @@ describe("EngagementLeadsService", () => {
         include: { notes: { orderBy: { createdAt: "asc" } } },
       });
       expect(result.priority).toBeNull();
+    });
+
+    it("stores a null experience level now that the form no longer asks for it", async () => {
+      await service.createFromIntake({
+        workEmail: "john.doe@wipro.com",
+        accountName: "ABC Bank",
+        smu: "EURP",
+        engagementModel: EngagementModel.TIME_AND_MATERIAL,
+        roleTitle: "QA Engineer",
+        jobDescription: "Test the product.",
+        requiredSkills: ["Java"],
+        minYearsExperience: 3,
+        resourcesRequired: 1,
+        preferredStartDate: "2026-11-01T00:00:00.000Z",
+        engagementDuration: "6 months",
+        workingHoursPerDay: 8,
+        timeZoneRequirement: "IST",
+        remoteWorkAccepted: true,
+        billRateCurrency: "USD",
+        billRateAmount: "100",
+      });
+
+      expect(db.engagementLead.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ experienceLevel: null }),
+        }),
+      );
     });
   });
 
@@ -494,6 +522,38 @@ describe("EngagementLeadQueryDto validation", () => {
       sortBy: EngagementLeadSortField.CREATED_AT,
       sortOrder: "desc",
     });
+  });
+});
+
+describe("CreateEngagementLeadIntakeDto validation", () => {
+  const pipe = new ValidationPipe({ transform: true, whitelist: true });
+
+  it("accepts an intake without an experience level", async () => {
+    const intake = {
+      workEmail: "john.doe@wipro.com",
+      accountName: "ABC Bank",
+      smu: "EURP",
+      engagementModel: EngagementModel.TIME_AND_MATERIAL,
+      roleTitle: "QA Engineer",
+      jobDescription: "Test the product.",
+      requiredSkills: ["Java"],
+      minYearsExperience: 3,
+      resourcesRequired: 1,
+      preferredStartDate: "2026-11-01T00:00:00.000Z",
+      engagementDuration: "6 months",
+      workingHoursPerDay: 8,
+      timeZoneRequirement: "IST",
+      remoteWorkAccepted: true,
+      billRateCurrency: "USD",
+      billRateAmount: "100",
+    };
+
+    await expect(
+      pipe.transform(intake, {
+        type: "body",
+        metatype: CreateEngagementLeadIntakeDto,
+      }),
+    ).resolves.toMatchObject(intake);
   });
 });
 
