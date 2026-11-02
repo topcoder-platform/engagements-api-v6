@@ -15,6 +15,7 @@ RUN npm install -g pnpm@11.15.1
 FROM tooling AS deps
 # Copy dependency-defining files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tools ./tools
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 COPY prisma ./prisma
@@ -25,12 +26,14 @@ RUN DATABASE_URL="postgresql://user:pass@localhost:5432/db?schema=public" pnpm p
 FROM tooling AS build
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
+RUN pnpm run test:dependency-compat
 # Build the application
 RUN pnpm build
 
 # ---- Production Dependencies Stage ----
 FROM tooling AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tools ./tools
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 # Install into a clean virtual store so build-only packages are absent from the
