@@ -293,20 +293,30 @@ model EngagementLead {
   billRateAmount           String?
   priority                 LeadPriority?
   additionalRequirements   String?
-  notes                    String?
-  notesUpdatedAt           DateTime?
-  notesUpdatedBy           String?
   status                   EngagementLeadStatus @default(SUBMITTED)
   convertedEngagementId    String?
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
   updatedBy                String?
+  notes                    EngagementLeadNote[]
 
   @@index([status])
   @@index([leadType])
   @@index([workEmail])
   @@index([accountName])
   @@index([createdAt])
+}
+
+/// A Talent Manager note on a lead. Notes are append-only, so each one keeps who wrote it and when.
+model EngagementLeadNote {
+  id               String         @id @default(uuid())
+  engagementLeadId String
+  content          String
+  createdAt        DateTime       @default(now())
+  createdBy        String?
+  lead             EngagementLead @relation(fields: [engagementLeadId], references: [id], onDelete: Cascade)
+
+  @@index([engagementLeadId, createdAt])
 }
 
 model EngagementTimesheetEntry {

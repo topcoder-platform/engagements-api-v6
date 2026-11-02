@@ -244,14 +244,19 @@ exports.Prisma.EngagementLeadScalarFieldEnum = {
   billRateAmount: 'billRateAmount',
   priority: 'priority',
   additionalRequirements: 'additionalRequirements',
-  notes: 'notes',
-  notesUpdatedAt: 'notesUpdatedAt',
-  notesUpdatedBy: 'notesUpdatedBy',
   status: 'status',
   convertedEngagementId: 'convertedEngagementId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   updatedBy: 'updatedBy'
+};
+
+exports.Prisma.EngagementLeadNoteScalarFieldEnum = {
+  id: 'id',
+  engagementLeadId: 'engagementLeadId',
+  content: 'content',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
 };
 
 exports.Prisma.EngagementTimesheetEntryScalarFieldEnum = {
@@ -449,6 +454,7 @@ exports.Prisma.ModelName = {
   EngagementFeedback: 'EngagementFeedback',
   MemberExperience: 'MemberExperience',
   EngagementLead: 'EngagementLead',
+  EngagementLeadNote: 'EngagementLeadNote',
   EngagementTimesheetEntry: 'EngagementTimesheetEntry',
   EngagementTimesheetAudit: 'EngagementTimesheetAudit',
   EngagementManager: 'EngagementManager'

@@ -38,8 +38,11 @@ export class TimesheetAccessService {
    * call this before doing anything else.
    *
    * Order matters, first match wins:
-   *   1. ADMINISTRATOR - a human administrator or a machine token with the manage scope.
-   *   2. MEMBER        - the assignee themselves.
+   *   1. MEMBER        - the assignee themselves, whatever platform roles they also hold. An
+   *                      administrator or TM logging their own hours is a member on that timesheet:
+   *                      they submit for approval like anyone else instead of acting on their own
+   *                      behalf, and cannot approve their own entries.
+   *   2. ADMINISTRATOR - a human administrator or a machine token with the manage scope.
    *   3. MANAGER       - a live EngagementManager row for the assignment's engagement.
    *   4. TM            - a Talent Manager platform role, read-only.
    *   5. otherwise     - NotFoundException.
@@ -51,14 +54,16 @@ export class TimesheetAccessService {
     authUser: Record<string, any> | undefined,
     assignment: TimesheetAssignmentRef,
   ): Promise<TimesheetViewerRole> {
-    if (this.isTimesheetAdmin(authUser)) {
-      return TimesheetViewerRole.Administrator;
-    }
-
-    const userId = normalizeUserId(authUser?.userId);
+    const userId = authUser?.isMachine
+      ? undefined
+      : normalizeUserId(authUser?.userId);
 
     if (userId && userId === normalizeUserId(assignment.memberId)) {
       return TimesheetViewerRole.Member;
+    }
+
+    if (this.isTimesheetAdmin(authUser)) {
+      return TimesheetViewerRole.Administrator;
     }
 
     if (
