@@ -15,6 +15,7 @@ import {
   LeadPriority,
 } from "@prisma/client";
 import { PaginationDto } from "../../engagements/dto";
+import { IsNotWhitespace } from "src/common/validation.util";
 
 export enum EngagementLeadStatusGroup {
   NEW = "NEW",
@@ -136,6 +137,7 @@ export class CreateEngagementLeadNoteDto {
   })
   @IsString()
   @IsNotEmpty()
+  @IsNotWhitespace()
   @MaxLength(5000)
   content: string;
 }
