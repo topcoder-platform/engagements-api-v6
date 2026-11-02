@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import {
   EngagementLead,
+  EngagementLeadNote,
   EngagementLeadStatus,
   EngagementLeadType,
   ExperienceLevel,
@@ -26,6 +27,15 @@ import {
   UpdateEngagementLeadStatusDto,
 } from "./dto";
 
+/** Every lead response carries its notes, oldest first, so they read as a timeline. */
+const LEAD_INCLUDE = {
+  notes: { orderBy: { createdAt: "asc" } },
+} satisfies Prisma.EngagementLeadInclude;
+
+type EngagementLeadWithNotes = EngagementLead & {
+  notes: EngagementLeadNote[];
+};
+
 @Injectable()
 export class EngagementLeadsService {
   private readonly logger = new Logger(EngagementLeadsService.name);
@@ -36,7 +46,7 @@ export class EngagementLeadsService {
   ) {}
 
   private transformToResponseDto(
-    lead: EngagementLead,
+    lead: EngagementLeadWithNotes,
   ): EngagementLeadResponseDto {
     return {
       id: lead.id,
@@ -62,9 +72,12 @@ export class EngagementLeadsService {
       billRateAmount: lead.billRateAmount,
       priority: lead.priority,
       additionalRequirements: lead.additionalRequirements,
-      notes: lead.notes,
-      notesUpdatedAt: lead.notesUpdatedAt,
-      notesUpdatedBy: lead.notesUpdatedBy,
+      notes: lead.notes.map((note) => ({
+        id: note.id,
+        content: note.content,
+        createdAt: note.createdAt,
+        createdBy: note.createdBy,
+      })),
       status: lead.status,
       convertedEngagementId: lead.convertedEngagementId,
       createdAt: lead.createdAt,
@@ -96,6 +109,7 @@ export class EngagementLeadsService {
         additionalRequirements:
           intakeDto.additionalRequirements?.trim() || null,
       },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(lead);
@@ -117,6 +131,7 @@ export class EngagementLeadsService {
           ? new Date(intakeDto.preferredStartDate)
           : null,
       },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(lead);
@@ -223,6 +238,7 @@ export class EngagementLeadsService {
         orderBy,
         skip,
         take: perPage,
+        include: LEAD_INCLUDE,
       }),
       this.db.engagementLead.count({ where }),
     ]);
@@ -241,6 +257,7 @@ export class EngagementLeadsService {
   async findOne(id: string): Promise<EngagementLeadResponseDto> {
     const lead = await this.db.engagementLead.findUnique({
       where: { id },
+      include: LEAD_INCLUDE,
     });
 
     if (!lead) {
@@ -275,15 +292,16 @@ export class EngagementLeadsService {
         status: updateDto.status,
         updatedBy: updatedBy ?? null,
       },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(updated);
   }
 
-  async updateNotes(
+  async addNote(
     id: string,
-    notes: string,
-    updatedBy?: string,
+    content: string,
+    createdBy?: string,
   ): Promise<EngagementLeadResponseDto> {
     const lead = await this.db.engagementLead.findUnique({
       where: { id },
@@ -295,17 +313,26 @@ export class EngagementLeadsService {
 
     if (lead.status === EngagementLeadStatus.CONVERTED) {
       throw new BadRequestException(
-        "Cannot update notes of a converted engagement lead.",
+        "Cannot add notes to a converted engagement lead.",
       );
+    }
+
+    const trimmed = content.trim();
+    if (!trimmed) {
+      throw new BadRequestException("Note content cannot be empty.");
     }
 
     const updated = await this.db.engagementLead.update({
       where: { id },
       data: {
-        notes: notes.trim() || null,
-        notesUpdatedAt: new Date(),
-        notesUpdatedBy: updatedBy ?? null,
+        notes: {
+          create: {
+            content: trimmed,
+            createdBy: createdBy ?? null,
+          },
+        },
       },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(updated);
@@ -335,6 +362,7 @@ export class EngagementLeadsService {
         convertedEngagementId: engagementId,
         updatedBy: updatedBy ?? null,
       },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(updated);

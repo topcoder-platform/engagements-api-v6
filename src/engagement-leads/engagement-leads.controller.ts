@@ -34,13 +34,13 @@ import { PaginatedResponse } from "../engagements/dto";
 import { getUserIdentifier, getUserRoles } from "../common/user.util";
 import {
   CreateEngagementLeadIntakeDto,
+  CreateEngagementLeadNoteDto,
   CreateWiproDirectEngagementLeadIntakeDto,
   EngagementLeadIntakeResponseDto,
   EngagementLeadPrefillDto,
   EngagementLeadQueryDto,
   EngagementLeadResponseDto,
   MarkEngagementLeadConvertedDto,
-  UpdateEngagementLeadNotesDto,
   UpdateEngagementLeadStatusDto,
 } from "./dto";
 import { EngagementLeadsService } from "./engagement-leads.service";
@@ -213,39 +213,39 @@ export class EngagementLeadsController {
     return this.engagementLeadsService.updateStatus(id, updateDto, updatedBy);
   }
 
-  @Patch(":id/notes")
+  @Post(":id/notes")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.WriteEngagements)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Update engagement lead notes",
+    summary: "Add an engagement lead note",
     description:
-      "Saves Talent Manager notes on an engagement lead. Notes cannot be changed once the lead is converted.",
+      "Adds a Talent Manager note to an engagement lead. Notes are read-only once added, and none can be added after the lead is converted.",
   })
   @ApiResponse({
-    status: 200,
-    description: "Engagement lead notes updated.",
+    status: 201,
+    description: "Engagement lead note added.",
     type: EngagementLeadResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "The lead has been converted.",
+    description: "The note is empty or the lead has been converted.",
   })
-  async updateNotes(
+  async addNote(
     @Param("id") id: string,
-    @Body() updateDto: UpdateEngagementLeadNotesDto,
+    @Body() createDto: CreateEngagementLeadNoteDto,
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<EngagementLeadResponseDto> {
     this.assertLeadManager(req.authUser);
-    // Notes show who last edited them, so prefer the readable handle over the user ID.
+    // Each note shows who wrote it, so prefer the readable handle over the user ID.
     const handle =
       typeof req.authUser?.handle === "string"
         ? req.authUser.handle.trim()
         : "";
-    const updatedBy = handle || getUserIdentifier(req.authUser);
-    return this.engagementLeadsService.updateNotes(
+    const createdBy = handle || getUserIdentifier(req.authUser);
+    return this.engagementLeadsService.addNote(
       id,
-      updateDto.notes,
-      updatedBy,
+      createDto.content,
+      createdBy,
     );
   }
 

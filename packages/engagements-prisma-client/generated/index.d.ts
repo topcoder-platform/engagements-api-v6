@@ -44,6 +44,11 @@ export type MemberExperience = $Result.DefaultSelection<Prisma.$MemberExperience
  */
 export type EngagementLead = $Result.DefaultSelection<Prisma.$EngagementLeadPayload>
 /**
+ * Model EngagementLeadNote
+ * A Talent Manager note on a lead. Notes are append-only, so each one keeps who wrote it and when.
+ */
+export type EngagementLeadNote = $Result.DefaultSelection<Prisma.$EngagementLeadNotePayload>
+/**
  * Model EngagementTimesheetEntry
  * 
  */
@@ -473,6 +478,16 @@ export class PrismaClient<
     * ```
     */
   get engagementLead(): Prisma.EngagementLeadDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.engagementLeadNote`: Exposes CRUD operations for the **EngagementLeadNote** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more EngagementLeadNotes
+    * const engagementLeadNotes = await prisma.engagementLeadNote.findMany()
+    * ```
+    */
+  get engagementLeadNote(): Prisma.EngagementLeadNoteDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.engagementTimesheetEntry`: Exposes CRUD operations for the **EngagementTimesheetEntry** model.
@@ -943,6 +958,7 @@ export namespace Prisma {
     EngagementFeedback: 'EngagementFeedback',
     MemberExperience: 'MemberExperience',
     EngagementLead: 'EngagementLead',
+    EngagementLeadNote: 'EngagementLeadNote',
     EngagementTimesheetEntry: 'EngagementTimesheetEntry',
     EngagementTimesheetAudit: 'EngagementTimesheetAudit',
     EngagementManager: 'EngagementManager'
@@ -961,7 +977,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "engagement" | "engagementApplication" | "engagementAssignment" | "engagementFeedback" | "memberExperience" | "engagementLead" | "engagementTimesheetEntry" | "engagementTimesheetAudit" | "engagementManager"
+      modelProps: "engagement" | "engagementApplication" | "engagementAssignment" | "engagementFeedback" | "memberExperience" | "engagementLead" | "engagementLeadNote" | "engagementTimesheetEntry" | "engagementTimesheetAudit" | "engagementManager"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1409,6 +1425,80 @@ export namespace Prisma {
           }
         }
       }
+      EngagementLeadNote: {
+        payload: Prisma.$EngagementLeadNotePayload<ExtArgs>
+        fields: Prisma.EngagementLeadNoteFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.EngagementLeadNoteFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.EngagementLeadNoteFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>
+          }
+          findFirst: {
+            args: Prisma.EngagementLeadNoteFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.EngagementLeadNoteFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>
+          }
+          findMany: {
+            args: Prisma.EngagementLeadNoteFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>[]
+          }
+          create: {
+            args: Prisma.EngagementLeadNoteCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>
+          }
+          createMany: {
+            args: Prisma.EngagementLeadNoteCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.EngagementLeadNoteCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>[]
+          }
+          delete: {
+            args: Prisma.EngagementLeadNoteDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>
+          }
+          update: {
+            args: Prisma.EngagementLeadNoteUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>
+          }
+          deleteMany: {
+            args: Prisma.EngagementLeadNoteDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.EngagementLeadNoteUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.EngagementLeadNoteUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>[]
+          }
+          upsert: {
+            args: Prisma.EngagementLeadNoteUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$EngagementLeadNotePayload>
+          }
+          aggregate: {
+            args: Prisma.EngagementLeadNoteAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateEngagementLeadNote>
+          }
+          groupBy: {
+            args: Prisma.EngagementLeadNoteGroupByArgs<ExtArgs>
+            result: $Utils.Optional<EngagementLeadNoteGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.EngagementLeadNoteCountArgs<ExtArgs>
+            result: $Utils.Optional<EngagementLeadNoteCountAggregateOutputType> | number
+          }
+        }
+      }
       EngagementTimesheetEntry: {
         payload: Prisma.$EngagementTimesheetEntryPayload<ExtArgs>
         fields: Prisma.EngagementTimesheetEntryFieldRefs
@@ -1745,6 +1835,7 @@ export namespace Prisma {
     engagementFeedback?: EngagementFeedbackOmit
     memberExperience?: MemberExperienceOmit
     engagementLead?: EngagementLeadOmit
+    engagementLeadNote?: EngagementLeadNoteOmit
     engagementTimesheetEntry?: EngagementTimesheetEntryOmit
     engagementTimesheetAudit?: EngagementTimesheetAuditOmit
     engagementManager?: EngagementManagerOmit
@@ -1927,6 +2018,37 @@ export namespace Prisma {
    */
   export type EngagementAssignmentCountOutputTypeCountTimesheetEntriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EngagementTimesheetEntryWhereInput
+  }
+
+
+  /**
+   * Count Type EngagementLeadCountOutputType
+   */
+
+  export type EngagementLeadCountOutputType = {
+    notes: number
+  }
+
+  export type EngagementLeadCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    notes?: boolean | EngagementLeadCountOutputTypeCountNotesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * EngagementLeadCountOutputType without action
+   */
+  export type EngagementLeadCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadCountOutputType
+     */
+    select?: EngagementLeadCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * EngagementLeadCountOutputType without action
+   */
+  export type EngagementLeadCountOutputTypeCountNotesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementLeadNoteWhereInput
   }
 
 
@@ -8450,9 +8572,6 @@ export namespace Prisma {
     billRateAmount: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
-    notes: string | null
-    notesUpdatedAt: Date | null
-    notesUpdatedBy: string | null
     status: $Enums.EngagementLeadStatus | null
     convertedEngagementId: string | null
     createdAt: Date | null
@@ -8483,9 +8602,6 @@ export namespace Prisma {
     billRateAmount: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
-    notes: string | null
-    notesUpdatedAt: Date | null
-    notesUpdatedBy: string | null
     status: $Enums.EngagementLeadStatus | null
     convertedEngagementId: string | null
     createdAt: Date | null
@@ -8517,9 +8633,6 @@ export namespace Prisma {
     billRateAmount: number
     priority: number
     additionalRequirements: number
-    notes: number
-    notesUpdatedAt: number
-    notesUpdatedBy: number
     status: number
     convertedEngagementId: number
     createdAt: number
@@ -8564,9 +8677,6 @@ export namespace Prisma {
     billRateAmount?: true
     priority?: true
     additionalRequirements?: true
-    notes?: true
-    notesUpdatedAt?: true
-    notesUpdatedBy?: true
     status?: true
     convertedEngagementId?: true
     createdAt?: true
@@ -8597,9 +8707,6 @@ export namespace Prisma {
     billRateAmount?: true
     priority?: true
     additionalRequirements?: true
-    notes?: true
-    notesUpdatedAt?: true
-    notesUpdatedBy?: true
     status?: true
     convertedEngagementId?: true
     createdAt?: true
@@ -8631,9 +8738,6 @@ export namespace Prisma {
     billRateAmount?: true
     priority?: true
     additionalRequirements?: true
-    notes?: true
-    notesUpdatedAt?: true
-    notesUpdatedBy?: true
     status?: true
     convertedEngagementId?: true
     createdAt?: true
@@ -8752,9 +8856,6 @@ export namespace Prisma {
     billRateAmount: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
-    notes: string | null
-    notesUpdatedAt: Date | null
-    notesUpdatedBy: string | null
     status: $Enums.EngagementLeadStatus
     convertedEngagementId: string | null
     createdAt: Date
@@ -8805,14 +8906,13 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
-    notes?: boolean
-    notesUpdatedAt?: boolean
-    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
+    notes?: boolean | EngagementLead$notesArgs<ExtArgs>
+    _count?: boolean | EngagementLeadCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["engagementLead"]>
 
   export type EngagementLeadSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -8839,9 +8939,6 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
-    notes?: boolean
-    notesUpdatedAt?: boolean
-    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
@@ -8873,9 +8970,6 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
-    notes?: boolean
-    notesUpdatedAt?: boolean
-    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
@@ -8907,9 +9001,6 @@ export namespace Prisma {
     billRateAmount?: boolean
     priority?: boolean
     additionalRequirements?: boolean
-    notes?: boolean
-    notesUpdatedAt?: boolean
-    notesUpdatedBy?: boolean
     status?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
@@ -8917,11 +9008,19 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "notes" | "notesUpdatedAt" | "notesUpdatedBy" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
+  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
+  export type EngagementLeadInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    notes?: boolean | EngagementLead$notesArgs<ExtArgs>
+    _count?: boolean | EngagementLeadCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type EngagementLeadIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type EngagementLeadIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
 
   export type $EngagementLeadPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EngagementLead"
-    objects: {}
+    objects: {
+      notes: Prisma.$EngagementLeadNotePayload<ExtArgs>[]
+    }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       leadType: $Enums.EngagementLeadType
@@ -8946,9 +9045,6 @@ export namespace Prisma {
       billRateAmount: string | null
       priority: $Enums.LeadPriority | null
       additionalRequirements: string | null
-      notes: string | null
-      notesUpdatedAt: Date | null
-      notesUpdatedBy: string | null
       status: $Enums.EngagementLeadStatus
       convertedEngagementId: string | null
       createdAt: Date
@@ -9348,6 +9444,7 @@ export namespace Prisma {
    */
   export interface Prisma__EngagementLeadClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    notes<T extends EngagementLead$notesArgs<ExtArgs> = {}>(args?: Subset<T, EngagementLead$notesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9400,9 +9497,6 @@ export namespace Prisma {
     readonly billRateAmount: FieldRef<"EngagementLead", 'String'>
     readonly priority: FieldRef<"EngagementLead", 'LeadPriority'>
     readonly additionalRequirements: FieldRef<"EngagementLead", 'String'>
-    readonly notes: FieldRef<"EngagementLead", 'String'>
-    readonly notesUpdatedAt: FieldRef<"EngagementLead", 'DateTime'>
-    readonly notesUpdatedBy: FieldRef<"EngagementLead", 'String'>
     readonly status: FieldRef<"EngagementLead", 'EngagementLeadStatus'>
     readonly convertedEngagementId: FieldRef<"EngagementLead", 'String'>
     readonly createdAt: FieldRef<"EngagementLead", 'DateTime'>
@@ -9425,6 +9519,10 @@ export namespace Prisma {
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    /**
      * Filter, which EngagementLead to fetch.
      */
     where: EngagementLeadWhereUniqueInput
@@ -9443,6 +9541,10 @@ export namespace Prisma {
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    /**
      * Filter, which EngagementLead to fetch.
      */
     where: EngagementLeadWhereUniqueInput
@@ -9460,6 +9562,10 @@ export namespace Prisma {
      * Omit specific fields from the EngagementLead
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
     /**
      * Filter, which EngagementLead to fetch.
      */
@@ -9509,6 +9615,10 @@ export namespace Prisma {
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    /**
      * Filter, which EngagementLead to fetch.
      */
     where?: EngagementLeadWhereInput
@@ -9556,6 +9666,10 @@ export namespace Prisma {
      * Omit specific fields from the EngagementLead
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
     /**
      * Filter, which EngagementLeads to fetch.
      */
@@ -9605,6 +9719,10 @@ export namespace Prisma {
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    /**
      * The data needed to create a EngagementLead.
      */
     data: XOR<EngagementLeadCreateInput, EngagementLeadUncheckedCreateInput>
@@ -9652,6 +9770,10 @@ export namespace Prisma {
      * Omit specific fields from the EngagementLead
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
     /**
      * The data needed to update a EngagementLead.
      */
@@ -9719,6 +9841,10 @@ export namespace Prisma {
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    /**
      * The filter to search for the EngagementLead to update in case it exists.
      */
     where: EngagementLeadWhereUniqueInput
@@ -9745,6 +9871,10 @@ export namespace Prisma {
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    /**
      * Filter which EngagementLead to delete.
      */
     where: EngagementLeadWhereUniqueInput
@@ -9765,6 +9895,30 @@ export namespace Prisma {
   }
 
   /**
+   * EngagementLead.notes
+   */
+  export type EngagementLead$notesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    where?: EngagementLeadNoteWhereInput
+    orderBy?: EngagementLeadNoteOrderByWithRelationInput | EngagementLeadNoteOrderByWithRelationInput[]
+    cursor?: EngagementLeadNoteWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EngagementLeadNoteScalarFieldEnum | EngagementLeadNoteScalarFieldEnum[]
+  }
+
+  /**
    * EngagementLead without action
    */
   export type EngagementLeadDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -9776,6 +9930,1073 @@ export namespace Prisma {
      * Omit specific fields from the EngagementLead
      */
     omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model EngagementLeadNote
+   */
+
+  export type AggregateEngagementLeadNote = {
+    _count: EngagementLeadNoteCountAggregateOutputType | null
+    _min: EngagementLeadNoteMinAggregateOutputType | null
+    _max: EngagementLeadNoteMaxAggregateOutputType | null
+  }
+
+  export type EngagementLeadNoteMinAggregateOutputType = {
+    id: string | null
+    engagementLeadId: string | null
+    content: string | null
+    createdAt: Date | null
+    createdBy: string | null
+  }
+
+  export type EngagementLeadNoteMaxAggregateOutputType = {
+    id: string | null
+    engagementLeadId: string | null
+    content: string | null
+    createdAt: Date | null
+    createdBy: string | null
+  }
+
+  export type EngagementLeadNoteCountAggregateOutputType = {
+    id: number
+    engagementLeadId: number
+    content: number
+    createdAt: number
+    createdBy: number
+    _all: number
+  }
+
+
+  export type EngagementLeadNoteMinAggregateInputType = {
+    id?: true
+    engagementLeadId?: true
+    content?: true
+    createdAt?: true
+    createdBy?: true
+  }
+
+  export type EngagementLeadNoteMaxAggregateInputType = {
+    id?: true
+    engagementLeadId?: true
+    content?: true
+    createdAt?: true
+    createdBy?: true
+  }
+
+  export type EngagementLeadNoteCountAggregateInputType = {
+    id?: true
+    engagementLeadId?: true
+    content?: true
+    createdAt?: true
+    createdBy?: true
+    _all?: true
+  }
+
+  export type EngagementLeadNoteAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementLeadNote to aggregate.
+     */
+    where?: EngagementLeadNoteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeadNotes to fetch.
+     */
+    orderBy?: EngagementLeadNoteOrderByWithRelationInput | EngagementLeadNoteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: EngagementLeadNoteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeadNotes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeadNotes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned EngagementLeadNotes
+    **/
+    _count?: true | EngagementLeadNoteCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: EngagementLeadNoteMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: EngagementLeadNoteMaxAggregateInputType
+  }
+
+  export type GetEngagementLeadNoteAggregateType<T extends EngagementLeadNoteAggregateArgs> = {
+        [P in keyof T & keyof AggregateEngagementLeadNote]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateEngagementLeadNote[P]>
+      : GetScalarType<T[P], AggregateEngagementLeadNote[P]>
+  }
+
+
+
+
+  export type EngagementLeadNoteGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EngagementLeadNoteWhereInput
+    orderBy?: EngagementLeadNoteOrderByWithAggregationInput | EngagementLeadNoteOrderByWithAggregationInput[]
+    by: EngagementLeadNoteScalarFieldEnum[] | EngagementLeadNoteScalarFieldEnum
+    having?: EngagementLeadNoteScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: EngagementLeadNoteCountAggregateInputType | true
+    _min?: EngagementLeadNoteMinAggregateInputType
+    _max?: EngagementLeadNoteMaxAggregateInputType
+  }
+
+  export type EngagementLeadNoteGroupByOutputType = {
+    id: string
+    engagementLeadId: string
+    content: string
+    createdAt: Date
+    createdBy: string | null
+    _count: EngagementLeadNoteCountAggregateOutputType | null
+    _min: EngagementLeadNoteMinAggregateOutputType | null
+    _max: EngagementLeadNoteMaxAggregateOutputType | null
+  }
+
+  type GetEngagementLeadNoteGroupByPayload<T extends EngagementLeadNoteGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<EngagementLeadNoteGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof EngagementLeadNoteGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EngagementLeadNoteGroupByOutputType[P]>
+            : GetScalarType<T[P], EngagementLeadNoteGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type EngagementLeadNoteSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementLeadId?: boolean
+    content?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementLeadNote"]>
+
+  export type EngagementLeadNoteSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementLeadId?: boolean
+    content?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementLeadNote"]>
+
+  export type EngagementLeadNoteSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    engagementLeadId?: boolean
+    content?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["engagementLeadNote"]>
+
+  export type EngagementLeadNoteSelectScalar = {
+    id?: boolean
+    engagementLeadId?: boolean
+    content?: boolean
+    createdAt?: boolean
+    createdBy?: boolean
+  }
+
+  export type EngagementLeadNoteOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementLeadId" | "content" | "createdAt" | "createdBy", ExtArgs["result"]["engagementLeadNote"]>
+  export type EngagementLeadNoteInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+  }
+  export type EngagementLeadNoteIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+  }
+  export type EngagementLeadNoteIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+  }
+
+  export type $EngagementLeadNotePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "EngagementLeadNote"
+    objects: {
+      lead: Prisma.$EngagementLeadPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      engagementLeadId: string
+      content: string
+      createdAt: Date
+      createdBy: string | null
+    }, ExtArgs["result"]["engagementLeadNote"]>
+    composites: {}
+  }
+
+  type EngagementLeadNoteGetPayload<S extends boolean | null | undefined | EngagementLeadNoteDefaultArgs> = $Result.GetResult<Prisma.$EngagementLeadNotePayload, S>
+
+  type EngagementLeadNoteCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<EngagementLeadNoteFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: EngagementLeadNoteCountAggregateInputType | true
+    }
+
+  export interface EngagementLeadNoteDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['EngagementLeadNote'], meta: { name: 'EngagementLeadNote' } }
+    /**
+     * Find zero or one EngagementLeadNote that matches the filter.
+     * @param {EngagementLeadNoteFindUniqueArgs} args - Arguments to find a EngagementLeadNote
+     * @example
+     * // Get one EngagementLeadNote
+     * const engagementLeadNote = await prisma.engagementLeadNote.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends EngagementLeadNoteFindUniqueArgs>(args: SelectSubset<T, EngagementLeadNoteFindUniqueArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one EngagementLeadNote that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {EngagementLeadNoteFindUniqueOrThrowArgs} args - Arguments to find a EngagementLeadNote
+     * @example
+     * // Get one EngagementLeadNote
+     * const engagementLeadNote = await prisma.engagementLeadNote.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends EngagementLeadNoteFindUniqueOrThrowArgs>(args: SelectSubset<T, EngagementLeadNoteFindUniqueOrThrowArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementLeadNote that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadNoteFindFirstArgs} args - Arguments to find a EngagementLeadNote
+     * @example
+     * // Get one EngagementLeadNote
+     * const engagementLeadNote = await prisma.engagementLeadNote.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends EngagementLeadNoteFindFirstArgs>(args?: SelectSubset<T, EngagementLeadNoteFindFirstArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first EngagementLeadNote that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadNoteFindFirstOrThrowArgs} args - Arguments to find a EngagementLeadNote
+     * @example
+     * // Get one EngagementLeadNote
+     * const engagementLeadNote = await prisma.engagementLeadNote.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends EngagementLeadNoteFindFirstOrThrowArgs>(args?: SelectSubset<T, EngagementLeadNoteFindFirstOrThrowArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more EngagementLeadNotes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadNoteFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all EngagementLeadNotes
+     * const engagementLeadNotes = await prisma.engagementLeadNote.findMany()
+     * 
+     * // Get first 10 EngagementLeadNotes
+     * const engagementLeadNotes = await prisma.engagementLeadNote.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const engagementLeadNoteWithIdOnly = await prisma.engagementLeadNote.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends EngagementLeadNoteFindManyArgs>(args?: SelectSubset<T, EngagementLeadNoteFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a EngagementLeadNote.
+     * @param {EngagementLeadNoteCreateArgs} args - Arguments to create a EngagementLeadNote.
+     * @example
+     * // Create one EngagementLeadNote
+     * const EngagementLeadNote = await prisma.engagementLeadNote.create({
+     *   data: {
+     *     // ... data to create a EngagementLeadNote
+     *   }
+     * })
+     * 
+     */
+    create<T extends EngagementLeadNoteCreateArgs>(args: SelectSubset<T, EngagementLeadNoteCreateArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many EngagementLeadNotes.
+     * @param {EngagementLeadNoteCreateManyArgs} args - Arguments to create many EngagementLeadNotes.
+     * @example
+     * // Create many EngagementLeadNotes
+     * const engagementLeadNote = await prisma.engagementLeadNote.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends EngagementLeadNoteCreateManyArgs>(args?: SelectSubset<T, EngagementLeadNoteCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many EngagementLeadNotes and returns the data saved in the database.
+     * @param {EngagementLeadNoteCreateManyAndReturnArgs} args - Arguments to create many EngagementLeadNotes.
+     * @example
+     * // Create many EngagementLeadNotes
+     * const engagementLeadNote = await prisma.engagementLeadNote.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many EngagementLeadNotes and only return the `id`
+     * const engagementLeadNoteWithIdOnly = await prisma.engagementLeadNote.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends EngagementLeadNoteCreateManyAndReturnArgs>(args?: SelectSubset<T, EngagementLeadNoteCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a EngagementLeadNote.
+     * @param {EngagementLeadNoteDeleteArgs} args - Arguments to delete one EngagementLeadNote.
+     * @example
+     * // Delete one EngagementLeadNote
+     * const EngagementLeadNote = await prisma.engagementLeadNote.delete({
+     *   where: {
+     *     // ... filter to delete one EngagementLeadNote
+     *   }
+     * })
+     * 
+     */
+    delete<T extends EngagementLeadNoteDeleteArgs>(args: SelectSubset<T, EngagementLeadNoteDeleteArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one EngagementLeadNote.
+     * @param {EngagementLeadNoteUpdateArgs} args - Arguments to update one EngagementLeadNote.
+     * @example
+     * // Update one EngagementLeadNote
+     * const engagementLeadNote = await prisma.engagementLeadNote.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends EngagementLeadNoteUpdateArgs>(args: SelectSubset<T, EngagementLeadNoteUpdateArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more EngagementLeadNotes.
+     * @param {EngagementLeadNoteDeleteManyArgs} args - Arguments to filter EngagementLeadNotes to delete.
+     * @example
+     * // Delete a few EngagementLeadNotes
+     * const { count } = await prisma.engagementLeadNote.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends EngagementLeadNoteDeleteManyArgs>(args?: SelectSubset<T, EngagementLeadNoteDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementLeadNotes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadNoteUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many EngagementLeadNotes
+     * const engagementLeadNote = await prisma.engagementLeadNote.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends EngagementLeadNoteUpdateManyArgs>(args: SelectSubset<T, EngagementLeadNoteUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more EngagementLeadNotes and returns the data updated in the database.
+     * @param {EngagementLeadNoteUpdateManyAndReturnArgs} args - Arguments to update many EngagementLeadNotes.
+     * @example
+     * // Update many EngagementLeadNotes
+     * const engagementLeadNote = await prisma.engagementLeadNote.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more EngagementLeadNotes and only return the `id`
+     * const engagementLeadNoteWithIdOnly = await prisma.engagementLeadNote.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends EngagementLeadNoteUpdateManyAndReturnArgs>(args: SelectSubset<T, EngagementLeadNoteUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one EngagementLeadNote.
+     * @param {EngagementLeadNoteUpsertArgs} args - Arguments to update or create a EngagementLeadNote.
+     * @example
+     * // Update or create a EngagementLeadNote
+     * const engagementLeadNote = await prisma.engagementLeadNote.upsert({
+     *   create: {
+     *     // ... data to create a EngagementLeadNote
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the EngagementLeadNote we want to update
+     *   }
+     * })
+     */
+    upsert<T extends EngagementLeadNoteUpsertArgs>(args: SelectSubset<T, EngagementLeadNoteUpsertArgs<ExtArgs>>): Prisma__EngagementLeadNoteClient<$Result.GetResult<Prisma.$EngagementLeadNotePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of EngagementLeadNotes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadNoteCountArgs} args - Arguments to filter EngagementLeadNotes to count.
+     * @example
+     * // Count the number of EngagementLeadNotes
+     * const count = await prisma.engagementLeadNote.count({
+     *   where: {
+     *     // ... the filter for the EngagementLeadNotes we want to count
+     *   }
+     * })
+    **/
+    count<T extends EngagementLeadNoteCountArgs>(
+      args?: Subset<T, EngagementLeadNoteCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], EngagementLeadNoteCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a EngagementLeadNote.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadNoteAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends EngagementLeadNoteAggregateArgs>(args: Subset<T, EngagementLeadNoteAggregateArgs>): Prisma.PrismaPromise<GetEngagementLeadNoteAggregateType<T>>
+
+    /**
+     * Group by EngagementLeadNote.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {EngagementLeadNoteGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends EngagementLeadNoteGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: EngagementLeadNoteGroupByArgs['orderBy'] }
+        : { orderBy?: EngagementLeadNoteGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, EngagementLeadNoteGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEngagementLeadNoteGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the EngagementLeadNote model
+   */
+  readonly fields: EngagementLeadNoteFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for EngagementLeadNote.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__EngagementLeadNoteClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    lead<T extends EngagementLeadDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EngagementLeadDefaultArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the EngagementLeadNote model
+   */
+  interface EngagementLeadNoteFieldRefs {
+    readonly id: FieldRef<"EngagementLeadNote", 'String'>
+    readonly engagementLeadId: FieldRef<"EngagementLeadNote", 'String'>
+    readonly content: FieldRef<"EngagementLeadNote", 'String'>
+    readonly createdAt: FieldRef<"EngagementLeadNote", 'DateTime'>
+    readonly createdBy: FieldRef<"EngagementLeadNote", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * EngagementLeadNote findUnique
+   */
+  export type EngagementLeadNoteFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementLeadNote to fetch.
+     */
+    where: EngagementLeadNoteWhereUniqueInput
+  }
+
+  /**
+   * EngagementLeadNote findUniqueOrThrow
+   */
+  export type EngagementLeadNoteFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementLeadNote to fetch.
+     */
+    where: EngagementLeadNoteWhereUniqueInput
+  }
+
+  /**
+   * EngagementLeadNote findFirst
+   */
+  export type EngagementLeadNoteFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementLeadNote to fetch.
+     */
+    where?: EngagementLeadNoteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeadNotes to fetch.
+     */
+    orderBy?: EngagementLeadNoteOrderByWithRelationInput | EngagementLeadNoteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementLeadNotes.
+     */
+    cursor?: EngagementLeadNoteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeadNotes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeadNotes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementLeadNotes.
+     */
+    distinct?: EngagementLeadNoteScalarFieldEnum | EngagementLeadNoteScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementLeadNote findFirstOrThrow
+   */
+  export type EngagementLeadNoteFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementLeadNote to fetch.
+     */
+    where?: EngagementLeadNoteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeadNotes to fetch.
+     */
+    orderBy?: EngagementLeadNoteOrderByWithRelationInput | EngagementLeadNoteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for EngagementLeadNotes.
+     */
+    cursor?: EngagementLeadNoteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeadNotes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeadNotes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementLeadNotes.
+     */
+    distinct?: EngagementLeadNoteScalarFieldEnum | EngagementLeadNoteScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementLeadNote findMany
+   */
+  export type EngagementLeadNoteFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * Filter, which EngagementLeadNotes to fetch.
+     */
+    where?: EngagementLeadNoteWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of EngagementLeadNotes to fetch.
+     */
+    orderBy?: EngagementLeadNoteOrderByWithRelationInput | EngagementLeadNoteOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing EngagementLeadNotes.
+     */
+    cursor?: EngagementLeadNoteWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` EngagementLeadNotes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` EngagementLeadNotes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of EngagementLeadNotes.
+     */
+    distinct?: EngagementLeadNoteScalarFieldEnum | EngagementLeadNoteScalarFieldEnum[]
+  }
+
+  /**
+   * EngagementLeadNote create
+   */
+  export type EngagementLeadNoteCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * The data needed to create a EngagementLeadNote.
+     */
+    data: XOR<EngagementLeadNoteCreateInput, EngagementLeadNoteUncheckedCreateInput>
+  }
+
+  /**
+   * EngagementLeadNote createMany
+   */
+  export type EngagementLeadNoteCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many EngagementLeadNotes.
+     */
+    data: EngagementLeadNoteCreateManyInput | EngagementLeadNoteCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * EngagementLeadNote createManyAndReturn
+   */
+  export type EngagementLeadNoteCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * The data used to create many EngagementLeadNotes.
+     */
+    data: EngagementLeadNoteCreateManyInput | EngagementLeadNoteCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementLeadNote update
+   */
+  export type EngagementLeadNoteUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * The data needed to update a EngagementLeadNote.
+     */
+    data: XOR<EngagementLeadNoteUpdateInput, EngagementLeadNoteUncheckedUpdateInput>
+    /**
+     * Choose, which EngagementLeadNote to update.
+     */
+    where: EngagementLeadNoteWhereUniqueInput
+  }
+
+  /**
+   * EngagementLeadNote updateMany
+   */
+  export type EngagementLeadNoteUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update EngagementLeadNotes.
+     */
+    data: XOR<EngagementLeadNoteUpdateManyMutationInput, EngagementLeadNoteUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementLeadNotes to update
+     */
+    where?: EngagementLeadNoteWhereInput
+    /**
+     * Limit how many EngagementLeadNotes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementLeadNote updateManyAndReturn
+   */
+  export type EngagementLeadNoteUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * The data used to update EngagementLeadNotes.
+     */
+    data: XOR<EngagementLeadNoteUpdateManyMutationInput, EngagementLeadNoteUncheckedUpdateManyInput>
+    /**
+     * Filter which EngagementLeadNotes to update
+     */
+    where?: EngagementLeadNoteWhereInput
+    /**
+     * Limit how many EngagementLeadNotes to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * EngagementLeadNote upsert
+   */
+  export type EngagementLeadNoteUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * The filter to search for the EngagementLeadNote to update in case it exists.
+     */
+    where: EngagementLeadNoteWhereUniqueInput
+    /**
+     * In case the EngagementLeadNote found by the `where` argument doesn't exist, create a new EngagementLeadNote with this data.
+     */
+    create: XOR<EngagementLeadNoteCreateInput, EngagementLeadNoteUncheckedCreateInput>
+    /**
+     * In case the EngagementLeadNote was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<EngagementLeadNoteUpdateInput, EngagementLeadNoteUncheckedUpdateInput>
+  }
+
+  /**
+   * EngagementLeadNote delete
+   */
+  export type EngagementLeadNoteDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
+    /**
+     * Filter which EngagementLeadNote to delete.
+     */
+    where: EngagementLeadNoteWhereUniqueInput
+  }
+
+  /**
+   * EngagementLeadNote deleteMany
+   */
+  export type EngagementLeadNoteDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which EngagementLeadNotes to delete
+     */
+    where?: EngagementLeadNoteWhereInput
+    /**
+     * Limit how many EngagementLeadNotes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * EngagementLeadNote without action
+   */
+  export type EngagementLeadNoteDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLeadNote
+     */
+    select?: EngagementLeadNoteSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLeadNote
+     */
+    omit?: EngagementLeadNoteOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadNoteInclude<ExtArgs> | null
   }
 
 
@@ -13553,9 +14774,6 @@ export namespace Prisma {
     billRateAmount: 'billRateAmount',
     priority: 'priority',
     additionalRequirements: 'additionalRequirements',
-    notes: 'notes',
-    notesUpdatedAt: 'notesUpdatedAt',
-    notesUpdatedBy: 'notesUpdatedBy',
     status: 'status',
     convertedEngagementId: 'convertedEngagementId',
     createdAt: 'createdAt',
@@ -13564,6 +14782,17 @@ export namespace Prisma {
   };
 
   export type EngagementLeadScalarFieldEnum = (typeof EngagementLeadScalarFieldEnum)[keyof typeof EngagementLeadScalarFieldEnum]
+
+
+  export const EngagementLeadNoteScalarFieldEnum: {
+    id: 'id',
+    engagementLeadId: 'engagementLeadId',
+    content: 'content',
+    createdAt: 'createdAt',
+    createdBy: 'createdBy'
+  };
+
+  export type EngagementLeadNoteScalarFieldEnum = (typeof EngagementLeadNoteScalarFieldEnum)[keyof typeof EngagementLeadNoteScalarFieldEnum]
 
 
   export const EngagementTimesheetEntryScalarFieldEnum: {
@@ -14616,14 +15845,12 @@ export namespace Prisma {
     billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
-    notes?: StringNullableFilter<"EngagementLead"> | string | null
-    notesUpdatedAt?: DateTimeNullableFilter<"EngagementLead"> | Date | string | null
-    notesUpdatedBy?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementLead"> | Date | string
     updatedBy?: StringNullableFilter<"EngagementLead"> | string | null
+    notes?: EngagementLeadNoteListRelationFilter
   }
 
   export type EngagementLeadOrderByWithRelationInput = {
@@ -14650,14 +15877,12 @@ export namespace Prisma {
     billRateAmount?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
-    notes?: SortOrderInput | SortOrder
-    notesUpdatedAt?: SortOrderInput | SortOrder
-    notesUpdatedBy?: SortOrderInput | SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     updatedBy?: SortOrderInput | SortOrder
+    notes?: EngagementLeadNoteOrderByRelationAggregateInput
   }
 
   export type EngagementLeadWhereUniqueInput = Prisma.AtLeast<{
@@ -14687,14 +15912,12 @@ export namespace Prisma {
     billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
-    notes?: StringNullableFilter<"EngagementLead"> | string | null
-    notesUpdatedAt?: DateTimeNullableFilter<"EngagementLead"> | Date | string | null
-    notesUpdatedBy?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementLead"> | Date | string
     updatedBy?: StringNullableFilter<"EngagementLead"> | string | null
+    notes?: EngagementLeadNoteListRelationFilter
   }, "id">
 
   export type EngagementLeadOrderByWithAggregationInput = {
@@ -14721,9 +15944,6 @@ export namespace Prisma {
     billRateAmount?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
-    notes?: SortOrderInput | SortOrder
-    notesUpdatedAt?: SortOrderInput | SortOrder
-    notesUpdatedBy?: SortOrderInput | SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -14763,14 +15983,66 @@ export namespace Prisma {
     billRateAmount?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
-    notes?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
-    notesUpdatedAt?: DateTimeNullableWithAggregatesFilter<"EngagementLead"> | Date | string | null
-    notesUpdatedBy?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
     convertedEngagementId?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
     updatedBy?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+  }
+
+  export type EngagementLeadNoteWhereInput = {
+    AND?: EngagementLeadNoteWhereInput | EngagementLeadNoteWhereInput[]
+    OR?: EngagementLeadNoteWhereInput[]
+    NOT?: EngagementLeadNoteWhereInput | EngagementLeadNoteWhereInput[]
+    id?: StringFilter<"EngagementLeadNote"> | string
+    engagementLeadId?: StringFilter<"EngagementLeadNote"> | string
+    content?: StringFilter<"EngagementLeadNote"> | string
+    createdAt?: DateTimeFilter<"EngagementLeadNote"> | Date | string
+    createdBy?: StringNullableFilter<"EngagementLeadNote"> | string | null
+    lead?: XOR<EngagementLeadScalarRelationFilter, EngagementLeadWhereInput>
+  }
+
+  export type EngagementLeadNoteOrderByWithRelationInput = {
+    id?: SortOrder
+    engagementLeadId?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrderInput | SortOrder
+    lead?: EngagementLeadOrderByWithRelationInput
+  }
+
+  export type EngagementLeadNoteWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: EngagementLeadNoteWhereInput | EngagementLeadNoteWhereInput[]
+    OR?: EngagementLeadNoteWhereInput[]
+    NOT?: EngagementLeadNoteWhereInput | EngagementLeadNoteWhereInput[]
+    engagementLeadId?: StringFilter<"EngagementLeadNote"> | string
+    content?: StringFilter<"EngagementLeadNote"> | string
+    createdAt?: DateTimeFilter<"EngagementLeadNote"> | Date | string
+    createdBy?: StringNullableFilter<"EngagementLeadNote"> | string | null
+    lead?: XOR<EngagementLeadScalarRelationFilter, EngagementLeadWhereInput>
+  }, "id">
+
+  export type EngagementLeadNoteOrderByWithAggregationInput = {
+    id?: SortOrder
+    engagementLeadId?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrderInput | SortOrder
+    _count?: EngagementLeadNoteCountOrderByAggregateInput
+    _max?: EngagementLeadNoteMaxOrderByAggregateInput
+    _min?: EngagementLeadNoteMinOrderByAggregateInput
+  }
+
+  export type EngagementLeadNoteScalarWhereWithAggregatesInput = {
+    AND?: EngagementLeadNoteScalarWhereWithAggregatesInput | EngagementLeadNoteScalarWhereWithAggregatesInput[]
+    OR?: EngagementLeadNoteScalarWhereWithAggregatesInput[]
+    NOT?: EngagementLeadNoteScalarWhereWithAggregatesInput | EngagementLeadNoteScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"EngagementLeadNote"> | string
+    engagementLeadId?: StringWithAggregatesFilter<"EngagementLeadNote"> | string
+    content?: StringWithAggregatesFilter<"EngagementLeadNote"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"EngagementLeadNote"> | Date | string
+    createdBy?: StringNullableWithAggregatesFilter<"EngagementLeadNote"> | string | null
   }
 
   export type EngagementTimesheetEntryWhereInput = {
@@ -15816,14 +17088,12 @@ export namespace Prisma {
     billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
-    notes?: string | null
-    notesUpdatedAt?: Date | string | null
-    notesUpdatedBy?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     updatedBy?: string | null
+    notes?: EngagementLeadNoteCreateNestedManyWithoutLeadInput
   }
 
   export type EngagementLeadUncheckedCreateInput = {
@@ -15850,14 +17120,12 @@ export namespace Prisma {
     billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
-    notes?: string | null
-    notesUpdatedAt?: Date | string | null
-    notesUpdatedBy?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     updatedBy?: string | null
+    notes?: EngagementLeadNoteUncheckedCreateNestedManyWithoutLeadInput
   }
 
   export type EngagementLeadUpdateInput = {
@@ -15884,14 +17152,12 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: EngagementLeadNoteUpdateManyWithoutLeadNestedInput
   }
 
   export type EngagementLeadUncheckedUpdateInput = {
@@ -15918,14 +17184,12 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: EngagementLeadNoteUncheckedUpdateManyWithoutLeadNestedInput
   }
 
   export type EngagementLeadCreateManyInput = {
@@ -15952,9 +17216,6 @@ export namespace Prisma {
     billRateAmount?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
-    notes?: string | null
-    notesUpdatedAt?: Date | string | null
-    notesUpdatedBy?: string | null
     status?: $Enums.EngagementLeadStatus
     convertedEngagementId?: string | null
     createdAt?: Date | string
@@ -15986,9 +17247,6 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16020,14 +17278,66 @@ export namespace Prisma {
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
-    notes?: NullableStringFieldUpdateOperationsInput | string | null
-    notesUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    notesUpdatedBy?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadNoteCreateInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    createdBy?: string | null
+    lead: EngagementLeadCreateNestedOneWithoutNotesInput
+  }
+
+  export type EngagementLeadNoteUncheckedCreateInput = {
+    id?: string
+    engagementLeadId: string
+    content: string
+    createdAt?: Date | string
+    createdBy?: string | null
+  }
+
+  export type EngagementLeadNoteUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lead?: EngagementLeadUpdateOneRequiredWithoutNotesNestedInput
+  }
+
+  export type EngagementLeadNoteUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementLeadId?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadNoteCreateManyInput = {
+    id?: string
+    engagementLeadId: string
+    content: string
+    createdAt?: Date | string
+    createdBy?: string | null
+  }
+
+  export type EngagementLeadNoteUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadNoteUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    engagementLeadId?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EngagementTimesheetEntryCreateInput = {
@@ -17191,6 +18501,16 @@ export namespace Prisma {
     not?: NestedEnumEngagementLeadStatusFilter<$PrismaModel> | $Enums.EngagementLeadStatus
   }
 
+  export type EngagementLeadNoteListRelationFilter = {
+    every?: EngagementLeadNoteWhereInput
+    some?: EngagementLeadNoteWhereInput
+    none?: EngagementLeadNoteWhereInput
+  }
+
+  export type EngagementLeadNoteOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type EngagementLeadCountOrderByAggregateInput = {
     id?: SortOrder
     leadType?: SortOrder
@@ -17215,9 +18535,6 @@ export namespace Prisma {
     billRateAmount?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
-    notes?: SortOrder
-    notesUpdatedAt?: SortOrder
-    notesUpdatedBy?: SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
@@ -17254,9 +18571,6 @@ export namespace Prisma {
     billRateAmount?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
-    notes?: SortOrder
-    notesUpdatedAt?: SortOrder
-    notesUpdatedBy?: SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
@@ -17287,9 +18601,6 @@ export namespace Prisma {
     billRateAmount?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
-    notes?: SortOrder
-    notesUpdatedAt?: SortOrder
-    notesUpdatedBy?: SortOrder
     status?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
@@ -17383,6 +18694,35 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumEngagementLeadStatusFilter<$PrismaModel>
     _max?: NestedEnumEngagementLeadStatusFilter<$PrismaModel>
+  }
+
+  export type EngagementLeadScalarRelationFilter = {
+    is?: EngagementLeadWhereInput
+    isNot?: EngagementLeadWhereInput
+  }
+
+  export type EngagementLeadNoteCountOrderByAggregateInput = {
+    id?: SortOrder
+    engagementLeadId?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+  }
+
+  export type EngagementLeadNoteMaxOrderByAggregateInput = {
+    id?: SortOrder
+    engagementLeadId?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
+  }
+
+  export type EngagementLeadNoteMinOrderByAggregateInput = {
+    id?: SortOrder
+    engagementLeadId?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: SortOrder
   }
 
   export type DecimalFilter<$PrismaModel = never> = {
@@ -18125,6 +19465,20 @@ export namespace Prisma {
     set: string[]
   }
 
+  export type EngagementLeadNoteCreateNestedManyWithoutLeadInput = {
+    create?: XOR<EngagementLeadNoteCreateWithoutLeadInput, EngagementLeadNoteUncheckedCreateWithoutLeadInput> | EngagementLeadNoteCreateWithoutLeadInput[] | EngagementLeadNoteUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: EngagementLeadNoteCreateOrConnectWithoutLeadInput | EngagementLeadNoteCreateOrConnectWithoutLeadInput[]
+    createMany?: EngagementLeadNoteCreateManyLeadInputEnvelope
+    connect?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+  }
+
+  export type EngagementLeadNoteUncheckedCreateNestedManyWithoutLeadInput = {
+    create?: XOR<EngagementLeadNoteCreateWithoutLeadInput, EngagementLeadNoteUncheckedCreateWithoutLeadInput> | EngagementLeadNoteCreateWithoutLeadInput[] | EngagementLeadNoteUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: EngagementLeadNoteCreateOrConnectWithoutLeadInput | EngagementLeadNoteCreateOrConnectWithoutLeadInput[]
+    createMany?: EngagementLeadNoteCreateManyLeadInputEnvelope
+    connect?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+  }
+
   export type EnumEngagementLeadTypeFieldUpdateOperationsInput = {
     set?: $Enums.EngagementLeadType
   }
@@ -18164,6 +19518,48 @@ export namespace Prisma {
 
   export type EnumEngagementLeadStatusFieldUpdateOperationsInput = {
     set?: $Enums.EngagementLeadStatus
+  }
+
+  export type EngagementLeadNoteUpdateManyWithoutLeadNestedInput = {
+    create?: XOR<EngagementLeadNoteCreateWithoutLeadInput, EngagementLeadNoteUncheckedCreateWithoutLeadInput> | EngagementLeadNoteCreateWithoutLeadInput[] | EngagementLeadNoteUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: EngagementLeadNoteCreateOrConnectWithoutLeadInput | EngagementLeadNoteCreateOrConnectWithoutLeadInput[]
+    upsert?: EngagementLeadNoteUpsertWithWhereUniqueWithoutLeadInput | EngagementLeadNoteUpsertWithWhereUniqueWithoutLeadInput[]
+    createMany?: EngagementLeadNoteCreateManyLeadInputEnvelope
+    set?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    disconnect?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    delete?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    connect?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    update?: EngagementLeadNoteUpdateWithWhereUniqueWithoutLeadInput | EngagementLeadNoteUpdateWithWhereUniqueWithoutLeadInput[]
+    updateMany?: EngagementLeadNoteUpdateManyWithWhereWithoutLeadInput | EngagementLeadNoteUpdateManyWithWhereWithoutLeadInput[]
+    deleteMany?: EngagementLeadNoteScalarWhereInput | EngagementLeadNoteScalarWhereInput[]
+  }
+
+  export type EngagementLeadNoteUncheckedUpdateManyWithoutLeadNestedInput = {
+    create?: XOR<EngagementLeadNoteCreateWithoutLeadInput, EngagementLeadNoteUncheckedCreateWithoutLeadInput> | EngagementLeadNoteCreateWithoutLeadInput[] | EngagementLeadNoteUncheckedCreateWithoutLeadInput[]
+    connectOrCreate?: EngagementLeadNoteCreateOrConnectWithoutLeadInput | EngagementLeadNoteCreateOrConnectWithoutLeadInput[]
+    upsert?: EngagementLeadNoteUpsertWithWhereUniqueWithoutLeadInput | EngagementLeadNoteUpsertWithWhereUniqueWithoutLeadInput[]
+    createMany?: EngagementLeadNoteCreateManyLeadInputEnvelope
+    set?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    disconnect?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    delete?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    connect?: EngagementLeadNoteWhereUniqueInput | EngagementLeadNoteWhereUniqueInput[]
+    update?: EngagementLeadNoteUpdateWithWhereUniqueWithoutLeadInput | EngagementLeadNoteUpdateWithWhereUniqueWithoutLeadInput[]
+    updateMany?: EngagementLeadNoteUpdateManyWithWhereWithoutLeadInput | EngagementLeadNoteUpdateManyWithWhereWithoutLeadInput[]
+    deleteMany?: EngagementLeadNoteScalarWhereInput | EngagementLeadNoteScalarWhereInput[]
+  }
+
+  export type EngagementLeadCreateNestedOneWithoutNotesInput = {
+    create?: XOR<EngagementLeadCreateWithoutNotesInput, EngagementLeadUncheckedCreateWithoutNotesInput>
+    connectOrCreate?: EngagementLeadCreateOrConnectWithoutNotesInput
+    connect?: EngagementLeadWhereUniqueInput
+  }
+
+  export type EngagementLeadUpdateOneRequiredWithoutNotesNestedInput = {
+    create?: XOR<EngagementLeadCreateWithoutNotesInput, EngagementLeadUncheckedCreateWithoutNotesInput>
+    connectOrCreate?: EngagementLeadCreateOrConnectWithoutNotesInput
+    upsert?: EngagementLeadUpsertWithoutNotesInput
+    connect?: EngagementLeadWhereUniqueInput
+    update?: XOR<XOR<EngagementLeadUpdateToOneWithWhereWithoutNotesInput, EngagementLeadUpdateWithoutNotesInput>, EngagementLeadUncheckedUpdateWithoutNotesInput>
   }
 
   export type EngagementAssignmentCreateNestedOneWithoutTimesheetEntriesInput = {
@@ -19934,6 +21330,197 @@ export namespace Prisma {
     timesheetEntries?: EngagementTimesheetEntryUncheckedUpdateManyWithoutAssignmentNestedInput
   }
 
+  export type EngagementLeadNoteCreateWithoutLeadInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    createdBy?: string | null
+  }
+
+  export type EngagementLeadNoteUncheckedCreateWithoutLeadInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    createdBy?: string | null
+  }
+
+  export type EngagementLeadNoteCreateOrConnectWithoutLeadInput = {
+    where: EngagementLeadNoteWhereUniqueInput
+    create: XOR<EngagementLeadNoteCreateWithoutLeadInput, EngagementLeadNoteUncheckedCreateWithoutLeadInput>
+  }
+
+  export type EngagementLeadNoteCreateManyLeadInputEnvelope = {
+    data: EngagementLeadNoteCreateManyLeadInput | EngagementLeadNoteCreateManyLeadInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EngagementLeadNoteUpsertWithWhereUniqueWithoutLeadInput = {
+    where: EngagementLeadNoteWhereUniqueInput
+    update: XOR<EngagementLeadNoteUpdateWithoutLeadInput, EngagementLeadNoteUncheckedUpdateWithoutLeadInput>
+    create: XOR<EngagementLeadNoteCreateWithoutLeadInput, EngagementLeadNoteUncheckedCreateWithoutLeadInput>
+  }
+
+  export type EngagementLeadNoteUpdateWithWhereUniqueWithoutLeadInput = {
+    where: EngagementLeadNoteWhereUniqueInput
+    data: XOR<EngagementLeadNoteUpdateWithoutLeadInput, EngagementLeadNoteUncheckedUpdateWithoutLeadInput>
+  }
+
+  export type EngagementLeadNoteUpdateManyWithWhereWithoutLeadInput = {
+    where: EngagementLeadNoteScalarWhereInput
+    data: XOR<EngagementLeadNoteUpdateManyMutationInput, EngagementLeadNoteUncheckedUpdateManyWithoutLeadInput>
+  }
+
+  export type EngagementLeadNoteScalarWhereInput = {
+    AND?: EngagementLeadNoteScalarWhereInput | EngagementLeadNoteScalarWhereInput[]
+    OR?: EngagementLeadNoteScalarWhereInput[]
+    NOT?: EngagementLeadNoteScalarWhereInput | EngagementLeadNoteScalarWhereInput[]
+    id?: StringFilter<"EngagementLeadNote"> | string
+    engagementLeadId?: StringFilter<"EngagementLeadNote"> | string
+    content?: StringFilter<"EngagementLeadNote"> | string
+    createdAt?: DateTimeFilter<"EngagementLeadNote"> | Date | string
+    createdBy?: StringNullableFilter<"EngagementLeadNote"> | string | null
+  }
+
+  export type EngagementLeadCreateWithoutNotesInput = {
+    id?: string
+    leadType?: $Enums.EngagementLeadType
+    workEmail: string
+    accountName: string
+    smu: string
+    engagementModel?: $Enums.EngagementModel | null
+    roleTitle?: string | null
+    jobDescription: string
+    requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
+    experienceLevel?: $Enums.ExperienceLevel | null
+    minYearsExperience?: number | null
+    industryDomain?: string | null
+    resourcesRequired: number
+    preferredStartDate?: Date | string | null
+    engagementDuration: string
+    workingHoursPerDay: number
+    timeZoneRequirement: string
+    remoteWorkAccepted: boolean
+    workLocationRestrictions?: string | null
+    billRateCurrency?: string | null
+    billRateAmount?: string | null
+    priority?: $Enums.LeadPriority | null
+    additionalRequirements?: string | null
+    status?: $Enums.EngagementLeadStatus
+    convertedEngagementId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+  }
+
+  export type EngagementLeadUncheckedCreateWithoutNotesInput = {
+    id?: string
+    leadType?: $Enums.EngagementLeadType
+    workEmail: string
+    accountName: string
+    smu: string
+    engagementModel?: $Enums.EngagementModel | null
+    roleTitle?: string | null
+    jobDescription: string
+    requiredSkills?: EngagementLeadCreaterequiredSkillsInput | string[]
+    experienceLevel?: $Enums.ExperienceLevel | null
+    minYearsExperience?: number | null
+    industryDomain?: string | null
+    resourcesRequired: number
+    preferredStartDate?: Date | string | null
+    engagementDuration: string
+    workingHoursPerDay: number
+    timeZoneRequirement: string
+    remoteWorkAccepted: boolean
+    workLocationRestrictions?: string | null
+    billRateCurrency?: string | null
+    billRateAmount?: string | null
+    priority?: $Enums.LeadPriority | null
+    additionalRequirements?: string | null
+    status?: $Enums.EngagementLeadStatus
+    convertedEngagementId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    updatedBy?: string | null
+  }
+
+  export type EngagementLeadCreateOrConnectWithoutNotesInput = {
+    where: EngagementLeadWhereUniqueInput
+    create: XOR<EngagementLeadCreateWithoutNotesInput, EngagementLeadUncheckedCreateWithoutNotesInput>
+  }
+
+  export type EngagementLeadUpsertWithoutNotesInput = {
+    update: XOR<EngagementLeadUpdateWithoutNotesInput, EngagementLeadUncheckedUpdateWithoutNotesInput>
+    create: XOR<EngagementLeadCreateWithoutNotesInput, EngagementLeadUncheckedCreateWithoutNotesInput>
+    where?: EngagementLeadWhereInput
+  }
+
+  export type EngagementLeadUpdateToOneWithWhereWithoutNotesInput = {
+    where?: EngagementLeadWhereInput
+    data: XOR<EngagementLeadUpdateWithoutNotesInput, EngagementLeadUncheckedUpdateWithoutNotesInput>
+  }
+
+  export type EngagementLeadUpdateWithoutNotesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    leadType?: EnumEngagementLeadTypeFieldUpdateOperationsInput | $Enums.EngagementLeadType
+    workEmail?: StringFieldUpdateOperationsInput | string
+    accountName?: StringFieldUpdateOperationsInput | string
+    smu?: StringFieldUpdateOperationsInput | string
+    engagementModel?: NullableEnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel | null
+    roleTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    jobDescription?: StringFieldUpdateOperationsInput | string
+    requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
+    experienceLevel?: NullableEnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel | null
+    minYearsExperience?: NullableIntFieldUpdateOperationsInput | number | null
+    industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
+    resourcesRequired?: IntFieldUpdateOperationsInput | number
+    preferredStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    engagementDuration?: StringFieldUpdateOperationsInput | string
+    workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
+    timeZoneRequirement?: StringFieldUpdateOperationsInput | string
+    remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
+    workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
+    additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadUncheckedUpdateWithoutNotesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    leadType?: EnumEngagementLeadTypeFieldUpdateOperationsInput | $Enums.EngagementLeadType
+    workEmail?: StringFieldUpdateOperationsInput | string
+    accountName?: StringFieldUpdateOperationsInput | string
+    smu?: StringFieldUpdateOperationsInput | string
+    engagementModel?: NullableEnumEngagementModelFieldUpdateOperationsInput | $Enums.EngagementModel | null
+    roleTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    jobDescription?: StringFieldUpdateOperationsInput | string
+    requiredSkills?: EngagementLeadUpdaterequiredSkillsInput | string[]
+    experienceLevel?: NullableEnumExperienceLevelFieldUpdateOperationsInput | $Enums.ExperienceLevel | null
+    minYearsExperience?: NullableIntFieldUpdateOperationsInput | number | null
+    industryDomain?: NullableStringFieldUpdateOperationsInput | string | null
+    resourcesRequired?: IntFieldUpdateOperationsInput | number
+    preferredStartDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    engagementDuration?: StringFieldUpdateOperationsInput | string
+    workingHoursPerDay?: FloatFieldUpdateOperationsInput | number
+    timeZoneRequirement?: StringFieldUpdateOperationsInput | string
+    remoteWorkAccepted?: BoolFieldUpdateOperationsInput | boolean
+    workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
+    billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
+    additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type EngagementAssignmentCreateWithoutTimesheetEntriesInput = {
     id?: string
     memberId: string
@@ -20960,6 +22547,34 @@ export namespace Prisma {
     createdBy?: StringFieldUpdateOperationsInput | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadNoteCreateManyLeadInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    createdBy?: string | null
+  }
+
+  export type EngagementLeadNoteUpdateWithoutLeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadNoteUncheckedUpdateWithoutLeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EngagementLeadNoteUncheckedUpdateManyWithoutLeadInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EngagementTimesheetAuditCreateManyEntryInput = {

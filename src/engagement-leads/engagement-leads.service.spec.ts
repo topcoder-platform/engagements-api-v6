@@ -42,6 +42,7 @@ describe("EngagementLeadsService", () => {
         count: jest.fn().mockResolvedValue(0),
         create: jest.fn().mockImplementation(({ data }) => ({
           ...data,
+          notes: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         })),
@@ -49,6 +50,7 @@ describe("EngagementLeadsService", () => {
         update: jest.fn().mockImplementation(({ where, data }) => ({
           id: where.id,
           ...data,
+          notes: [],
         })),
       },
     };
@@ -245,19 +247,37 @@ describe("EngagementLeadsService", () => {
           leadType: EngagementLeadType.WIPRO_CONSUMPTION,
           priority: null,
         }),
+        include: { notes: { orderBy: { createdAt: "asc" } } },
       });
       expect(result.priority).toBeNull();
     });
   });
 
-  describe("updateNotes", () => {
-    it("saves trimmed notes with who changed them", async () => {
+  describe("addNote", () => {
+    it("adds a trimmed note with who wrote it and returns the notes oldest first", async () => {
+      const earlier = {
+        id: "note-1",
+        content: "First call done.",
+        createdAt: new Date("2026-10-30T10:00:00.000Z"),
+        createdBy: "other-tm",
+      };
+      const added = {
+        id: "note-2",
+        content: "Call back next week.",
+        createdAt: new Date("2026-11-02T10:00:00.000Z"),
+        createdBy: "tm-handle",
+      };
       db.engagementLead.findUnique.mockResolvedValue({
         id: "lead-1",
         status: EngagementLeadStatus.UNDER_REVIEW,
       });
+      db.engagementLead.update.mockResolvedValue({
+        id: "lead-1",
+        status: EngagementLeadStatus.UNDER_REVIEW,
+        notes: [earlier, added],
+      });
 
-      const result = await service.updateNotes(
+      const result = await service.addNote(
         "lead-1",
         "  Call back next week.  ",
         "tm-handle",
@@ -266,37 +286,38 @@ describe("EngagementLeadsService", () => {
       expect(db.engagementLead.update).toHaveBeenCalledWith({
         where: { id: "lead-1" },
         data: {
-          notes: "Call back next week.",
-          notesUpdatedAt: expect.any(Date),
-          notesUpdatedBy: "tm-handle",
+          notes: {
+            create: {
+              content: "Call back next week.",
+              createdBy: "tm-handle",
+            },
+          },
         },
+        include: { notes: { orderBy: { createdAt: "asc" } } },
       });
-      expect(result.notes).toBe("Call back next week.");
+      expect(result.notes).toEqual([earlier, added]);
     });
 
-    it("clears the notes when given only whitespace", async () => {
+    it("rejects a note that is only whitespace", async () => {
       db.engagementLead.findUnique.mockResolvedValue({
         id: "lead-1",
         status: EngagementLeadStatus.SUBMITTED,
       });
 
-      await service.updateNotes("lead-1", "   ");
-
-      expect(db.engagementLead.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ notes: null }),
-        }),
+      await expect(service.addNote("lead-1", "   ")).rejects.toBeInstanceOf(
+        BadRequestException,
       );
+      expect(db.engagementLead.update).not.toHaveBeenCalled();
     });
 
-    it("rejects notes changes on a converted lead", async () => {
+    it("rejects notes on a converted lead", async () => {
       db.engagementLead.findUnique.mockResolvedValue({
         id: "lead-1",
         status: EngagementLeadStatus.CONVERTED,
       });
 
       await expect(
-        service.updateNotes("lead-1", "Too late."),
+        service.addNote("lead-1", "Too late."),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(db.engagementLead.update).not.toHaveBeenCalled();
     });
@@ -304,9 +325,9 @@ describe("EngagementLeadsService", () => {
     it("throws when the lead does not exist", async () => {
       db.engagementLead.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.updateNotes("missing", "Note"),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.addNote("missing", "Note")).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 
@@ -351,6 +372,7 @@ describe("EngagementLeadsService", () => {
         data: expect.objectContaining({
           preferredStartDate: new Date("2026-11-01T00:00:00.000Z"),
         }),
+        include: { notes: { orderBy: { createdAt: "asc" } } },
       });
     });
   });
@@ -384,6 +406,7 @@ describe("EngagementLeadsService", () => {
       convertedEngagementId: null,
       createdAt: new Date("2026-10-28T00:00:00.000Z"),
       updatedAt: new Date("2026-10-28T00:00:00.000Z"),
+      notes: [],
     };
 
     it("maps a Wipro Direct lead without the consumption-only fields", async () => {

@@ -129,15 +129,29 @@ export class UpdateEngagementLeadStatusDto {
   status: EngagementLeadStatus;
 }
 
-export class UpdateEngagementLeadNotesDto {
+export class CreateEngagementLeadNoteDto {
   @ApiProperty({
-    description:
-      "Talent Manager notes for the lead. An empty value clears the notes.",
+    description: "Talent Manager note to add to the lead.",
     example: "Customer prefers candidates with banking experience.",
   })
   @IsString()
+  @IsNotEmpty()
   @MaxLength(5000)
-  notes: string;
+  content: string;
+}
+
+export class EngagementLeadNoteResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  content: string;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiPropertyOptional()
+  createdBy?: string | null;
 }
 
 export class MarkEngagementLeadConvertedDto {
@@ -220,14 +234,11 @@ export class EngagementLeadResponseDto {
   @ApiPropertyOptional()
   additionalRequirements?: string | null;
 
-  @ApiPropertyOptional()
-  notes?: string | null;
-
-  @ApiPropertyOptional()
-  notesUpdatedAt?: Date | null;
-
-  @ApiPropertyOptional()
-  notesUpdatedBy?: string | null;
+  @ApiProperty({
+    type: [EngagementLeadNoteResponseDto],
+    description: "Notes on the lead, oldest first.",
+  })
+  notes: EngagementLeadNoteResponseDto[];
 
   @ApiProperty()
   status: string;
