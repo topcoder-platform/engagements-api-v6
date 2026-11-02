@@ -99,7 +99,7 @@ export class EngagementLeadsService {
         leadType: EngagementLeadType.WIPRO_CONSUMPTION,
         engagementModel: intakeDto.engagementModel,
         roleTitle: intakeDto.roleTitle.trim(),
-        experienceLevel: intakeDto.experienceLevel,
+        experienceLevel: intakeDto.experienceLevel ?? null,
         minYearsExperience: intakeDto.minYearsExperience,
         industryDomain: intakeDto.industryDomain?.trim() || null,
         preferredStartDate: new Date(intakeDto.preferredStartDate),

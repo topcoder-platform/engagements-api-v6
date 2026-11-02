@@ -93,13 +93,15 @@ export class CreateEngagementLeadIntakeDto {
   )
   requiredSkills: string[];
 
-  @ApiProperty({
-    description: "Required experience level",
+  @ApiPropertyOptional({
+    description:
+      "Required experience level. No longer collected on the intake form; accepted for older clients.",
     enum: ExperienceLevel,
     example: ExperienceLevel.SENIOR,
   })
+  @IsOptional()
   @IsEnum(ExperienceLevel)
-  experienceLevel: ExperienceLevel;
+  experienceLevel?: ExperienceLevel;
 
   @ApiProperty({
     description: "Minimum years of relevant experience",
