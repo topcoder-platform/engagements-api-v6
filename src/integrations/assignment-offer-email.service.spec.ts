@@ -113,8 +113,8 @@ describe("AssignmentOfferEmailService", () => {
   });
 
   it("CCs the engagement creator on offer emails", async () => {
-    memberService.getMemberByUserId.mockImplementation(
-      async (userId: string) => {
+    memberService.getMemberByUserId.mockImplementation((userId: string) =>
+      Promise.resolve().then(() => {
         if (userId === "99999") {
           return {
             email: "creator@example.com",
@@ -128,7 +128,7 @@ describe("AssignmentOfferEmailService", () => {
           firstName: "Jane",
           lastName: "Doe",
         };
-      },
+      }),
     );
 
     await service.sendAssignmentOfferEmail({
@@ -149,8 +149,8 @@ describe("AssignmentOfferEmailService", () => {
   });
 
   it("does not CC the engagement creator on assignment update emails", async () => {
-    memberService.getMemberByUserId.mockImplementation(
-      async (userId: string) => {
+    memberService.getMemberByUserId.mockImplementation((userId: string) =>
+      Promise.resolve().then(() => {
         if (userId === "99999") {
           return {
             email: "creator@example.com",
@@ -164,7 +164,7 @@ describe("AssignmentOfferEmailService", () => {
           firstName: "Jane",
           lastName: "Doe",
         };
-      },
+      }),
     );
 
     await service.sendAssignmentUpdatedEmail({
@@ -211,8 +211,8 @@ describe("AssignmentOfferEmailService", () => {
   });
 
   it("still sends the offer email when creator lookup fails", async () => {
-    memberService.getMemberByUserId.mockImplementation(
-      async (userId: string) => {
+    memberService.getMemberByUserId.mockImplementation((userId: string) =>
+      Promise.resolve().then(() => {
         if (userId === "99999") {
           throw new Error("member api unavailable");
         }
@@ -222,7 +222,7 @@ describe("AssignmentOfferEmailService", () => {
           firstName: "Jane",
           lastName: "Doe",
         };
-      },
+      }),
     );
 
     await service.sendAssignmentOfferEmail({
