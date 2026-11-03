@@ -266,7 +266,7 @@ export class TimesheetsController {
   })
   @ApiBadRequestResponse({
     description:
-      "One or more entries cannot be submitted (wrong status or zero hours), or an administrator submitted on a member's behalf without an override reason. Nothing is submitted.",
+      "One or more entries cannot be submitted (wrong status, negative hours, or missing remarks), or an administrator submitted on a member's behalf without an override reason. Nothing is submitted.",
   })
   @ApiForbiddenResponse({
     description: "Managers cannot submit on a member's behalf.",

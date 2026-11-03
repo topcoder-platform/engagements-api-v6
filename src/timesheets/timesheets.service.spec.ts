@@ -1049,21 +1049,31 @@ describe("TimesheetsService", () => {
       expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
     });
 
-    it("submits nothing when one entry has zero hours", async () => {
+    it("submits an entry with zero hours", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([
-        entry({ id: "ok" }),
-        entry({ id: "empty", hoursWorked: decimal("0") }),
+        entry({ id: "zero", hoursWorked: decimal("0") }),
       ]);
+      db.engagementTimesheetEntry.update.mockResolvedValue(
+        entry({
+          id: "zero",
+          hoursWorked: decimal("0"),
+          status: TimesheetEntryStatus.SUBMITTED,
+        }),
+      );
 
-      await expect(
-        service.submitEntries(
-          "eng1",
-          "asg1",
-          { entryIds: ["ok", "empty"] },
-          member,
-        ),
-      ).rejects.toThrow(/nothing was submitted/);
-      expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+      await service.submitEntries(
+        "eng1",
+        "asg1",
+        { entryIds: ["zero"] },
+        member,
+      );
+
+      expect(db.engagementTimesheetEntry.update).toHaveBeenCalledWith({
+        where: { id: "zero" },
+        data: expect.objectContaining({
+          status: TimesheetEntryStatus.SUBMITTED,
+        }),
+      });
     });
 
     it("submits nothing when one entry has no remarks", async () => {

@@ -424,8 +424,10 @@ export class TimesheetsService {
         return `Only draft entries can be submitted; this entry is ${entry.status}.`;
       }
 
-      if (entry.hoursWorked.lessThanOrEqualTo(0)) {
-        return "Hours worked must be greater than zero.";
+      // Zero is a valid submission: members record days they did not work, and those still go
+      // through approval like any other day.
+      if (entry.hoursWorked.isNegative()) {
+        return ERROR_MESSAGES.TimesheetHoursNegative;
       }
 
       if (!entry.remarks?.trim()) {
