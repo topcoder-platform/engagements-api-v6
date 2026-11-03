@@ -427,7 +427,7 @@ export class TimesheetsService {
       // Zero is a valid submission: members record days they did not work, and those still go
       // through approval like any other day.
       if (entry.hoursWorked.isNegative()) {
-        return "Hours worked cannot be negative.";
+        return ERROR_MESSAGES.TimesheetHoursNegative;
       }
 
       if (!entry.remarks?.trim()) {
