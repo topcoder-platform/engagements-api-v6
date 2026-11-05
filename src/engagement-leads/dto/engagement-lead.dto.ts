@@ -231,6 +231,9 @@ export class EngagementLeadResponseDto {
   billRateAmount?: string | null;
 
   @ApiPropertyOptional()
+  maximumCost?: string | null;
+
+  @ApiPropertyOptional()
   priority?: string | null;
 
   @ApiPropertyOptional()

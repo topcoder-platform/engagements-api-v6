@@ -70,6 +70,7 @@ export class EngagementLeadsService {
       workLocationRestrictions: lead.workLocationRestrictions,
       billRateCurrency: lead.billRateCurrency,
       billRateAmount: lead.billRateAmount,
+      maximumCost: lead.maximumCost,
       priority: lead.priority,
       additionalRequirements: lead.additionalRequirements,
       notes: lead.notes.map((note) => ({
@@ -97,14 +98,16 @@ export class EngagementLeadsService {
       data: {
         ...this.buildCommonLeadData(intakeDto),
         leadType: EngagementLeadType.WIPRO_CONSUMPTION,
-        engagementModel: intakeDto.engagementModel,
+        engagementModel: intakeDto.engagementModel ?? null,
         roleTitle: intakeDto.roleTitle.trim(),
         experienceLevel: intakeDto.experienceLevel ?? null,
         minYearsExperience: intakeDto.minYearsExperience,
         industryDomain: intakeDto.industryDomain?.trim() || null,
         preferredStartDate: new Date(intakeDto.preferredStartDate),
-        billRateCurrency: intakeDto.billRateCurrency.trim().toUpperCase(),
-        billRateAmount: intakeDto.billRateAmount.trim(),
+        billRateCurrency:
+          intakeDto.billRateCurrency?.trim().toUpperCase() || null,
+        billRateAmount: intakeDto.billRateAmount?.trim() || null,
+        maximumCost: intakeDto.maximumCost.trim(),
         priority: intakeDto.priority ?? null,
         additionalRequirements:
           intakeDto.additionalRequirements?.trim() || null,
@@ -440,15 +443,23 @@ export class EngagementLeadsService {
       requiredMemberCount: lead.resourcesRequired,
       durationStartDate: lead.preferredStartDate?.toISOString() ?? null,
       durationMonths: this.parseDurationMonths(lead.engagementDuration),
-      compensationRange:
-        lead.billRateCurrency && lead.billRateAmount
-          ? `${lead.billRateCurrency} ${lead.billRateAmount}/hour`
-          : null,
+      compensationRange: this.getCompensationRange(lead),
       timeZones: this.parseTimeZones(lead.timeZoneRequirement),
       countries: this.parseCountries(lead.workLocationRestrictions),
       receivedDateFromAccount: lead.createdAt.toISOString(),
       additionalRequirements: lead.additionalRequirements ?? null,
     };
+  }
+
+  // Leads submitted before the maximum cost field only carry the bill rate currency and amount.
+  private getCompensationRange(lead: EngagementLeadResponseDto): string | null {
+    if (lead.maximumCost) {
+      return lead.maximumCost;
+    }
+
+    return lead.billRateCurrency && lead.billRateAmount
+      ? `${lead.billRateCurrency} ${lead.billRateAmount}/hour`
+      : null;
   }
 
   private mapExperienceLevelToRoleLevel(

@@ -8570,6 +8570,7 @@ export namespace Prisma {
     workLocationRestrictions: string | null
     billRateCurrency: string | null
     billRateAmount: string | null
+    maximumCost: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus | null
@@ -8600,6 +8601,7 @@ export namespace Prisma {
     workLocationRestrictions: string | null
     billRateCurrency: string | null
     billRateAmount: string | null
+    maximumCost: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus | null
@@ -8631,6 +8633,7 @@ export namespace Prisma {
     workLocationRestrictions: number
     billRateCurrency: number
     billRateAmount: number
+    maximumCost: number
     priority: number
     additionalRequirements: number
     status: number
@@ -8675,6 +8678,7 @@ export namespace Prisma {
     workLocationRestrictions?: true
     billRateCurrency?: true
     billRateAmount?: true
+    maximumCost?: true
     priority?: true
     additionalRequirements?: true
     status?: true
@@ -8705,6 +8709,7 @@ export namespace Prisma {
     workLocationRestrictions?: true
     billRateCurrency?: true
     billRateAmount?: true
+    maximumCost?: true
     priority?: true
     additionalRequirements?: true
     status?: true
@@ -8736,6 +8741,7 @@ export namespace Prisma {
     workLocationRestrictions?: true
     billRateCurrency?: true
     billRateAmount?: true
+    maximumCost?: true
     priority?: true
     additionalRequirements?: true
     status?: true
@@ -8854,6 +8860,7 @@ export namespace Prisma {
     workLocationRestrictions: string | null
     billRateCurrency: string | null
     billRateAmount: string | null
+    maximumCost: string | null
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus
@@ -8904,6 +8911,7 @@ export namespace Prisma {
     workLocationRestrictions?: boolean
     billRateCurrency?: boolean
     billRateAmount?: boolean
+    maximumCost?: boolean
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
@@ -8937,6 +8945,7 @@ export namespace Prisma {
     workLocationRestrictions?: boolean
     billRateCurrency?: boolean
     billRateAmount?: boolean
+    maximumCost?: boolean
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
@@ -8968,6 +8977,7 @@ export namespace Prisma {
     workLocationRestrictions?: boolean
     billRateCurrency?: boolean
     billRateAmount?: boolean
+    maximumCost?: boolean
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
@@ -8999,6 +9009,7 @@ export namespace Prisma {
     workLocationRestrictions?: boolean
     billRateCurrency?: boolean
     billRateAmount?: boolean
+    maximumCost?: boolean
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
@@ -9008,7 +9019,7 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
+  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "maximumCost" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
   export type EngagementLeadInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     notes?: boolean | EngagementLead$notesArgs<ExtArgs>
     _count?: boolean | EngagementLeadCountOutputTypeDefaultArgs<ExtArgs>
@@ -9043,6 +9054,7 @@ export namespace Prisma {
       workLocationRestrictions: string | null
       billRateCurrency: string | null
       billRateAmount: string | null
+      maximumCost: string | null
       priority: $Enums.LeadPriority | null
       additionalRequirements: string | null
       status: $Enums.EngagementLeadStatus
@@ -9495,6 +9507,7 @@ export namespace Prisma {
     readonly workLocationRestrictions: FieldRef<"EngagementLead", 'String'>
     readonly billRateCurrency: FieldRef<"EngagementLead", 'String'>
     readonly billRateAmount: FieldRef<"EngagementLead", 'String'>
+    readonly maximumCost: FieldRef<"EngagementLead", 'String'>
     readonly priority: FieldRef<"EngagementLead", 'LeadPriority'>
     readonly additionalRequirements: FieldRef<"EngagementLead", 'String'>
     readonly status: FieldRef<"EngagementLead", 'EngagementLeadStatus'>
@@ -14772,6 +14785,7 @@ export namespace Prisma {
     workLocationRestrictions: 'workLocationRestrictions',
     billRateCurrency: 'billRateCurrency',
     billRateAmount: 'billRateAmount',
+    maximumCost: 'maximumCost',
     priority: 'priority',
     additionalRequirements: 'additionalRequirements',
     status: 'status',
@@ -15843,6 +15857,7 @@ export namespace Prisma {
     workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
     billRateCurrency?: StringNullableFilter<"EngagementLead"> | string | null
     billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
+    maximumCost?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
@@ -15875,6 +15890,7 @@ export namespace Prisma {
     workLocationRestrictions?: SortOrderInput | SortOrder
     billRateCurrency?: SortOrderInput | SortOrder
     billRateAmount?: SortOrderInput | SortOrder
+    maximumCost?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
@@ -15910,6 +15926,7 @@ export namespace Prisma {
     workLocationRestrictions?: StringNullableFilter<"EngagementLead"> | string | null
     billRateCurrency?: StringNullableFilter<"EngagementLead"> | string | null
     billRateAmount?: StringNullableFilter<"EngagementLead"> | string | null
+    maximumCost?: StringNullableFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
@@ -15942,6 +15959,7 @@ export namespace Prisma {
     workLocationRestrictions?: SortOrderInput | SortOrder
     billRateCurrency?: SortOrderInput | SortOrder
     billRateAmount?: SortOrderInput | SortOrder
+    maximumCost?: SortOrderInput | SortOrder
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
@@ -15981,6 +15999,7 @@ export namespace Prisma {
     workLocationRestrictions?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     billRateCurrency?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     billRateAmount?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
+    maximumCost?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     priority?: EnumLeadPriorityNullableWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
@@ -17086,6 +17105,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency?: string | null
     billRateAmount?: string | null
+    maximumCost?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -17118,6 +17138,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency?: string | null
     billRateAmount?: string | null
+    maximumCost?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -17150,6 +17171,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    maximumCost?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -17182,6 +17204,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    maximumCost?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -17214,6 +17237,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency?: string | null
     billRateAmount?: string | null
+    maximumCost?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -17245,6 +17269,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    maximumCost?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -17276,6 +17301,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    maximumCost?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -18533,6 +18559,7 @@ export namespace Prisma {
     workLocationRestrictions?: SortOrder
     billRateCurrency?: SortOrder
     billRateAmount?: SortOrder
+    maximumCost?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
     status?: SortOrder
@@ -18569,6 +18596,7 @@ export namespace Prisma {
     workLocationRestrictions?: SortOrder
     billRateCurrency?: SortOrder
     billRateAmount?: SortOrder
+    maximumCost?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
     status?: SortOrder
@@ -18599,6 +18627,7 @@ export namespace Prisma {
     workLocationRestrictions?: SortOrder
     billRateCurrency?: SortOrder
     billRateAmount?: SortOrder
+    maximumCost?: SortOrder
     priority?: SortOrder
     additionalRequirements?: SortOrder
     status?: SortOrder
@@ -21403,6 +21432,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency?: string | null
     billRateAmount?: string | null
+    maximumCost?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -21434,6 +21464,7 @@ export namespace Prisma {
     workLocationRestrictions?: string | null
     billRateCurrency?: string | null
     billRateAmount?: string | null
+    maximumCost?: string | null
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
@@ -21481,6 +21512,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    maximumCost?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
@@ -21512,6 +21544,7 @@ export namespace Prisma {
     workLocationRestrictions?: NullableStringFieldUpdateOperationsInput | string | null
     billRateCurrency?: NullableStringFieldUpdateOperationsInput | string | null
     billRateAmount?: NullableStringFieldUpdateOperationsInput | string | null
+    maximumCost?: NullableStringFieldUpdateOperationsInput | string | null
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus

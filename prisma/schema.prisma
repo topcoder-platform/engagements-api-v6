@@ -291,6 +291,7 @@ model EngagementLead {
   workLocationRestrictions String?
   billRateCurrency         String?
   billRateAmount           String?
+  maximumCost              String?
   priority                 LeadPriority?
   additionalRequirements   String?
   status                   EngagementLeadStatus @default(SUBMITTED)
