@@ -6,15 +6,19 @@ import {
 } from "@nestjs/common";
 import {
   EngagementLead,
+  EngagementLeadNote,
   EngagementLeadStatus,
+  EngagementLeadType,
   ExperienceLevel,
   Prisma,
 } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { DbService } from "../db/db.service";
+import { SkillsService } from "../integrations/skills.service";
 import { PaginatedResponse } from "../engagements/dto";
 import {
   CreateEngagementLeadIntakeDto,
+  CreateWiproDirectEngagementLeadIntakeDto,
   EngagementLeadPrefillDto,
   EngagementLeadQueryDto,
   EngagementLeadResponseDto,
@@ -23,15 +27,30 @@ import {
   UpdateEngagementLeadStatusDto,
 } from "./dto";
 
+/** Every lead response carries its notes, oldest first, so they read as a timeline. */
+const LEAD_INCLUDE = {
+  notes: { orderBy: { createdAt: "asc" } },
+} satisfies Prisma.EngagementLeadInclude;
+
+type EngagementLeadWithNotes = EngagementLead & {
+  notes: EngagementLeadNote[];
+};
+
 @Injectable()
 export class EngagementLeadsService {
   private readonly logger = new Logger(EngagementLeadsService.name);
 
-  constructor(private readonly db: DbService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly skillsService: SkillsService,
+  ) {}
 
-  private transformToResponseDto(lead: EngagementLead): EngagementLeadResponseDto {
+  private transformToResponseDto(
+    lead: EngagementLeadWithNotes,
+  ): EngagementLeadResponseDto {
     return {
       id: lead.id,
+      leadType: lead.leadType,
       workEmail: lead.workEmail,
       accountName: lead.accountName,
       smu: lead.smu,
@@ -53,6 +72,12 @@ export class EngagementLeadsService {
       billRateAmount: lead.billRateAmount,
       priority: lead.priority,
       additionalRequirements: lead.additionalRequirements,
+      notes: lead.notes.map((note) => ({
+        id: note.id,
+        content: note.content,
+        createdAt: note.createdAt,
+        createdBy: note.createdBy,
+      })),
       status: lead.status,
       convertedEngagementId: lead.convertedEngagementId,
       createdAt: lead.createdAt,
@@ -70,35 +95,67 @@ export class EngagementLeadsService {
 
     const lead = await this.db.engagementLead.create({
       data: {
-        id: nanoid(),
-        workEmail: intakeDto.workEmail.trim().toLowerCase(),
-        accountName: intakeDto.accountName.trim(),
-        smu: intakeDto.smu.trim(),
+        ...this.buildCommonLeadData(intakeDto),
+        leadType: EngagementLeadType.WIPRO_CONSUMPTION,
         engagementModel: intakeDto.engagementModel,
         roleTitle: intakeDto.roleTitle.trim(),
-        jobDescription: intakeDto.jobDescription.trim(),
-        requiredSkills: intakeDto.requiredSkills,
-        experienceLevel: intakeDto.experienceLevel,
+        experienceLevel: intakeDto.experienceLevel ?? null,
         minYearsExperience: intakeDto.minYearsExperience,
         industryDomain: intakeDto.industryDomain?.trim() || null,
-        resourcesRequired: intakeDto.resourcesRequired,
         preferredStartDate: new Date(intakeDto.preferredStartDate),
-        engagementDuration: intakeDto.engagementDuration.trim(),
-        workingHoursPerDay: intakeDto.workingHoursPerDay,
-        timeZoneRequirement: intakeDto.timeZoneRequirement.trim(),
-        remoteWorkAccepted: intakeDto.remoteWorkAccepted,
-        workLocationRestrictions:
-          intakeDto.workLocationRestrictions?.trim() || null,
         billRateCurrency: intakeDto.billRateCurrency.trim().toUpperCase(),
         billRateAmount: intakeDto.billRateAmount.trim(),
-        priority: intakeDto.priority,
+        priority: intakeDto.priority ?? null,
         additionalRequirements:
           intakeDto.additionalRequirements?.trim() || null,
-        status: EngagementLeadStatus.SUBMITTED,
       },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(lead);
+  }
+
+  async createFromWiproDirectIntake(
+    intakeDto: CreateWiproDirectEngagementLeadIntakeDto,
+  ): Promise<EngagementLeadResponseDto> {
+    this.logger.debug("Creating engagement lead from Wipro Direct intake", {
+      workEmail: intakeDto.workEmail,
+      accountName: intakeDto.accountName,
+    });
+
+    const lead = await this.db.engagementLead.create({
+      data: {
+        ...this.buildCommonLeadData(intakeDto),
+        leadType: EngagementLeadType.WIPRO_DIRECT,
+        preferredStartDate: intakeDto.preferredStartDate
+          ? new Date(intakeDto.preferredStartDate)
+          : null,
+      },
+      include: LEAD_INCLUDE,
+    });
+
+    return this.transformToResponseDto(lead);
+  }
+
+  private buildCommonLeadData(
+    intakeDto: CreateWiproDirectEngagementLeadIntakeDto,
+  ) {
+    return {
+      id: nanoid(),
+      workEmail: intakeDto.workEmail.trim().toLowerCase(),
+      accountName: intakeDto.accountName.trim(),
+      smu: intakeDto.smu.trim(),
+      jobDescription: intakeDto.jobDescription.trim(),
+      requiredSkills: intakeDto.requiredSkills,
+      resourcesRequired: intakeDto.resourcesRequired,
+      engagementDuration: intakeDto.engagementDuration.trim(),
+      workingHoursPerDay: intakeDto.workingHoursPerDay,
+      timeZoneRequirement: intakeDto.timeZoneRequirement.trim(),
+      remoteWorkAccepted: intakeDto.remoteWorkAccepted,
+      workLocationRestrictions:
+        intakeDto.workLocationRestrictions?.trim() || null,
+      status: EngagementLeadStatus.SUBMITTED,
+    };
   }
 
   async findAll(
@@ -109,6 +166,10 @@ export class EngagementLeadsService {
     const skip = (page - 1) * perPage;
 
     const where: Prisma.EngagementLeadWhereInput = {};
+
+    if (query.leadType) {
+      where.leadType = query.leadType;
+    }
 
     if (query.accountName?.trim()) {
       where.accountName = {
@@ -141,9 +202,10 @@ export class EngagementLeadsService {
 
     if (query.statusGroup) {
       if (query.statusGroup === EngagementLeadStatusGroup.NEW) {
+        where.status = EngagementLeadStatus.SUBMITTED;
+      } else if (query.statusGroup === EngagementLeadStatusGroup.IN_PROGRESS) {
         where.status = {
           in: [
-            EngagementLeadStatus.SUBMITTED,
             EngagementLeadStatus.UNDER_REVIEW,
             EngagementLeadStatus.QUALIFIED,
           ],
@@ -158,16 +220,16 @@ export class EngagementLeadsService {
     }
 
     if (query.priority) {
-      where.priority = query.priority as Prisma.EnumLeadPriorityFilter["equals"];
+      where.priority = query.priority;
     }
 
     const sortBy = query.sortBy ?? EngagementLeadSortField.CREATED_AT;
     const sortOrder = query.sortOrder ?? "desc";
     const orderBy: Prisma.EngagementLeadOrderByWithRelationInput =
       sortBy === EngagementLeadSortField.PRIORITY
-        ? { priority: sortOrder }
+        ? { priority: { sort: sortOrder, nulls: "last" } }
         : sortBy === EngagementLeadSortField.PREFERRED_START_DATE
-          ? { preferredStartDate: sortOrder }
+          ? { preferredStartDate: { sort: sortOrder, nulls: "last" } }
           : { createdAt: sortOrder };
 
     const [leads, totalCount] = await Promise.all([
@@ -176,6 +238,7 @@ export class EngagementLeadsService {
         orderBy,
         skip,
         take: perPage,
+        include: LEAD_INCLUDE,
       }),
       this.db.engagementLead.count({ where }),
     ]);
@@ -194,6 +257,7 @@ export class EngagementLeadsService {
   async findOne(id: string): Promise<EngagementLeadResponseDto> {
     const lead = await this.db.engagementLead.findUnique({
       where: { id },
+      include: LEAD_INCLUDE,
     });
 
     if (!lead) {
@@ -228,6 +292,47 @@ export class EngagementLeadsService {
         status: updateDto.status,
         updatedBy: updatedBy ?? null,
       },
+      include: LEAD_INCLUDE,
+    });
+
+    return this.transformToResponseDto(updated);
+  }
+
+  async addNote(
+    id: string,
+    content: string,
+    createdBy?: string,
+  ): Promise<EngagementLeadResponseDto> {
+    const lead = await this.db.engagementLead.findUnique({
+      where: { id },
+    });
+
+    if (!lead) {
+      throw new NotFoundException("Engagement lead not found.");
+    }
+
+    if (lead.status === EngagementLeadStatus.CONVERTED) {
+      throw new BadRequestException(
+        "Cannot add notes to a converted engagement lead.",
+      );
+    }
+
+    const trimmed = content.trim();
+    if (!trimmed) {
+      throw new BadRequestException("Note content cannot be empty.");
+    }
+
+    const updated = await this.db.engagementLead.update({
+      where: { id },
+      data: {
+        notes: {
+          create: {
+            content: trimmed,
+            createdBy: createdBy ?? null,
+          },
+        },
+      },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(updated);
@@ -257,18 +362,33 @@ export class EngagementLeadsService {
         convertedEngagementId: engagementId,
         updatedBy: updatedBy ?? null,
       },
+      include: LEAD_INCLUDE,
     });
 
     return this.transformToResponseDto(updated);
   }
 
-  getEngagementPrefill(id: string): Promise<EngagementLeadPrefillDto> {
-    return this.findOne(id).then((lead) => this.mapLeadToPrefill(lead));
+  async getEngagementPrefill(id: string): Promise<EngagementLeadPrefillDto> {
+    const lead = await this.findOne(id);
+    // Leads keep the skill names picked on the intake form, while engagements need standardized
+    // skill ids, so the names are matched here and only the misses are left for the TM.
+    const skillResolution = await this.skillsService.resolveSkillFilterValues(
+      lead.requiredSkills,
+    );
+
+    return {
+      ...this.mapLeadToPrefill(lead),
+      requiredSkills: skillResolution.skillIds.map((skillId) => ({
+        id: skillId,
+        name: skillResolution.skillNamesById.get(skillId) ?? skillId,
+      })),
+      unresolvedSkillNames: skillResolution.unresolvedNames,
+    };
   }
 
   private mapLeadToPrefill(
     lead: EngagementLeadResponseDto,
-  ): EngagementLeadPrefillDto {
+  ): Omit<EngagementLeadPrefillDto, "requiredSkills" | "unresolvedSkillNames"> {
     const descriptionParts = [lead.jobDescription];
 
     if (lead.industryDomain) {
@@ -285,7 +405,7 @@ export class EngagementLeadsService {
       descriptionParts.push(`\n\nEngagement Model: ${modelLabel}`);
     }
 
-    if (lead.minYearsExperience > 0) {
+    if (lead.minYearsExperience) {
       descriptionParts.push(
         `\n\nMinimum Years of Experience: ${lead.minYearsExperience}`,
       );
@@ -313,14 +433,17 @@ export class EngagementLeadsService {
       account: lead.accountName,
       smu: lead.smu,
       spoc: lead.workEmail,
-      title: lead.roleTitle,
+      title: lead.roleTitle ?? "",
       description: descriptionParts.join(""),
       requiredSkillNames: lead.requiredSkills,
       roleLevel: this.mapExperienceLevelToRoleLevel(lead.experienceLevel),
       requiredMemberCount: lead.resourcesRequired,
-      durationStartDate: lead.preferredStartDate.toISOString(),
+      durationStartDate: lead.preferredStartDate?.toISOString() ?? null,
       durationMonths: this.parseDurationMonths(lead.engagementDuration),
-      compensationRange: `${lead.billRateCurrency} ${lead.billRateAmount}/hour`,
+      compensationRange:
+        lead.billRateCurrency && lead.billRateAmount
+          ? `${lead.billRateCurrency} ${lead.billRateAmount}/hour`
+          : null,
       timeZones: this.parseTimeZones(lead.timeZoneRequirement),
       countries: this.parseCountries(lead.workLocationRestrictions),
       receivedDateFromAccount: lead.createdAt.toISOString(),
@@ -329,7 +452,7 @@ export class EngagementLeadsService {
   }
 
   private mapExperienceLevelToRoleLevel(
-    experienceLevel: string,
+    experienceLevel?: string | null,
   ): string | null {
     switch (experienceLevel as ExperienceLevel) {
       case ExperienceLevel.JUNIOR:

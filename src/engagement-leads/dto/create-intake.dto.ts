@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional, PickType } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import {
   ArrayMinSize,
@@ -93,13 +93,15 @@ export class CreateEngagementLeadIntakeDto {
   )
   requiredSkills: string[];
 
-  @ApiProperty({
-    description: "Required experience level",
+  @ApiPropertyOptional({
+    description:
+      "Required experience level. No longer collected on the intake form; accepted for older clients.",
     enum: ExperienceLevel,
     example: ExperienceLevel.SENIOR,
   })
+  @IsOptional()
   @IsEnum(ExperienceLevel)
-  experienceLevel: ExperienceLevel;
+  experienceLevel?: ExperienceLevel;
 
   @ApiProperty({
     description: "Minimum years of relevant experience",
@@ -200,13 +202,14 @@ export class CreateEngagementLeadIntakeDto {
   @MaxLength(50)
   billRateAmount: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: "Priority of the request",
     enum: LeadPriority,
     example: LeadPriority.HIGH,
   })
+  @IsOptional()
   @IsEnum(LeadPriority)
-  priority: LeadPriority;
+  priority?: LeadPriority;
 
   @ApiPropertyOptional({
     description: "Additional requirements or constraints",
@@ -216,4 +219,29 @@ export class CreateEngagementLeadIntakeDto {
   @IsString()
   @MaxLength(5000)
   additionalRequirements?: string;
+}
+
+export class CreateWiproDirectEngagementLeadIntakeDto extends PickType(
+  CreateEngagementLeadIntakeDto,
+  [
+    "workEmail",
+    "accountName",
+    "smu",
+    "jobDescription",
+    "requiredSkills",
+    "resourcesRequired",
+    "engagementDuration",
+    "workingHoursPerDay",
+    "timeZoneRequirement",
+    "remoteWorkAccepted",
+    "workLocationRestrictions",
+  ] as const,
+) {
+  @ApiPropertyOptional({
+    description: "Preferred start date for the resource(s)",
+    example: "2026-04-01T00:00:00.000Z",
+  })
+  @IsOptional()
+  @IsDateString()
+  preferredStartDate?: string;
 }

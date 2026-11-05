@@ -4,12 +4,9 @@ import {
   Logger,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import * as busApi from "tc-bus-api-wrapper";
+import { createBusApiClient as busApi, type BusApiClient } from "tc-core-library-js";
 import { EventBusMessage } from "./types/event-bus.types";
 
-type BusApiClient = {
-  postEvent: <T>(message: EventBusMessage<T>) => Promise<void>;
-};
 
 @Injectable()
 export class EventBusService {

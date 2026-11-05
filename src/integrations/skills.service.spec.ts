@@ -4,9 +4,7 @@ import { SkillsService } from "./skills.service";
 const mockGetMachineToken = jest.fn();
 
 jest.mock("tc-core-library-js", () => ({
-  auth: {
-    m2m: jest.fn(() => ({ getMachineToken: mockGetMachineToken })),
-  },
+  createM2MClient: jest.fn(() => ({ getMachineToken: mockGetMachineToken })),
 }));
 
 describe("SkillsService engagement filter resolution", () => {

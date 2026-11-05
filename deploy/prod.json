@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "environment": "prod",
+  "accountId": "409275337247",
+  "region": "us-east-1",
+  "deployRoleArn": "arn:aws:iam::409275337247:role/engagements-api-v6-prod-deploy",
+  "taskRoleArn": null,
+  "executionRoleArn": "arn:aws:iam::409275337247:role/ecsTaskExecutionRole",
+  "cluster": "engagements-api-serverless",
+  "service": "engagements-api-v6",
+  "taskFamily": "engagements-api-v6",
+  "circleciOrgId": "947bef5e-1669-415d-b83c-4fc85155b7df",
+  "circleciProjectId": "327fa5bf-4843-4588-9de7-0c52e5221a72",
+  "repository": "github.com/topcoder-platform/engagements-api-v6",
+  "branch": "master",
+  "images": {
+    "engagements-api-v6": "engagements-api-v6"
+  }
+}

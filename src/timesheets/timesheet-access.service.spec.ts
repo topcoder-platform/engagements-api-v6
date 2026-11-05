@@ -143,6 +143,35 @@ describe("TimesheetAccessService", () => {
       ).rejects.toThrow("Timesheet not found");
     });
 
+    it("resolves an assignee who is also an Administrator as MEMBER", async () => {
+      await expect(
+        service.resolveTimesheetRole(
+          { userId: "1001", roles: [UserRoles.Admin] },
+          assignment,
+        ),
+      ).resolves.toBe(TimesheetViewerRole.Member);
+    });
+
+    it("resolves an assignee who is also a talent manager as MEMBER", async () => {
+      asNotManager();
+
+      await expect(
+        service.resolveTimesheetRole(
+          { userId: "1001", roles: [UserRoles.TalentManager] },
+          assignment,
+        ),
+      ).resolves.toBe(TimesheetViewerRole.Member);
+    });
+
+    it("keeps a machine token as ADMINISTRATOR even if its id matches the assignee", async () => {
+      await expect(
+        service.resolveTimesheetRole(
+          { isMachine: true, userId: "1001", scopes: ["manage:timesheets"] },
+          assignment,
+        ),
+      ).resolves.toBe(TimesheetViewerRole.Administrator);
+    });
+
     it("prefers MEMBER over MANAGER when the assignee is also a manager", async () => {
       asManager();
 

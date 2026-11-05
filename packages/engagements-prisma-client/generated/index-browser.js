@@ -222,6 +222,7 @@ exports.Prisma.MemberExperienceScalarFieldEnum = {
 
 exports.Prisma.EngagementLeadScalarFieldEnum = {
   id: 'id',
+  leadType: 'leadType',
   workEmail: 'workEmail',
   accountName: 'accountName',
   smu: 'smu',
@@ -248,6 +249,14 @@ exports.Prisma.EngagementLeadScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   updatedBy: 'updatedBy'
+};
+
+exports.Prisma.EngagementLeadNoteScalarFieldEnum = {
+  id: 'id',
+  engagementLeadId: 'engagementLeadId',
+  content: 'content',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
 };
 
 exports.Prisma.EngagementTimesheetEntryScalarFieldEnum = {
@@ -386,6 +395,11 @@ exports.AssignmentSource = exports.$Enums.AssignmentSource = {
   TOPCODER_COMMUNITY: 'TOPCODER_COMMUNITY'
 };
 
+exports.EngagementLeadType = exports.$Enums.EngagementLeadType = {
+  WIPRO_CONSUMPTION: 'WIPRO_CONSUMPTION',
+  WIPRO_DIRECT: 'WIPRO_DIRECT'
+};
+
 exports.EngagementModel = exports.$Enums.EngagementModel = {
   TIME_AND_MATERIAL: 'TIME_AND_MATERIAL',
   FIXED_PRICE: 'FIXED_PRICE'
@@ -440,6 +454,7 @@ exports.Prisma.ModelName = {
   EngagementFeedback: 'EngagementFeedback',
   MemberExperience: 'MemberExperience',
   EngagementLead: 'EngagementLead',
+  EngagementLeadNote: 'EngagementLeadNote',
   EngagementTimesheetEntry: 'EngagementTimesheetEntry',
   EngagementTimesheetAudit: 'EngagementTimesheetAudit',
   EngagementManager: 'EngagementManager'
