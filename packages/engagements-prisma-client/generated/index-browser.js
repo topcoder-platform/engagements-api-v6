@@ -242,6 +242,7 @@ exports.Prisma.EngagementLeadScalarFieldEnum = {
   workLocationRestrictions: 'workLocationRestrictions',
   billRateCurrency: 'billRateCurrency',
   billRateAmount: 'billRateAmount',
+  maximumCost: 'maximumCost',
   priority: 'priority',
   additionalRequirements: 'additionalRequirements',
   status: 'status',
