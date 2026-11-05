@@ -227,7 +227,6 @@ describe("EngagementLeadsService", () => {
         workEmail: "john.doe@wipro.com",
         accountName: "ABC Bank",
         smu: "EURP",
-        engagementModel: EngagementModel.TIME_AND_MATERIAL,
         roleTitle: "QA Engineer",
         jobDescription: "Test the product.",
         requiredSkills: ["Java"],
@@ -239,8 +238,7 @@ describe("EngagementLeadsService", () => {
         workingHoursPerDay: 8,
         timeZoneRequirement: "IST",
         remoteWorkAccepted: true,
-        billRateCurrency: "USD",
-        billRateAmount: "100",
+        maximumCost: "USD 100/hour",
       });
 
       expect(db.engagementLead.create).toHaveBeenCalledWith({
@@ -258,7 +256,6 @@ describe("EngagementLeadsService", () => {
         workEmail: "john.doe@wipro.com",
         accountName: "ABC Bank",
         smu: "EURP",
-        engagementModel: EngagementModel.TIME_AND_MATERIAL,
         roleTitle: "QA Engineer",
         jobDescription: "Test the product.",
         requiredSkills: ["Java"],
@@ -269,13 +266,43 @@ describe("EngagementLeadsService", () => {
         workingHoursPerDay: 8,
         timeZoneRequirement: "IST",
         remoteWorkAccepted: true,
-        billRateCurrency: "USD",
-        billRateAmount: "100",
+        maximumCost: "USD 100/hour",
       });
 
       expect(db.engagementLead.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ experienceLevel: null }),
+        }),
+      );
+    });
+
+    it("stores the maximum cost in place of the engagement model and bill rate", async () => {
+      await service.createFromIntake({
+        workEmail: "john.doe@wipro.com",
+        accountName: "ABC Bank",
+        smu: "EURP",
+        roleTitle: "QA Engineer",
+        jobDescription: "Test the product.",
+        requiredSkills: ["Java", "Custom Framework"],
+        minYearsExperience: 3,
+        resourcesRequired: 1,
+        preferredStartDate: "2026-11-01T00:00:00.000Z",
+        engagementDuration: "6 months",
+        workingHoursPerDay: 8,
+        timeZoneRequirement: "IST",
+        remoteWorkAccepted: true,
+        maximumCost: "  USD 100/hour  ",
+      });
+
+      expect(db.engagementLead.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            billRateAmount: null,
+            billRateCurrency: null,
+            engagementModel: null,
+            maximumCost: "USD 100/hour",
+            requiredSkills: ["Java", "Custom Framework"],
+          }),
         }),
       );
     });
@@ -428,6 +455,7 @@ describe("EngagementLeadsService", () => {
       workLocationRestrictions: null,
       billRateCurrency: null,
       billRateAmount: null,
+      maximumCost: null,
       priority: null,
       additionalRequirements: null,
       status: EngagementLeadStatus.QUALIFIED,
@@ -457,6 +485,31 @@ describe("EngagementLeadsService", () => {
         timeZones: ["EST"],
         countries: ["ANY"],
       });
+    });
+
+    it("uses the maximum cost as the compensation range", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        ...directLead,
+        leadType: EngagementLeadType.WIPRO_CONSUMPTION,
+        maximumCost: "USD 100/hour",
+      });
+
+      const prefill = await service.getEngagementPrefill("lead-1");
+
+      expect(prefill.compensationRange).toBe("USD 100/hour");
+    });
+
+    it("falls back to the bill rate for leads submitted before the maximum cost field", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        ...directLead,
+        leadType: EngagementLeadType.WIPRO_CONSUMPTION,
+        billRateCurrency: "USD",
+        billRateAmount: "90",
+      });
+
+      const prefill = await service.getEngagementPrefill("lead-1");
+
+      expect(prefill.compensationRange).toBe("USD 90/hour");
     });
 
     it("matches the intake skill names to standardized skills", async () => {
@@ -528,32 +581,39 @@ describe("EngagementLeadQueryDto validation", () => {
 describe("CreateEngagementLeadIntakeDto validation", () => {
   const pipe = new ValidationPipe({ transform: true, whitelist: true });
 
-  it("accepts an intake without an experience level", async () => {
-    const intake = {
-      workEmail: "john.doe@wipro.com",
-      accountName: "ABC Bank",
-      smu: "EURP",
-      engagementModel: EngagementModel.TIME_AND_MATERIAL,
-      roleTitle: "QA Engineer",
-      jobDescription: "Test the product.",
-      requiredSkills: ["Java"],
-      minYearsExperience: 3,
-      resourcesRequired: 1,
-      preferredStartDate: "2026-11-01T00:00:00.000Z",
-      engagementDuration: "6 months",
-      workingHoursPerDay: 8,
-      timeZoneRequirement: "IST",
-      remoteWorkAccepted: true,
-      billRateCurrency: "USD",
-      billRateAmount: "100",
-    };
+  const intake = {
+    workEmail: "john.doe@wipro.com",
+    accountName: "ABC Bank",
+    smu: "EURP",
+    roleTitle: "QA Engineer",
+    jobDescription: "Test the product.",
+    requiredSkills: ["Java"],
+    minYearsExperience: 3,
+    resourcesRequired: 1,
+    preferredStartDate: "2026-11-01T00:00:00.000Z",
+    engagementDuration: "6 months",
+    workingHoursPerDay: 8,
+    timeZoneRequirement: "IST",
+    remoteWorkAccepted: true,
+    maximumCost: "USD 100/hour",
+  };
 
+  it("accepts an intake without an experience level, engagement model, or bill rate", async () => {
     await expect(
       pipe.transform(intake, {
         type: "body",
         metatype: CreateEngagementLeadIntakeDto,
       }),
     ).resolves.toMatchObject(intake);
+  });
+
+  it("rejects an intake without a maximum cost", async () => {
+    await expect(
+      pipe.transform(
+        { ...intake, maximumCost: " " },
+        { type: "body", metatype: CreateEngagementLeadIntakeDto },
+      ),
+    ).rejects.toThrow();
   });
 });
 

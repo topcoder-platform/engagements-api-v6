@@ -51,13 +51,15 @@ export class CreateEngagementLeadIntakeDto {
   @MaxLength(255)
   smu: string;
 
-  @ApiProperty({
-    description: "Commercial engagement model",
+  @ApiPropertyOptional({
+    description:
+      "Commercial engagement model. No longer collected on the intake form; accepted for older clients.",
     enum: EngagementModel,
     example: EngagementModel.TIME_AND_MATERIAL,
   })
+  @IsOptional()
   @IsEnum(EngagementModel)
-  engagementModel: EngagementModel;
+  engagementModel?: EngagementModel;
 
   @ApiProperty({
     description: "Role title for the engagement",
@@ -183,24 +185,35 @@ export class CreateEngagementLeadIntakeDto {
   workLocationRestrictions?: string;
 
   @ApiProperty({
-    description: "Approved client bill rate currency",
+    description:
+      "Maximum hourly rate the client will pay for the resource. Billing is based on actual hours worked.",
+    example: "USD 100/hour",
+  })
+  @IsString()
+  @IsNotEmpty()
+  @IsNotWhitespace()
+  @MaxLength(100)
+  maximumCost: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Approved client bill rate currency. No longer collected on the intake form; accepted for older clients.",
     example: "USD",
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @IsNotWhitespace()
   @MaxLength(10)
-  billRateCurrency: string;
+  billRateCurrency?: string;
 
-  @ApiProperty({
-    description: "Approved hourly bill rate amount",
+  @ApiPropertyOptional({
+    description:
+      "Approved hourly bill rate amount. No longer collected on the intake form; accepted for older clients.",
     example: "100",
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @IsNotWhitespace()
   @MaxLength(50)
-  billRateAmount: string;
+  billRateAmount?: string;
 
   @ApiPropertyOptional({
     description: "Priority of the request",
