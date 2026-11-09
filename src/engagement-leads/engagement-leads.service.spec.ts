@@ -363,6 +363,8 @@ describe("EngagementLeadsService", () => {
   });
 
   describe("updateStatus", () => {
+    const REASON = "Customer chose another vendor.";
+
     it.each([
       [EngagementLeadStatus.SUBMITTED, EngagementLeadStatus.UNDER_REVIEW],
       [EngagementLeadStatus.SUBMITTED, EngagementLeadStatus.FULFILLED],
@@ -378,17 +380,22 @@ describe("EngagementLeadsService", () => {
         id: "lead-1",
         status: current,
       });
+      const isRejection = next === EngagementLeadStatus.REJECTED;
 
       const result = await service.updateStatus(
         "lead-1",
-        { status: next },
+        { status: next, reason: isRejection ? REASON : undefined },
         "tm-1",
       );
 
       expect(db.engagementLead.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: "lead-1" },
-          data: { status: next, updatedBy: "tm-1" },
+          data: {
+            status: next,
+            rejectionReason: isRejection ? REASON : null,
+            updatedBy: "tm-1",
+          },
         }),
       );
       expect(result.status).toBe(next);
@@ -406,9 +413,62 @@ describe("EngagementLeadsService", () => {
       });
 
       await expect(
-        service.updateStatus("lead-1", { status: next }),
+        service.updateStatus("lead-1", { status: next, reason: REASON }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(db.engagementLead.update).not.toHaveBeenCalled();
+    });
+
+    describe("rejection reason", () => {
+      beforeEach(() => {
+        db.engagementLead.findUnique.mockResolvedValue({
+          id: "lead-1",
+          status: EngagementLeadStatus.UNDER_REVIEW,
+        });
+      });
+
+      it("stores the trimmed reason when a lead is rejected", async () => {
+        const result = await service.updateStatus(
+          "lead-1",
+          { status: EngagementLeadStatus.REJECTED, reason: `  ${REASON}  ` },
+          "tm-1",
+        );
+
+        expect(db.engagementLead.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({ rejectionReason: REASON }),
+          }),
+        );
+        expect(result.rejectionReason).toBe(REASON);
+      });
+
+      it.each([undefined, "   "])(
+        "does not reject a lead without a reason (%p)",
+        async (reason) => {
+          await expect(
+            service.updateStatus("lead-1", {
+              status: EngagementLeadStatus.REJECTED,
+              reason,
+            }),
+          ).rejects.toBeInstanceOf(BadRequestException);
+          expect(db.engagementLead.update).not.toHaveBeenCalled();
+        },
+      );
+
+      it("clears the rejection reason on any other status", async () => {
+        await service.updateStatus("lead-1", {
+          status: EngagementLeadStatus.FULFILLED,
+          reason: "ignored",
+        });
+
+        expect(db.engagementLead.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              status: EngagementLeadStatus.FULFILLED,
+              rejectionReason: null,
+            }),
+          }),
+        );
+      });
     });
   });
 
@@ -753,30 +813,32 @@ describe("EngagementLeadQueryDto validation", () => {
 
 describe("UpdateEngagementLeadStatusDto validation", () => {
   const pipe = new ValidationPipe({ transform: true, whitelist: true });
+  const validate = (body: Record<string, unknown>) =>
+    pipe.transform(body, {
+      type: "body",
+      metatype: UpdateEngagementLeadStatusDto,
+    });
 
-  it.each(["UNDER_REVIEW", "FULFILLED", "REJECTED"])(
-    "accepts %s",
-    async (status) => {
-      await expect(
-        pipe.transform(
-          { status },
-          { type: "body", metatype: UpdateEngagementLeadStatusDto },
-        ),
-      ).resolves.toMatchObject({ status });
-    },
-  );
+  it.each(["UNDER_REVIEW", "FULFILLED"])("accepts %s", async (status) => {
+    await expect(validate({ status })).resolves.toMatchObject({ status });
+  });
 
   it.each(["SUBMITTED", "QUALIFIED", "CONVERTED"])(
     "rejects the %s status",
     async (status) => {
-      await expect(
-        pipe.transform(
-          { status },
-          { type: "body", metatype: UpdateEngagementLeadStatusDto },
-        ),
-      ).rejects.toBeDefined();
+      await expect(validate({ status })).rejects.toBeDefined();
     },
   );
+
+  it("requires a reason to reject a lead", async () => {
+    await expect(validate({ status: "REJECTED" })).rejects.toBeDefined();
+    await expect(
+      validate({ status: "REJECTED", reason: "  " }),
+    ).rejects.toBeDefined();
+    await expect(
+      validate({ status: "REJECTED", reason: "Budget cut." }),
+    ).resolves.toMatchObject({ status: "REJECTED", reason: "Budget cut." });
+  });
 });
 
 describe("CreateEngagementLeadIntakeDto validation", () => {
