@@ -246,6 +246,7 @@ exports.Prisma.EngagementLeadScalarFieldEnum = {
   priority: 'priority',
   additionalRequirements: 'additionalRequirements',
   status: 'status',
+  rejectionReason: 'rejectionReason',
   convertedEngagementId: 'convertedEngagementId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',

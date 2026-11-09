@@ -80,6 +80,7 @@ export class EngagementLeadsService {
         createdBy: note.createdBy,
       })),
       status: lead.status,
+      rejectionReason: lead.rejectionReason,
       convertedEngagementId: lead.convertedEngagementId,
       createdAt: lead.createdAt,
       updatedAt: lead.updatedAt,
@@ -289,10 +290,20 @@ export class EngagementLeadsService {
       );
     }
 
+    const isRejection = updateDto.status === EngagementLeadStatus.REJECTED;
+    const rejectionReason = updateDto.reason?.trim() ?? "";
+
+    if (isRejection && !rejectionReason) {
+      throw new BadRequestException(
+        "A reason is required to reject an engagement lead.",
+      );
+    }
+
     const updated = await this.db.engagementLead.update({
       where: { id },
       data: {
         status: updateDto.status,
+        rejectionReason: isRejection ? rejectionReason : null,
         updatedBy: updatedBy ?? null,
       },
       include: LEAD_INCLUDE,

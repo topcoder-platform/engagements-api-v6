@@ -295,6 +295,8 @@ model EngagementLead {
   priority                 LeadPriority?
   additionalRequirements   String?
   status                   EngagementLeadStatus @default(SUBMITTED)
+  /// Why the lead was rejected. Required when it is rejected and cleared when it moves to another status.
+  rejectionReason          String?
   convertedEngagementId    String?
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt

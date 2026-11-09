@@ -17,6 +17,7 @@ import {
   EngagementLeadQueryDto,
   EngagementLeadSortField,
   EngagementLeadStatusGroup,
+  UpdateEngagementLeadStatusDto,
 } from "./dto";
 
 jest.mock("nanoid", () => ({
@@ -308,6 +309,66 @@ describe("EngagementLeadsService", () => {
     });
   });
 
+  describe("updateStatus", () => {
+    beforeEach(() => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: EngagementLeadStatus.UNDER_REVIEW,
+      });
+    });
+
+    it("stores the trimmed reason when a lead is rejected", async () => {
+      const result = await service.updateStatus(
+        "lead-1",
+        {
+          status: EngagementLeadStatus.REJECTED,
+          reason: "  Customer chose another vendor.  ",
+        },
+        "tm-1",
+      );
+
+      expect(db.engagementLead.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            status: EngagementLeadStatus.REJECTED,
+            rejectionReason: "Customer chose another vendor.",
+            updatedBy: "tm-1",
+          },
+        }),
+      );
+      expect(result.rejectionReason).toBe("Customer chose another vendor.");
+    });
+
+    it.each([undefined, "   "])(
+      "does not reject a lead without a reason (%p)",
+      async (reason) => {
+        await expect(
+          service.updateStatus("lead-1", {
+            status: EngagementLeadStatus.REJECTED,
+            reason,
+          }),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(db.engagementLead.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it("clears the rejection reason on any other status", async () => {
+      await service.updateStatus("lead-1", {
+        status: EngagementLeadStatus.QUALIFIED,
+        reason: "ignored",
+      });
+
+      expect(db.engagementLead.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: EngagementLeadStatus.QUALIFIED,
+            rejectionReason: null,
+          }),
+        }),
+      );
+    });
+  });
+
   describe("addNote", () => {
     it("adds a trimmed note with who wrote it and returns the notes oldest first", async () => {
       const earlier = {
@@ -574,6 +635,31 @@ describe("EngagementLeadQueryDto validation", () => {
       roleTitle: "PM",
       sortBy: EngagementLeadSortField.CREATED_AT,
       sortOrder: "desc",
+    });
+  });
+});
+
+describe("UpdateEngagementLeadStatusDto validation", () => {
+  const pipe = new ValidationPipe({ transform: true, whitelist: true });
+  const validate = (body: Record<string, unknown>) =>
+    pipe.transform(body, {
+      type: "body",
+      metatype: UpdateEngagementLeadStatusDto,
+    });
+
+  it("requires a reason to reject a lead", async () => {
+    await expect(validate({ status: "REJECTED" })).rejects.toBeDefined();
+    await expect(
+      validate({ status: "REJECTED", reason: "  " }),
+    ).rejects.toBeDefined();
+    await expect(
+      validate({ status: "REJECTED", reason: "Budget cut." }),
+    ).resolves.toMatchObject({ reason: "Budget cut." });
+  });
+
+  it("does not require a reason for other statuses", async () => {
+    await expect(validate({ status: "UNDER_REVIEW" })).resolves.toMatchObject({
+      status: "UNDER_REVIEW",
     });
   });
 });

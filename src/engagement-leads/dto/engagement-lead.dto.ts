@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  ValidateIf,
 } from "class-validator";
 import {
   EngagementLeadStatus,
@@ -128,6 +129,20 @@ export class UpdateEngagementLeadStatusDto {
   })
   @IsEnum(EngagementLeadStatus)
   status: EngagementLeadStatus;
+
+  @ApiPropertyOptional({
+    description: "Why the lead is rejected. Required when status is REJECTED.",
+    example: "The customer chose another vendor.",
+  })
+  @ValidateIf(
+    (dto: UpdateEngagementLeadStatusDto) =>
+      dto.status === EngagementLeadStatus.REJECTED,
+  )
+  @IsString()
+  @IsNotEmpty()
+  @IsNotWhitespace()
+  @MaxLength(2000)
+  reason?: string;
 }
 
 export class CreateEngagementLeadNoteDto {
@@ -247,6 +262,11 @@ export class EngagementLeadResponseDto {
 
   @ApiProperty()
   status: string;
+
+  @ApiPropertyOptional({
+    description: "Why the lead was rejected; set only while it is rejected.",
+  })
+  rejectionReason?: string | null;
 
   @ApiPropertyOptional()
   convertedEngagementId?: string | null;

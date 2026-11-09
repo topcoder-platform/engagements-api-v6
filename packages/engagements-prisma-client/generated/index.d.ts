@@ -8574,6 +8574,7 @@ export namespace Prisma {
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus | null
+    rejectionReason: string | null
     convertedEngagementId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -8605,6 +8606,7 @@ export namespace Prisma {
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus | null
+    rejectionReason: string | null
     convertedEngagementId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -8637,6 +8639,7 @@ export namespace Prisma {
     priority: number
     additionalRequirements: number
     status: number
+    rejectionReason: number
     convertedEngagementId: number
     createdAt: number
     updatedAt: number
@@ -8682,6 +8685,7 @@ export namespace Prisma {
     priority?: true
     additionalRequirements?: true
     status?: true
+    rejectionReason?: true
     convertedEngagementId?: true
     createdAt?: true
     updatedAt?: true
@@ -8713,6 +8717,7 @@ export namespace Prisma {
     priority?: true
     additionalRequirements?: true
     status?: true
+    rejectionReason?: true
     convertedEngagementId?: true
     createdAt?: true
     updatedAt?: true
@@ -8745,6 +8750,7 @@ export namespace Prisma {
     priority?: true
     additionalRequirements?: true
     status?: true
+    rejectionReason?: true
     convertedEngagementId?: true
     createdAt?: true
     updatedAt?: true
@@ -8864,6 +8870,7 @@ export namespace Prisma {
     priority: $Enums.LeadPriority | null
     additionalRequirements: string | null
     status: $Enums.EngagementLeadStatus
+    rejectionReason: string | null
     convertedEngagementId: string | null
     createdAt: Date
     updatedAt: Date
@@ -8915,6 +8922,7 @@ export namespace Prisma {
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
+    rejectionReason?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -8949,6 +8957,7 @@ export namespace Prisma {
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
+    rejectionReason?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -8981,6 +8990,7 @@ export namespace Prisma {
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
+    rejectionReason?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -9013,13 +9023,14 @@ export namespace Prisma {
     priority?: boolean
     additionalRequirements?: boolean
     status?: boolean
+    rejectionReason?: boolean
     convertedEngagementId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
   }
 
-  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "maximumCost" | "priority" | "additionalRequirements" | "status" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
+  export type EngagementLeadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "leadType" | "workEmail" | "accountName" | "smu" | "engagementModel" | "roleTitle" | "jobDescription" | "requiredSkills" | "experienceLevel" | "minYearsExperience" | "industryDomain" | "resourcesRequired" | "preferredStartDate" | "engagementDuration" | "workingHoursPerDay" | "timeZoneRequirement" | "remoteWorkAccepted" | "workLocationRestrictions" | "billRateCurrency" | "billRateAmount" | "maximumCost" | "priority" | "additionalRequirements" | "status" | "rejectionReason" | "convertedEngagementId" | "createdAt" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLead"]>
   export type EngagementLeadInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     notes?: boolean | EngagementLead$notesArgs<ExtArgs>
     _count?: boolean | EngagementLeadCountOutputTypeDefaultArgs<ExtArgs>
@@ -9058,6 +9069,10 @@ export namespace Prisma {
       priority: $Enums.LeadPriority | null
       additionalRequirements: string | null
       status: $Enums.EngagementLeadStatus
+      /**
+       * Why the lead was rejected. Required when it is rejected and cleared when it moves to another status.
+       */
+      rejectionReason: string | null
       convertedEngagementId: string | null
       createdAt: Date
       updatedAt: Date
@@ -9511,6 +9526,7 @@ export namespace Prisma {
     readonly priority: FieldRef<"EngagementLead", 'LeadPriority'>
     readonly additionalRequirements: FieldRef<"EngagementLead", 'String'>
     readonly status: FieldRef<"EngagementLead", 'EngagementLeadStatus'>
+    readonly rejectionReason: FieldRef<"EngagementLead", 'String'>
     readonly convertedEngagementId: FieldRef<"EngagementLead", 'String'>
     readonly createdAt: FieldRef<"EngagementLead", 'DateTime'>
     readonly updatedAt: FieldRef<"EngagementLead", 'DateTime'>
@@ -14789,6 +14805,7 @@ export namespace Prisma {
     priority: 'priority',
     additionalRequirements: 'additionalRequirements',
     status: 'status',
+    rejectionReason: 'rejectionReason',
     convertedEngagementId: 'convertedEngagementId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
@@ -15861,6 +15878,7 @@ export namespace Prisma {
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
+    rejectionReason?: StringNullableFilter<"EngagementLead"> | string | null
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementLead"> | Date | string
@@ -15894,6 +15912,7 @@ export namespace Prisma {
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
+    rejectionReason?: SortOrderInput | SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -15930,6 +15949,7 @@ export namespace Prisma {
     priority?: EnumLeadPriorityNullableFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
+    rejectionReason?: StringNullableFilter<"EngagementLead"> | string | null
     convertedEngagementId?: StringNullableFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeFilter<"EngagementLead"> | Date | string
     updatedAt?: DateTimeFilter<"EngagementLead"> | Date | string
@@ -15963,6 +15983,7 @@ export namespace Prisma {
     priority?: SortOrderInput | SortOrder
     additionalRequirements?: SortOrderInput | SortOrder
     status?: SortOrder
+    rejectionReason?: SortOrderInput | SortOrder
     convertedEngagementId?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -16003,6 +16024,7 @@ export namespace Prisma {
     priority?: EnumLeadPriorityNullableWithAggregatesFilter<"EngagementLead"> | $Enums.LeadPriority | null
     additionalRequirements?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     status?: EnumEngagementLeadStatusWithAggregatesFilter<"EngagementLead"> | $Enums.EngagementLeadStatus
+    rejectionReason?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     convertedEngagementId?: StringNullableWithAggregatesFilter<"EngagementLead"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"EngagementLead"> | Date | string
@@ -17109,6 +17131,7 @@ export namespace Prisma {
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
+    rejectionReason?: string | null
     convertedEngagementId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -17142,6 +17165,7 @@ export namespace Prisma {
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
+    rejectionReason?: string | null
     convertedEngagementId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -17175,6 +17199,7 @@ export namespace Prisma {
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17208,6 +17233,7 @@ export namespace Prisma {
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17241,6 +17267,7 @@ export namespace Prisma {
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
+    rejectionReason?: string | null
     convertedEngagementId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -17273,6 +17300,7 @@ export namespace Prisma {
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17305,6 +17333,7 @@ export namespace Prisma {
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18563,6 +18592,7 @@ export namespace Prisma {
     priority?: SortOrder
     additionalRequirements?: SortOrder
     status?: SortOrder
+    rejectionReason?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -18600,6 +18630,7 @@ export namespace Prisma {
     priority?: SortOrder
     additionalRequirements?: SortOrder
     status?: SortOrder
+    rejectionReason?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -18631,6 +18662,7 @@ export namespace Prisma {
     priority?: SortOrder
     additionalRequirements?: SortOrder
     status?: SortOrder
+    rejectionReason?: SortOrder
     convertedEngagementId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -21436,6 +21468,7 @@ export namespace Prisma {
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
+    rejectionReason?: string | null
     convertedEngagementId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -21468,6 +21501,7 @@ export namespace Prisma {
     priority?: $Enums.LeadPriority | null
     additionalRequirements?: string | null
     status?: $Enums.EngagementLeadStatus
+    rejectionReason?: string | null
     convertedEngagementId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -21516,6 +21550,7 @@ export namespace Prisma {
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21548,6 +21583,7 @@ export namespace Prisma {
     priority?: NullableEnumLeadPriorityFieldUpdateOperationsInput | $Enums.LeadPriority | null
     additionalRequirements?: NullableStringFieldUpdateOperationsInput | string | null
     status?: EnumEngagementLeadStatusFieldUpdateOperationsInput | $Enums.EngagementLeadStatus
+    rejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     convertedEngagementId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
