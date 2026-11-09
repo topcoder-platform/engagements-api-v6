@@ -314,12 +314,7 @@ export class EngagementLeadsService {
       throw new NotFoundException("Engagement lead not found.");
     }
 
-    if (lead.status === EngagementLeadStatus.CONVERTED) {
-      throw new BadRequestException(
-        "Cannot add notes to a converted engagement lead.",
-      );
-    }
-
+    // Notes can be added whatever the lead's status, including lost and completed leads.
     const trimmed = content.trim();
     if (!trimmed) {
       throw new BadRequestException("Note content cannot be empty.");

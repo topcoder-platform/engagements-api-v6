@@ -220,7 +220,7 @@ export class EngagementLeadsController {
   @ApiOperation({
     summary: "Add an engagement lead note",
     description:
-      "Adds a Talent Manager note to an engagement lead. Notes are read-only once added, and none can be added after the lead is converted.",
+      "Adds a Talent Manager note to an engagement lead, whatever its status. Notes are read-only once added.",
   })
   @ApiResponse({
     status: 201,
@@ -228,7 +228,7 @@ export class EngagementLeadsController {
     type: EngagementLeadResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "The note is empty or the lead has been converted.",
+    description: "The note is empty.",
   })
   async addNote(
     @Param("id") id: string,

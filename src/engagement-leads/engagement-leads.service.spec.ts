@@ -365,17 +365,30 @@ describe("EngagementLeadsService", () => {
       expect(db.engagementLead.update).not.toHaveBeenCalled();
     });
 
-    it("rejects notes on a converted lead", async () => {
-      db.engagementLead.findUnique.mockResolvedValue({
-        id: "lead-1",
-        status: EngagementLeadStatus.CONVERTED,
-      });
+    it.each([EngagementLeadStatus.CONVERTED, EngagementLeadStatus.REJECTED])(
+      "adds notes to a %s lead",
+      async (status) => {
+        db.engagementLead.findUnique.mockResolvedValue({
+          id: "lead-1",
+          status,
+        });
 
-      await expect(
-        service.addNote("lead-1", "Too late."),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(db.engagementLead.update).not.toHaveBeenCalled();
-    });
+        await service.addNote("lead-1", "Follow up with the account.", "tm");
+
+        expect(db.engagementLead.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: {
+              notes: {
+                create: {
+                  content: "Follow up with the account.",
+                  createdBy: "tm",
+                },
+              },
+            },
+          }),
+        );
+      },
+    );
 
     it("throws when the lead does not exist", async () => {
       db.engagementLead.findUnique.mockResolvedValue(null);
