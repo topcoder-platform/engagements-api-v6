@@ -246,6 +246,7 @@ exports.Prisma.EngagementLeadScalarFieldEnum = {
   priority: 'priority',
   additionalRequirements: 'additionalRequirements',
   status: 'status',
+  rejectionReason: 'rejectionReason',
   convertedEngagementId: 'convertedEngagementId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -425,7 +426,8 @@ exports.EngagementLeadStatus = exports.$Enums.EngagementLeadStatus = {
   UNDER_REVIEW: 'UNDER_REVIEW',
   QUALIFIED: 'QUALIFIED',
   CONVERTED: 'CONVERTED',
-  REJECTED: 'REJECTED'
+  REJECTED: 'REJECTED',
+  FULFILLED: 'FULFILLED'
 };
 
 exports.TimesheetEntryStatus = exports.$Enums.TimesheetEntryStatus = {
