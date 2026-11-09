@@ -95,12 +95,16 @@ enum RoleLevel {
   SENIOR
 }
 
+/// SUBMITTED shows as "New" and REJECTED as "Lost". QUALIFIED and CONVERTED are no longer
+/// used: leads in either were moved to UNDER_REVIEW, and leads now stay UNDER_REVIEW when an
+/// engagement is created from them.
 enum EngagementLeadStatus {
   SUBMITTED
   UNDER_REVIEW
   QUALIFIED
   CONVERTED
   REJECTED
+  FULFILLED
 }
 
 enum EngagementModel {

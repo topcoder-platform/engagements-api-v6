@@ -17,6 +17,7 @@ import {
   EngagementLeadQueryDto,
   EngagementLeadSortField,
   EngagementLeadStatusGroup,
+  UpdateEngagementLeadStatusDto,
 } from "./dto";
 
 jest.mock("nanoid", () => ({
@@ -149,26 +150,45 @@ describe("EngagementLeadsService", () => {
       );
     });
 
-    it("applies statusGroup IN_PROGRESS filter to leads under review or qualified", async () => {
-      await service.findAll({
-        page: 1,
-        perPage: 10,
-        statusGroup: EngagementLeadStatusGroup.IN_PROGRESS,
-      });
+    it.each([
+      EngagementLeadStatusGroup.UNDER_REVIEW,
+      EngagementLeadStatusGroup.IN_PROGRESS,
+      EngagementLeadStatusGroup.CONVERTED,
+    ])(
+      "applies statusGroup %s filter to leads under review, including retired statuses",
+      async (statusGroup) => {
+        await service.findAll({ page: 1, perPage: 10, statusGroup });
 
-      expect(db.engagementLead.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            status: {
-              in: [
-                EngagementLeadStatus.UNDER_REVIEW,
-                EngagementLeadStatus.QUALIFIED,
-              ],
+        expect(db.engagementLead.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: {
+              status: {
+                in: [
+                  EngagementLeadStatus.UNDER_REVIEW,
+                  EngagementLeadStatus.QUALIFIED,
+                  EngagementLeadStatus.CONVERTED,
+                ],
+              },
             },
-          },
-        }),
-      );
-    });
+          }),
+        );
+      },
+    );
+
+    it.each([
+      [EngagementLeadStatusGroup.FULFILLED, EngagementLeadStatus.FULFILLED],
+      [EngagementLeadStatusGroup.LOST, EngagementLeadStatus.REJECTED],
+      [EngagementLeadStatusGroup.DECLINED, EngagementLeadStatus.REJECTED],
+    ])(
+      "applies statusGroup %s filter to %s leads",
+      async (statusGroup, status) => {
+        await service.findAll({ page: 1, perPage: 10, statusGroup });
+
+        expect(db.engagementLead.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({ where: { status } }),
+        );
+      },
+    );
 
     it("applies explicit status and priority filters", async () => {
       await service.findAll({
@@ -305,6 +325,92 @@ describe("EngagementLeadsService", () => {
           }),
         }),
       );
+    });
+  });
+
+  describe("updateStatus", () => {
+    it.each([
+      [EngagementLeadStatus.SUBMITTED, EngagementLeadStatus.UNDER_REVIEW],
+      [EngagementLeadStatus.SUBMITTED, EngagementLeadStatus.FULFILLED],
+      [EngagementLeadStatus.SUBMITTED, EngagementLeadStatus.REJECTED],
+      [EngagementLeadStatus.REJECTED, EngagementLeadStatus.UNDER_REVIEW],
+      [EngagementLeadStatus.REJECTED, EngagementLeadStatus.FULFILLED],
+      [EngagementLeadStatus.UNDER_REVIEW, EngagementLeadStatus.FULFILLED],
+      [EngagementLeadStatus.UNDER_REVIEW, EngagementLeadStatus.REJECTED],
+      [EngagementLeadStatus.CONVERTED, EngagementLeadStatus.FULFILLED],
+      [EngagementLeadStatus.FULFILLED, EngagementLeadStatus.UNDER_REVIEW],
+    ])("moves a %s lead to %s", async (current, next) => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: current,
+      });
+
+      const result = await service.updateStatus(
+        "lead-1",
+        { status: next },
+        "tm-1",
+      );
+
+      expect(db.engagementLead.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "lead-1" },
+          data: { status: next, updatedBy: "tm-1" },
+        }),
+      );
+      expect(result.status).toBe(next);
+    });
+
+    it.each([
+      [EngagementLeadStatus.UNDER_REVIEW, EngagementLeadStatus.UNDER_REVIEW],
+      [EngagementLeadStatus.FULFILLED, EngagementLeadStatus.REJECTED],
+      [EngagementLeadStatus.FULFILLED, EngagementLeadStatus.FULFILLED],
+      [EngagementLeadStatus.REJECTED, EngagementLeadStatus.REJECTED],
+    ])("does not move a %s lead to %s", async (current, next) => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: current,
+      });
+
+      await expect(
+        service.updateStatus("lead-1", { status: next }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(db.engagementLead.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("markConverted", () => {
+    it("links the engagement and keeps the lead under review", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: EngagementLeadStatus.SUBMITTED,
+        convertedEngagementId: null,
+      });
+
+      const result = await service.markConverted("lead-1", "eng-1", "tm-1");
+
+      expect(db.engagementLead.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            status: EngagementLeadStatus.UNDER_REVIEW,
+            convertedEngagementId: "eng-1",
+            updatedBy: "tm-1",
+          },
+        }),
+      );
+      expect(result.status).toBe(EngagementLeadStatus.UNDER_REVIEW);
+    });
+
+    it("rejects a lead that already has an engagement", async () => {
+      db.engagementLead.findUnique.mockResolvedValue({
+        id: "lead-1",
+        status: EngagementLeadStatus.UNDER_REVIEW,
+        convertedEngagementId: "eng-1",
+      });
+
+      await expect(
+        service.markConverted("lead-1", "eng-2"),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(db.engagementLead.update).not.toHaveBeenCalled();
     });
   });
 
@@ -576,6 +682,34 @@ describe("EngagementLeadQueryDto validation", () => {
       sortOrder: "desc",
     });
   });
+});
+
+describe("UpdateEngagementLeadStatusDto validation", () => {
+  const pipe = new ValidationPipe({ transform: true, whitelist: true });
+
+  it.each(["UNDER_REVIEW", "FULFILLED", "REJECTED"])(
+    "accepts %s",
+    async (status) => {
+      await expect(
+        pipe.transform(
+          { status },
+          { type: "body", metatype: UpdateEngagementLeadStatusDto },
+        ),
+      ).resolves.toMatchObject({ status });
+    },
+  );
+
+  it.each(["SUBMITTED", "QUALIFIED", "CONVERTED"])(
+    "rejects the %s status",
+    async (status) => {
+      await expect(
+        pipe.transform(
+          { status },
+          { type: "body", metatype: UpdateEngagementLeadStatusDto },
+        ),
+      ).rejects.toBeDefined();
+    },
+  );
 });
 
 describe("CreateEngagementLeadIntakeDto validation", () => {
