@@ -191,7 +191,8 @@ export const EngagementLeadStatus: {
   UNDER_REVIEW: 'UNDER_REVIEW',
   QUALIFIED: 'QUALIFIED',
   CONVERTED: 'CONVERTED',
-  REJECTED: 'REJECTED'
+  REJECTED: 'REJECTED',
+  FULFILLED: 'FULFILLED'
 };
 
 export type EngagementLeadStatus = (typeof EngagementLeadStatus)[keyof typeof EngagementLeadStatus]

@@ -425,7 +425,8 @@ exports.EngagementLeadStatus = exports.$Enums.EngagementLeadStatus = {
   UNDER_REVIEW: 'UNDER_REVIEW',
   QUALIFIED: 'QUALIFIED',
   CONVERTED: 'CONVERTED',
-  REJECTED: 'REJECTED'
+  REJECTED: 'REJECTED',
+  FULFILLED: 'FULFILLED'
 };
 
 exports.TimesheetEntryStatus = exports.$Enums.TimesheetEntryStatus = {

@@ -21,10 +21,23 @@ import { IsNotWhitespace, transformArray } from "src/common/validation.util";
 
 export enum EngagementLeadStatusGroup {
   NEW = "NEW",
+  UNDER_REVIEW = "UNDER_REVIEW",
+  FULFILLED = "FULFILLED",
+  LOST = "LOST",
+  /** @deprecated Use UNDER_REVIEW. Kept so clients built before the rename keep working. */
   IN_PROGRESS = "IN_PROGRESS",
+  /** @deprecated Converted leads are now under review. Use UNDER_REVIEW. */
   CONVERTED = "CONVERTED",
+  /** @deprecated Use LOST. */
   DECLINED = "DECLINED",
 }
+
+/** Statuses a Talent Manager can move a lead to from the lead view page. */
+export const MANUAL_ENGAGEMENT_LEAD_STATUSES = [
+  EngagementLeadStatus.UNDER_REVIEW,
+  EngagementLeadStatus.FULFILLED,
+  EngagementLeadStatus.REJECTED,
+] as const;
 
 export enum EngagementLeadSortField {
   PREFERRED_START_DATE = "preferredStartDate",
@@ -96,7 +109,7 @@ export class EngagementLeadQueryDto extends PaginationDto {
     isArray: true,
     example: [
       EngagementLeadStatusGroup.NEW,
-      EngagementLeadStatusGroup.IN_PROGRESS,
+      EngagementLeadStatusGroup.UNDER_REVIEW,
     ],
   })
   @IsOptional()
@@ -132,11 +145,12 @@ export class EngagementLeadQueryDto extends PaginationDto {
 
 export class UpdateEngagementLeadStatusDto {
   @ApiProperty({
-    description: "Updated lead status",
-    enum: EngagementLeadStatus,
-    example: EngagementLeadStatus.QUALIFIED,
+    description:
+      "Updated lead status. REJECTED is shown as Lost. New leads can move to any of these; Lost leads to UNDER_REVIEW or FULFILLED; leads under review to FULFILLED or REJECTED; fulfilled leads back to UNDER_REVIEW.",
+    enum: MANUAL_ENGAGEMENT_LEAD_STATUSES,
+    example: EngagementLeadStatus.UNDER_REVIEW,
   })
-  @IsEnum(EngagementLeadStatus)
+  @IsIn(MANUAL_ENGAGEMENT_LEAD_STATUSES)
   status: EngagementLeadStatus;
 }
 

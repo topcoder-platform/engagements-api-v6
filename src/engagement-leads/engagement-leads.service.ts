@@ -32,18 +32,54 @@ const LEAD_INCLUDE = {
   notes: { orderBy: { createdAt: "asc" } },
 } satisfies Prisma.EngagementLeadInclude;
 
+// Leads that were qualified or converted before those statuses were retired count as under review.
+const UNDER_REVIEW_STATUSES: EngagementLeadStatus[] = [
+  EngagementLeadStatus.UNDER_REVIEW,
+  EngagementLeadStatus.QUALIFIED,
+  EngagementLeadStatus.CONVERTED,
+];
+
 /** Lead statuses each status group of the Leads page filter covers. */
 const STATUS_GROUP_STATUSES: Record<
   EngagementLeadStatusGroup,
   EngagementLeadStatus[]
 > = {
   [EngagementLeadStatusGroup.NEW]: [EngagementLeadStatus.SUBMITTED],
-  [EngagementLeadStatusGroup.IN_PROGRESS]: [
-    EngagementLeadStatus.UNDER_REVIEW,
-    EngagementLeadStatus.QUALIFIED,
-  ],
-  [EngagementLeadStatusGroup.CONVERTED]: [EngagementLeadStatus.CONVERTED],
+  [EngagementLeadStatusGroup.UNDER_REVIEW]: UNDER_REVIEW_STATUSES,
+  [EngagementLeadStatusGroup.FULFILLED]: [EngagementLeadStatus.FULFILLED],
+  [EngagementLeadStatusGroup.LOST]: [EngagementLeadStatus.REJECTED],
+  [EngagementLeadStatusGroup.IN_PROGRESS]: UNDER_REVIEW_STATUSES,
+  [EngagementLeadStatusGroup.CONVERTED]: UNDER_REVIEW_STATUSES,
   [EngagementLeadStatusGroup.DECLINED]: [EngagementLeadStatus.REJECTED],
+};
+
+/** Statuses a Talent Manager can move a lead to, by its current status. */
+const ALLOWED_STATUS_TRANSITIONS: Record<
+  EngagementLeadStatus,
+  EngagementLeadStatus[]
+> = {
+  [EngagementLeadStatus.SUBMITTED]: [
+    EngagementLeadStatus.UNDER_REVIEW,
+    EngagementLeadStatus.FULFILLED,
+    EngagementLeadStatus.REJECTED,
+  ],
+  [EngagementLeadStatus.REJECTED]: [
+    EngagementLeadStatus.UNDER_REVIEW,
+    EngagementLeadStatus.FULFILLED,
+  ],
+  [EngagementLeadStatus.UNDER_REVIEW]: [
+    EngagementLeadStatus.FULFILLED,
+    EngagementLeadStatus.REJECTED,
+  ],
+  [EngagementLeadStatus.QUALIFIED]: [
+    EngagementLeadStatus.FULFILLED,
+    EngagementLeadStatus.REJECTED,
+  ],
+  [EngagementLeadStatus.CONVERTED]: [
+    EngagementLeadStatus.FULFILLED,
+    EngagementLeadStatus.REJECTED,
+  ],
+  [EngagementLeadStatus.FULFILLED]: [EngagementLeadStatus.UNDER_REVIEW],
 };
 
 type EngagementLeadWithNotes = EngagementLead & {
@@ -291,9 +327,9 @@ export class EngagementLeadsService {
       throw new NotFoundException("Engagement lead not found.");
     }
 
-    if (lead.status === EngagementLeadStatus.CONVERTED) {
+    if (!ALLOWED_STATUS_TRANSITIONS[lead.status].includes(updateDto.status)) {
       throw new BadRequestException(
-        "Cannot update status of a converted engagement lead.",
+        `Cannot change the status of a ${lead.status} engagement lead to ${updateDto.status}.`,
       );
     }
 
@@ -362,14 +398,18 @@ export class EngagementLeadsService {
       throw new NotFoundException("Engagement lead not found.");
     }
 
-    if (lead.status === EngagementLeadStatus.CONVERTED) {
-      throw new BadRequestException("Engagement lead is already converted.");
+    if (lead.convertedEngagementId) {
+      throw new BadRequestException(
+        "An engagement has already been created from this lead.",
+      );
     }
 
+    // The lead stays under review while the engagement is being filled; it is marked
+    // fulfilled by hand once it is.
     const updated = await this.db.engagementLead.update({
       where: { id },
       data: {
-        status: EngagementLeadStatus.CONVERTED,
+        status: EngagementLeadStatus.UNDER_REVIEW,
         convertedEngagementId: engagementId,
         updatedBy: updatedBy ?? null,
       },
