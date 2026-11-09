@@ -32,6 +32,20 @@ const LEAD_INCLUDE = {
   notes: { orderBy: { createdAt: "asc" } },
 } satisfies Prisma.EngagementLeadInclude;
 
+/** Lead statuses each status group of the Leads page filter covers. */
+const STATUS_GROUP_STATUSES: Record<
+  EngagementLeadStatusGroup,
+  EngagementLeadStatus[]
+> = {
+  [EngagementLeadStatusGroup.NEW]: [EngagementLeadStatus.SUBMITTED],
+  [EngagementLeadStatusGroup.IN_PROGRESS]: [
+    EngagementLeadStatus.UNDER_REVIEW,
+    EngagementLeadStatus.QUALIFIED,
+  ],
+  [EngagementLeadStatusGroup.CONVERTED]: [EngagementLeadStatus.CONVERTED],
+  [EngagementLeadStatusGroup.DECLINED]: [EngagementLeadStatus.REJECTED],
+};
+
 type EngagementLeadWithNotes = EngagementLead & {
   notes: EngagementLeadNote[];
 };
@@ -203,21 +217,15 @@ export class EngagementLeadsService {
       where.experienceLevel = query.experienceLevel;
     }
 
-    if (query.statusGroup) {
-      if (query.statusGroup === EngagementLeadStatusGroup.NEW) {
-        where.status = EngagementLeadStatus.SUBMITTED;
-      } else if (query.statusGroup === EngagementLeadStatusGroup.IN_PROGRESS) {
-        where.status = {
-          in: [
-            EngagementLeadStatus.UNDER_REVIEW,
-            EngagementLeadStatus.QUALIFIED,
-          ],
-        };
-      } else if (query.statusGroup === EngagementLeadStatusGroup.CONVERTED) {
-        where.status = EngagementLeadStatus.CONVERTED;
-      } else if (query.statusGroup === EngagementLeadStatusGroup.DECLINED) {
-        where.status = EngagementLeadStatus.REJECTED;
-      }
+    if (query.statusGroup?.length) {
+      const statuses = Array.from(
+        new Set(
+          query.statusGroup.flatMap(
+            (group) => STATUS_GROUP_STATUSES[group] ?? [],
+          ),
+        ),
+      );
+      where.status = statuses.length === 1 ? statuses[0] : { in: statuses };
     } else if (query.status) {
       where.status = query.status;
     }

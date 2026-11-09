@@ -139,7 +139,7 @@ describe("EngagementLeadsService", () => {
       await service.findAll({
         page: 1,
         perPage: 10,
-        statusGroup: EngagementLeadStatusGroup.NEW,
+        statusGroup: [EngagementLeadStatusGroup.NEW],
       } as EngagementLeadQueryDto);
 
       expect(db.engagementLead.findMany).toHaveBeenCalledWith(
@@ -153,7 +153,7 @@ describe("EngagementLeadsService", () => {
       await service.findAll({
         page: 1,
         perPage: 10,
-        statusGroup: EngagementLeadStatusGroup.IN_PROGRESS,
+        statusGroup: [EngagementLeadStatusGroup.IN_PROGRESS],
       });
 
       expect(db.engagementLead.findMany).toHaveBeenCalledWith(
@@ -161,6 +161,31 @@ describe("EngagementLeadsService", () => {
           where: {
             status: {
               in: [
+                EngagementLeadStatus.UNDER_REVIEW,
+                EngagementLeadStatus.QUALIFIED,
+              ],
+            },
+          },
+        }),
+      );
+    });
+
+    it("ORs the statuses of several status groups", async () => {
+      await service.findAll({
+        page: 1,
+        perPage: 10,
+        statusGroup: [
+          EngagementLeadStatusGroup.NEW,
+          EngagementLeadStatusGroup.IN_PROGRESS,
+        ],
+      });
+
+      expect(db.engagementLead.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: {
+              in: [
+                EngagementLeadStatus.SUBMITTED,
                 EngagementLeadStatus.UNDER_REVIEW,
                 EngagementLeadStatus.QUALIFIED,
               ],
@@ -575,6 +600,26 @@ describe("EngagementLeadQueryDto validation", () => {
       sortBy: EngagementLeadSortField.CREATED_AT,
       sortOrder: "desc",
     });
+  });
+  it("parses a comma-separated statusGroup list", async () => {
+    const query = await pipe.transform(
+      { statusGroup: "NEW,IN_PROGRESS" },
+      { type: "query", metatype: EngagementLeadQueryDto },
+    );
+
+    expect(query.statusGroup).toEqual([
+      EngagementLeadStatusGroup.NEW,
+      EngagementLeadStatusGroup.IN_PROGRESS,
+    ]);
+  });
+
+  it("rejects an unknown statusGroup", async () => {
+    await expect(
+      pipe.transform(
+        { statusGroup: "NEW,UNKNOWN" },
+        { type: "query", metatype: EngagementLeadQueryDto },
+      ),
+    ).rejects.toBeDefined();
   });
 });
 

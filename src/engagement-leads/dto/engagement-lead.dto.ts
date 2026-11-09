@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import {
+  IsArray,
   IsEnum,
   IsIn,
   IsNotEmpty,
@@ -15,7 +17,7 @@ import {
   LeadPriority,
 } from "@prisma/client";
 import { PaginationDto } from "../../engagements/dto";
-import { IsNotWhitespace } from "src/common/validation.util";
+import { IsNotWhitespace, transformArray } from "src/common/validation.util";
 
 export enum EngagementLeadStatusGroup {
   NEW = "NEW",
@@ -88,12 +90,20 @@ export class EngagementLeadQueryDto extends PaginationDto {
   status?: EngagementLeadStatus;
 
   @ApiPropertyOptional({
-    description: "Filter by simplified status group",
+    description:
+      "Filter by one or more simplified status groups, as a comma-separated list or repeated param. Groups are ORed.",
     enum: EngagementLeadStatusGroup,
+    isArray: true,
+    example: [
+      EngagementLeadStatusGroup.NEW,
+      EngagementLeadStatusGroup.IN_PROGRESS,
+    ],
   })
   @IsOptional()
-  @IsEnum(EngagementLeadStatusGroup)
-  statusGroup?: EngagementLeadStatusGroup;
+  @IsArray()
+  @IsEnum(EngagementLeadStatusGroup, { each: true })
+  @Transform(transformArray)
+  statusGroup?: EngagementLeadStatusGroup[];
 
   @ApiPropertyOptional({
     description: "Filter by priority",
