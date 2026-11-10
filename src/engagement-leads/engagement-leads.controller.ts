@@ -196,7 +196,7 @@ export class EngagementLeadsController {
   @ApiOperation({
     summary: "Update engagement lead status",
     description:
-      "Updates the status of an engagement lead. Requires Admin or Talent Manager role.",
+      "Updates the status of an engagement lead to UNDER_REVIEW, FULFILLED, or REJECTED (Lost). Requires Admin or Talent Manager role.",
   })
   @ApiResponse({
     status: 200,
@@ -220,7 +220,7 @@ export class EngagementLeadsController {
   @ApiOperation({
     summary: "Add an engagement lead note",
     description:
-      "Adds a Talent Manager note to an engagement lead. Notes are read-only once added, and none can be added after the lead is converted.",
+      "Adds a Talent Manager note to an engagement lead, whatever its status. Notes are read-only once added.",
   })
   @ApiResponse({
     status: 201,
@@ -228,7 +228,7 @@ export class EngagementLeadsController {
     type: EngagementLeadResponseDto,
   })
   @ApiBadRequestResponse({
-    description: "The note is empty or the lead has been converted.",
+    description: "The note is empty.",
   })
   async addNote(
     @Param("id") id: string,
@@ -254,13 +254,13 @@ export class EngagementLeadsController {
   @ScopesDecorator(AppScopes.WriteEngagements)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Mark engagement lead as converted",
+    summary: "Link an engagement lead to the engagement created from it",
     description:
-      "Links an engagement lead to a created engagement and marks it as converted.",
+      "Links an engagement lead to a created engagement and moves the lead to UNDER_REVIEW.",
   })
   @ApiResponse({
     status: 200,
-    description: "Engagement lead marked as converted.",
+    description: "Engagement lead linked to the engagement.",
     type: EngagementLeadResponseDto,
   })
   async markConverted(

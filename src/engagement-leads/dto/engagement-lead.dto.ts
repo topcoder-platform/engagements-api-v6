@@ -1,11 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import {
+  IsArray,
   IsEnum,
   IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
+  ValidateIf,
 } from "class-validator";
 import {
   EngagementLeadStatus,
@@ -15,14 +18,27 @@ import {
   LeadPriority,
 } from "@prisma/client";
 import { PaginationDto } from "../../engagements/dto";
-import { IsNotWhitespace } from "src/common/validation.util";
+import { IsNotWhitespace, transformArray } from "src/common/validation.util";
 
 export enum EngagementLeadStatusGroup {
   NEW = "NEW",
+  UNDER_REVIEW = "UNDER_REVIEW",
+  FULFILLED = "FULFILLED",
+  LOST = "LOST",
+  /** @deprecated Use UNDER_REVIEW. Kept so clients built before the rename keep working. */
   IN_PROGRESS = "IN_PROGRESS",
+  /** @deprecated Converted leads are now under review. Use UNDER_REVIEW. */
   CONVERTED = "CONVERTED",
+  /** @deprecated Use LOST. */
   DECLINED = "DECLINED",
 }
+
+/** Statuses a Talent Manager can move a lead to from the lead view page. */
+export const MANUAL_ENGAGEMENT_LEAD_STATUSES = [
+  EngagementLeadStatus.UNDER_REVIEW,
+  EngagementLeadStatus.FULFILLED,
+  EngagementLeadStatus.REJECTED,
+] as const;
 
 export enum EngagementLeadSortField {
   PREFERRED_START_DATE = "preferredStartDate",
@@ -88,12 +104,20 @@ export class EngagementLeadQueryDto extends PaginationDto {
   status?: EngagementLeadStatus;
 
   @ApiPropertyOptional({
-    description: "Filter by simplified status group",
+    description:
+      "Filter by one or more simplified status groups, as a comma-separated list or repeated param. Groups are ORed.",
     enum: EngagementLeadStatusGroup,
+    isArray: true,
+    example: [
+      EngagementLeadStatusGroup.NEW,
+      EngagementLeadStatusGroup.UNDER_REVIEW,
+    ],
   })
   @IsOptional()
-  @IsEnum(EngagementLeadStatusGroup)
-  statusGroup?: EngagementLeadStatusGroup;
+  @IsArray()
+  @IsEnum(EngagementLeadStatusGroup, { each: true })
+  @Transform(transformArray)
+  statusGroup?: EngagementLeadStatusGroup[];
 
   @ApiPropertyOptional({
     description: "Filter by priority",
@@ -122,12 +146,27 @@ export class EngagementLeadQueryDto extends PaginationDto {
 
 export class UpdateEngagementLeadStatusDto {
   @ApiProperty({
-    description: "Updated lead status",
-    enum: EngagementLeadStatus,
-    example: EngagementLeadStatus.QUALIFIED,
+    description:
+      "Updated lead status. REJECTED is shown as Lost. New leads can move to any of these; Lost leads to UNDER_REVIEW or FULFILLED; leads under review to FULFILLED or REJECTED; fulfilled leads back to UNDER_REVIEW.",
+    enum: MANUAL_ENGAGEMENT_LEAD_STATUSES,
+    example: EngagementLeadStatus.UNDER_REVIEW,
   })
-  @IsEnum(EngagementLeadStatus)
+  @IsIn(MANUAL_ENGAGEMENT_LEAD_STATUSES)
   status: EngagementLeadStatus;
+
+  @ApiPropertyOptional({
+    description: "Why the lead is rejected. Required when status is REJECTED.",
+    example: "The customer chose another vendor.",
+  })
+  @ValidateIf(
+    (dto: UpdateEngagementLeadStatusDto) =>
+      dto.status === EngagementLeadStatus.REJECTED,
+  )
+  @IsString()
+  @IsNotEmpty()
+  @IsNotWhitespace()
+  @MaxLength(2000)
+  reason?: string;
 }
 
 export class CreateEngagementLeadNoteDto {
@@ -247,6 +286,11 @@ export class EngagementLeadResponseDto {
 
   @ApiProperty()
   status: string;
+
+  @ApiPropertyOptional({
+    description: "Why the lead was rejected; set only while it is rejected.",
+  })
+  rejectionReason?: string | null;
 
   @ApiPropertyOptional()
   convertedEngagementId?: string | null;
