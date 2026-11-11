@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
+  HttpCode,
   Get,
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   BadRequestException,
@@ -16,6 +19,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiResponse,
@@ -36,13 +40,16 @@ import {
   CreateEngagementLeadIntakeDto,
   CreateEngagementLeadNoteDto,
   CreateWiproDirectEngagementLeadIntakeDto,
+  EngagementLeadCalculationResponseDto,
   EngagementLeadIntakeResponseDto,
   EngagementLeadPrefillDto,
   EngagementLeadQueryDto,
   EngagementLeadResponseDto,
   MarkEngagementLeadConvertedDto,
+  SaveEngagementLeadCalculationDto,
   UpdateEngagementLeadStatusDto,
 } from "./dto";
+import { EngagementLeadCalculationsService } from "./engagement-lead-calculations.service";
 import { EngagementLeadsService } from "./engagement-leads.service";
 
 @ApiTags("Engagement Leads")
@@ -54,6 +61,7 @@ export class EngagementLeadsController {
 
   constructor(
     private readonly engagementLeadsService: EngagementLeadsService,
+    private readonly calculationsService: EngagementLeadCalculationsService,
   ) {}
 
   @Post("intake")
@@ -247,6 +255,116 @@ export class EngagementLeadsController {
       createDto.content,
       createdBy,
     );
+  }
+
+  @Get(":id/calculations")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List a lead's saved cost calculations",
+    description:
+      "Returns the Flexi Talent cost calculations saved for an engagement lead, oldest first.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Cost calculations retrieved.",
+    type: [EngagementLeadCalculationResponseDto],
+  })
+  @ApiNotFoundResponse({
+    description: "Engagement lead not found.",
+  })
+  async findCalculations(
+    @Param("id") id: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementLeadCalculationResponseDto[]> {
+    this.assertLeadManager(req.authUser);
+    return this.calculationsService.findAll(id);
+  }
+
+  @Post(":id/calculations")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Save a new cost calculation for a lead",
+    description:
+      "Saves a Flexi Talent cost calculation. A lead can have several, e.g. one per resource.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Cost calculation saved.",
+    type: EngagementLeadCalculationResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: "Engagement lead not found.",
+  })
+  async createCalculation(
+    @Param("id") id: string,
+    @Body() saveDto: SaveEngagementLeadCalculationDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementLeadCalculationResponseDto> {
+    this.assertLeadManager(req.authUser);
+    return this.calculationsService.create(
+      id,
+      saveDto,
+      getUserIdentifier(req.authUser),
+    );
+  }
+
+  @Put(":id/calculations/:calculationId")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Overwrite a saved cost calculation",
+    description:
+      "Replaces the calculation's values with the ones sent. Previous values are not kept.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Cost calculation saved.",
+    type: EngagementLeadCalculationResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: "Cost calculation not found on this lead.",
+  })
+  async updateCalculation(
+    @Param("id") id: string,
+    @Param("calculationId") calculationId: string,
+    @Body() saveDto: SaveEngagementLeadCalculationDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementLeadCalculationResponseDto> {
+    this.assertLeadManager(req.authUser);
+    return this.calculationsService.update(
+      id,
+      calculationId,
+      saveDto,
+      getUserIdentifier(req.authUser),
+    );
+  }
+
+  @Delete(":id/calculations/:calculationId")
+  @HttpCode(204)
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Delete a saved cost calculation",
+  })
+  @ApiNoContentResponse({
+    description: "Cost calculation deleted.",
+  })
+  @ApiNotFoundResponse({
+    description: "Cost calculation not found on this lead.",
+  })
+  async deleteCalculation(
+    @Param("id") id: string,
+    @Param("calculationId") calculationId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<void> {
+    this.assertLeadManager(req.authUser);
+    await this.calculationsService.remove(id, calculationId);
   }
 
   @Patch(":id/convert")

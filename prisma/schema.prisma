@@ -306,6 +306,7 @@ model EngagementLead {
   updatedAt                DateTime             @updatedAt
   updatedBy                String?
   notes                    EngagementLeadNote[]
+  calculations             EngagementLeadCalculation[]
 
   @@index([status])
   @@index([leadType])
@@ -322,6 +323,47 @@ model EngagementLeadNote {
   createdAt        DateTime       @default(now())
   createdBy        String?
   lead             EngagementLead @relation(fields: [engagementLeadId], references: [id], onDelete: Cascade)
+
+  @@index([engagementLeadId, createdAt])
+}
+
+/// Which member value a cost calculation was worked out from.
+enum LeadCalculationMemberInput {
+  MEMBER_COST
+  MEMBER_RATE
+}
+
+/// Which commercial value a cost calculation was worked out from.
+enum LeadCalculationCommercialInput {
+  TC_MARGIN_PERCENT
+  TC_MARGIN_AMOUNT
+  BOOKING_COST
+  BOOKING_RATE
+  ACTUAL_COST
+  ACTUAL_RATE
+}
+
+/// A saved Flexi Talent cost calculation for a lead. A lead can have several, e.g. one per resource.
+/// Saving overwrites it, so only the latest values are kept. Only what the user entered is stored:
+/// every other value (booking cost, margin, cost transfer...) is recalculated from it.
+model EngagementLeadCalculation {
+  id                   String                          @id @default(uuid())
+  engagementLeadId     String
+  memberName           String?
+  accountName          String?
+  smu                  String?
+  durationWeeks        Decimal?                        @db.Decimal(8, 2)
+  hoursPerDay          Decimal?                        @db.Decimal(5, 2)
+  referral             Boolean                         @default(false)
+  memberInputField     LeadCalculationMemberInput?
+  memberInputValue     Decimal?                        @db.Decimal(14, 4)
+  commercialInputField LeadCalculationCommercialInput?
+  commercialInputValue Decimal?                        @db.Decimal(14, 4)
+  createdAt            DateTime                        @default(now())
+  createdBy            String?
+  updatedAt            DateTime                        @updatedAt
+  updatedBy            String?
+  lead                 EngagementLead                  @relation(fields: [engagementLeadId], references: [id], onDelete: Cascade)
 
   @@index([engagementLeadId, createdAt])
 }

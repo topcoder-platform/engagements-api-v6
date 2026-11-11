@@ -261,6 +261,25 @@ exports.Prisma.EngagementLeadNoteScalarFieldEnum = {
   createdBy: 'createdBy'
 };
 
+exports.Prisma.EngagementLeadCalculationScalarFieldEnum = {
+  id: 'id',
+  engagementLeadId: 'engagementLeadId',
+  memberName: 'memberName',
+  accountName: 'accountName',
+  smu: 'smu',
+  durationWeeks: 'durationWeeks',
+  hoursPerDay: 'hoursPerDay',
+  referral: 'referral',
+  memberInputField: 'memberInputField',
+  memberInputValue: 'memberInputValue',
+  commercialInputField: 'commercialInputField',
+  commercialInputValue: 'commercialInputValue',
+  createdAt: 'createdAt',
+  createdBy: 'createdBy',
+  updatedAt: 'updatedAt',
+  updatedBy: 'updatedBy'
+};
+
 exports.Prisma.EngagementTimesheetEntryScalarFieldEnum = {
   id: 'id',
   engagementAssignmentId: 'engagementAssignmentId',
@@ -430,6 +449,20 @@ exports.EngagementLeadStatus = exports.$Enums.EngagementLeadStatus = {
   FULFILLED: 'FULFILLED'
 };
 
+exports.LeadCalculationMemberInput = exports.$Enums.LeadCalculationMemberInput = {
+  MEMBER_COST: 'MEMBER_COST',
+  MEMBER_RATE: 'MEMBER_RATE'
+};
+
+exports.LeadCalculationCommercialInput = exports.$Enums.LeadCalculationCommercialInput = {
+  TC_MARGIN_PERCENT: 'TC_MARGIN_PERCENT',
+  TC_MARGIN_AMOUNT: 'TC_MARGIN_AMOUNT',
+  BOOKING_COST: 'BOOKING_COST',
+  BOOKING_RATE: 'BOOKING_RATE',
+  ACTUAL_COST: 'ACTUAL_COST',
+  ACTUAL_RATE: 'ACTUAL_RATE'
+};
+
 exports.TimesheetEntryStatus = exports.$Enums.TimesheetEntryStatus = {
   DRAFT: 'DRAFT',
   SUBMITTED: 'SUBMITTED',
@@ -458,6 +491,7 @@ exports.Prisma.ModelName = {
   MemberExperience: 'MemberExperience',
   EngagementLead: 'EngagementLead',
   EngagementLeadNote: 'EngagementLeadNote',
+  EngagementLeadCalculation: 'EngagementLeadCalculation',
   EngagementTimesheetEntry: 'EngagementTimesheetEntry',
   EngagementTimesheetAudit: 'EngagementTimesheetAudit',
   EngagementManager: 'EngagementManager'
