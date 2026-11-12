@@ -148,3 +148,73 @@ describe("SkillsService engagement filter resolution", () => {
     });
   });
 });
+
+describe("SkillsService skill creation", () => {
+  let httpPost: jest.Mock;
+  let configValues: Record<string, string>;
+  let service: SkillsService;
+
+  beforeEach(() => {
+    mockGetMachineToken.mockReset().mockResolvedValue("m2m-token");
+    httpPost = jest.fn();
+    configValues = {
+      TOPCODER_API_URL_BASE: "https://api.example.test/",
+      M2M_CLIENT_ID: "client-id",
+      M2M_CLIENT_SECRET: "client-secret",
+      STANDARDIZED_SKILLS_NEW_SKILL_CATEGORY_ID:
+        "33333333-3333-4333-8333-333333333333",
+    };
+
+    service = new SkillsService(
+      { post: httpPost } as any,
+      {
+        get: jest.fn(
+          (key: string, fallback?: string) => configValues[key] ?? fallback,
+        ),
+      } as any,
+    );
+  });
+
+  it("creates the skill under the configured category", async () => {
+    httpPost.mockReturnValue(
+      of({ status: 201, data: { id: "skill-new", name: "Brand New Skill" } }),
+    );
+
+    await expect(service.createSkill(" Brand New Skill ")).resolves.toBe(
+      "skill-new",
+    );
+    expect(httpPost).toHaveBeenCalledWith(
+      "https://api.example.test/v5/standardized-skills/skills",
+      {
+        name: "Brand New Skill",
+        description: null,
+        categoryId: "33333333-3333-4333-8333-333333333333",
+      },
+      { headers: { Authorization: "Bearer m2m-token" } },
+    );
+  });
+
+  it("returns undefined when the skill name already exists", async () => {
+    httpPost.mockReturnValue(
+      throwError(() => ({ isAxiosError: true, response: { status: 409 } })),
+    );
+
+    await expect(service.createSkill("React")).resolves.toBeUndefined();
+  });
+
+  it("rethrows other standardized-skills failures", async () => {
+    const failure = { isAxiosError: true, response: { status: 500 } };
+    httpPost.mockReturnValue(throwError(() => failure));
+
+    await expect(service.createSkill("React")).rejects.toBe(failure);
+  });
+
+  it("fails without calling standardized-skills when no category is configured", async () => {
+    delete configValues.STANDARDIZED_SKILLS_NEW_SKILL_CATEGORY_ID;
+
+    await expect(service.createSkill("React")).rejects.toThrow(
+      "Creating new skills is not configured.",
+    );
+    expect(httpPost).not.toHaveBeenCalled();
+  });
+});
