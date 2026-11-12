@@ -122,13 +122,17 @@ export class EngagementLeadEmailService {
 
     const seenEmails = new Set<string>();
     return members.flatMap((member) => {
-      const email = (member.email ?? emailsByUserId.get(member.userId) ?? "")
-        .trim()
-        .toLowerCase();
-      if (!email || seenEmails.has(email)) {
+      const email = (
+        member.email ??
+        emailsByUserId.get(member.userId) ??
+        ""
+      ).trim();
+      // Addresses are compared case-insensitively but sent as stored.
+      const dedupeKey = email.toLowerCase();
+      if (!email || seenEmails.has(dedupeKey)) {
         return [];
       }
-      seenEmails.add(email);
+      seenEmails.add(dedupeKey);
       return [
         {
           userId: member.userId,

@@ -37,10 +37,11 @@ describe("EngagementLeadEmailService", () => {
     );
   });
 
-  it("emails every Flexi Talent Manager by handle with a link to the lead", async () => {
+  it("emails every Flexi Talent Manager once by handle with a link to the lead", async () => {
     identityService.getRoleMembers.mockResolvedValue([
       { userId: "1", handle: "tm-one", email: "One@Example.com" },
       { userId: "2", handle: "tm-two", email: "two@example.com" },
+      { userId: "3", handle: "tm-one-alt", email: "one@EXAMPLE.com" },
     ]);
 
     await service.sendLeadSubmittedEmails(lead);
@@ -60,7 +61,7 @@ describe("EngagementLeadEmailService", () => {
           accountName: "ABC Bank",
           roleTitle: "QA Engineer",
         },
-        recipients: ["one@example.com"],
+        recipients: ["One@Example.com"],
         sendgrid_template_id: "lead-template",
         version: "v3",
       },
