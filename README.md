@@ -113,6 +113,9 @@ Set the following environment variables (see `.env.example` for defaults):
 | `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` | SendGrid template ID for telling a member their timesheet entries were approved. |
 | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` | SendGrid template ID for telling a member an administrator reopened or modified approved entries. |
 | `SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID` | SendGrid template ID for telling a member they were made a manager of an engagement. |
+| `SENDGRID_ENGAGEMENT_LEAD_SUBMITTED_TEMPLATE_ID` | SendGrid template ID for telling the Flexi Talent Managers a new engagement lead was submitted. Template data: `handle`, `leadId`, `leadUrl`, `leadType`, `accountName`, `roleTitle`. Disabled while empty. |
+| `FLEXI_TALENT_MANAGER_ROLE_NAME` | Identity role whose members receive the lead submitted email. Defaults to `Flexi Talent Manager`. |
+| `WORK_APP_BASE_URL` | Optional work app base URL used for the lead link in that email; derived from `TOPCODER_API_URL_BASE` (`https://work.<domain>`) when empty. |
 
 ## Authentication
 

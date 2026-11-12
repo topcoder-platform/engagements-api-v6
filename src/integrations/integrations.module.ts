@@ -9,6 +9,7 @@ import { FinanceService } from "./finance.service";
 import { AssignmentOfferEmailService } from "./assignment-offer-email.service";
 import { AssignmentOfferResponseEmailService } from "./assignment-offer-response-email.service";
 import { ApplicationStatusEmailService } from "./application-status-email.service";
+import { IdentityService } from "./identity.service";
 
 @Global()
 @Module({
@@ -22,6 +23,7 @@ import { ApplicationStatusEmailService } from "./application-status-email.servic
     AssignmentOfferEmailService,
     AssignmentOfferResponseEmailService,
     ApplicationStatusEmailService,
+    IdentityService,
   ],
   exports: [
     ProjectService,
@@ -32,6 +34,7 @@ import { ApplicationStatusEmailService } from "./application-status-email.servic
     AssignmentOfferEmailService,
     AssignmentOfferResponseEmailService,
     ApplicationStatusEmailService,
+    IdentityService,
   ],
 })
 export class IntegrationsModule {}
