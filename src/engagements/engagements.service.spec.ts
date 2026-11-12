@@ -80,6 +80,7 @@ describe("EngagementsService", () => {
     validateProjectExists: jest.Mock;
   };
   let skillsService: {
+    createSkill: jest.Mock;
     getSkillNamesByIds: jest.Mock;
     resolveSkillFilterValues: jest.Mock;
     validateSkillsExist: jest.Mock;
@@ -233,6 +234,7 @@ describe("EngagementsService", () => {
       validateProjectExists: jest.fn().mockResolvedValue(true),
     };
     skillsService = {
+      createSkill: jest.fn(),
       getSkillNamesByIds: jest.fn().mockResolvedValue(new Map()),
       resolveSkillFilterValues: jest.fn().mockResolvedValue({
         skillIds: [],
@@ -344,6 +346,120 @@ describe("EngagementsService", () => {
         data: expect.objectContaining({ createdBy: "system" }),
       }),
     );
+  });
+
+  describe("new skill names", () => {
+    const mockCreateTransaction = () => {
+      const tx = {
+        engagement: {
+          create: jest.fn().mockResolvedValue({ id: "eng-1" }),
+          findUnique: jest
+            .fn()
+            .mockResolvedValue({ id: "eng-1", assignments: [] }),
+        },
+      };
+      db.$transaction.mockImplementation((callback: any) => callback(tx));
+      return tx;
+    };
+
+    it("matches existing skills, creates the rest, and stores their ids", async () => {
+      const tx = mockCreateTransaction();
+      skillsService.resolveSkillFilterValues.mockResolvedValueOnce({
+        skillIds: ["skill-react"],
+        skillNamesById: new Map([["skill-react", "React"]]),
+        unresolvedNames: ["Brand New Skill"],
+      });
+      skillsService.createSkill.mockResolvedValueOnce("skill-new");
+
+      await service.create(
+        {
+          ...createDto,
+          newSkillNames: [" React ", "Brand New Skill", "react", "SKILL-1"],
+        } as any,
+        { isMachine: true },
+      );
+
+      expect(skillsService.validateSkillsExist).toHaveBeenCalledWith([
+        "skill-1",
+      ]);
+      expect(skillsService.resolveSkillFilterValues).toHaveBeenCalledWith([
+        "React",
+        "Brand New Skill",
+        "SKILL-1",
+      ]);
+      expect(skillsService.createSkill).toHaveBeenCalledWith(
+        "Brand New Skill",
+      );
+      const data = tx.engagement.create.mock.calls[0][0].data;
+      expect(data.requiredSkills).toEqual([
+        "skill-1",
+        "skill-react",
+        "skill-new",
+      ]);
+      expect(data).not.toHaveProperty("newSkillNames");
+    });
+
+    it("allows only new skill names when no skill ids are sent", async () => {
+      const tx = mockCreateTransaction();
+      skillsService.resolveSkillFilterValues.mockResolvedValueOnce({
+        skillIds: [],
+        skillNamesById: new Map(),
+        unresolvedNames: ["Brand New Skill"],
+      });
+      skillsService.createSkill.mockResolvedValueOnce("skill-new");
+
+      await service.create(
+        {
+          ...createDto,
+          requiredSkills: undefined,
+          newSkillNames: ["Brand New Skill"],
+        } as any,
+        { isMachine: true },
+      );
+
+      expect(
+        tx.engagement.create.mock.calls[0][0].data.requiredSkills,
+      ).toEqual(["skill-new"]);
+    });
+
+    it("looks a name up again when another request created it first", async () => {
+      const tx = mockCreateTransaction();
+      skillsService.resolveSkillFilterValues
+        .mockResolvedValueOnce({
+          skillIds: [],
+          skillNamesById: new Map(),
+          unresolvedNames: ["Brand New Skill"],
+        })
+        .mockResolvedValueOnce({
+          skillIds: ["skill-existing"],
+          skillNamesById: new Map(),
+          unresolvedNames: [],
+        });
+      skillsService.createSkill.mockResolvedValueOnce(undefined);
+
+      await service.create(
+        { ...createDto, newSkillNames: ["Brand New Skill"] } as any,
+        { isMachine: true },
+      );
+
+      expect(
+        tx.engagement.create.mock.calls[0][0].data.requiredSkills,
+      ).toEqual(["skill-1", "skill-existing"]);
+    });
+
+    it("does not create skills when a sent skill id is invalid", async () => {
+      skillsService.validateSkillsExist.mockResolvedValueOnce({
+        invalid: ["skill-1"],
+      });
+
+      await expect(
+        service.create(
+          { ...createDto, newSkillNames: ["Brand New Skill"] } as any,
+          { isMachine: true },
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(skillsService.createSkill).not.toHaveBeenCalled();
+    });
   });
 
   it("creates private engagements without an assigned member", async () => {

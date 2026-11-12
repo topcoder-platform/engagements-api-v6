@@ -6,6 +6,7 @@ import {
 } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import {
+  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsBoolean,
@@ -301,13 +302,28 @@ export class CreateEngagementDto {
   countries?: string[];
 
   @ApiProperty({
-    description: "Required skill IDs. Must contain at least one skill ID.",
+    description:
+      "Required skill IDs. Must contain at least one skill ID, unless newSkillNames is given.",
     example: ["c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
   })
+  @ValidateIf((dto: CreateEngagementDto) => !dto.newSkillNames?.length)
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
   requiredSkills: string[];
+
+  @ApiPropertyOptional({
+    description:
+      "Skill names that are not standardized skills yet, such as skills typed on a lead intake form. Each name is matched to an existing standardized skill, or created as a new one, and its id is added to requiredSkills.",
+    example: ["Salesforce Marketing Cloud"],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @MaxLength(100, { each: true })
+  newSkillNames?: string[];
 
   @ApiPropertyOptional({
     description: "Role for the engagement",

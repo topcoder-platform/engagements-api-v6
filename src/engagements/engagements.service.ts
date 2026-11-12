@@ -340,13 +340,24 @@ export class EngagementsService {
       this.assertNonEmptyArrayField(createDto.timeZones, "timeZones");
       this.assertNonEmptyArrayField(createDto.countries, "countries");
     }
-    this.assertNonEmptyArrayField(createDto.requiredSkills, "requiredSkills");
+    const providedSkillIds = Array.isArray(createDto.requiredSkills)
+      ? createDto.requiredSkills
+      : [];
+    const newSkillNames = this.normalizeNewSkillNames(createDto.newSkillNames);
+    if (!newSkillNames.length) {
+      this.assertNonEmptyArrayField(createDto.requiredSkills, "requiredSkills");
+    }
 
     await this.assertProjectExists(createDto.projectId);
-    await this.assertSkillsValid(createDto.requiredSkills);
+    await this.assertSkillsValid(providedSkillIds);
+    createDto.requiredSkills = await this.addNewSkillIds(
+      providedSkillIds,
+      newSkillNames,
+    );
 
     const {
       durationValidation,
+      newSkillNames: newSkillNamesPayload,
       assignedMemberId,
       assignedMemberHandle,
       assignedMemberIds,
@@ -355,6 +366,7 @@ export class EngagementsService {
       ...payload
     } = createDto;
     void durationValidation;
+    void newSkillNamesPayload;
 
     const assignmentDetailsPayload =
       Array.isArray(assignmentDetails) && assignmentDetails.length
@@ -1665,7 +1677,8 @@ export class EngagementsService {
     if (updateDto.countries !== undefined && !isPrivateEngagement) {
       this.assertNonEmptyArrayField(updateDto.countries, "countries");
     }
-    if (updateDto.requiredSkills !== undefined) {
+    const newSkillNames = this.normalizeNewSkillNames(updateDto.newSkillNames);
+    if (updateDto.requiredSkills !== undefined && !newSkillNames.length) {
       this.assertNonEmptyArrayField(updateDto.requiredSkills, "requiredSkills");
     }
 
@@ -1689,12 +1702,28 @@ export class EngagementsService {
       await this.assertProjectExists(updateDto.projectId);
     }
 
-    if (updateDto.requiredSkills) {
+    if (Array.isArray(updateDto.requiredSkills)) {
       await this.assertSkillsValid(updateDto.requiredSkills);
     }
+    if (newSkillNames.length) {
+      // New skills are added to the skills sent with the request, or to the
+      // engagement's current skills when the request sends none.
+      updateDto.requiredSkills = await this.addNewSkillIds(
+        Array.isArray(updateDto.requiredSkills)
+          ? updateDto.requiredSkills
+          : existingEngagement.requiredSkills,
+        newSkillNames,
+      );
+    }
 
-    const { durationValidation, assignmentDetails, ...payload } = updateDto;
+    const {
+      durationValidation,
+      assignmentDetails,
+      newSkillNames: newSkillNamesPayload,
+      ...payload
+    } = updateDto;
     void durationValidation;
+    void newSkillNamesPayload;
 
     const assignedMemberId = payload.assignedMemberId?.trim();
     if (payload.assignedMemberId !== undefined && !assignedMemberId) {
@@ -4951,6 +4980,83 @@ export class EngagementsService {
         ERROR_MESSAGES.ProjectChangeBlockedByBillingAccount,
       );
     }
+  }
+
+  /**
+   * Trims and de-duplicates (case-insensitively) skill names sent in
+   * `newSkillNames`, keeping the first spelling of each name.
+   *
+   * @param names Raw `newSkillNames` from a create or update request.
+   * @returns Non-empty, unique skill names in input order.
+   */
+  private normalizeNewSkillNames(names: string[] | undefined): string[] {
+    const seenNames = new Set<string>();
+    const normalizedNames: string[] = [];
+
+    (Array.isArray(names) ? names : []).forEach((name) => {
+      const trimmedName = typeof name === "string" ? name.trim() : "";
+      const normalizedName = trimmedName.toLowerCase();
+
+      if (trimmedName && !seenNames.has(normalizedName)) {
+        seenNames.add(normalizedName);
+        normalizedNames.push(trimmedName);
+      }
+    });
+
+    return normalizedNames;
+  }
+
+  /**
+   * Turns skill names that are not standardized skills yet, such as skills
+   * typed on a lead intake form, into standardized skill ids.
+   *
+   * Names that match an existing standardized skill (case-insensitive) reuse
+   * it; the rest are created in standardized-skills. When a create call
+   * reports the name is already taken, for example because another request
+   * created it first, the name is looked up again.
+   *
+   * @param skillIds Skill ids already selected for the engagement.
+   * @param newSkillNames Normalized skill names to match or create.
+   * @returns `skillIds` followed by the ids for `newSkillNames`, de-duplicated.
+   * @throws BadRequestException when a name can be neither created nor found.
+   */
+  private async addNewSkillIds(
+    skillIds: string[],
+    newSkillNames: string[],
+  ): Promise<string[]> {
+    if (!newSkillNames.length) {
+      return skillIds;
+    }
+
+    const resolution =
+      await this.skillsService.resolveSkillFilterValues(newSkillNames);
+    const resolvedIds = [...resolution.skillIds];
+
+    for (const name of resolution.unresolvedNames) {
+      const createdId = await this.skillsService.createSkill(name);
+      if (createdId) {
+        resolvedIds.push(createdId);
+        continue;
+      }
+
+      const retry = await this.skillsService.resolveSkillFilterValues([name]);
+      if (!retry.skillIds.length) {
+        throw new BadRequestException(
+          `Skill "${name}" could not be created or found.`,
+        );
+      }
+      resolvedIds.push(...retry.skillIds);
+    }
+
+    const seenIds = new Set<string>();
+    return [...skillIds, ...resolvedIds].filter((skillId) => {
+      const normalizedId = skillId.toLowerCase();
+      if (seenIds.has(normalizedId)) {
+        return false;
+      }
+      seenIds.add(normalizedId);
+      return true;
+    });
   }
 
   private async assertSkillsValid(skillIds: string[]): Promise<void> {
