@@ -16,6 +16,7 @@ import { nanoid } from "nanoid";
 import { DbService } from "../db/db.service";
 import { SkillsService } from "../integrations/skills.service";
 import { PaginatedResponse } from "../engagements/dto";
+import { EngagementLeadEmailService } from "./engagement-lead-email.service";
 import {
   CreateEngagementLeadIntakeDto,
   CreateWiproDirectEngagementLeadIntakeDto,
@@ -93,6 +94,7 @@ export class EngagementLeadsService {
   constructor(
     private readonly db: DbService,
     private readonly skillsService: SkillsService,
+    private readonly leadEmailService: EngagementLeadEmailService,
   ) {}
 
   private transformToResponseDto(
@@ -166,6 +168,7 @@ export class EngagementLeadsService {
       include: LEAD_INCLUDE,
     });
 
+    this.notifyLeadSubmitted(lead);
     return this.transformToResponseDto(lead);
   }
 
@@ -188,7 +191,18 @@ export class EngagementLeadsService {
       include: LEAD_INCLUDE,
     });
 
+    this.notifyLeadSubmitted(lead);
     return this.transformToResponseDto(lead);
+  }
+
+  /** Emails go out in the background so the intake response does not wait on them. */
+  private notifyLeadSubmitted(lead: EngagementLead): void {
+    void this.leadEmailService.sendLeadSubmittedEmails({
+      id: lead.id,
+      leadType: lead.leadType,
+      accountName: lead.accountName,
+      roleTitle: lead.roleTitle,
+    });
   }
 
   private buildCommonLeadData(

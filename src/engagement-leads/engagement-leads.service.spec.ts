@@ -36,6 +36,7 @@ describe("EngagementLeadsService", () => {
     };
   };
   let skillsService: { resolveSkillFilterValues: jest.Mock };
+  let leadEmailService: { sendLeadSubmittedEmails: jest.Mock };
 
   beforeEach(() => {
     db = {
@@ -63,7 +64,14 @@ describe("EngagementLeadsService", () => {
         unresolvedNames: [],
       }),
     };
-    service = new EngagementLeadsService(db as any, skillsService as any);
+    leadEmailService = {
+      sendLeadSubmittedEmails: jest.fn().mockResolvedValue(undefined),
+    };
+    service = new EngagementLeadsService(
+      db as any,
+      skillsService as any,
+      leadEmailService as any,
+    );
   });
 
   describe("findAll", () => {
@@ -303,6 +311,12 @@ describe("EngagementLeadsService", () => {
         include: { notes: { orderBy: { createdAt: "asc" } } },
       });
       expect(result.priority).toBeNull();
+      expect(leadEmailService.sendLeadSubmittedEmails).toHaveBeenCalledWith({
+        id: "test-id",
+        leadType: EngagementLeadType.WIPRO_CONSUMPTION,
+        accountName: "ABC Bank",
+        roleTitle: "QA Engineer",
+      });
     });
 
     it("stores a null experience level now that the form no longer asks for it", async () => {
@@ -628,6 +642,22 @@ describe("EngagementLeadsService", () => {
       expect(data).not.toHaveProperty("roleTitle");
       expect(data).not.toHaveProperty("billRateAmount");
       expect(result.leadType).toBe(EngagementLeadType.WIPRO_DIRECT);
+      expect(leadEmailService.sendLeadSubmittedEmails).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "test-id",
+          leadType: EngagementLeadType.WIPRO_DIRECT,
+        }),
+      );
+    });
+
+    it("does not wait on the lead submitted emails", async () => {
+      leadEmailService.sendLeadSubmittedEmails.mockReturnValue(
+        new Promise(() => undefined),
+      );
+
+      await expect(
+        service.createFromWiproDirectIntake(directIntake),
+      ).resolves.toMatchObject({ leadType: EngagementLeadType.WIPRO_DIRECT });
     });
 
     it("stores the preferred start date when provided", async () => {
