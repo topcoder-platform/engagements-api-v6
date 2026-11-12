@@ -301,7 +301,7 @@ export class CreateEngagementDto {
   @IsString({ each: true })
   countries?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       "Required skill IDs. Must contain at least one skill ID, unless newSkillNames is given.",
     example: ["c1b3ac2c-5c8b-4d58-9c7c-1f50b75f0f0f"],
