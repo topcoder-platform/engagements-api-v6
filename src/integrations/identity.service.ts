@@ -117,7 +117,8 @@ export class IdentityService {
       const response = await firstValueFrom(
         this.httpService.get(roleUrl, {
           headers,
-          params: { fields: "subjects" },
+          // identity-api-v6 expands role members only through `selector`, not `fields`.
+          params: { selector: "subjects" },
         }),
       );
       const payload = unwrapContent(response.data) as {
@@ -127,7 +128,7 @@ export class IdentityService {
         ? (payload.subjects as IdentityRoleSubjectRecord[])
         : [];
     } catch (error) {
-      // The Identity API answers 404 when subjects are requested for a role nobody holds.
+      // A 404 means the role disappeared between the two calls, so it has no members.
       if (isAxiosError(error) && error.response?.status === 404) {
         return [];
       }

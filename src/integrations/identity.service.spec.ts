@@ -56,7 +56,7 @@ describe("IdentityService", () => {
     });
     expect(httpService.get).toHaveBeenCalledWith(`${rolesUrl}/5`, {
       headers: { Authorization: "Bearer m2m-token" },
-      params: { fields: "subjects" },
+      params: { selector: "subjects" },
     });
   });
 
