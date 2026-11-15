@@ -51,7 +51,8 @@ export class SaveEngagementLeadCalculationDto {
 
   @ApiPropertyOptional({
     description:
-      'Cost transfer % entered for the "Others" SMU, which has no fixed %. Above 0 and at most 100.',
+      'Cost transfer % entered for the "Others" SMU, which has no fixed %. Above 0 and at most 100. ' +
+      "Ignored for the other SMUs.",
     example: 72.5,
   })
   @IsOptional()

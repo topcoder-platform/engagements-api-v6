@@ -155,6 +155,31 @@ describe("EngagementLeadCalculationsService", () => {
       });
     });
 
+    it.each(["EURP", undefined])(
+      "drops the cost transfer %% when the SMU is %s",
+      async (smu) => {
+        await service.create("lead-1", { smu, costTransferPercent: 72.5 });
+
+        expect(db.engagementLeadCalculation.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({ costTransferPercent: null }),
+        });
+      },
+    );
+
+    it("keeps the cost transfer % for the Others SMU whatever its case", async () => {
+      await service.create("lead-1", {
+        smu: " others ",
+        costTransferPercent: 72.5,
+      });
+
+      expect(db.engagementLeadCalculation.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          smu: "others",
+          costTransferPercent: 72.5,
+        }),
+      });
+    });
+
     it("throws when the lead does not exist", async () => {
       db.engagementLead.findUnique.mockResolvedValue(null);
 

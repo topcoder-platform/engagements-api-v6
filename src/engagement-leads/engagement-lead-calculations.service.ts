@@ -15,6 +15,9 @@ function trimOrNull(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
+/** The SMU without a fixed cost transfer %; the user enters it. */
+const OTHER_SMU = "others";
+
 /**
  * Saved Flexi Talent cost calculations. A lead can have several (e.g. one per resource); saving
  * one overwrites its previous values, so there is no version history.
@@ -108,13 +111,19 @@ export class EngagementLeadCalculationsService {
     }
   }
 
-  // Every field is written, so a value the user cleared is cleared in the database too.
+  // Every field is written, so a value the user cleared is cleared in the database too. The cost
+  // transfer % only applies to the Others SMU (the other SMUs have a fixed %), so it is dropped for them.
   private toData(dto: SaveEngagementLeadCalculationDto) {
+    const smu = trimOrNull(dto.smu);
+
     return {
       memberName: trimOrNull(dto.memberName),
       accountName: trimOrNull(dto.accountName),
-      smu: trimOrNull(dto.smu),
-      costTransferPercent: dto.costTransferPercent ?? null,
+      smu,
+      costTransferPercent:
+        smu?.toLowerCase() === OTHER_SMU
+          ? (dto.costTransferPercent ?? null)
+          : null,
       durationWeeks: dto.durationWeeks ?? null,
       hoursPerDay: dto.hoursPerDay ?? null,
       referral: dto.referral ?? false,
