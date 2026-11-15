@@ -1,9 +1,9 @@
 # Keep build tooling aligned with the version used by local development.
-ARG NODE_VERSION=26.12.1
+ARG NODE_VERSION=26.13.1
 
 # ---- Base Stage ----
 FROM node:${NODE_VERSION}-alpine AS base
-RUN apk upgrade --no-cache && apk add --no-cache openssl
+RUN apk upgrade --no-cache && apk add --no-cache 'zlib>=1.4-r0' openssl
 WORKDIR /usr/src/app
 
 # ---- Tooling Stage ----
@@ -51,7 +51,7 @@ ARG NODE_VERSION
 # Alpine replaces old APK patch versions. Keep the configured Node major while
 # accepting maintained patch releases and verify the selected runtime below.
 RUN apk upgrade --no-cache \
-  && apk add --no-cache "nodejs-current~${NODE_VERSION%%.*}" openssl \
+  && apk add --no-cache 'zlib>=1.4-r0' "nodejs-current~${NODE_VERSION%%.*}" "nodejs-current>=${NODE_VERSION}-r0" openssl \
   && test "$(node -p 'process.versions.node.split(".")[0]')" = "${NODE_VERSION%%.*}" \
   && addgroup -S app \
   && adduser -S -D -H -u 10001 -G app app
