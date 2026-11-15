@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   Max,
   MaxLength,
@@ -47,6 +48,18 @@ export class SaveEngagementLeadCalculationDto {
   @IsString()
   @MaxLength(50)
   smu?: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Cost transfer % entered for the "Others" SMU, which has no fixed %. Above 0 and at most 100. ' +
+      "Ignored for the other SMUs.",
+    example: 72.5,
+  })
+  @IsOptional()
+  @IsNumber({ ...NUMBER_OPTIONS, maxDecimalPlaces: 2 })
+  @IsPositive()
+  @Max(100)
+  costTransferPercent?: number | null;
 
   @ApiPropertyOptional({ example: 52 })
   @IsOptional()
@@ -114,6 +127,9 @@ export class EngagementLeadCalculationResponseDto {
 
   @ApiPropertyOptional()
   smu: string | null;
+
+  @ApiPropertyOptional()
+  costTransferPercent: number | null;
 
   @ApiPropertyOptional()
   durationWeeks: number | null;
