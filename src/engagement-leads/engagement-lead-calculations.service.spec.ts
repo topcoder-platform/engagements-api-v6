@@ -16,7 +16,8 @@ function storedCalculation(overrides: Record<string, unknown> = {}) {
     engagementLeadId: "lead-1",
     memberName: "Jane Doe",
     accountName: "Acme",
-    smu: "EURP",
+    smu: "Others",
+    costTransferPercent: new Prisma.Decimal("72.5"),
     durationWeeks: new Prisma.Decimal("52"),
     hoursPerDay: new Prisma.Decimal("8"),
     referral: true,
@@ -75,7 +76,8 @@ describe("EngagementLeadCalculationsService", () => {
           engagementLeadId: "lead-1",
           memberName: "Jane Doe",
           accountName: "Acme",
-          smu: "EURP",
+          smu: "Others",
+          costTransferPercent: 72.5,
           durationWeeks: 52,
           hoursPerDay: 8,
           referral: true,
@@ -96,6 +98,7 @@ describe("EngagementLeadCalculationsService", () => {
         storedCalculation({
           commercialInputField: null,
           commercialInputValue: null,
+          costTransferPercent: null,
           durationWeeks: null,
         }),
       ]);
@@ -104,6 +107,7 @@ describe("EngagementLeadCalculationsService", () => {
 
       expect(result.commercialInputValue).toBeNull();
       expect(result.durationWeeks).toBeNull();
+      expect(result.costTransferPercent).toBeNull();
     });
 
     it("throws when the lead does not exist", async () => {
@@ -121,7 +125,8 @@ describe("EngagementLeadCalculationsService", () => {
         "lead-1",
         {
           memberName: "  Jane Doe  ",
-          smu: "EURP",
+          smu: "Others",
+          costTransferPercent: 72.5,
           durationWeeks: 52,
           hoursPerDay: 8,
           memberInputField: LeadCalculationMemberInput.MEMBER_RATE,
@@ -135,7 +140,8 @@ describe("EngagementLeadCalculationsService", () => {
           engagementLeadId: "lead-1",
           memberName: "Jane Doe",
           accountName: null,
-          smu: "EURP",
+          smu: "Others",
+          costTransferPercent: 72.5,
           durationWeeks: 52,
           hoursPerDay: 8,
           referral: false,
@@ -182,6 +188,7 @@ describe("EngagementLeadCalculationsService", () => {
           memberName: null,
           accountName: null,
           smu: null,
+          costTransferPercent: null,
           durationWeeks: null,
           hoursPerDay: null,
           referral: false,
@@ -233,6 +240,13 @@ describe("SaveEngagementLeadCalculationDto", () => {
       metatype: SaveEngagementLeadCalculationDto,
     });
 
+  it.each([[{ costTransferPercent: 100 }], [{ costTransferPercent: 0.01 }]])(
+    "accepts %o",
+    async (body) => {
+      await expect(validate(body)).resolves.toBeDefined();
+    },
+  );
+
   it("accepts nulls to clear values", async () => {
     await expect(
       validate({ commercialInputValue: null, smu: null }),
@@ -245,6 +259,9 @@ describe("SaveEngagementLeadCalculationDto", () => {
     [{ commercialInputValue: "220000" }],
     [{ commercialInputValue: 1.23456 }],
     [{ referral: "yes" }],
+    [{ costTransferPercent: 0 }],
+    [{ costTransferPercent: 100.01 }],
+    [{ costTransferPercent: 72.555 }],
   ])("rejects %o", async (body) => {
     await expect(validate(body)).rejects.toBeDefined();
   });

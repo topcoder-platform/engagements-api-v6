@@ -267,6 +267,7 @@ exports.Prisma.EngagementLeadCalculationScalarFieldEnum = {
   memberName: 'memberName',
   accountName: 'accountName',
   smu: 'smu',
+  costTransferPercent: 'costTransferPercent',
   durationWeeks: 'durationWeeks',
   hoursPerDay: 'hoursPerDay',
   referral: 'referral',

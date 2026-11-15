@@ -352,6 +352,9 @@ model EngagementLeadCalculation {
   memberName           String?
   accountName          String?
   smu                  String?
+  /// Cost transfer % entered for the "Others" SMU, e.g. 72.5. The other SMUs have a fixed %, so it is
+  /// only set for "Others".
+  costTransferPercent  Decimal?                        @db.Decimal(5, 2)
   durationWeeks        Decimal?                        @db.Decimal(8, 2)
   hoursPerDay          Decimal?                        @db.Decimal(5, 2)
   referral             Boolean                         @default(false)

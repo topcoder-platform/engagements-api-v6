@@ -11201,6 +11201,7 @@ export namespace Prisma {
   }
 
   export type EngagementLeadCalculationAvgAggregateOutputType = {
+    costTransferPercent: Decimal | null
     durationWeeks: Decimal | null
     hoursPerDay: Decimal | null
     memberInputValue: Decimal | null
@@ -11208,6 +11209,7 @@ export namespace Prisma {
   }
 
   export type EngagementLeadCalculationSumAggregateOutputType = {
+    costTransferPercent: Decimal | null
     durationWeeks: Decimal | null
     hoursPerDay: Decimal | null
     memberInputValue: Decimal | null
@@ -11220,6 +11222,7 @@ export namespace Prisma {
     memberName: string | null
     accountName: string | null
     smu: string | null
+    costTransferPercent: Decimal | null
     durationWeeks: Decimal | null
     hoursPerDay: Decimal | null
     referral: boolean | null
@@ -11239,6 +11242,7 @@ export namespace Prisma {
     memberName: string | null
     accountName: string | null
     smu: string | null
+    costTransferPercent: Decimal | null
     durationWeeks: Decimal | null
     hoursPerDay: Decimal | null
     referral: boolean | null
@@ -11258,6 +11262,7 @@ export namespace Prisma {
     memberName: number
     accountName: number
     smu: number
+    costTransferPercent: number
     durationWeeks: number
     hoursPerDay: number
     referral: number
@@ -11274,6 +11279,7 @@ export namespace Prisma {
 
 
   export type EngagementLeadCalculationAvgAggregateInputType = {
+    costTransferPercent?: true
     durationWeeks?: true
     hoursPerDay?: true
     memberInputValue?: true
@@ -11281,6 +11287,7 @@ export namespace Prisma {
   }
 
   export type EngagementLeadCalculationSumAggregateInputType = {
+    costTransferPercent?: true
     durationWeeks?: true
     hoursPerDay?: true
     memberInputValue?: true
@@ -11293,6 +11300,7 @@ export namespace Prisma {
     memberName?: true
     accountName?: true
     smu?: true
+    costTransferPercent?: true
     durationWeeks?: true
     hoursPerDay?: true
     referral?: true
@@ -11312,6 +11320,7 @@ export namespace Prisma {
     memberName?: true
     accountName?: true
     smu?: true
+    costTransferPercent?: true
     durationWeeks?: true
     hoursPerDay?: true
     referral?: true
@@ -11331,6 +11340,7 @@ export namespace Prisma {
     memberName?: true
     accountName?: true
     smu?: true
+    costTransferPercent?: true
     durationWeeks?: true
     hoursPerDay?: true
     referral?: true
@@ -11437,6 +11447,7 @@ export namespace Prisma {
     memberName: string | null
     accountName: string | null
     smu: string | null
+    costTransferPercent: Decimal | null
     durationWeeks: Decimal | null
     hoursPerDay: Decimal | null
     referral: boolean
@@ -11475,6 +11486,7 @@ export namespace Prisma {
     memberName?: boolean
     accountName?: boolean
     smu?: boolean
+    costTransferPercent?: boolean
     durationWeeks?: boolean
     hoursPerDay?: boolean
     referral?: boolean
@@ -11495,6 +11507,7 @@ export namespace Prisma {
     memberName?: boolean
     accountName?: boolean
     smu?: boolean
+    costTransferPercent?: boolean
     durationWeeks?: boolean
     hoursPerDay?: boolean
     referral?: boolean
@@ -11515,6 +11528,7 @@ export namespace Prisma {
     memberName?: boolean
     accountName?: boolean
     smu?: boolean
+    costTransferPercent?: boolean
     durationWeeks?: boolean
     hoursPerDay?: boolean
     referral?: boolean
@@ -11535,6 +11549,7 @@ export namespace Prisma {
     memberName?: boolean
     accountName?: boolean
     smu?: boolean
+    costTransferPercent?: boolean
     durationWeeks?: boolean
     hoursPerDay?: boolean
     referral?: boolean
@@ -11548,7 +11563,7 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementLeadCalculationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementLeadId" | "memberName" | "accountName" | "smu" | "durationWeeks" | "hoursPerDay" | "referral" | "memberInputField" | "memberInputValue" | "commercialInputField" | "commercialInputValue" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLeadCalculation"]>
+  export type EngagementLeadCalculationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementLeadId" | "memberName" | "accountName" | "smu" | "costTransferPercent" | "durationWeeks" | "hoursPerDay" | "referral" | "memberInputField" | "memberInputValue" | "commercialInputField" | "commercialInputValue" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLeadCalculation"]>
   export type EngagementLeadCalculationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
   }
@@ -11570,6 +11585,11 @@ export namespace Prisma {
       memberName: string | null
       accountName: string | null
       smu: string | null
+      /**
+       * Cost transfer % entered for the "Others" SMU, e.g. 72.5. The other SMUs have a fixed %, so it is
+       * only set for "Others".
+       */
+      costTransferPercent: Prisma.Decimal | null
       durationWeeks: Prisma.Decimal | null
       hoursPerDay: Prisma.Decimal | null
       referral: boolean
@@ -12010,6 +12030,7 @@ export namespace Prisma {
     readonly memberName: FieldRef<"EngagementLeadCalculation", 'String'>
     readonly accountName: FieldRef<"EngagementLeadCalculation", 'String'>
     readonly smu: FieldRef<"EngagementLeadCalculation", 'String'>
+    readonly costTransferPercent: FieldRef<"EngagementLeadCalculation", 'Decimal'>
     readonly durationWeeks: FieldRef<"EngagementLeadCalculation", 'Decimal'>
     readonly hoursPerDay: FieldRef<"EngagementLeadCalculation", 'Decimal'>
     readonly referral: FieldRef<"EngagementLeadCalculation", 'Boolean'>
@@ -16243,6 +16264,7 @@ export namespace Prisma {
     memberName: 'memberName',
     accountName: 'accountName',
     smu: 'smu',
+    costTransferPercent: 'costTransferPercent',
     durationWeeks: 'durationWeeks',
     hoursPerDay: 'hoursPerDay',
     referral: 'referral',
@@ -17559,6 +17581,7 @@ export namespace Prisma {
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
+    costTransferPercent?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFilter<"EngagementLeadCalculation"> | boolean
@@ -17579,6 +17602,7 @@ export namespace Prisma {
     memberName?: SortOrderInput | SortOrder
     accountName?: SortOrderInput | SortOrder
     smu?: SortOrderInput | SortOrder
+    costTransferPercent?: SortOrderInput | SortOrder
     durationWeeks?: SortOrderInput | SortOrder
     hoursPerDay?: SortOrderInput | SortOrder
     referral?: SortOrder
@@ -17602,6 +17626,7 @@ export namespace Prisma {
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
+    costTransferPercent?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFilter<"EngagementLeadCalculation"> | boolean
@@ -17622,6 +17647,7 @@ export namespace Prisma {
     memberName?: SortOrderInput | SortOrder
     accountName?: SortOrderInput | SortOrder
     smu?: SortOrderInput | SortOrder
+    costTransferPercent?: SortOrderInput | SortOrder
     durationWeeks?: SortOrderInput | SortOrder
     hoursPerDay?: SortOrderInput | SortOrder
     referral?: SortOrder
@@ -17649,6 +17675,7 @@ export namespace Prisma {
     memberName?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
+    costTransferPercent?: DecimalNullableWithAggregatesFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: DecimalNullableWithAggregatesFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: DecimalNullableWithAggregatesFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     referral?: BoolWithAggregatesFilter<"EngagementLeadCalculation"> | boolean
@@ -18980,6 +19007,7 @@ export namespace Prisma {
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
+    costTransferPercent?: Decimal | DecimalJsLike | number | string | null
     durationWeeks?: Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: Decimal | DecimalJsLike | number | string | null
     referral?: boolean
@@ -19000,6 +19028,7 @@ export namespace Prisma {
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
+    costTransferPercent?: Decimal | DecimalJsLike | number | string | null
     durationWeeks?: Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: Decimal | DecimalJsLike | number | string | null
     referral?: boolean
@@ -19018,6 +19047,7 @@ export namespace Prisma {
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
+    costTransferPercent?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFieldUpdateOperationsInput | boolean
@@ -19038,6 +19068,7 @@ export namespace Prisma {
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
+    costTransferPercent?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFieldUpdateOperationsInput | boolean
@@ -19057,6 +19088,7 @@ export namespace Prisma {
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
+    costTransferPercent?: Decimal | DecimalJsLike | number | string | null
     durationWeeks?: Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: Decimal | DecimalJsLike | number | string | null
     referral?: boolean
@@ -19075,6 +19107,7 @@ export namespace Prisma {
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
+    costTransferPercent?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFieldUpdateOperationsInput | boolean
@@ -19094,6 +19127,7 @@ export namespace Prisma {
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
+    costTransferPercent?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFieldUpdateOperationsInput | boolean
@@ -20539,6 +20573,7 @@ export namespace Prisma {
     memberName?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
+    costTransferPercent?: SortOrder
     durationWeeks?: SortOrder
     hoursPerDay?: SortOrder
     referral?: SortOrder
@@ -20553,6 +20588,7 @@ export namespace Prisma {
   }
 
   export type EngagementLeadCalculationAvgOrderByAggregateInput = {
+    costTransferPercent?: SortOrder
     durationWeeks?: SortOrder
     hoursPerDay?: SortOrder
     memberInputValue?: SortOrder
@@ -20565,6 +20601,7 @@ export namespace Prisma {
     memberName?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
+    costTransferPercent?: SortOrder
     durationWeeks?: SortOrder
     hoursPerDay?: SortOrder
     referral?: SortOrder
@@ -20584,6 +20621,7 @@ export namespace Prisma {
     memberName?: SortOrder
     accountName?: SortOrder
     smu?: SortOrder
+    costTransferPercent?: SortOrder
     durationWeeks?: SortOrder
     hoursPerDay?: SortOrder
     referral?: SortOrder
@@ -20598,6 +20636,7 @@ export namespace Prisma {
   }
 
   export type EngagementLeadCalculationSumOrderByAggregateInput = {
+    costTransferPercent?: SortOrder
     durationWeeks?: SortOrder
     hoursPerDay?: SortOrder
     memberInputValue?: SortOrder
@@ -23407,6 +23446,7 @@ export namespace Prisma {
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
+    costTransferPercent?: Decimal | DecimalJsLike | number | string | null
     durationWeeks?: Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: Decimal | DecimalJsLike | number | string | null
     referral?: boolean
@@ -23425,6 +23465,7 @@ export namespace Prisma {
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
+    costTransferPercent?: Decimal | DecimalJsLike | number | string | null
     durationWeeks?: Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: Decimal | DecimalJsLike | number | string | null
     referral?: boolean
@@ -23500,6 +23541,7 @@ export namespace Prisma {
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
+    costTransferPercent?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: DecimalNullableFilter<"EngagementLeadCalculation"> | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFilter<"EngagementLeadCalculation"> | boolean
@@ -24857,6 +24899,7 @@ export namespace Prisma {
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
+    costTransferPercent?: Decimal | DecimalJsLike | number | string | null
     durationWeeks?: Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: Decimal | DecimalJsLike | number | string | null
     referral?: boolean
@@ -24896,6 +24939,7 @@ export namespace Prisma {
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
+    costTransferPercent?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFieldUpdateOperationsInput | boolean
@@ -24914,6 +24958,7 @@ export namespace Prisma {
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
+    costTransferPercent?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFieldUpdateOperationsInput | boolean
@@ -24932,6 +24977,7 @@ export namespace Prisma {
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
+    costTransferPercent?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     durationWeeks?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     hoursPerDay?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
     referral?: BoolFieldUpdateOperationsInput | boolean
