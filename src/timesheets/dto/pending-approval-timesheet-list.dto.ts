@@ -186,6 +186,11 @@ export class SendPendingApprovalRemindersDto {
     isArray: true,
     example: ["0d6f3a52-5d0a-4b6e-9a61-1b9c2f0f6a10"],
   })
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value)
+      ? value.map((item) => (typeof item === "string" ? item.trim() : item))
+      : value,
+  )
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(PENDING_APPROVAL_REMINDER_MAX_ASSIGNMENTS)

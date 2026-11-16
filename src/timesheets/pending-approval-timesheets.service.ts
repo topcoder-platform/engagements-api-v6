@@ -260,11 +260,16 @@ export class PendingApprovalTimesheetsService {
 
     entries.forEach((entry) => {
       const assignment = entry.assignment;
-      const id = [
-        assignment.id,
-        entry.submittedAt?.toISOString() ?? "",
-        entry.submittedBy ?? "",
-      ].join(":");
+      // Submitting always stamps both columns. An entry missing them (written outside the submit
+      // flow) has no submission to share, so it stays a row of its own rather than merging into a
+      // made-up one.
+      const id = entry.submittedAt
+        ? [
+            assignment.id,
+            entry.submittedAt.toISOString(),
+            entry.submittedBy ?? "",
+          ].join(":")
+        : [assignment.id, "entry", entry.id].join(":");
       const group = groupsById.get(id);
 
       if (group) {

@@ -143,6 +143,31 @@ describe("PendingApprovalTimesheetsService", () => {
       );
     });
 
+    it("keeps entries without submission metadata as rows of their own", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({ id: "e1", submittedAt: null, submittedBy: null }),
+        entry({
+          id: "e2",
+          workDate: utcDate("2026-10-06"),
+          submittedAt: null,
+          submittedBy: null,
+        }),
+        entry({ id: "e3", workDate: utcDate("2026-10-07") }),
+      ]);
+
+      const result = await service.findPendingApprovals(
+        { page: 1, perPage: 20 },
+        admin,
+      );
+
+      expect(result.data.map((row) => [row.id, row.entryIds])).toEqual([
+        ["asg1:entry:e1", ["e1"]],
+        ["asg1:entry:e2", ["e2"]],
+        [`asg1:${firstSubmission.toISOString()}:1001`, ["e3"]],
+      ]);
+      expect(result.data[0].submittedAt).toBeNull();
+    });
+
     it("returns no approvers for an engagement without managers", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([
         entry({ assignment: assignment({ engagementId: "eng9" }) }),
