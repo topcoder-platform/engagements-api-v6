@@ -63,6 +63,12 @@ const APPROVAL_REMINDER_TEMPLATE_KEY =
  */
 const PENDING_APPROVAL_TIMESHEETS_PATH = "timesheets?status=pending-approval";
 
+const SUBMISSION_REMINDER_TEMPLATE_KEY =
+  "SENDGRID_TIMESHEET_SUBMISSION_REMINDER_TEMPLATE_ID";
+
+/** Loose address check, enough to tell an email apart from an employee id typed in the same field. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /** Pre-formatted people lines, in the same `Name (handle)` form the timesheet header shows. */
 interface TimesheetPeople {
   memberDisplayName: string;
@@ -75,6 +81,23 @@ interface EmailRecipient {
   email: string;
   firstName: string;
   handle: string;
+}
+
+export interface SubmissionReminderEmailParams {
+  engagementId: string;
+  engagementTitle: string;
+  assignmentId: string;
+  memberUserId: string;
+  memberHandle: string;
+  /**
+   * The assignment's Candidate Wipro ID. Admins enter either the member's Wipro email or an employee
+   * id there, so it is only used as an address when it looks like one.
+   */
+  candidateWiproId?: string | null;
+  /** YYYY-MM-DD */
+  fromDate: string;
+  /** YYYY-MM-DD */
+  toDate: string;
 }
 
 export interface ManagerAssignedEmailParams {
@@ -282,6 +305,97 @@ export class TimesheetEmailService {
     }
   }
 
+  /** True when the submission reminder template is configured, so a reminder can be sent at all. */
+  isSubmissionReminderConfigured(): boolean {
+    return Boolean(
+      this.configService.get<string>(SUBMISSION_REMINDER_TEMPLATE_KEY)?.trim(),
+    );
+  }
+
+  /**
+   * Reminds a member to submit their timesheet for a work period. Sent on an administrator's request
+   * from the Work App's Pending Timesheet Submissions tab.
+   *
+   * Goes to the member's Topcoder email and, when the assignment holds one, their Wipro email - in one
+   * email, since both addresses belong to the same person. Reports true when it was handed to the bus.
+   */
+  async sendSubmissionReminderEmail(
+    params: SubmissionReminderEmailParams,
+  ): Promise<boolean> {
+    const logLabel = "timesheet submission reminder";
+
+    try {
+      const templateId = this.resolveTemplateId(
+        SUBMISSION_REMINDER_TEMPLATE_KEY,
+        logLabel,
+      );
+      if (!templateId) {
+        return false;
+      }
+
+      const [member] = await this.resolveMemberRecipients(
+        params.memberUserId,
+        params.memberHandle,
+      );
+      const wiproEmail = String(params.candidateWiproId ?? "").trim();
+      const emails = Array.from(
+        new Set(
+          [member?.email, EMAIL_PATTERN.test(wiproEmail) ? wiproEmail : ""]
+            .filter((email): email is string => Boolean(email))
+            .map((email) => email.toLowerCase()),
+        ),
+      );
+
+      if (!emails.length) {
+        this.logger.warn(
+          `${logLabel} email skipped for assignment ${params.assignmentId}: no email found for member ${params.memberUserId}.`,
+        );
+        return false;
+      }
+
+      const fromDate = formatWorkDate(params.fromDate);
+      const toDate = formatWorkDate(params.toDate);
+      const query = new URLSearchParams({
+        fromDate: params.fromDate,
+        toDate: params.toDate,
+      });
+
+      return await this.publish(
+        templateId,
+        {
+          userId: params.memberUserId,
+          email: emails[0],
+          firstName: member?.firstName ?? params.memberHandle,
+          handle: params.memberHandle,
+        },
+        {
+          recipientFirstName: member?.firstName ?? params.memberHandle,
+          recipientHandle: params.memberHandle,
+          engagementId: params.engagementId,
+          engagementTitle: params.engagementTitle,
+          fromDate,
+          toDate,
+          workPeriod:
+            fromDate === toDate ? fromDate : `${fromDate} - ${toDate}`,
+          timesheetUrl: this.buildEngagementsAppUrl(
+            `${encodeURIComponent(params.engagementId)}/timesheets/${encodeURIComponent(
+              params.assignmentId,
+            )}?${query.toString()}`,
+          ),
+        },
+        logLabel,
+        emails,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send ${logLabel} email for assignment ${params.assignmentId}: ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      );
+      return false;
+    }
+  }
+
   private resolveTemplateId(
     templateKey: string,
     logLabel: string,
@@ -468,11 +582,13 @@ export class TimesheetEmailService {
     recipient: EmailRecipient,
     data: Record<string, unknown>,
     logLabel: string,
+    /** Every address of this one recipient; defaults to their profile email. */
+    emails: string[] = [recipient.email],
   ): Promise<boolean> {
     try {
       await this.eventBusService.postEvent("external.action.email", {
         data,
-        recipients: [recipient.email],
+        recipients: emails,
         sendgrid_template_id: templateId,
         version: "v3",
       });

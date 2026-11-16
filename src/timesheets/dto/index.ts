@@ -7,3 +7,4 @@ export * from "./timesheet-query.dto";
 export * from "./timesheet-response.dto";
 export * from "./upsert-timesheet-entries.dto";
 export * from "./pending-approval-timesheet-list.dto";
+export * from "./pending-submission-timesheet-list.dto";

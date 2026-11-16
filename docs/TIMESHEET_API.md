@@ -307,6 +307,58 @@ At most 200 ids. Assignments with no `SUBMITTED` entry left are skipped rather t
 
 `sent` is false when the manager has no email address on file or the bus publish failed.
 
+### `GET /timesheets/pending-submission`
+
+Administrators only (403 otherwise). Backs the Work App's Pending Timesheet Submissions tab. Paginated per the
+repo's `pagination.dto.ts`.
+
+Query: `fromDate`, `toDate` (**required**, `YYYY-MM-DD`, at most 31 days - the longest range the member's timesheet
+page opens), `engagement` (title substring, case-insensitive), `excludeTestProjects`, `page`, `perPage`.
+
+An assignment is listed when it is `ASSIGNED`, its start/end dates overlap the period, and none of its entries
+dated inside the period is `SUBMITTED` or `APPROVED`. Drafts do not count as submitted. One row per assignment;
+the work period is clipped to the assignment's own start and end dates.
+
+```json
+{
+  "data": [
+    {
+      "id": "asg1",
+      "engagementId": "...",
+      "engagementTitle": "Senior Frontend Engineer",
+      "projectId": "100",
+      "assignmentId": "asg1",
+      "assigneeId": "1001",
+      "assigneeHandle": "johnsmith",
+      "workPeriodStart": "2026-11-09",
+      "workPeriodEnd": "2026-11-13",
+      "approvers": [{ "userId": "2002", "handle": "maryj", "name": "Mary Jones" }]
+    }
+  ],
+  "meta": { "page": 1, "perPage": 20, "totalCount": 1, "totalPages": 1 }
+}
+```
+
+### `POST /timesheets/pending-submission/reminders`
+
+Administrators only. Emails the member of each assignment to submit their timesheet for the work period
+(`SENDGRID_TIMESHEET_SUBMISSION_REMINDER_TEMPLATE_ID`; 503 while not configured). The email goes to the member's
+Topcoder email and, when the assignment's `candidateWiproId` is an email address, their Wipro email.
+
+```json
+{ "fromDate": "2026-11-09", "toDate": "2026-11-13", "assignmentIds": ["asg1", "asg2"] }
+```
+
+At most 200 ids. Assignments no longer pending for the period are skipped rather than failing the request.
+
+```json
+{
+  "sentCount": 1,
+  "recipients": [{ "assignmentId": "asg1", "userId": "1001", "handle": "johnsmith", "sent": true }],
+  "skippedAssignmentIds": ["asg2"]
+}
+```
+
 ### `GET /engagements/:id/managers`
 
 `[{ "userId": "2002", "handle": "maryj", "name": "Mary Jones" }]` — currently assigned managers, excluding
