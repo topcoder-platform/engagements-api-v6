@@ -168,12 +168,18 @@ email failure is logged and never fails the mutation; an email whose template ID
 Assigning a manager to an engagement emails that manager (`SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID`).
 Removing one sends nothing.
 
+An administrator can also remind managers about timesheets still waiting for approval, from the Work App's Pending
+Timesheet Approvals tab (`POST /timesheets/pending-approval/reminders`). Each selected engagement's current
+managers get one email each (`SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID`, template in
+[`emails/timesheet-approval-reminder.html`](./emails/timesheet-approval-reminder.html)).
+
 Timesheet template data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `memberHandle`,
 `actorHandle`, `memberDisplayName`, `managerDisplayNames` and `actorDisplayName` (`Name (handle)` as on the timesheet
 page; the managers are comma-separated), `entryCount`, `totalHours`, `workDates` (`DD-MM-YYYY` list), `fromDate`, `toDate`, `comment`
 (approval comment or override reason, empty otherwise), `timesheetUrl`, and `changeType` on the administrator
 template. Manager-assigned data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `actorHandle`,
-`timesheetsUrl`.
+`timesheetsUrl`. Approval reminder data: `recipientFirstName`, `recipientHandle`, `timesheetsUrl` (the
+engagements app's timesheet list, opened on Pending Approval).
 
 ## Endpoints
 
