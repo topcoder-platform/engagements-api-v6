@@ -46,6 +46,7 @@ describe("TimesheetEmailService", () => {
       SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID: "admin-changed-template",
       SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID:
         "manager-assigned-template",
+      SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID: "reminder-template",
       TOPCODER_API_URL_BASE: "https://api.topcoder-dev.com",
     };
     access = {
@@ -280,6 +281,63 @@ describe("TimesheetEmailService", () => {
         managerHandle: "ghost",
       });
 
+      expect(eventBusService.postEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("sendApprovalReminderEmail", () => {
+    const manager = { userId: "2002", handle: "maryj", name: "Mary Jones" };
+
+    it("emails the manager a link to the timesheets awaiting their approval", async () => {
+      await expect(service.sendApprovalReminderEmail(manager)).resolves.toBe(
+        true,
+      );
+
+      expect(eventBusService.postEvent).toHaveBeenCalledWith(
+        "external.action.email",
+        {
+          data: {
+            recipientFirstName: "Mary",
+            recipientHandle: "maryj",
+            timesheetsUrl:
+              "https://engagements.topcoder-dev.com/timesheets?status=pending-approval",
+          },
+          recipients: ["mary@example.com"],
+          sendgrid_template_id: "reminder-template",
+          version: "v3",
+        },
+      );
+    });
+
+    it("reports false when the manager has no email", async () => {
+      await expect(
+        service.sendApprovalReminderEmail({
+          userId: "9999",
+          handle: "ghost",
+          name: null,
+        }),
+      ).resolves.toBe(false);
+
+      expect(eventBusService.postEvent).not.toHaveBeenCalled();
+    });
+
+    it("reports false when publishing fails", async () => {
+      eventBusService.postEvent.mockRejectedValue(new Error("bus down"));
+
+      await expect(service.sendApprovalReminderEmail(manager)).resolves.toBe(
+        false,
+      );
+    });
+
+    it("reports whether the template is configured", async () => {
+      expect(service.isApprovalReminderConfigured()).toBe(true);
+
+      config.SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID = " ";
+
+      expect(service.isApprovalReminderConfigured()).toBe(false);
+      await expect(service.sendApprovalReminderEmail(manager)).resolves.toBe(
+        false,
+      );
       expect(eventBusService.postEvent).not.toHaveBeenCalled();
     });
   });

@@ -250,6 +250,63 @@ engagements. "Eligible" means an assignment that is still active or one that alr
 offer with no entries has no timesheet to manage. One record per (engagement, assignee) pair. `timesheetStatus`
 is `Pending Approval` when the assignee has any `SUBMITTED` entry, otherwise `Approved`.
 
+### `GET /timesheets/pending-approval`
+
+Administrators only (403 otherwise). Backs the Work App's Pending Timesheet Approvals tab. Paginated per the
+repo's `pagination.dto.ts`.
+
+Query: `engagement` (title substring, case-insensitive), `fromDate`, `toDate` (`YYYY-MM-DD`, compared against
+each entry's work date, inclusive), `excludeTestProjects`, `page`, `perPage`.
+
+```json
+{
+  "data": [
+    {
+      "id": "asg1:2026-10-10T09:00:00.000Z:1001",
+      "engagementId": "...",
+      "engagementTitle": "Senior Frontend Engineer",
+      "projectId": "100",
+      "assignmentId": "asg1",
+      "assigneeId": "1001",
+      "assigneeHandle": "johnsmith",
+      "workPeriodStart": "2026-10-05",
+      "workPeriodEnd": "2026-10-09",
+      "submittedAt": "2026-10-10T09:00:00.000Z",
+      "hours": 40,
+      "entryIds": ["entry1", "entry2"],
+      "approvers": [{ "userId": "2002", "handle": "maryj", "name": "Mary Jones" }]
+    }
+  ],
+  "meta": { "page": 1, "perPage": 20, "totalCount": 1, "totalPages": 1 }
+}
+```
+
+One row per submission: the `SUBMITTED` entries one submit action stamped with the same `submittedAt` on one
+assignment. `approvers` are the engagement's current managers; empty when none is assigned.
+
+### `POST /timesheets/pending-approval/reminders`
+
+Administrators only. Emails every current manager of the given assignments' engagements, once per manager
+however many of the assignments they manage (`SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID`). Returns 503
+when that template ID is not configured.
+
+```json
+{ "assignmentIds": ["asg1", "asg2"] }
+```
+
+At most 200 ids. Assignments with no `SUBMITTED` entry left are skipped rather than failing the request.
+
+```json
+{
+  "sentCount": 1,
+  "recipients": [{ "userId": "2002", "handle": "maryj", "sent": true }],
+  "engagementsWithoutManagers": [{ "engagementId": "...", "engagementTitle": "Data Engineer" }],
+  "skippedAssignmentIds": ["asg2"]
+}
+```
+
+`sent` is false when the manager has no email address on file or the bus publish failed.
+
 ### `GET /engagements/:id/managers`
 
 `[{ "userId": "2002", "handle": "maryj", "name": "Mary Jones" }]` — currently assigned managers, excluding

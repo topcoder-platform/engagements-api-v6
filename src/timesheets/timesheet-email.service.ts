@@ -54,6 +54,15 @@ const TIMESHEET_EMAIL_ROUTES: Record<string, TimesheetEmailRoute> = {
 const MANAGER_ASSIGNED_TEMPLATE_KEY =
   "SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID";
 
+const APPROVAL_REMINDER_TEMPLATE_KEY =
+  "SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID";
+
+/**
+ * The engagements app's timesheet landing list, opened on what is waiting for the reader's approval.
+ * The list scopes rows to the engagements the reader manages, so this shows "awaiting your approval".
+ */
+const PENDING_APPROVAL_TIMESHEETS_PATH = "timesheets?status=pending-approval";
+
 /** Pre-formatted people lines, in the same `Name (handle)` form the timesheet header shows. */
 interface TimesheetPeople {
   memberDisplayName: string;
@@ -209,6 +218,67 @@ export class TimesheetEmailService {
           error instanceof Error ? error.message : "unknown error"
         }`,
       );
+    }
+  }
+
+  /** True when the approval reminder template is configured, so a reminder can be sent at all. */
+  isApprovalReminderConfigured(): boolean {
+    return Boolean(
+      this.configService.get<string>(APPROVAL_REMINDER_TEMPLATE_KEY)?.trim(),
+    );
+  }
+
+  /**
+   * Reminds one engagement manager that timesheets are waiting for their approval. Sent on an
+   * administrator's request from the Work App's Pending Timesheet Approvals tab.
+   *
+   * Unlike the lifecycle emails this reports back: true when the email was handed to the bus, false
+   * when the template is missing, the manager has no email address, or publishing failed.
+   */
+  async sendApprovalReminderEmail(
+    manager: EngagementManagerSummary,
+  ): Promise<boolean> {
+    const logLabel = "timesheet approval reminder";
+
+    try {
+      const templateId = this.resolveTemplateId(
+        APPROVAL_REMINDER_TEMPLATE_KEY,
+        logLabel,
+      );
+      if (!templateId) {
+        return false;
+      }
+
+      const [recipient] = await this.resolveMemberRecipients(
+        manager.userId,
+        manager.handle,
+      );
+      if (!recipient) {
+        this.logger.warn(
+          `${logLabel} email skipped: no email found for manager ${manager.userId}.`,
+        );
+        return false;
+      }
+
+      return await this.publish(
+        templateId,
+        recipient,
+        {
+          recipientFirstName: recipient.firstName,
+          recipientHandle: recipient.handle,
+          timesheetsUrl: this.buildEngagementsAppUrl(
+            PENDING_APPROVAL_TIMESHEETS_PATH,
+          ),
+        },
+        logLabel,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send ${logLabel} email for manager ${manager.userId}: ${
+          error instanceof Error ? error.message : "unknown error"
+        }`,
+      );
+      return false;
     }
   }
 
@@ -398,7 +468,7 @@ export class TimesheetEmailService {
     recipient: EmailRecipient,
     data: Record<string, unknown>,
     logLabel: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       await this.eventBusService.postEvent("external.action.email", {
         data,
@@ -409,12 +479,14 @@ export class TimesheetEmailService {
       this.logger.log(
         `Published 'external.action.email' (${logLabel}) for user ${recipient.userId}.`,
       );
+      return true;
     } catch (error) {
       this.logger.error(
         `Failed to publish ${logLabel} email for user ${recipient.userId}: ${
           error instanceof Error ? error.message : "unknown error"
         }`,
       );
+      return false;
     }
   }
 
