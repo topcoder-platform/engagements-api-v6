@@ -22,6 +22,7 @@ import {
   TimesheetAccessService,
 } from "./timesheet-access.service";
 import { TimesheetEmailService } from "./timesheet-email.service";
+import { parseWorkDateFilter, toWorkDateString } from "./timesheet-dates.util";
 
 const submittedEntrySelect = {
   id: true,
@@ -48,27 +49,6 @@ interface SubmissionGroup {
   id: string;
   assignment: SubmittedEntry["assignment"];
   entries: SubmittedEntry[];
-}
-
-/** Parses a YYYY-MM-DD filter into the UTC midnight a `@db.Date` column compares against. */
-function toWorkDate(value: string, field: string): Date {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
-  const parsed = match
-    ? new Date(
-        Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])),
-      )
-    : undefined;
-
-  if (!parsed || Number.isNaN(parsed.getTime())) {
-    throw new BadRequestException(`${field} must be a YYYY-MM-DD date.`);
-  }
-
-  return parsed;
-}
-
-/** Formats a stored date column back to the YYYY-MM-DD the API speaks. */
-function toDateString(value: Date): string {
-  return value.toISOString().slice(0, 10);
 }
 
 /**
@@ -99,10 +79,10 @@ export class PendingApprovalTimesheetsService {
     const page = query.page;
     const perPage = query.perPage;
     const fromDate = query.fromDate
-      ? toWorkDate(query.fromDate, "fromDate")
+      ? parseWorkDateFilter(query.fromDate, "fromDate")
       : undefined;
     const toDate = query.toDate
-      ? toWorkDate(query.toDate, "toDate")
+      ? parseWorkDateFilter(query.toDate, "toDate")
       : undefined;
 
     if (fromDate && toDate && toDate.getTime() < fromDate.getTime()) {
@@ -320,8 +300,8 @@ export class PendingApprovalTimesheetsService {
         assignmentId: assignment.id,
         assigneeId: assignment.memberId,
         assigneeHandle: assignment.memberHandle,
-        workPeriodStart: toDateString(entries[0].workDate),
-        workPeriodEnd: toDateString(entries[entries.length - 1].workDate),
+        workPeriodStart: toWorkDateString(entries[0].workDate),
+        workPeriodEnd: toWorkDateString(entries[entries.length - 1].workDate),
         submittedAt: entries[0].submittedAt ?? null,
         hours: hundredths / 100,
         entryIds: entries.map((entry) => entry.id),

@@ -173,13 +173,22 @@ Timesheet Approvals tab (`POST /timesheets/pending-approval/reminders`). Each se
 managers get one email each (`SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID`, template in
 [`emails/timesheet-approval-reminder.html`](./emails/timesheet-approval-reminder.html)).
 
+From the Pending Timesheet Submissions tab an administrator can likewise remind members who have not submitted for a
+work period (`POST /timesheets/pending-submission/reminders`). One email per selected assignment, to the member's
+Topcoder email and - when the assignment's Candidate Wipro ID holds an email address - their Wipro email
+(`SENDGRID_TIMESHEET_SUBMISSION_REMINDER_TEMPLATE_ID`, template in
+[`emails/timesheet-submission-reminder.html`](./emails/timesheet-submission-reminder.html)). Its link opens the
+member's timesheet on that work period.
+
 Timesheet template data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `memberHandle`,
 `actorHandle`, `memberDisplayName`, `managerDisplayNames` and `actorDisplayName` (`Name (handle)` as on the timesheet
 page; the managers are comma-separated), `entryCount`, `totalHours`, `workDates` (`DD-MM-YYYY` list), `fromDate`, `toDate`, `comment`
 (approval comment or override reason, empty otherwise), `timesheetUrl`, and `changeType` on the administrator
 template. Manager-assigned data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `actorHandle`,
 `timesheetsUrl`. Approval reminder data: `recipientFirstName`, `recipientHandle`, `timesheetsUrl` (the
-engagements app's timesheet list, opened on Pending Approval).
+engagements app's timesheet list, opened on Pending Approval). Submission reminder data: `recipientFirstName`,
+`recipientHandle`, `engagementTitle`, `fromDate`, `toDate`, `workPeriod`, `timesheetUrl` (the member's timesheet,
+opened on the work period).
 
 ## Endpoints
 
