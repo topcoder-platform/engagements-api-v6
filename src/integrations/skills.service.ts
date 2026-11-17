@@ -1,5 +1,9 @@
 import { HttpService } from "@nestjs/axios";
-import { Injectable, Logger } from "@nestjs/common";
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { firstValueFrom } from "rxjs";
 import { isAxiosError } from "axios";
@@ -102,6 +106,77 @@ export class SkillsService {
     });
 
     return { valid, invalid };
+  }
+
+  /**
+   * Creates a standardized skill so a skill typed on a lead intake form can be
+   * stored on an engagement, which only keeps standardized skill ids.
+   *
+   * New skills go under the category set in
+   * `STANDARDIZED_SKILLS_NEW_SKILL_CATEGORY_ID`, with no description. The
+   * request uses this service's M2M credentials.
+   *
+   * @param name Skill name to create; surrounding whitespace is trimmed.
+   * @returns The created skill id, or `undefined` when standardized-skills
+   * reports that a skill with this name already exists (HTTP 409), so the
+   * caller can look the existing skill up instead.
+   * @throws InternalServerErrorException when the category is not configured,
+   * and the underlying error for any other standardized-skills failure.
+   */
+  async createSkill(name: string): Promise<string | undefined> {
+    const categoryId = this.configService
+      .get<string>("STANDARDIZED_SKILLS_NEW_SKILL_CATEGORY_ID")
+      ?.trim();
+
+    if (!categoryId) {
+      this.logger.error(
+        "STANDARDIZED_SKILLS_NEW_SKILL_CATEGORY_ID is not configured; new skills cannot be created.",
+      );
+      throw new InternalServerErrorException(
+        "Creating new skills is not configured.",
+      );
+    }
+
+    const apiBaseUrl = this.configService.get<string>(
+      "TOPCODER_API_URL_BASE",
+      "https://api.topcoder-dev.com",
+    );
+    const token = await this.getM2MToken();
+    const skillsBaseUrl = `${apiBaseUrl.replace(/\/$/, "")}/v5/standardized-skills`;
+    const skillName = name.trim();
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${skillsBaseUrl}/skills`,
+          { name: skillName, description: null, categoryId },
+          { headers: { Authorization: `Bearer ${token}` } },
+        ),
+      );
+      const skillId = this.normalizeSkillId(
+        (response.data as SkillResponse)?.id ??
+          (response.data as SkillResponse)?.skillId,
+      );
+
+      if (!skillId) {
+        throw new Error("Standardized-skills returned no id for a new skill.");
+      }
+
+      this.logger.log("Created standardized skill.", { skillId, skillName });
+      return skillId;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        return undefined;
+      }
+
+      this.logger.error("Skill creation failed.", {
+        skillName,
+        status: isAxiosError(error) ? error.response?.status : undefined,
+        data: isAxiosError(error) ? error.response?.data : undefined,
+        error: error instanceof Error ? error.message : error,
+      });
+      throw error;
+    }
   }
 
   /**

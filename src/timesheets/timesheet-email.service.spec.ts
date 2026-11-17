@@ -46,6 +46,9 @@ describe("TimesheetEmailService", () => {
       SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID: "admin-changed-template",
       SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID:
         "manager-assigned-template",
+      SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID: "reminder-template",
+      SENDGRID_TIMESHEET_SUBMISSION_REMINDER_TEMPLATE_ID:
+        "submission-reminder-template",
       TOPCODER_API_URL_BASE: "https://api.topcoder-dev.com",
     };
     access = {
@@ -281,6 +284,174 @@ describe("TimesheetEmailService", () => {
       });
 
       expect(eventBusService.postEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("sendApprovalReminderEmail", () => {
+    const manager = { userId: "2002", handle: "maryj", name: "Mary Jones" };
+
+    it("emails the manager a link to the timesheets awaiting their approval", async () => {
+      await expect(service.sendApprovalReminderEmail(manager)).resolves.toBe(
+        true,
+      );
+
+      expect(eventBusService.postEvent).toHaveBeenCalledWith(
+        "external.action.email",
+        {
+          data: {
+            recipientFirstName: "Mary",
+            recipientHandle: "maryj",
+            timesheetsUrl:
+              "https://engagements.topcoder-dev.com/timesheets?status=pending-approval",
+          },
+          recipients: ["mary@example.com"],
+          sendgrid_template_id: "reminder-template",
+          version: "v3",
+        },
+      );
+    });
+
+    it("reports false when the manager has no email", async () => {
+      await expect(
+        service.sendApprovalReminderEmail({
+          userId: "9999",
+          handle: "ghost",
+          name: null,
+        }),
+      ).resolves.toBe(false);
+
+      expect(eventBusService.postEvent).not.toHaveBeenCalled();
+    });
+
+    it("reports false when publishing fails", async () => {
+      eventBusService.postEvent.mockRejectedValue(new Error("bus down"));
+
+      await expect(service.sendApprovalReminderEmail(manager)).resolves.toBe(
+        false,
+      );
+    });
+
+    it("reports whether the template is configured", async () => {
+      expect(service.isApprovalReminderConfigured()).toBe(true);
+
+      config.SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID = " ";
+
+      expect(service.isApprovalReminderConfigured()).toBe(false);
+      await expect(service.sendApprovalReminderEmail(manager)).resolves.toBe(
+        false,
+      );
+      expect(eventBusService.postEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("sendSubmissionReminderEmail", () => {
+    const params = {
+      engagementId: "eng1",
+      engagementTitle: "Senior Frontend Engineer",
+      assignmentId: "asg1",
+      memberUserId: "1001",
+      memberHandle: "johns",
+      candidateWiproId: "John.Smith@wipro.com",
+      fromDate: "2026-11-09",
+      toDate: "2026-11-13",
+    };
+
+    it("emails the member's Topcoder and Wipro addresses a link to the work period", async () => {
+      await expect(service.sendSubmissionReminderEmail(params)).resolves.toBe(
+        true,
+      );
+
+      expect(eventBusService.postEvent).toHaveBeenCalledTimes(1);
+      expect(eventBusService.postEvent).toHaveBeenCalledWith(
+        "external.action.email",
+        {
+          data: {
+            recipientFirstName: "John",
+            recipientHandle: "johns",
+            engagementId: "eng1",
+            engagementTitle: "Senior Frontend Engineer",
+            fromDate: "09-11-2026",
+            toDate: "13-11-2026",
+            workPeriod: "09-11-2026 - 13-11-2026",
+            timesheetUrl:
+              "https://engagements.topcoder-dev.com/eng1/timesheets/asg1?fromDate=2026-11-09&toDate=2026-11-13",
+          },
+          recipients: ["john@example.com", "john.smith@wipro.com"],
+          sendgrid_template_id: "submission-reminder-template",
+          version: "v3",
+        },
+      );
+    });
+
+    it("ignores a Wipro ID that is not an email address", async () => {
+      await service.sendSubmissionReminderEmail({
+        ...params,
+        candidateWiproId: "WP12345",
+      });
+
+      expect(eventBusService.postEvent.mock.calls[0][1].recipients).toEqual([
+        "john@example.com",
+      ]);
+    });
+
+    it("sends the same address only once", async () => {
+      await service.sendSubmissionReminderEmail({
+        ...params,
+        candidateWiproId: " JOHN@example.com ",
+      });
+
+      expect(eventBusService.postEvent.mock.calls[0][1].recipients).toEqual([
+        "john@example.com",
+      ]);
+    });
+
+    it("still reaches the Wipro address when the member has no Topcoder email", async () => {
+      await expect(
+        service.sendSubmissionReminderEmail({
+          ...params,
+          memberUserId: "9999",
+          memberHandle: "ghost",
+        }),
+      ).resolves.toBe(true);
+
+      expect(eventBusService.postEvent.mock.calls[0][1]).toMatchObject({
+        data: { recipientFirstName: "ghost", recipientHandle: "ghost" },
+        recipients: ["john.smith@wipro.com"],
+      });
+    });
+
+    it("reports false when there is no address at all", async () => {
+      await expect(
+        service.sendSubmissionReminderEmail({
+          ...params,
+          memberUserId: "9999",
+          candidateWiproId: null,
+        }),
+      ).resolves.toBe(false);
+
+      expect(eventBusService.postEvent).not.toHaveBeenCalled();
+    });
+
+    it("names a one-day period once", async () => {
+      await service.sendSubmissionReminderEmail({
+        ...params,
+        toDate: "2026-11-09",
+      });
+
+      expect(eventBusService.postEvent.mock.calls[0][1].data.workPeriod).toBe(
+        "09-11-2026",
+      );
+    });
+
+    it("reports whether the template is configured", async () => {
+      expect(service.isSubmissionReminderConfigured()).toBe(true);
+
+      config.SENDGRID_TIMESHEET_SUBMISSION_REMINDER_TEMPLATE_ID = undefined;
+
+      expect(service.isSubmissionReminderConfigured()).toBe(false);
+      await expect(service.sendSubmissionReminderEmail(params)).resolves.toBe(
+        false,
+      );
     });
   });
 });

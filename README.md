@@ -113,6 +113,11 @@ Set the following environment variables (see `.env.example` for defaults):
 | `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` | SendGrid template ID for telling a member their timesheet entries were approved. |
 | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` | SendGrid template ID for telling a member an administrator reopened or modified approved entries. |
 | `SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID` | SendGrid template ID for telling a member they were made a manager of an engagement. |
+| `SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID` | SendGrid template ID for the reminder administrators send engagement managers about timesheets awaiting their approval. Template: [`docs/emails/timesheet-approval-reminder.html`](docs/emails/timesheet-approval-reminder.html), subject `Reminder: Timesheets Awaiting Your Approval`. Template data: `recipientFirstName`, `recipientHandle`, `timesheetsUrl`. Reminders return 503 while empty. |
+| `SENDGRID_TIMESHEET_SUBMISSION_REMINDER_TEMPLATE_ID` | SendGrid template ID for the reminder administrators send members about timesheets they have not submitted for a work period. Template: [`docs/emails/timesheet-submission-reminder.html`](docs/emails/timesheet-submission-reminder.html), subject `Reminder: Timesheets Pending Submission`. Template data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `fromDate`, `toDate`, `workPeriod` (`DD-MM-YYYY - DD-MM-YYYY`), `timesheetUrl`. Sent to the member's Topcoder email and, when the assignment's Candidate Wipro ID is an email address, to that too. Reminders return 503 while empty. |
+| `SENDGRID_ENGAGEMENT_LEAD_SUBMITTED_TEMPLATE_ID` | SendGrid template ID for telling the Flexi Talent Managers a new engagement lead was submitted. Template data: `handle`, `leadId`, `leadUrl`, `leadType`, `accountName`, `roleTitle`. Disabled while empty. |
+| `FLEXI_TALENT_MANAGER_ROLE_NAME` | Identity role whose members receive the lead submitted email. Defaults to `Flexi Talent Manager`. |
+| `WORK_APP_BASE_URL` | Optional work app base URL used for the lead link in that email; derived from `TOPCODER_API_URL_BASE` (`https://work.<domain>`) when empty. |
 
 ## Authentication
 

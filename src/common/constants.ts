@@ -85,6 +85,16 @@ export const ERROR_MESSAGES = {
     "You do not have permission to list timesheet engagements.",
   UnauthorizedApprovedTimesheetList:
     "Only administrators and talent managers can list approved timesheets.",
+  UnauthorizedPendingApprovalTimesheets:
+    "Only administrators can view pending timesheet approvals or send approval reminders.",
+  PendingApprovalRemindersNotConfigured:
+    "Timesheet approval reminder emails are not configured.",
+  UnauthorizedPendingSubmissionTimesheets:
+    "Only administrators can view pending timesheet submissions or send submission reminders.",
+  PendingSubmissionRemindersNotConfigured:
+    "Timesheet submission reminder emails are not configured.",
+  PendingSubmissionRangeTooLong:
+    "The work period cannot span more than 31 days.",
   EngagementNotFound: "Engagement not found",
   ManagerUserIdRequired: "A Topcoder user id is required.",
   ManagerHandleUnresolved:

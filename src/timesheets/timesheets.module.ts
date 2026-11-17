@@ -3,6 +3,10 @@ import { DbModule } from "../db/db.module";
 import { IntegrationsModule } from "../integrations/integrations.module";
 import { ApprovedTimesheetsController } from "./approved-timesheets.controller";
 import { ApprovedTimesheetsService } from "./approved-timesheets.service";
+import { PendingApprovalTimesheetsController } from "./pending-approval-timesheets.controller";
+import { PendingApprovalTimesheetsService } from "./pending-approval-timesheets.service";
+import { PendingSubmissionTimesheetsController } from "./pending-submission-timesheets.controller";
+import { PendingSubmissionTimesheetsService } from "./pending-submission-timesheets.service";
 import { TimesheetAccessService } from "./timesheet-access.service";
 import { TimesheetAuditService } from "./timesheet-audit.service";
 import { TimesheetEmailService } from "./timesheet-email.service";
@@ -21,9 +25,13 @@ import { TimesheetsService } from "./timesheets.service";
     TimesheetsController,
     TimesheetEngagementsController,
     ApprovedTimesheetsController,
+    PendingApprovalTimesheetsController,
+    PendingSubmissionTimesheetsController,
   ],
   providers: [
     ApprovedTimesheetsService,
+    PendingApprovalTimesheetsService,
+    PendingSubmissionTimesheetsService,
     TimesheetAccessService,
     TimesheetAuditService,
     TimesheetEmailService,
