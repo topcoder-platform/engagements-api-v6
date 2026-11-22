@@ -36,7 +36,7 @@ overrides:
   'ajv@>=7.0.0 <8.18.0': 8.18.0
   'deepmerge-ts@<8.0.0': 8.0.0
   defu: 6.1.7
-  effect: 3.22.0
+  effect: 3.22.1
   'diff@>=4.0.0 <4.0.4': 4.0.4
   'flatted@<3.4.2': 3.4.2
   form-data: 4.0.6
