@@ -1441,6 +1441,119 @@ describe("TimesheetsService", () => {
     });
   });
 
+  describe("revertEntriesToDraft", () => {
+    const revertPayload = {
+      entryIds: ["entry1", "entry2"],
+      reason: "Submitted for the wrong week",
+    } as never;
+    const submitted = (id: string, workDate: string) =>
+      entry({
+        id,
+        workDate: utcDate(workDate),
+        status: TimesheetEntryStatus.SUBMITTED,
+        submittedAt: new Date(),
+        submittedBy: "1001",
+      });
+
+    beforeEach(() => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        submitted("entry1", "2026-09-07"),
+        submitted("entry2", "2026-09-08"),
+      ]);
+      db.engagementTimesheetEntry.updateMany.mockResolvedValue({ count: 2 });
+    });
+
+    it("returns submitted entries to draft, guarded on their status, and emails the member", async () => {
+      await service.revertEntriesToDraft("eng1", "asg1", revertPayload, admin);
+
+      expect(db.engagementTimesheetEntry.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ["entry1", "entry2"] },
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+        data: expect.objectContaining({
+          status: TimesheetEntryStatus.DRAFT,
+          submittedAt: null,
+          submittedBy: null,
+        }),
+      });
+      expect(audit.record).toHaveBeenCalledTimes(2);
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          timesheetEntryId: "entry1",
+          action: TimesheetAuditAction.UNSUBMITTED,
+          comment: "Submitted for the wrong week",
+          previousValues: expect.objectContaining({
+            status: TimesheetEntryStatus.SUBMITTED,
+          }),
+          updatedValues: expect.objectContaining({
+            status: TimesheetEntryStatus.DRAFT,
+          }),
+        }),
+      );
+      expect(events.emit).toHaveBeenCalledWith(
+        TimesheetEventTopics.RevertedToDraft,
+        expect.objectContaining({
+          entryIds: ["entry1", "entry2"],
+          workDates: ["2026-09-07", "2026-09-08"],
+          totalHours: "17.00",
+          comment: "Submitted for the wrong week",
+        }),
+      );
+    });
+
+    it("refuses a manager", async () => {
+      withManagerRow();
+
+      await expect(
+        service.revertEntriesToDraft("eng1", "asg1", revertPayload, manager),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("refuses the assignee", async () => {
+      await expect(
+        service.revertEntriesToDraft("eng1", "asg1", revertPayload, member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("refuses a TM", async () => {
+      await expect(
+        service.revertEntriesToDraft(
+          "eng1",
+          "asg1",
+          revertPayload,
+          talentManager,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it("reverts nothing when an entry is not submitted", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        submitted("entry1", "2026-09-07"),
+        entry({ id: "entry2", status: TimesheetEntryStatus.APPROVED }),
+      ]);
+
+      await expect(
+        service.revertEntriesToDraft("eng1", "asg1", revertPayload, admin),
+      ).rejects.toThrow(
+        "Only submitted timesheet entries can be reverted to draft",
+      );
+      expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
+      expect(events.emit).not.toHaveBeenCalled();
+    });
+
+    it("fails without emailing when an entry is approved while reverting", async () => {
+      db.engagementTimesheetEntry.updateMany.mockResolvedValue({ count: 1 });
+
+      await expect(
+        service.revertEntriesToDraft("eng1", "asg1", revertPayload, admin),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(audit.record).not.toHaveBeenCalled();
+      expect(events.emit).not.toHaveBeenCalled();
+    });
+  });
+
   describe("findPaymentSummary", () => {
     const approved = (overrides: Record<string, unknown> = {}) =>
       entry({ status: TimesheetEntryStatus.APPROVED, ...overrides });

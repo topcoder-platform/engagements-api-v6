@@ -37,5 +37,6 @@ export const TimesheetEventTopics = {
   Unsubmitted: "engagement.timesheet.unsubmitted",
   Approved: "engagement.timesheet.approved",
   Reopened: "engagement.timesheet.reopened",
+  RevertedToDraft: "engagement.timesheet.reverted-to-draft",
   AdminOverride: "engagement.timesheet.overridden",
 } as const;

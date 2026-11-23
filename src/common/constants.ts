@@ -66,6 +66,12 @@ export const ERROR_MESSAGES = {
     "Only an administrator can reopen approved timesheet entries.",
   TimesheetReopenNotApproved:
     "Only approved timesheet entries can be reopened.",
+  TimesheetRevertToDraftAdminOnly:
+    "Only an administrator can revert submitted timesheet entries to draft.",
+  TimesheetRevertToDraftNotSubmitted:
+    "Only submitted timesheet entries can be reverted to draft.",
+  TimesheetRevertToDraftConflict:
+    "One or more entries changed status while being reverted, so nothing was reverted. Reload and try again.",
   TimesheetManagerCannotDelete: "Managers cannot delete timesheet entries.",
   TimesheetDeleteRejected:
     "Only unpaid draft entries can be deleted, so nothing was deleted.",

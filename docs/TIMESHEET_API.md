@@ -192,6 +192,16 @@ Sets `status = DRAFT` and `reopenedAt`, clears `approvedAt`/`approvedBy`/`approv
 A reopened entry returns to `DRAFT` rather than gaining a fourth status; `reopenedAt` is what the UI badges
 `Reopened` from.
 
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/revert-to-draft`
+
+Administrators only. `{ "entryIds": ["..."], "reason": "required" }`.
+
+For submitted entries that should not have been, e.g. a wrong work period. Sets `status = DRAFT` and clears
+`submittedAt`/`submittedBy`; hours and remarks are kept. Every entry has to be `SUBMITTED` (`400` otherwise), and
+the update is guarded on that status, so if a manager approves one of them meanwhile nothing is reverted (`409`).
+Audit `UNSUBMITTED` per entry, carrying the reason. The member is emailed (`engagement.timesheet.reverted-to-draft`).
+Returns the refreshed timesheet.
+
 ### `GET /engagements/:engagementId/assignments/:assignmentId/timesheets/entries/:entryId/audit`
 
 Administrators only. Returns the entry's recorded changes, newest first.

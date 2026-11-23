@@ -28,6 +28,7 @@ import {
   LinkTimesheetPaymentDto,
   LinkedTimesheetPaymentDto,
   ReopenTimesheetEntriesDto,
+  RevertTimesheetEntriesToDraftDto,
   SkippedTimesheetEntryDto,
   SubmitTimesheetEntriesDto,
   TimesheetEngagementListResponseDto,
@@ -795,6 +796,103 @@ export class TimesheetsService {
         topic: TimesheetEventTopics.Reopened,
         entries: reopened,
         comment: dto.overrideReason,
+      },
+    ]);
+
+    return this.findTimesheet(engagementId, assignmentId, {}, authUser);
+  }
+
+  /**
+   * Sends submitted entries back to draft, e.g. when a member submitted the wrong work period, so the
+   * member can correct and resubmit them. Administrators only, and a reason is always required; the
+   * member is emailed with it.
+   *
+   * All or nothing: every entry has to still be submitted. The update is guarded on that status, so an
+   * entry a manager approves in the meantime makes the whole call fail rather than silently undoing
+   * the approval.
+   */
+  async revertEntriesToDraft(
+    engagementId: string,
+    assignmentId: string,
+    dto: RevertTimesheetEntriesToDraftDto,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetViewResponseDto> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (!context.isAdministrator) {
+      throw new ForbiddenException(
+        ERROR_MESSAGES.TimesheetRevertToDraftAdminOnly,
+      );
+    }
+
+    const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+    const notSubmitted = entries.filter(
+      (entry) => entry.status !== TimesheetEntryStatus.SUBMITTED,
+    );
+
+    if (notSubmitted.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetRevertToDraftNotSubmitted,
+        entries: notSubmitted.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          currentStatus: entry.status,
+        })),
+      });
+    }
+
+    await this.db.$transaction(async (tx) => {
+      const { count } = await tx.engagementTimesheetEntry.updateMany({
+        where: {
+          id: { in: entries.map((entry) => entry.id) },
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+        data: {
+          status: TimesheetEntryStatus.DRAFT,
+          submittedAt: null,
+          submittedBy: null,
+          updatedBy: context.actorUserId,
+        },
+      });
+
+      if (count !== entries.length) {
+        // Throwing rolls the transaction back, so no entry is left half reverted.
+        throw new ConflictException(
+          ERROR_MESSAGES.TimesheetRevertToDraftConflict,
+        );
+      }
+
+      for (const entry of entries) {
+        await this.audit.record(tx, {
+          timesheetEntryId: entry.id,
+          action: TimesheetAuditAction.UNSUBMITTED,
+          previousValues: {
+            status: entry.status,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+          },
+          updatedValues: {
+            status: TimesheetEntryStatus.DRAFT,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+          },
+          actorUserId: context.actorUserId,
+          actorHandle: context.actorHandle,
+          actorRole: TimesheetActorRole.Administrator,
+          comment: dto.reason,
+        });
+      }
+    });
+
+    await this.emitEvents(context, [
+      {
+        topic: TimesheetEventTopics.RevertedToDraft,
+        entries,
+        comment: dto.reason,
       },
     ]);
 
