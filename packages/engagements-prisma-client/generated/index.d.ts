@@ -199,7 +199,9 @@ export const EngagementLeadStatus: {
   QUALIFIED: 'QUALIFIED',
   CONVERTED: 'CONVERTED',
   REJECTED: 'REJECTED',
-  FULFILLED: 'FULFILLED'
+  FULFILLED: 'FULFILLED',
+  PARTIALLY_FULFILLED: 'PARTIALLY_FULFILLED',
+  ON_HOLD: 'ON_HOLD'
 };
 
 export type EngagementLeadStatus = (typeof EngagementLeadStatus)[keyof typeof EngagementLeadStatus]

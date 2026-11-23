@@ -447,7 +447,9 @@ exports.EngagementLeadStatus = exports.$Enums.EngagementLeadStatus = {
   QUALIFIED: 'QUALIFIED',
   CONVERTED: 'CONVERTED',
   REJECTED: 'REJECTED',
-  FULFILLED: 'FULFILLED'
+  FULFILLED: 'FULFILLED',
+  PARTIALLY_FULFILLED: 'PARTIALLY_FULFILLED',
+  ON_HOLD: 'ON_HOLD'
 };
 
 exports.LeadCalculationMemberInput = exports.$Enums.LeadCalculationMemberInput = {

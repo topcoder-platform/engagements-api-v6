@@ -25,6 +25,8 @@ export enum EngagementLeadStatusGroup {
   UNDER_REVIEW = "UNDER_REVIEW",
   FULFILLED = "FULFILLED",
   LOST = "LOST",
+  PARTIALLY_FULFILLED = "PARTIALLY_FULFILLED",
+  ON_HOLD = "ON_HOLD",
   /** @deprecated Use UNDER_REVIEW. Kept so clients built before the rename keep working. */
   IN_PROGRESS = "IN_PROGRESS",
   /** @deprecated Converted leads are now under review. Use UNDER_REVIEW. */
@@ -37,6 +39,8 @@ export enum EngagementLeadStatusGroup {
 export const MANUAL_ENGAGEMENT_LEAD_STATUSES = [
   EngagementLeadStatus.UNDER_REVIEW,
   EngagementLeadStatus.FULFILLED,
+  EngagementLeadStatus.PARTIALLY_FULFILLED,
+  EngagementLeadStatus.ON_HOLD,
   EngagementLeadStatus.REJECTED,
 ] as const;
 
@@ -147,7 +151,7 @@ export class EngagementLeadQueryDto extends PaginationDto {
 export class UpdateEngagementLeadStatusDto {
   @ApiProperty({
     description:
-      "Updated lead status. REJECTED is shown as Lost. New leads can move to any of these; Lost leads to UNDER_REVIEW or FULFILLED; leads under review to FULFILLED or REJECTED; fulfilled leads back to UNDER_REVIEW.",
+      "Updated lead status. REJECTED is shown as Lost. New leads can move to any of these; Lost leads to UNDER_REVIEW or FULFILLED; leads under review to FULFILLED or REJECTED; fulfilled leads back to UNDER_REVIEW. Any lead can move to PARTIALLY_FULFILLED or ON_HOLD, and leads in either of those can move to any other of these statuses.",
     enum: MANUAL_ENGAGEMENT_LEAD_STATUSES,
     example: EngagementLeadStatus.UNDER_REVIEW,
   })
