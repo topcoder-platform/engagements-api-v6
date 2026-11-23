@@ -44,6 +44,11 @@ const TIMESHEET_EMAIL_ROUTES: Record<string, TimesheetEmailRoute> = {
     audience: "member",
     logLabel: "timesheet reopened",
   },
+  [TimesheetEventTopics.ReturnedForCorrections]: {
+    templateKey: "SENDGRID_TIMESHEET_RETURNED_FOR_CORRECTIONS_TEMPLATE_ID",
+    audience: "member",
+    logLabel: "timesheet returned for corrections",
+  },
   [TimesheetEventTopics.RevertedToDraft]: {
     templateKey: "SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID",
     audience: "member",

@@ -72,6 +72,12 @@ export const ERROR_MESSAGES = {
     "Only submitted timesheet entries can be reverted to draft.",
   TimesheetRevertToDraftConflict:
     "One or more entries changed status while being reverted, so nothing was reverted. Reload and try again.",
+  TimesheetMemberCannotReturn:
+    "Only an assigned manager or an administrator can return timesheet entries for corrections.",
+  TimesheetReturnNotSubmitted:
+    "Only submitted timesheet entries can be returned for corrections.",
+  TimesheetReturnConflict:
+    "One or more entries changed status while being returned, so nothing was returned. Reload and try again.",
   TimesheetManagerCannotDelete: "Managers cannot delete timesheet entries.",
   TimesheetDeleteRejected:
     "Only unpaid draft entries can be deleted, so nothing was deleted.",

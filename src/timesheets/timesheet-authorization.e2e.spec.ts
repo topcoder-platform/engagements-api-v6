@@ -373,6 +373,46 @@ describe("Timesheet authorization (e2e)", () => {
     });
   });
 
+  describe("return for corrections access", () => {
+    const returnEntries = (token: string, body: Record<string, unknown> = {}) =>
+      request(app.getHttpServer())
+        .post(`${BASE}/return`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          entryIds: ["entry-1"],
+          returnComment: "Split the hours",
+          ...body,
+        });
+
+    it("lets an assigned manager return submitted entries", async () => {
+      await returnEntries("assigned-manager").expect(201);
+    });
+
+    it("400s a return with no corrections", async () => {
+      await returnEntries("assigned-manager", { returnComment: " " }).expect(
+        400,
+      );
+    });
+
+    it("400s an administrator without an override reason", async () => {
+      await returnEntries("administrator").expect(400);
+    });
+
+    it("lets an administrator return with an override reason", async () => {
+      await returnEntries("administrator", {
+        overrideReason: "Manager on leave",
+      }).expect(201);
+    });
+
+    it("403s the assignee", async () => {
+      await returnEntries("assignee").expect(403);
+    });
+
+    it("404s an unrelated member", async () => {
+      await returnEntries("other-member").expect(404);
+    });
+  });
+
   describe("revert to draft access", () => {
     const revert = (token: string, body: Record<string, unknown> = {}) =>
       request(app.getHttpServer())

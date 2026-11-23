@@ -30,6 +30,7 @@ import {
   LinkedTimesheetPaymentDto,
   TimesheetAuditRecordDto,
   ReopenTimesheetEntriesDto,
+  ReturnTimesheetEntriesDto,
   RevertTimesheetEntriesToDraftDto,
   SubmitTimesheetEntriesDto,
   TimesheetQueryDto,
@@ -349,6 +350,43 @@ export class TimesheetsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<ApproveTimesheetEntriesResultDto> {
     return this.timesheetsService.approveEntries(
+      engagementId,
+      assignmentId,
+      body,
+      req.authUser,
+    );
+  }
+
+  @Post("return")
+  @ApiOperation({
+    summary: "Return submitted timesheet entries for corrections",
+    description:
+      "Sends submitted entries back to the member with the corrections they have to make (`returnComment`, required). The entries return to draft with `returnedAt`, `returnedByHandle` and `returnComment` set, so they show as Returned for Corrections until the member resubmits them, which clears those fields. Every entry has to still be submitted: if one is not, or another manager approves one while this runs, nothing is returned. The member is emailed. Callable by an assigned manager or a TM, or by an administrator with an override reason. Audit: `RETURNED` per entry, carrying the corrections.",
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      "Entries returned for corrections; the refreshed timesheet is returned.",
+    type: TimesheetViewResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      "Missing corrections, one of the entries is not submitted, or an administrator returning on a manager's behalf without an override reason.",
+  })
+  @ApiForbiddenResponse({
+    description: "The assignee cannot return their own timesheet entries.",
+  })
+  @ApiConflictResponse({
+    description:
+      "An entry changed status while being returned, so nothing was returned.",
+  })
+  async returnEntries(
+    @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
+    @Body() body: ReturnTimesheetEntriesDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<TimesheetViewResponseDto> {
+    return this.timesheetsService.returnEntries(
       engagementId,
       assignmentId,
       body,
