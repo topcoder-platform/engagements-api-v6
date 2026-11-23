@@ -44,6 +44,11 @@ const TIMESHEET_EMAIL_ROUTES: Record<string, TimesheetEmailRoute> = {
     audience: "member",
     logLabel: "timesheet reopened",
   },
+  [TimesheetEventTopics.RevertedToDraft]: {
+    templateKey: "SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID",
+    audience: "member",
+    logLabel: "timesheet reverted to draft",
+  },
   [TimesheetEventTopics.AdminOverride]: {
     templateKey: "SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID",
     audience: "member",
@@ -548,6 +553,8 @@ export class TimesheetEmailService {
     people: TimesheetPeople,
   ): Record<string, unknown> {
     const workDates = [...payload.workDates].sort().map(formatWorkDate);
+    const fromDate = workDates[0] ?? "";
+    const toDate = workDates[workDates.length - 1] ?? "";
 
     return {
       engagementId: payload.engagementId,
@@ -559,8 +566,9 @@ export class TimesheetEmailService {
       entryCount: workDates.length,
       totalHours: payload.totalHours,
       workDates,
-      fromDate: workDates[0] ?? "",
-      toDate: workDates[workDates.length - 1] ?? "",
+      fromDate,
+      toDate,
+      workPeriod: fromDate === toDate ? fromDate : `${fromDate} - ${toDate}`,
       comment: payload.comment ?? "",
       ...(topic === TimesheetEventTopics.Reopened ||
       topic === TimesheetEventTopics.AdminOverride

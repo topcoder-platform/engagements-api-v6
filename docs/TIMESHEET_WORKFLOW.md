@@ -163,6 +163,7 @@ email failure is logged and never fails the mutation; an email whose template ID
 | `engagement.timesheet.unsubmitted` | a submitted entry was edited and reset to draft | the member | `SENDGRID_TIMESHEET_RESUBMISSION_REQUIRED_TEMPLATE_ID` |
 | `engagement.timesheet.approved` | entries approved | the member | `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` |
 | `engagement.timesheet.reopened` | an administrator reopened approved entries | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "reopened"`) |
+| `engagement.timesheet.reverted-to-draft` | an administrator moved submitted entries back to draft | the member | `SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID` (template in [`emails/timesheet-reverted-to-draft.html`](./emails/timesheet-reverted-to-draft.html)) |
 | `engagement.timesheet.overridden` | an administrator changed an approved entry | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "modified"`) |
 
 Assigning a manager to an engagement emails that manager (`SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID`).
@@ -182,7 +183,7 @@ member's timesheet on that work period.
 
 Timesheet template data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `memberHandle`,
 `actorHandle`, `memberDisplayName`, `managerDisplayNames` and `actorDisplayName` (`Name (handle)` as on the timesheet
-page; the managers are comma-separated), `entryCount`, `totalHours`, `workDates` (`DD-MM-YYYY` list), `fromDate`, `toDate`, `comment`
+page; the managers are comma-separated), `entryCount`, `totalHours`, `workDates` (`DD-MM-YYYY` list), `fromDate`, `toDate`, `workPeriod` (`DD-MM-YYYY - DD-MM-YYYY`), `comment`
 (approval comment or override reason, empty otherwise), `timesheetUrl`, and `changeType` on the administrator
 template. Manager-assigned data: `recipientFirstName`, `recipientHandle`, `engagementTitle`, `actorHandle`,
 `timesheetsUrl`. Approval reminder data: `recipientFirstName`, `recipientHandle`, `timesheetsUrl` (the

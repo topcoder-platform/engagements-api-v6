@@ -30,6 +30,7 @@ import {
   LinkedTimesheetPaymentDto,
   TimesheetAuditRecordDto,
   ReopenTimesheetEntriesDto,
+  RevertTimesheetEntriesToDraftDto,
   SubmitTimesheetEntriesDto,
   TimesheetQueryDto,
   TimesheetSummaryQueryDto,
@@ -380,6 +381,42 @@ export class TimesheetsController {
     @Req() req: Request & { authUser?: Record<string, any> },
   ): Promise<TimesheetViewResponseDto> {
     return this.timesheetsService.reopenEntries(
+      engagementId,
+      assignmentId,
+      body,
+      req.authUser,
+    );
+  }
+
+  @Post("revert-to-draft")
+  @ApiOperation({
+    summary: "Revert submitted timesheet entries to draft",
+    description:
+      "Administrators only, and a reason is always required. Sends submitted entries back to draft, e.g. when the member submitted the wrong work period, so they can be corrected and resubmitted. Every entry has to still be submitted: if one is not, or a manager approves one while this runs, nothing is reverted. The member is emailed with the reason. Audit: `UNSUBMITTED` per entry, carrying the reason.",
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      "Entries reverted to draft; the refreshed timesheet is returned.",
+    type: TimesheetViewResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: "Missing reason, or one of the entries is not submitted.",
+  })
+  @ApiForbiddenResponse({
+    description: "Only an administrator can revert submitted entries to draft.",
+  })
+  @ApiConflictResponse({
+    description:
+      "An entry changed status while being reverted, so nothing was reverted.",
+  })
+  async revertEntriesToDraft(
+    @Param("engagementId") engagementId: string,
+    @Param("assignmentId") assignmentId: string,
+    @Body() body: RevertTimesheetEntriesToDraftDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<TimesheetViewResponseDto> {
+    return this.timesheetsService.revertEntriesToDraft(
       engagementId,
       assignmentId,
       body,

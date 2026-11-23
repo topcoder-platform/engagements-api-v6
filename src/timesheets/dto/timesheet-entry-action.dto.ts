@@ -65,6 +65,20 @@ export class ApproveTimesheetEntriesDto extends TimesheetEntryIdsDto {
   overrideReason?: string;
 }
 
+export class RevertTimesheetEntriesToDraftDto extends TimesheetEntryIdsDto {
+  @ApiProperty({
+    description:
+      "Why the submitted entries are going back to draft. Always required, and included in the " +
+      "email sent to the member.",
+    example: "Submitted for the wrong work period",
+  })
+  @IsString()
+  @IsNotEmpty({ message: "reason is required to revert entries to draft." })
+  @MaxLength(1000)
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
+  reason: string;
+}
+
 export class ReopenTimesheetEntriesDto extends TimesheetEntryIdsDto {
   @ApiProperty({
     description:

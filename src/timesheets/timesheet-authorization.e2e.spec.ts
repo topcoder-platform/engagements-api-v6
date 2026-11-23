@@ -373,6 +373,38 @@ describe("Timesheet authorization (e2e)", () => {
     });
   });
 
+  describe("revert to draft access", () => {
+    const revert = (token: string, body: Record<string, unknown> = {}) =>
+      request(app.getHttpServer())
+        .post(`${BASE}/revert-to-draft`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ entryIds: ["entry-1"], reason: "Wrong week", ...body });
+
+    it("lets an administrator revert submitted entries", async () => {
+      await revert("administrator").expect(201);
+    });
+
+    it("400s a revert with no reason", async () => {
+      await revert("administrator", { reason: "  " }).expect(400);
+    });
+
+    it("403s an assigned manager", async () => {
+      await revert("assigned-manager").expect(403);
+    });
+
+    it("403s the assignee", async () => {
+      await revert("assignee").expect(403);
+    });
+
+    it("403s a talent manager", async () => {
+      await revert("talent-manager").expect(403);
+    });
+
+    it("404s an unrelated member", async () => {
+      await revert("other-member").expect(404);
+    });
+  });
+
   describe("landing list access", () => {
     it("scopes a manager's list to their own engagements", async () => {
       await request(app.getHttpServer())
@@ -407,7 +439,9 @@ describe("Timesheet authorization (e2e)", () => {
 
       const { where } =
         dbServiceMock.engagementAssignment.findMany.mock.calls[0][0];
-      expect(where.timesheetEntries.some.status).toBe(TimesheetEntryStatus.SUBMITTED);
+      expect(where.timesheetEntries.some.status).toBe(
+        TimesheetEntryStatus.SUBMITTED,
+      );
     });
 
     it("401s an anonymous caller", async () => {

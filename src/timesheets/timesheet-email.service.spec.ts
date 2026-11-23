@@ -44,6 +44,8 @@ describe("TimesheetEmailService", () => {
         "resubmission-template",
       SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID: "approved-template",
       SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID: "admin-changed-template",
+      SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID:
+        "reverted-to-draft-template",
       SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID:
         "manager-assigned-template",
       SENDGRID_TIMESHEET_APPROVAL_REMINDER_TEMPLATE_ID: "reminder-template",
@@ -104,6 +106,7 @@ describe("TimesheetEmailService", () => {
           workDates: ["14-09-2026", "15-09-2026"],
           fromDate: "14-09-2026",
           toDate: "15-09-2026",
+          workPeriod: "14-09-2026 - 15-09-2026",
           comment: "",
           timesheetUrl:
             "https://engagements.topcoder-dev.com/eng1/timesheets/asg1",
@@ -132,6 +135,11 @@ describe("TimesheetEmailService", () => {
     [TimesheetEventTopics.Approved, "approved-template", undefined],
     [TimesheetEventTopics.Reopened, "admin-changed-template", "reopened"],
     [TimesheetEventTopics.AdminOverride, "admin-changed-template", "modified"],
+    [
+      TimesheetEventTopics.RevertedToDraft,
+      "reverted-to-draft-template",
+      undefined,
+    ],
   ])("emails the member for %s", async (topic, templateId, changeType) => {
     await service.sendForEvent(topic, {
       ...payload,
@@ -153,6 +161,29 @@ describe("TimesheetEmailService", () => {
       }),
     );
     expect(message.data.changeType).toBe(changeType);
+  });
+
+  it("gives the reverted to draft email the work period, managers, admin and reason", async () => {
+    await service.sendForEvent(TimesheetEventTopics.RevertedToDraft, {
+      ...payload,
+      actorHandle: "adminuser",
+      comment: "Submitted for the wrong week",
+    });
+
+    const [, message] = eventBusService.postEvent.mock.calls[0];
+    expect(message.data).toEqual(
+      expect.objectContaining({
+        engagementTitle: "Senior Frontend Engineer",
+        managerDisplayNames: "Mary Jones (maryj), petek",
+        workPeriod: "14-09-2026 - 15-09-2026",
+        totalHours: "15.50",
+        actorHandle: "adminuser",
+        comment: "Submitted for the wrong week",
+        recipientHandle: "johns",
+        timesheetUrl:
+          "https://engagements.topcoder-dev.com/eng1/timesheets/asg1",
+      }),
+    );
   });
 
   it("uses a manager's stored name and only looks up the names it is missing", async () => {
