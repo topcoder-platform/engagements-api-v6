@@ -21,7 +21,7 @@ stateDiagram-v2
   SUBMITTED : Awaiting a manager
   SUBMITTED --> DRAFT : Member edits hours or remarks\n(resubmission required)
   SUBMITTED --> DRAFT : Manager returns for corrections (corrections required)\nreturnedAt is set until resubmitted
-  SUBMITTED --> APPROVED : Any assigned manager approves (comment required)\nAdministrator approves on behalf (reason required)
+  SUBMITTED --> APPROVED : Any assigned manager approves (comment required)\nAdministrator approves on behalf (reason required)\nSystem auto-approves after 7 days (see Auto-approval)
 
   APPROVED : Read-only to member and manager
   APPROVED : Eligible for payment
@@ -110,6 +110,31 @@ field never reaches the service in the first place, and the service does not rea
 A transition on one entry never affects its siblings in the same request: a member editing one of five submitted
 days resets that day and leaves the other four `SUBMITTED`.
 
+## Auto-approval
+
+A submission no manager has acted on is approved by the system once it is safe to (`TimesheetAutoApprovalService`,
+daily on `TIMESHEET_AUTO_APPROVAL_CRON`, UTC, default `0 2 * * *`; off unless `TIMESHEET_AUTO_APPROVAL_ENABLED=true`).
+
+The work period is **one submission**: the entries a member submitted together, which share their assignment and exact
+`submittedAt`, running from their earliest to their latest work date - the same period the submitted email shows the
+managers. A submission is approved as a whole only when all of these hold:
+
+1. its hours add up to no more than the expected hours for the period: the assignment's standard hours per day times
+   the weekdays (Monday to Friday) in the period that fall inside the assignment dates - the same figure the payment
+   summary reports as `expectedHours`. Weekend days expect nothing, and an assignment without standard hours is never
+   auto-approved;
+2. the engagement has at least one current manager;
+3. it has been pending approval for at least 7 days since it was submitted (`TIMESHEET_AUTO_APPROVAL_PENDING_DAYS`).
+   Working days are not stored per assignment, so these are calendar days;
+4. none of its work dates is in the future (a period ending today counts as past).
+
+Anything else waits for a manager as before. Entries a manager already approved or returned, or that the member edited
+back to draft, are no longer part of the submission. Approved entries carry `approvedByHandle: "System"`,
+`approvedBy: "system"` and the comment `Auto Approved by the system`; the audit records are `APPROVED` with actor role
+`SYSTEM`. The approval is guarded on every entry still being submitted at that `submittedAt`, so a manager approving at
+the same moment, or a second API instance running the same schedule, matches nothing and is skipped - no entry is
+approved twice and no email goes out twice. Each run logs how many submissions it approved and why it left the rest.
+
 ## Concurrent approval
 
 Approval is a single conditional update guarded on the entries still being `SUBMITTED`, and that guard is the
@@ -169,6 +194,7 @@ email failure is logged and never fails the mutation; an email whose template ID
 | `engagement.timesheet.unsubmitted` | a submitted entry was edited and reset to draft | the member | `SENDGRID_TIMESHEET_RESUBMISSION_REQUIRED_TEMPLATE_ID` |
 | `engagement.timesheet.approved` | entries approved | the member | `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` |
 | `engagement.timesheet.reopened` | an administrator reopened approved entries | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "reopened"`) |
+| `engagement.timesheet.auto-approved` | the system auto-approved a submission | every current manager, separately, and the member | `SENDGRID_TIMESHEET_AUTO_APPROVED_MANAGER_TEMPLATE_ID` and `SENDGRID_TIMESHEET_AUTO_APPROVED_MEMBER_TEMPLATE_ID` (templates in [`emails/timesheet-auto-approved-manager.html`](./emails/timesheet-auto-approved-manager.html) and [`emails/timesheet-auto-approved-member.html`](./emails/timesheet-auto-approved-member.html)) |
 | `engagement.timesheet.returned-for-corrections` | a manager returned submitted entries for corrections | the member | `SENDGRID_TIMESHEET_RETURNED_FOR_CORRECTIONS_TEMPLATE_ID` (template in [`emails/timesheet-returned-for-corrections.html`](./emails/timesheet-returned-for-corrections.html)) |
 | `engagement.timesheet.reverted-to-draft` | an administrator moved submitted entries back to draft | the member | `SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID` (template in [`emails/timesheet-reverted-to-draft.html`](./emails/timesheet-reverted-to-draft.html)) |
 | `engagement.timesheet.overridden` | an administrator changed an approved entry | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "modified"`) |

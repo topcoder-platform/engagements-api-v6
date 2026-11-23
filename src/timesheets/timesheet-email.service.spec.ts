@@ -43,6 +43,10 @@ describe("TimesheetEmailService", () => {
       SENDGRID_TIMESHEET_RESUBMISSION_REQUIRED_TEMPLATE_ID:
         "resubmission-template",
       SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID: "approved-template",
+      SENDGRID_TIMESHEET_AUTO_APPROVED_MANAGER_TEMPLATE_ID:
+        "auto-approved-manager-template",
+      SENDGRID_TIMESHEET_AUTO_APPROVED_MEMBER_TEMPLATE_ID:
+        "auto-approved-member-template",
       SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID: "admin-changed-template",
       SENDGRID_TIMESHEET_RETURNED_FOR_CORRECTIONS_TEMPLATE_ID:
         "returned-for-corrections-template",
@@ -191,6 +195,60 @@ describe("TimesheetEmailService", () => {
           "https://engagements.topcoder-dev.com/eng1/timesheets/asg1",
       }),
     );
+  });
+
+  it("emails every manager and the member, each their own template, when the system auto-approves", async () => {
+    await service.sendForEvent(TimesheetEventTopics.AutoApproved, {
+      ...payload,
+      actorUserId: "system",
+      actorHandle: "System",
+      actorRole: "SYSTEM",
+      comment: "Auto Approved by the system",
+    });
+
+    const sent = eventBusService.postEvent.mock.calls.map(
+      ([, message]: [string, any]) => ({
+        template: message.sendgrid_template_id,
+        to: message.recipients,
+      }),
+    );
+    expect(sent).toEqual([
+      { template: "auto-approved-manager-template", to: ["mary@example.com"] },
+      { template: "auto-approved-manager-template", to: ["pete@example.com"] },
+      { template: "auto-approved-member-template", to: ["john@example.com"] },
+    ]);
+
+    const [, managerMessage] = eventBusService.postEvent.mock.calls[0];
+    expect(managerMessage.data).toEqual(
+      expect.objectContaining({
+        engagementTitle: "Senior Frontend Engineer",
+        managerDisplayNames: "Mary Jones (maryj), petek",
+        workPeriod: "14-09-2026 - 15-09-2026",
+        totalHours: "15.50",
+        actorHandle: "System",
+        actorDisplayName: "System",
+        comment: "Auto Approved by the system",
+      }),
+    );
+    // The system is not a member, so it is never looked up by name.
+    expect(memberService.getMemberNamesByUserIds).not.toHaveBeenCalledWith(
+      expect.arrayContaining(["system"]),
+    );
+  });
+
+  it("still emails the member when the manager template for auto-approval is not configured", async () => {
+    delete config.SENDGRID_TIMESHEET_AUTO_APPROVED_MANAGER_TEMPLATE_ID;
+
+    await service.sendForEvent(TimesheetEventTopics.AutoApproved, {
+      ...payload,
+      actorUserId: "system",
+      actorHandle: "System",
+    });
+
+    expect(eventBusService.postEvent).toHaveBeenCalledTimes(1);
+    expect(
+      eventBusService.postEvent.mock.calls[0][1].sendgrid_template_id,
+    ).toBe("auto-approved-member-template");
   });
 
   it("uses a manager's stored name and only looks up the names it is missing", async () => {

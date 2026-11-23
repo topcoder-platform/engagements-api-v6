@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+  <title>The timesheets for your Topcoder engagement have been Auto approved!</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; display: block; }
+    a { color: #007d79; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    @media only screen and (max-width: 699px) {
+      .tc-wrapper { width: 100% !important; }
+      .tc-gutter { padding-left: 16px !important; padding-right: 16px !important; }
+      .tc-header-top { padding-top: 32px !important; }
+      .tc-browser-link { display: none !important; }
+      .tc-card { padding: 20px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f5f7fa;">
+  <!-- Preheader: shown in the inbox preview, hidden in the email body -->
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#f5f7fa; opacity:0;">
+    Your timesheets for {{engagementTitle}} were auto approved.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f7fa;">
+    <tr>
+      <td align="center" class="tc-gutter" style="padding:0 46px;">
+        <!--[if mso]><table role="presentation" width="608" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+        <table role="presentation" class="tc-wrapper" width="608" cellpadding="0" cellspacing="0" border="0" style="width:608px; max-width:608px;">
+
+          <!-- Header -->
+          <tr>
+            <td class="tc-header-top" style="padding:64px 0 8px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="top" align="left">
+                    <a href="https://www.topcoder.com" target="_blank" style="text-decoration:none;">
+                      <img src="https://cdn.mcauto-images-production.sendgrid.net/a5c0eaad02bb03cd/8b829ac9-6d40-4cce-bb56-a35df6a79fd9/408x96.png" width="204" height="48" alt="Topcoder, a Wipro company" style="display:block; width:204px; height:48px; border:0;">
+                    </a>
+                  </td>
+                  {{#if viewInBrowserUrl}}
+                  <td valign="top" align="right" class="tc-browser-link" style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:23px; color:#6f6f6f; white-space:nowrap;">
+                    <a href="{{viewInBrowserUrl}}" target="_blank" style="color:#6f6f6f; text-decoration:none;">View this email in your browser</a>
+                  </td>
+                  {{/if}}
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr><td height="20" style="height:20px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+          <!-- Content card -->
+          <tr>
+            <td class="tc-card" style="background-color:#ffffff; border-radius:8px; padding:24px; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#161616;">
+              <p style="margin:0 0 16px 0;">Hi {{#if recipientHandle}}{{recipientHandle}}{{else}}there{{/if}},</p>
+
+              <p style="margin:0 0 16px 0;">The following timesheets have been auto approved.</p>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:24px; color:#161616;">
+                <tr>
+                  <td style="padding:0 16px 8px 0; font-weight:bold; vertical-align:top; white-space:nowrap;">Engagement Name:</td>
+                  <td style="padding:0 0 8px 0; vertical-align:top;">{{engagementTitle}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:0 16px 8px 0; font-weight:bold; vertical-align:top; white-space:nowrap;">Managers:</td>
+                  <td style="padding:0 0 8px 0; vertical-align:top;">{{#if managerDisplayNames}}{{managerDisplayNames}}{{else}}-{{/if}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:0 16px 8px 0; font-weight:bold; vertical-align:top; white-space:nowrap;">Period:</td>
+                  <td style="padding:0 0 8px 0; vertical-align:top;">{{workPeriod}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:0 16px 8px 0; font-weight:bold; vertical-align:top; white-space:nowrap;">Total Hours:</td>
+                  <td style="padding:0 0 8px 0; vertical-align:top;">{{totalHours}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:0 16px 8px 0; font-weight:bold; vertical-align:top; white-space:nowrap;">Approved By:</td>
+                  <td style="padding:0 0 8px 0; vertical-align:top;">System</td>
+                </tr>
+                <tr>
+                  <td style="padding:0 16px 8px 0; font-weight:bold; vertical-align:top; white-space:nowrap;">Comment:</td>
+                  <td style="padding:0 0 8px 0; vertical-align:top;">{{comment}}</td>
+                </tr>
+              </table>
+
+              <!-- Button -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
+                <tr>
+                  <td align="center" bgcolor="#137d60" style="border-radius:4px; background-color:#137d60;">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{timesheetUrl}}" style="height:40px; v-text-anchor:middle; width:220px;" arcsize="10%" stroke="f" fillcolor="#137d60">
+                      <center style="color:#ffffff; font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold;">View Timesheets</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="{{timesheetUrl}}" target="_blank" style="display:inline-block; padding:10px 24px; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:20px; font-weight:bold; color:#ffffff; text-decoration:none; border-radius:4px;">View Timesheets</a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 24px 0; font-size:12px; line-height:16px; color:#6f6f6f; word-break:break-all;">If the button doesn&rsquo;t work, copy this link into your browser: <a href="{{timesheetUrl}}" target="_blank" style="color:#007d79;">{{timesheetUrl}}</a></p>
+
+              <p style="margin:0 0 24px 0;">(Payments will be credited to your Topcoder account based on approved timesheet hours.)</p>
+
+              <p style="margin:0 0 24px 0;">If you have any questions or concerns about this email, please feel free to reach out to support at <a href="https://support.topcoder.com" target="_blank" style="color:#007d79;">support.topcoder.com</a></p>
+
+              <p style="margin:0;">Thanks,<br>Topcoder</p>
+            </td>
+          </tr>
+
+          <tr><td height="20" style="height:20px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:16px 4px 24px 4px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:0 8px;">
+                    <a href="https://www.facebook.com/topcoder" target="_blank"><img src="https://cdn.mcauto-images-production.sendgrid.net/a5c0eaad02bb03cd/a2cc0063-38ef-4580-90e9-18734fecf40d/64x64.png" width="32" height="32" alt="Facebook" style="display:block; width:32px; height:32px; border:0;"></a>
+                  </td>
+                  <td style="padding:0 8px;">
+                    <a href="https://www.youtube.com/c/TopcoderOfficial" target="_blank"><img src="https://cdn.mcauto-images-production.sendgrid.net/a5c0eaad02bb03cd/e19e158e-0729-4456-8a34-9500bd2bfa8c/64x64.png" width="32" height="32" alt="YouTube" style="display:block; width:32px; height:32px; border:0;"></a>
+                  </td>
+                  <td style="padding:0 8px;">
+                    <a href="https://www.linkedin.com/company/topcoder" target="_blank"><img src="https://cdn.mcauto-images-production.sendgrid.net/a5c0eaad02bb03cd/ed416f2d-d363-4bd0-b8c2-ab6e301b892c/64x64.png" width="32" height="32" alt="LinkedIn" style="display:block; width:32px; height:32px; border:0;"></a>
+                  </td>
+                  <td style="padding:0 8px;">
+                    <a href="https://twitter.com/topcoder" target="_blank"><img src="https://cdn.mcauto-images-production.sendgrid.net/a5c0eaad02bb03cd/9716e77e-c673-4280-9237-aeaea601f1c1/64x64.png" width="32" height="32" alt="Twitter" style="display:block; width:32px; height:32px; border:0;"></a>
+                  </td>
+                  <td style="padding:0 8px;">
+                    <a href="https://www.instagram.com/topcoder" target="_blank"><img src="https://cdn.mcauto-images-production.sendgrid.net/a5c0eaad02bb03cd/70102ca0-562d-40f1-a0bd-e9db02544076/64x64.png" width="32" height="32" alt="Instagram" style="display:block; width:32px; height:32px; border:0;"></a>
+                  </td>
+                  <td style="padding:0 8px;">
+                    <a href="https://discord.com/invite/topcoder" target="_blank"><img src="https://cdn.mcauto-images-production.sendgrid.net/a5c0eaad02bb03cd/f1f32e81-b190-49eb-9e3d-14923ac85d7a/64x64.png" width="32" height="32" alt="Discord" style="display:block; width:32px; height:32px; border:0;"></a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:0 4px 40px 4px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:16px; color:#161616;">
+              Copyright &copy; 2026 Topcoder, All rights reserved.
+            </td>
+          </tr>
+
+        </table>
+        <!--[if mso]></td></tr></table><![endif]-->
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

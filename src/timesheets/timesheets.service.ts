@@ -56,6 +56,7 @@ import {
   TimesheetEventsService,
   TimesheetEventPayload,
 } from "./timesheet-events.service";
+import { computeExpectedHours } from "./timesheet-dates.util";
 import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -1091,55 +1092,8 @@ export class TimesheetsService {
       alreadyPaidEntryIds: alreadyPaid.map((entry) => entry.id),
       approvedHours: sumHours(approved),
       paidHours: sumHours(paid),
-      expectedHours: this.expectedHours(context.assignment, fromDate, toDate),
+      expectedHours: computeExpectedHours(context.assignment, fromDate, toDate),
     };
-  }
-
-  /**
-   * Standard hours per day times the weekdays (Monday to Friday) in the period, counting only days
-   * inside the assignment's start and end dates.
-   */
-  private expectedHours(
-    assignment: EngagementAssignment,
-    fromDate?: Date,
-    toDate?: Date,
-  ): string | null {
-    // Older assignments only carry the deprecated weekly figure; a working week is five days.
-    const hoursPerDay =
-      assignment.standardHoursPerDay ??
-      (assignment.standardHoursPerWeek
-        ? assignment.standardHoursPerWeek / 5
-        : null);
-
-    if (!fromDate || !toDate || !hoursPerDay || hoursPerDay <= 0) {
-      return null;
-    }
-
-    const assignmentStart = assignment.startDate
-      ? toWorkDate(toDateString(assignment.startDate))
-      : undefined;
-    const assignmentEnd = assignment.endDate
-      ? toWorkDate(toDateString(assignment.endDate))
-      : undefined;
-    const start = Math.max(fromDate.getTime(), assignmentStart?.getTime() ?? 0);
-    const end = Math.min(
-      toDate.getTime(),
-      assignmentEnd?.getTime() ?? Number.POSITIVE_INFINITY,
-    );
-
-    if (start > end) {
-      return null;
-    }
-
-    let weekdays = 0;
-    for (let day = start; day <= end; day += DAY_IN_MS) {
-      const dayOfWeek = new Date(day).getUTCDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        weekdays += 1;
-      }
-    }
-
-    return new Prisma.Decimal(hoursPerDay).times(weekdays).toFixed(2);
   }
 
   /**

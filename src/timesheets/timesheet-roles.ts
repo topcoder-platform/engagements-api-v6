@@ -16,11 +16,12 @@ export type TimesheetViewerRole =
 
 /**
  * Who performed an audited action. Machine tokens are recorded as MACHINE so an automated write is
- * never indistinguishable from a person's.
+ * never indistinguishable from a person's, and the API's own scheduled work (auto-approval) as SYSTEM.
  */
 export const TimesheetActorRole = {
   ...TimesheetViewerRole,
   Machine: "MACHINE",
+  System: "SYSTEM",
 } as const;
 
 export type TimesheetActorRole =

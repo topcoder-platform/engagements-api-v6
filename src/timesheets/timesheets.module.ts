@@ -9,6 +9,7 @@ import { PendingSubmissionTimesheetsController } from "./pending-submission-time
 import { PendingSubmissionTimesheetsService } from "./pending-submission-timesheets.service";
 import { TimesheetAccessService } from "./timesheet-access.service";
 import { TimesheetAuditService } from "./timesheet-audit.service";
+import { TimesheetAutoApprovalService } from "./timesheet-auto-approval.service";
 import { TimesheetEmailService } from "./timesheet-email.service";
 import { TimesheetEventsService } from "./timesheet-events.service";
 import { TimesheetEngagementsController } from "./timesheet-engagements.controller";
@@ -34,6 +35,7 @@ import { TimesheetsService } from "./timesheets.service";
     PendingSubmissionTimesheetsService,
     TimesheetAccessService,
     TimesheetAuditService,
+    TimesheetAutoApprovalService,
     TimesheetEmailService,
     TimesheetEventsService,
     TimesheetsService,
