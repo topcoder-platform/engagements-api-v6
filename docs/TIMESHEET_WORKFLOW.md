@@ -20,6 +20,7 @@ stateDiagram-v2
 
   SUBMITTED : Awaiting a manager
   SUBMITTED --> DRAFT : Member edits hours or remarks\n(resubmission required)
+  SUBMITTED --> DRAFT : Manager returns for corrections (corrections required)\nreturnedAt is set until resubmitted
   SUBMITTED --> APPROVED : Any assigned manager approves (comment required)\nAdministrator approves on behalf (reason required)
 
   APPROVED : Read-only to member and manager
@@ -29,12 +30,16 @@ stateDiagram-v2
   APPROVED --> [*]
 ```
 
-There is deliberately **no rejection status**. A manager who disagrees with an entry asks the member to edit it,
-which returns it to `DRAFT`, or escalates to an administrator. Adding `REJECTED` would have to answer every
+There is deliberately **no rejection status**. A manager who disagrees with an entry returns it for corrections,
+which sends it back to `DRAFT` with the corrections to make, or escalates to an administrator. Adding `REJECTED` would have to answer every
 question `DRAFT` already answers - can a member edit it, can a manager approve it - with the same answers.
 
 Reopening likewise returns an entry to `DRAFT` rather than introducing a fourth status. The fact that the entry
 was once approved survives in `reopenedAt` plus the `REOPENED` audit record, which is what the UI badges from.
+
+Returning for corrections works the same way. The entry goes back to `DRAFT` with `returnedAt`, `returnedByHandle`
+and `returnComment` set, which is what shows it as "Returned for Corrections" with what to fix. The member edits and
+resubmits it like any draft, and resubmitting clears those fields; the request stays on the `RETURNED` audit record.
 
 ## Status semantics
 
@@ -78,6 +83,7 @@ assignment exists, which is enough to enumerate assignment ids by probing.
 | Edit an approved entry | `409` | `409` | yes, reason required | `404` |
 | Submit | yes | `403` | yes, reason required | `404` |
 | Approve | `403` | yes, comment required | yes, reason + comment required | `404` |
+| Return a submitted entry for corrections | `403` | yes, corrections required | yes, reason + corrections required | `404` |
 | Reopen an approved entry | `403` | `403` | yes, reason required | `404` |
 | List timesheets (landing) | n/a | own engagements only | all eligible | empty or `403` |
 | Read an entry's audit history | `403` | `403` | yes | `404` |
@@ -163,6 +169,7 @@ email failure is logged and never fails the mutation; an email whose template ID
 | `engagement.timesheet.unsubmitted` | a submitted entry was edited and reset to draft | the member | `SENDGRID_TIMESHEET_RESUBMISSION_REQUIRED_TEMPLATE_ID` |
 | `engagement.timesheet.approved` | entries approved | the member | `SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID` |
 | `engagement.timesheet.reopened` | an administrator reopened approved entries | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "reopened"`) |
+| `engagement.timesheet.returned-for-corrections` | a manager returned submitted entries for corrections | the member | `SENDGRID_TIMESHEET_RETURNED_FOR_CORRECTIONS_TEMPLATE_ID` (template in [`emails/timesheet-returned-for-corrections.html`](./emails/timesheet-returned-for-corrections.html)) |
 | `engagement.timesheet.reverted-to-draft` | an administrator moved submitted entries back to draft | the member | `SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID` (template in [`emails/timesheet-reverted-to-draft.html`](./emails/timesheet-reverted-to-draft.html)) |
 | `engagement.timesheet.overridden` | an administrator changed an approved entry | the member | `SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID` (`changeType: "modified"`) |
 

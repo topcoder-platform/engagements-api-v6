@@ -44,6 +44,8 @@ describe("TimesheetEmailService", () => {
         "resubmission-template",
       SENDGRID_TIMESHEET_APPROVED_TEMPLATE_ID: "approved-template",
       SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID: "admin-changed-template",
+      SENDGRID_TIMESHEET_RETURNED_FOR_CORRECTIONS_TEMPLATE_ID:
+        "returned-for-corrections-template",
       SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID:
         "reverted-to-draft-template",
       SENDGRID_ENGAGEMENT_MANAGER_ASSIGNED_TEMPLATE_ID:
@@ -135,6 +137,11 @@ describe("TimesheetEmailService", () => {
     [TimesheetEventTopics.Approved, "approved-template", undefined],
     [TimesheetEventTopics.Reopened, "admin-changed-template", "reopened"],
     [TimesheetEventTopics.AdminOverride, "admin-changed-template", "modified"],
+    [
+      TimesheetEventTopics.ReturnedForCorrections,
+      "returned-for-corrections-template",
+      undefined,
+    ],
     [
       TimesheetEventTopics.RevertedToDraft,
       "reverted-to-draft-template",

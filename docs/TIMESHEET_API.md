@@ -192,6 +192,19 @@ Sets `status = DRAFT` and `reopenedAt`, clears `approvedAt`/`approvedBy`/`approv
 A reopened entry returns to `DRAFT` rather than gaining a fourth status; `reopenedAt` is what the UI badges
 `Reopened` from.
 
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/return`
+
+`{ "entryIds": ["..."], "returnComment": "required", "overrideReason": "administrators only" }`.
+
+Returns submitted entries to the member for corrections. Callable by an assigned manager or a TM; an administrator
+must also send `overrideReason`. Members get `403`. Sets `status = DRAFT`, clears `submittedAt`/`submittedBy` and
+sets `returnedAt`, `returnedBy`, `returnedByHandle` and `returnComment`; hours and remarks are kept. Every entry has to
+be `SUBMITTED` (`400` otherwise), and the update is guarded on that status, so if another manager approves one of them
+meanwhile nothing is returned (`409`). Audit `RETURNED` per entry, carrying the corrections. The member is emailed
+(`engagement.timesheet.returned-for-corrections`). Returns the refreshed timesheet.
+
+Submitting a returned entry again clears the `returned*` fields.
+
 ### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/revert-to-draft`
 
 Administrators only. `{ "entryIds": ["..."], "reason": "required" }`.

@@ -174,6 +174,7 @@ export const TimesheetAuditAction: {
   UNSUBMITTED: 'UNSUBMITTED',
   APPROVED: 'APPROVED',
   REOPENED: 'REOPENED',
+  RETURNED: 'RETURNED',
   ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
   PAYMENT_LINKED: 'PAYMENT_LINKED',
   MANAGER_ASSIGNED: 'MANAGER_ASSIGNED',
@@ -12497,6 +12498,10 @@ export namespace Prisma {
     approvedByHandle: string | null
     approvalComment: string | null
     reopenedAt: Date | null
+    returnedAt: Date | null
+    returnedBy: string | null
+    returnedByHandle: string | null
+    returnComment: string | null
     paidPaymentReference: string | null
     paidAt: Date | null
     createdAt: Date | null
@@ -12519,6 +12524,10 @@ export namespace Prisma {
     approvedByHandle: string | null
     approvalComment: string | null
     reopenedAt: Date | null
+    returnedAt: Date | null
+    returnedBy: string | null
+    returnedByHandle: string | null
+    returnComment: string | null
     paidPaymentReference: string | null
     paidAt: Date | null
     createdAt: Date | null
@@ -12541,6 +12550,10 @@ export namespace Prisma {
     approvedByHandle: number
     approvalComment: number
     reopenedAt: number
+    returnedAt: number
+    returnedBy: number
+    returnedByHandle: number
+    returnComment: number
     paidPaymentReference: number
     paidAt: number
     createdAt: number
@@ -12573,6 +12586,10 @@ export namespace Prisma {
     approvedByHandle?: true
     approvalComment?: true
     reopenedAt?: true
+    returnedAt?: true
+    returnedBy?: true
+    returnedByHandle?: true
+    returnComment?: true
     paidPaymentReference?: true
     paidAt?: true
     createdAt?: true
@@ -12595,6 +12612,10 @@ export namespace Prisma {
     approvedByHandle?: true
     approvalComment?: true
     reopenedAt?: true
+    returnedAt?: true
+    returnedBy?: true
+    returnedByHandle?: true
+    returnComment?: true
     paidPaymentReference?: true
     paidAt?: true
     createdAt?: true
@@ -12617,6 +12638,10 @@ export namespace Prisma {
     approvedByHandle?: true
     approvalComment?: true
     reopenedAt?: true
+    returnedAt?: true
+    returnedBy?: true
+    returnedByHandle?: true
+    returnComment?: true
     paidPaymentReference?: true
     paidAt?: true
     createdAt?: true
@@ -12726,6 +12751,10 @@ export namespace Prisma {
     approvedByHandle: string | null
     approvalComment: string | null
     reopenedAt: Date | null
+    returnedAt: Date | null
+    returnedBy: string | null
+    returnedByHandle: string | null
+    returnComment: string | null
     paidPaymentReference: string | null
     paidAt: Date | null
     createdAt: Date
@@ -12767,6 +12796,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12792,6 +12825,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12815,6 +12852,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12838,6 +12879,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12846,7 +12891,7 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementTimesheetEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementAssignmentId" | "workDate" | "hoursWorked" | "remarks" | "status" | "submittedAt" | "submittedBy" | "approvedAt" | "approvedBy" | "approvedByHandle" | "approvalComment" | "reopenedAt" | "paidPaymentReference" | "paidAt" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementTimesheetEntry"]>
+  export type EngagementTimesheetEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementAssignmentId" | "workDate" | "hoursWorked" | "remarks" | "status" | "submittedAt" | "submittedBy" | "approvedAt" | "approvedBy" | "approvedByHandle" | "approvalComment" | "reopenedAt" | "returnedAt" | "returnedBy" | "returnedByHandle" | "returnComment" | "paidPaymentReference" | "paidAt" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementTimesheetEntry"]>
   export type EngagementTimesheetEntryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
     auditRecords?: boolean | EngagementTimesheetEntry$auditRecordsArgs<ExtArgs>
@@ -12892,6 +12937,15 @@ export namespace Prisma {
        * what lets the UI badge it "Reopened" without the state machine growing a fourth status.
        */
       reopenedAt: Date | null
+      /**
+       * Set when a manager returns a submitted entry for corrections. The entry goes back to DRAFT, so the
+       * member can edit and resubmit it as usual; these fields are what lets every view show it as
+       * "Returned for Corrections" with what to fix. Resubmitting clears them.
+       */
+      returnedAt: Date | null
+      returnedBy: string | null
+      returnedByHandle: string | null
+      returnComment: string | null
       paidPaymentReference: string | null
       paidAt: Date | null
       createdAt: Date
@@ -13336,6 +13390,10 @@ export namespace Prisma {
     readonly approvedByHandle: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly approvalComment: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly reopenedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly returnedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly returnedBy: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly returnedByHandle: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly returnComment: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly paidPaymentReference: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly paidAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
     readonly createdAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
@@ -16297,6 +16355,10 @@ export namespace Prisma {
     approvedByHandle: 'approvedByHandle',
     approvalComment: 'approvalComment',
     reopenedAt: 'reopenedAt',
+    returnedAt: 'returnedAt',
+    returnedBy: 'returnedBy',
+    returnedByHandle: 'returnedByHandle',
+    returnComment: 'returnComment',
     paidPaymentReference: 'paidPaymentReference',
     paidAt: 'paidAt',
     createdAt: 'createdAt',
@@ -17708,6 +17770,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
@@ -17732,6 +17798,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrderInput | SortOrder
     approvalComment?: SortOrderInput | SortOrder
     reopenedAt?: SortOrderInput | SortOrder
+    returnedAt?: SortOrderInput | SortOrder
+    returnedBy?: SortOrderInput | SortOrder
+    returnedByHandle?: SortOrderInput | SortOrder
+    returnComment?: SortOrderInput | SortOrder
     paidPaymentReference?: SortOrderInput | SortOrder
     paidAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -17760,6 +17830,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
@@ -17784,6 +17858,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrderInput | SortOrder
     approvalComment?: SortOrderInput | SortOrder
     reopenedAt?: SortOrderInput | SortOrder
+    returnedAt?: SortOrderInput | SortOrder
+    returnedBy?: SortOrderInput | SortOrder
+    returnedByHandle?: SortOrderInput | SortOrder
+    returnComment?: SortOrderInput | SortOrder
     paidPaymentReference?: SortOrderInput | SortOrder
     paidAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -17814,6 +17892,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string
@@ -19156,6 +19238,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -19180,6 +19266,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -19202,6 +19292,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19226,6 +19320,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19249,6 +19347,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -19270,6 +19372,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19292,6 +19398,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20718,6 +20828,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrder
     approvalComment?: SortOrder
     reopenedAt?: SortOrder
+    returnedAt?: SortOrder
+    returnedBy?: SortOrder
+    returnedByHandle?: SortOrder
+    returnComment?: SortOrder
     paidPaymentReference?: SortOrder
     paidAt?: SortOrder
     createdAt?: SortOrder
@@ -20744,6 +20858,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrder
     approvalComment?: SortOrder
     reopenedAt?: SortOrder
+    returnedAt?: SortOrder
+    returnedBy?: SortOrder
+    returnedByHandle?: SortOrder
+    returnComment?: SortOrder
     paidPaymentReference?: SortOrder
     paidAt?: SortOrder
     createdAt?: SortOrder
@@ -20766,6 +20884,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrder
     approvalComment?: SortOrder
     reopenedAt?: SortOrder
+    returnedAt?: SortOrder
+    returnedBy?: SortOrder
+    returnedByHandle?: SortOrder
+    returnComment?: SortOrder
     paidPaymentReference?: SortOrder
     paidAt?: SortOrder
     createdAt?: SortOrder
@@ -22952,6 +23074,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -22974,6 +23100,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -23163,6 +23293,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
@@ -24050,6 +24184,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -24073,6 +24211,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -24181,6 +24323,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24204,6 +24350,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24756,6 +24906,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -24837,6 +24991,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24859,6 +25017,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24881,6 +25043,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string

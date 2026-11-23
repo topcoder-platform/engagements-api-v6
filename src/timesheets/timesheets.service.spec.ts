@@ -11,6 +11,7 @@ import {
   TimesheetEntryStatus,
 } from "@prisma/client";
 import { UserRoles } from "../app-constants";
+import { ERROR_MESSAGES } from "../common/constants";
 import { FinanceService } from "../integrations/finance.service";
 import { MemberService } from "../integrations/member.service";
 import { TimesheetAccessService } from "./timesheet-access.service";
@@ -81,6 +82,10 @@ describe("TimesheetsService", () => {
     approvedByHandle: null,
     approvalComment: null,
     reopenedAt: null,
+    returnedAt: null,
+    returnedBy: null,
+    returnedByHandle: null,
+    returnComment: null,
     paidPaymentReference: null,
     ...overrides,
   });
@@ -1032,6 +1037,38 @@ describe("TimesheetsService", () => {
       );
     });
 
+    it("clears the return for corrections when a returned entry is resubmitted", async () => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry({
+          returnedAt: new Date(),
+          returnedBy: "2002",
+          returnedByHandle: "maryj",
+          returnComment: "Split the hours",
+        }),
+      ]);
+      db.engagementTimesheetEntry.update.mockResolvedValue(
+        entry({ status: TimesheetEntryStatus.SUBMITTED }),
+      );
+
+      await service.submitEntries(
+        "eng1",
+        "asg1",
+        { entryIds: ["entry1"] },
+        member,
+      );
+
+      expect(db.engagementTimesheetEntry.update).toHaveBeenCalledWith({
+        where: { id: "entry1" },
+        data: expect.objectContaining({
+          status: TimesheetEntryStatus.SUBMITTED,
+          returnedAt: null,
+          returnedBy: null,
+          returnedByHandle: null,
+          returnComment: null,
+        }),
+      });
+    });
+
     it("submits nothing when one entry is not a draft", async () => {
       db.engagementTimesheetEntry.findMany.mockResolvedValue([
         entry({ id: "ok" }),
@@ -1438,6 +1475,139 @@ describe("TimesheetsService", () => {
         service.reopenEntries("eng1", "asg1", reopenPayload, admin),
       ).rejects.toThrow("Only approved timesheet entries can be reopened");
       expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("returnEntries", () => {
+    const returnPayload = {
+      entryIds: ["entry1", "entry2"],
+      returnComment: "Split the hours between the two projects",
+    };
+    const submitted = (id: string, workDate: string) =>
+      entry({
+        id,
+        workDate: utcDate(workDate),
+        status: TimesheetEntryStatus.SUBMITTED,
+        submittedAt: new Date(),
+        submittedBy: "1001",
+      });
+
+    beforeEach(() => {
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        submitted("entry1", "2026-09-07"),
+        submitted("entry2", "2026-09-08"),
+      ]);
+      db.engagementTimesheetEntry.updateMany.mockResolvedValue({ count: 2 });
+    });
+
+    it("returns submitted entries to draft with the corrections, and emails the member", async () => {
+      withManagerRow();
+
+      await service.returnEntries("eng1", "asg1", returnPayload, manager);
+
+      expect(db.engagementTimesheetEntry.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ["entry1", "entry2"] },
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+        data: expect.objectContaining({
+          status: TimesheetEntryStatus.DRAFT,
+          submittedAt: null,
+          submittedBy: null,
+          returnedBy: "2002",
+          returnedByHandle: "maryj",
+          returnComment: "Split the hours between the two projects",
+        }),
+      });
+      expect(
+        db.engagementTimesheetEntry.updateMany.mock.calls[0][0].data.returnedAt,
+      ).toBeInstanceOf(Date);
+      expect(audit.record).toHaveBeenCalledTimes(2);
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          timesheetEntryId: "entry1",
+          action: TimesheetAuditAction.RETURNED,
+          comment: "Split the hours between the two projects",
+          previousValues: expect.objectContaining({
+            status: TimesheetEntryStatus.SUBMITTED,
+          }),
+          updatedValues: expect.objectContaining({
+            status: TimesheetEntryStatus.DRAFT,
+          }),
+        }),
+      );
+      expect(events.emit).toHaveBeenCalledWith(
+        TimesheetEventTopics.ReturnedForCorrections,
+        expect.objectContaining({
+          entryIds: ["entry1", "entry2"],
+          workDates: ["2026-09-07", "2026-09-08"],
+          totalHours: "17.00",
+          comment: "Split the hours between the two projects",
+        }),
+      );
+    });
+
+    it("lets a TM return entries", async () => {
+      await service.returnEntries("eng1", "asg1", returnPayload, talentManager);
+
+      expect(db.engagementTimesheetEntry.updateMany).toHaveBeenCalled();
+    });
+
+    it("refuses the assignee", async () => {
+      await expect(
+        service.returnEntries("eng1", "asg1", returnPayload, member),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("requires an administrator to give an override reason", async () => {
+      await expect(
+        service.returnEntries("eng1", "asg1", returnPayload, admin),
+      ).rejects.toThrow(ERROR_MESSAGES.TimesheetOverrideReasonRequired);
+
+      await service.returnEntries(
+        "eng1",
+        "asg1",
+        { ...returnPayload, overrideReason: "Manager on leave" },
+        admin,
+      );
+      expect(audit.record).toHaveBeenCalledWith(
+        db,
+        expect.objectContaining({
+          comment:
+            "Split the hours between the two projects (override: Manager on leave)",
+        }),
+      );
+    });
+
+    it("returns nothing when an entry is not submitted", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        submitted("entry1", "2026-09-07"),
+        entry({
+          id: "entry2",
+          status: TimesheetEntryStatus.APPROVED,
+          approvedByHandle: "petek",
+        }),
+      ]);
+
+      await expect(
+        service.returnEntries("eng1", "asg1", returnPayload, manager),
+      ).rejects.toThrow(ERROR_MESSAGES.TimesheetReturnNotSubmitted);
+      expect(db.engagementTimesheetEntry.updateMany).not.toHaveBeenCalled();
+      expect(events.emit).not.toHaveBeenCalled();
+    });
+
+    it("fails without emailing when another manager approves an entry meanwhile", async () => {
+      withManagerRow();
+      db.engagementTimesheetEntry.updateMany.mockResolvedValue({ count: 1 });
+
+      await expect(
+        service.returnEntries("eng1", "asg1", returnPayload, manager),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(audit.record).not.toHaveBeenCalled();
+      expect(events.emit).not.toHaveBeenCalled();
     });
   });
 

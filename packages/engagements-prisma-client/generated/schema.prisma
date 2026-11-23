@@ -82,6 +82,7 @@ enum TimesheetAuditAction {
   UNSUBMITTED
   APPROVED
   REOPENED
+  RETURNED
   ADMIN_OVERRIDE
   PAYMENT_LINKED
   MANAGER_ASSIGNED
@@ -395,6 +396,13 @@ model EngagementTimesheetEntry {
   /// Set when an administrator reopens an approved entry. The entry returns to DRAFT; this field is
   /// what lets the UI badge it "Reopened" without the state machine growing a fourth status.
   reopenedAt       DateTime?
+  /// Set when a manager returns a submitted entry for corrections. The entry goes back to DRAFT, so the
+  /// member can edit and resubmit it as usual; these fields are what lets every view show it as
+  /// "Returned for Corrections" with what to fix. Resubmitting clears them.
+  returnedAt       DateTime?
+  returnedBy       String?
+  returnedByHandle String?
+  returnComment    String?
 
   paidPaymentReference String?
   paidAt               DateTime?

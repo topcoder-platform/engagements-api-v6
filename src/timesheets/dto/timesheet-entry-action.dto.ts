@@ -65,6 +65,31 @@ export class ApproveTimesheetEntriesDto extends TimesheetEntryIdsDto {
   overrideReason?: string;
 }
 
+export class ReturnTimesheetEntriesDto extends TimesheetEntryIdsDto {
+  @ApiProperty({
+    description:
+      "The corrections the member has to make. Required, shown on the returned entries and " +
+      "emailed to the member.",
+    example: "Split the hours between the two projects you worked on",
+  })
+  @IsString()
+  @IsNotEmpty({ message: "returnComment is required." })
+  @MaxLength(1000)
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
+  returnComment: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Required when an administrator returns entries on a manager's behalf. Recorded on the audit trail.",
+    example: "Returned on behalf of maryj while she is on leave",
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  @Transform(trimOrUndefined)
+  overrideReason?: string;
+}
+
 export class RevertTimesheetEntriesToDraftDto extends TimesheetEntryIdsDto {
   @ApiProperty({
     description:

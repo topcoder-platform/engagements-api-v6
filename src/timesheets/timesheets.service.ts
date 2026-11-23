@@ -28,6 +28,7 @@ import {
   LinkTimesheetPaymentDto,
   LinkedTimesheetPaymentDto,
   ReopenTimesheetEntriesDto,
+  ReturnTimesheetEntriesDto,
   RevertTimesheetEntriesToDraftDto,
   SkippedTimesheetEntryDto,
   SubmitTimesheetEntriesDto,
@@ -465,6 +466,12 @@ export class TimesheetsService {
             status: TimesheetEntryStatus.SUBMITTED,
             submittedAt,
             submittedBy: context.actorUserId,
+            // Resubmitting is the answer to a return for corrections, so the entry stops showing as
+            // returned. The request stays on the RETURNED audit record.
+            returnedAt: null,
+            returnedBy: null,
+            returnedByHandle: null,
+            returnComment: null,
             updatedBy: context.actorUserId,
           },
         });
@@ -707,6 +714,116 @@ export class TimesheetsService {
       approved: result.approved.map((entry) => entry.id),
       skipped: result.skipped,
     };
+  }
+
+  /**
+   * Sends submitted entries back to the member for corrections, with what has to change.
+   *
+   * The entries return to DRAFT, so the member edits and resubmits them as they would any draft; the
+   * `returned*` fields are what show them as "Returned for Corrections" until then. Callable by whoever
+   * can approve: an assigned manager or a TM, or an administrator with an override reason.
+   *
+   * All or nothing, like reverting to draft: every entry has to still be submitted, and the update is
+   * guarded on that status, so an entry another manager approves meanwhile fails the whole call instead
+   * of having its approval undone.
+   */
+  async returnEntries(
+    engagementId: string,
+    assignmentId: string,
+    dto: ReturnTimesheetEntriesDto,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetViewResponseDto> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (context.viewerRole === TimesheetViewerRole.Member) {
+      throw new ForbiddenException(ERROR_MESSAGES.TimesheetMemberCannotReturn);
+    }
+
+    if (context.isAdministrator && !dto.overrideReason) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.TimesheetOverrideReasonRequired,
+      );
+    }
+
+    const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+    const notSubmitted = entries.filter(
+      (entry) => entry.status !== TimesheetEntryStatus.SUBMITTED,
+    );
+
+    if (notSubmitted.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetReturnNotSubmitted,
+        entries: notSubmitted.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          currentStatus: entry.status,
+          approvedByHandle: entry.approvedByHandle ?? null,
+        })),
+      });
+    }
+
+    const returnedAt = new Date();
+    await this.db.$transaction(async (tx) => {
+      const { count } = await tx.engagementTimesheetEntry.updateMany({
+        where: {
+          id: { in: entries.map((entry) => entry.id) },
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+        data: {
+          status: TimesheetEntryStatus.DRAFT,
+          submittedAt: null,
+          submittedBy: null,
+          returnedAt,
+          returnedBy: context.actorUserId,
+          returnedByHandle: context.actorHandle,
+          returnComment: dto.returnComment,
+          updatedBy: context.actorUserId,
+        },
+      });
+
+      if (count !== entries.length) {
+        // Throwing rolls the transaction back, so no entry is left half returned.
+        throw new ConflictException(ERROR_MESSAGES.TimesheetReturnConflict);
+      }
+
+      for (const entry of entries) {
+        await this.audit.record(tx, {
+          timesheetEntryId: entry.id,
+          action: TimesheetAuditAction.RETURNED,
+          previousValues: {
+            status: entry.status,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+          },
+          updatedValues: {
+            status: TimesheetEntryStatus.DRAFT,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+            returnedAt: returnedAt.toISOString(),
+          },
+          actorUserId: context.actorUserId,
+          actorHandle: context.actorHandle,
+          actorRole: this.toActorRole(context),
+          comment: context.isAdministrator
+            ? `${dto.returnComment} (override: ${dto.overrideReason})`
+            : dto.returnComment,
+        });
+      }
+    });
+
+    await this.emitEvents(context, [
+      {
+        topic: TimesheetEventTopics.ReturnedForCorrections,
+        entries,
+        comment: dto.returnComment,
+      },
+    ]);
+
+    return this.findTimesheet(engagementId, assignmentId, {}, authUser);
   }
 
   /**
@@ -1783,6 +1900,9 @@ export class TimesheetsService {
       approvalComment: entry.approvalComment ?? null,
       reopenedAt: entry.reopenedAt ?? null,
       reopenComment,
+      returnedAt: entry.returnedAt ?? null,
+      returnedByHandle: entry.returnedByHandle ?? null,
+      returnComment: entry.returnComment ?? null,
       outsideAssignmentWindow: this.isOutsideAssignmentWindow(
         assignment,
         entry.workDate,
