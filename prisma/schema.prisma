@@ -105,6 +105,8 @@ enum EngagementLeadStatus {
   CONVERTED
   REJECTED
   FULFILLED
+  PARTIALLY_FULFILLED
+  ON_HOLD
 }
 
 enum EngagementModel {

@@ -204,7 +204,7 @@ export class EngagementLeadsController {
   @ApiOperation({
     summary: "Update engagement lead status",
     description:
-      "Updates the status of an engagement lead to UNDER_REVIEW, FULFILLED, or REJECTED (Lost). Requires Admin or Talent Manager role.",
+      "Updates the status of an engagement lead to UNDER_REVIEW, FULFILLED, PARTIALLY_FULFILLED, ON_HOLD, or REJECTED (Lost). Requires Admin or Talent Manager role.",
   })
   @ApiResponse({
     status: 200,

@@ -49,10 +49,21 @@ const STATUS_GROUP_STATUSES: Record<
   [EngagementLeadStatusGroup.UNDER_REVIEW]: UNDER_REVIEW_STATUSES,
   [EngagementLeadStatusGroup.FULFILLED]: [EngagementLeadStatus.FULFILLED],
   [EngagementLeadStatusGroup.LOST]: [EngagementLeadStatus.REJECTED],
+  [EngagementLeadStatusGroup.PARTIALLY_FULFILLED]: [
+    EngagementLeadStatus.PARTIALLY_FULFILLED,
+  ],
+  [EngagementLeadStatusGroup.ON_HOLD]: [EngagementLeadStatus.ON_HOLD],
   [EngagementLeadStatusGroup.IN_PROGRESS]: UNDER_REVIEW_STATUSES,
   [EngagementLeadStatusGroup.CONVERTED]: UNDER_REVIEW_STATUSES,
   [EngagementLeadStatusGroup.DECLINED]: [EngagementLeadStatus.REJECTED],
 };
+
+// Partially fulfilled and on hold can be set on a lead in any status, so they are offered on every
+// lead the Talent Manager opens.
+const PARTIAL_AND_ON_HOLD_STATUSES: EngagementLeadStatus[] = [
+  EngagementLeadStatus.PARTIALLY_FULFILLED,
+  EngagementLeadStatus.ON_HOLD,
+];
 
 /** Statuses a Talent Manager can move a lead to, by its current status. */
 const ALLOWED_STATUS_TRANSITIONS: Record<
@@ -63,24 +74,44 @@ const ALLOWED_STATUS_TRANSITIONS: Record<
     EngagementLeadStatus.UNDER_REVIEW,
     EngagementLeadStatus.FULFILLED,
     EngagementLeadStatus.REJECTED,
+    ...PARTIAL_AND_ON_HOLD_STATUSES,
   ],
   [EngagementLeadStatus.REJECTED]: [
     EngagementLeadStatus.UNDER_REVIEW,
     EngagementLeadStatus.FULFILLED,
+    ...PARTIAL_AND_ON_HOLD_STATUSES,
   ],
   [EngagementLeadStatus.UNDER_REVIEW]: [
     EngagementLeadStatus.FULFILLED,
     EngagementLeadStatus.REJECTED,
+    ...PARTIAL_AND_ON_HOLD_STATUSES,
   ],
   [EngagementLeadStatus.QUALIFIED]: [
     EngagementLeadStatus.FULFILLED,
     EngagementLeadStatus.REJECTED,
+    ...PARTIAL_AND_ON_HOLD_STATUSES,
   ],
   [EngagementLeadStatus.CONVERTED]: [
     EngagementLeadStatus.FULFILLED,
     EngagementLeadStatus.REJECTED,
+    ...PARTIAL_AND_ON_HOLD_STATUSES,
   ],
-  [EngagementLeadStatus.FULFILLED]: [EngagementLeadStatus.UNDER_REVIEW],
+  [EngagementLeadStatus.FULFILLED]: [
+    EngagementLeadStatus.UNDER_REVIEW,
+    ...PARTIAL_AND_ON_HOLD_STATUSES,
+  ],
+  [EngagementLeadStatus.PARTIALLY_FULFILLED]: [
+    EngagementLeadStatus.UNDER_REVIEW,
+    EngagementLeadStatus.FULFILLED,
+    EngagementLeadStatus.REJECTED,
+    EngagementLeadStatus.ON_HOLD,
+  ],
+  [EngagementLeadStatus.ON_HOLD]: [
+    EngagementLeadStatus.UNDER_REVIEW,
+    EngagementLeadStatus.FULFILLED,
+    EngagementLeadStatus.REJECTED,
+    EngagementLeadStatus.PARTIALLY_FULFILLED,
+  ],
 };
 
 type EngagementLeadWithNotes = EngagementLead & {
