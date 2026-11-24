@@ -51,6 +51,7 @@ export type EngagementLeadNote = $Result.DefaultSelection<Prisma.$EngagementLead
 /**
  * Model EngagementLeadCalculation
  * A saved Flexi Talent cost calculation for a lead. A lead can have several, e.g. one per resource.
+ * Without a lead it is a general calculation from the Leads page, private to the user who created it.
  * Saving overwrites it, so only the latest values are kept. Only what the user entered is stored:
  * every other value (booking cost, margin, cost transfer...) is recalculated from it.
  */
@@ -11446,7 +11447,7 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationGroupByOutputType = {
     id: string
-    engagementLeadId: string
+    engagementLeadId: string | null
     memberName: string | null
     accountName: string | null
     smu: string | null
@@ -11501,7 +11502,7 @@ export namespace Prisma {
     createdBy?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }, ExtArgs["result"]["engagementLeadCalculation"]>
 
   export type EngagementLeadCalculationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -11522,7 +11523,7 @@ export namespace Prisma {
     createdBy?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }, ExtArgs["result"]["engagementLeadCalculation"]>
 
   export type EngagementLeadCalculationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -11543,7 +11544,7 @@ export namespace Prisma {
     createdBy?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }, ExtArgs["result"]["engagementLeadCalculation"]>
 
   export type EngagementLeadCalculationSelectScalar = {
@@ -11568,23 +11569,23 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementLeadId" | "memberName" | "accountName" | "smu" | "costTransferPercent" | "durationWeeks" | "hoursPerDay" | "referral" | "memberInputField" | "memberInputValue" | "commercialInputField" | "commercialInputValue" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLeadCalculation"]>
   export type EngagementLeadCalculationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }
   export type EngagementLeadCalculationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }
   export type EngagementLeadCalculationIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }
 
   export type $EngagementLeadCalculationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EngagementLeadCalculation"
     objects: {
-      lead: Prisma.$EngagementLeadPayload<ExtArgs>
+      lead: Prisma.$EngagementLeadPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
-      engagementLeadId: string
+      engagementLeadId: string | null
       memberName: string | null
       accountName: string | null
       smu: string | null
@@ -11998,7 +11999,7 @@ export namespace Prisma {
    */
   export interface Prisma__EngagementLeadCalculationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    lead<T extends EngagementLeadDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EngagementLeadDefaultArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    lead<T extends EngagementLeadCalculation$leadArgs<ExtArgs> = {}>(args?: Subset<T, EngagementLeadCalculation$leadArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -12443,6 +12444,25 @@ export namespace Prisma {
      * Limit how many EngagementLeadCalculations to delete.
      */
     limit?: number
+  }
+
+  /**
+   * EngagementLeadCalculation.lead
+   */
+  export type EngagementLeadCalculation$leadArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    where?: EngagementLeadWhereInput
   }
 
   /**
@@ -17641,7 +17661,7 @@ export namespace Prisma {
     OR?: EngagementLeadCalculationWhereInput[]
     NOT?: EngagementLeadCalculationWhereInput | EngagementLeadCalculationWhereInput[]
     id?: StringFilter<"EngagementLeadCalculation"> | string
-    engagementLeadId?: StringFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
@@ -17657,12 +17677,12 @@ export namespace Prisma {
     createdBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     updatedAt?: DateTimeFilter<"EngagementLeadCalculation"> | Date | string
     updatedBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
-    lead?: XOR<EngagementLeadScalarRelationFilter, EngagementLeadWhereInput>
+    lead?: XOR<EngagementLeadNullableScalarRelationFilter, EngagementLeadWhereInput> | null
   }
 
   export type EngagementLeadCalculationOrderByWithRelationInput = {
     id?: SortOrder
-    engagementLeadId?: SortOrder
+    engagementLeadId?: SortOrderInput | SortOrder
     memberName?: SortOrderInput | SortOrder
     accountName?: SortOrderInput | SortOrder
     smu?: SortOrderInput | SortOrder
@@ -17686,7 +17706,7 @@ export namespace Prisma {
     AND?: EngagementLeadCalculationWhereInput | EngagementLeadCalculationWhereInput[]
     OR?: EngagementLeadCalculationWhereInput[]
     NOT?: EngagementLeadCalculationWhereInput | EngagementLeadCalculationWhereInput[]
-    engagementLeadId?: StringFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
@@ -17702,12 +17722,12 @@ export namespace Prisma {
     createdBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     updatedAt?: DateTimeFilter<"EngagementLeadCalculation"> | Date | string
     updatedBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
-    lead?: XOR<EngagementLeadScalarRelationFilter, EngagementLeadWhereInput>
+    lead?: XOR<EngagementLeadNullableScalarRelationFilter, EngagementLeadWhereInput> | null
   }, "id">
 
   export type EngagementLeadCalculationOrderByWithAggregationInput = {
     id?: SortOrder
-    engagementLeadId?: SortOrder
+    engagementLeadId?: SortOrderInput | SortOrder
     memberName?: SortOrderInput | SortOrder
     accountName?: SortOrderInput | SortOrder
     smu?: SortOrderInput | SortOrder
@@ -17735,7 +17755,7 @@ export namespace Prisma {
     OR?: EngagementLeadCalculationScalarWhereWithAggregatesInput[]
     NOT?: EngagementLeadCalculationScalarWhereWithAggregatesInput | EngagementLeadCalculationScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"EngagementLeadCalculation"> | string
-    engagementLeadId?: StringWithAggregatesFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
@@ -19103,12 +19123,12 @@ export namespace Prisma {
     createdBy?: string | null
     updatedAt?: Date | string
     updatedBy?: string | null
-    lead: EngagementLeadCreateNestedOneWithoutCalculationsInput
+    lead?: EngagementLeadCreateNestedOneWithoutCalculationsInput
   }
 
   export type EngagementLeadCalculationUncheckedCreateInput = {
     id?: string
-    engagementLeadId: string
+    engagementLeadId?: string | null
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
@@ -19143,12 +19163,12 @@ export namespace Prisma {
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    lead?: EngagementLeadUpdateOneRequiredWithoutCalculationsNestedInput
+    lead?: EngagementLeadUpdateOneWithoutCalculationsNestedInput
   }
 
   export type EngagementLeadCalculationUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    engagementLeadId?: StringFieldUpdateOperationsInput | string
+    engagementLeadId?: NullableStringFieldUpdateOperationsInput | string | null
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19168,7 +19188,7 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationCreateManyInput = {
     id?: string
-    engagementLeadId: string
+    engagementLeadId?: string | null
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
@@ -19207,7 +19227,7 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    engagementLeadId?: StringFieldUpdateOperationsInput | string
+    engagementLeadId?: NullableStringFieldUpdateOperationsInput | string | null
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
@@ -20679,6 +20699,11 @@ export namespace Prisma {
     not?: NestedEnumLeadCalculationCommercialInputNullableFilter<$PrismaModel> | $Enums.LeadCalculationCommercialInput | null
   }
 
+  export type EngagementLeadNullableScalarRelationFilter = {
+    is?: EngagementLeadWhereInput | null
+    isNot?: EngagementLeadWhereInput | null
+  }
+
   export type EngagementLeadCalculationCountOrderByAggregateInput = {
     id?: SortOrder
     engagementLeadId?: SortOrder
@@ -21704,10 +21729,12 @@ export namespace Prisma {
     set?: $Enums.LeadCalculationCommercialInput | null
   }
 
-  export type EngagementLeadUpdateOneRequiredWithoutCalculationsNestedInput = {
+  export type EngagementLeadUpdateOneWithoutCalculationsNestedInput = {
     create?: XOR<EngagementLeadCreateWithoutCalculationsInput, EngagementLeadUncheckedCreateWithoutCalculationsInput>
     connectOrCreate?: EngagementLeadCreateOrConnectWithoutCalculationsInput
     upsert?: EngagementLeadUpsertWithoutCalculationsInput
+    disconnect?: EngagementLeadWhereInput | boolean
+    delete?: EngagementLeadWhereInput | boolean
     connect?: EngagementLeadWhereUniqueInput
     update?: XOR<XOR<EngagementLeadUpdateToOneWithWhereWithoutCalculationsInput, EngagementLeadUpdateWithoutCalculationsInput>, EngagementLeadUncheckedUpdateWithoutCalculationsInput>
   }
@@ -23673,7 +23700,7 @@ export namespace Prisma {
     OR?: EngagementLeadCalculationScalarWhereInput[]
     NOT?: EngagementLeadCalculationScalarWhereInput | EngagementLeadCalculationScalarWhereInput[]
     id?: StringFilter<"EngagementLeadCalculation"> | string
-    engagementLeadId?: StringFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null

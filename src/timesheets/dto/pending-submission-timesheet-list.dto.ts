@@ -78,6 +78,17 @@ export class PendingSubmissionTimesheetQueryDto extends IntersectionType(
   @IsBoolean()
   @Transform(transformBoolean)
   excludeTestProjects?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      "When true, only assignments on engagements with at least one current manager. Otherwise " +
+      "engagements without a manager are listed too.",
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(transformBoolean)
+  managerAssigned?: boolean;
 }
 
 export class PendingSubmissionTimesheetRowDto {

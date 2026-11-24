@@ -144,6 +144,111 @@ export class EngagementLeadsController {
     return this.engagementLeadsService.findAll(query);
   }
 
+  // General calculations are declared before ":id" so "calculations" is not taken for a lead id.
+  @Get("calculations")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.ReadEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List your general cost calculations",
+    description:
+      "Returns the Flexi Talent cost calculations you saved from the Leads page for no particular " +
+      "lead, oldest first. Each user sees only their own.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Cost calculations retrieved.",
+    type: [EngagementLeadCalculationResponseDto],
+  })
+  async findGeneralCalculations(
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementLeadCalculationResponseDto[]> {
+    this.assertLeadManager(req.authUser);
+    return this.calculationsService.findAllGeneral(
+      getUserIdentifier(req.authUser),
+    );
+  }
+
+  @Post("calculations")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Save a new general cost calculation",
+    description:
+      "Saves a Flexi Talent cost calculation that is not for any lead. Only you can see it.",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Cost calculation saved.",
+    type: EngagementLeadCalculationResponseDto,
+  })
+  async createGeneralCalculation(
+    @Body() saveDto: SaveEngagementLeadCalculationDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementLeadCalculationResponseDto> {
+    this.assertLeadManager(req.authUser);
+    return this.calculationsService.createGeneral(
+      saveDto,
+      getUserIdentifier(req.authUser),
+    );
+  }
+
+  @Put("calculations/:calculationId")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Overwrite one of your general cost calculations",
+    description:
+      "Replaces the calculation's values with the ones sent. Previous values are not kept.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Cost calculation saved.",
+    type: EngagementLeadCalculationResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: "No general cost calculation of yours with this id.",
+  })
+  async updateGeneralCalculation(
+    @Param("calculationId") calculationId: string,
+    @Body() saveDto: SaveEngagementLeadCalculationDto,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<EngagementLeadCalculationResponseDto> {
+    this.assertLeadManager(req.authUser);
+    return this.calculationsService.updateGeneral(
+      calculationId,
+      saveDto,
+      getUserIdentifier(req.authUser),
+    );
+  }
+
+  @Delete("calculations/:calculationId")
+  @HttpCode(204)
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Delete one of your general cost calculations",
+  })
+  @ApiNoContentResponse({
+    description: "Cost calculation deleted.",
+  })
+  @ApiNotFoundResponse({
+    description: "No general cost calculation of yours with this id.",
+  })
+  async deleteGeneralCalculation(
+    @Param("calculationId") calculationId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<void> {
+    this.assertLeadManager(req.authUser);
+    await this.calculationsService.removeGeneral(
+      calculationId,
+      getUserIdentifier(req.authUser),
+    );
+  }
+
   @Get(":id")
   @UseGuards(PermissionsGuard)
   @ScopesDecorator(AppScopes.ReadEngagements)
