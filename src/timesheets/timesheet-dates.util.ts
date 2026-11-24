@@ -93,3 +93,16 @@ export function computeExpectedHours(
 
   return new Prisma.Decimal(hoursPerDay).times(weekdays).toFixed(2);
 }
+
+/**
+ * True when a work date has not started anywhere yet. Work dates are calendar days with no time zone,
+ * and the member's is unknown here, so "today" is taken in the zone furthest ahead (UTC+14): a member
+ * submitting just after midnight local time is never refused for a day that has already begun for them.
+ */
+export function isFutureWorkDate(
+  workDate: Date,
+  now: Date = new Date(),
+): boolean {
+  const latestToday = toWorkDay(new Date(now.getTime() + 14 * 60 * 60 * 1000));
+  return toWorkDay(workDate).getTime() > latestToday.getTime();
+}

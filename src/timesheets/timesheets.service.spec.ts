@@ -1006,6 +1006,28 @@ describe("TimesheetsService", () => {
   });
 
   describe("submitEntries", () => {
+    it("refuses future work dates with the future work period message, submitting nothing", async () => {
+      const future = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      db.engagementTimesheetEntry.findMany.mockResolvedValue([
+        entry(),
+        entry({
+          id: "entry2",
+          workDate: utcDate(future.toISOString().slice(0, 10)),
+        }),
+      ]);
+
+      await expect(
+        service.submitEntries(
+          "eng1",
+          "asg1",
+          { entryIds: ["entry1", "entry2"] },
+          member,
+        ),
+      ).rejects.toThrow(ERROR_MESSAGES.TimesheetSubmitFutureWorkPeriod);
+      expect(db.engagementTimesheetEntry.update).not.toHaveBeenCalled();
+      expect(events.emit).not.toHaveBeenCalled();
+    });
+
     it("submits drafts, recording who and when, and emits the event", async () => {
       const draft = entry();
       db.engagementTimesheetEntry.findMany.mockResolvedValue([draft]);

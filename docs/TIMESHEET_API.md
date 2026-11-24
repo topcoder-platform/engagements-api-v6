@@ -158,6 +158,11 @@ Only `DRAFT` entries with valid hours become `SUBMITTED`, recording `submittedAt
 missing required data is reported per entry and **nothing partially submits** — the call is atomic. An
 administrator may submit on behalf of a member, with a reason. Audit: `SUBMITTED` per entry.
 
+Future work dates can be saved but not submitted: if any selected entry is dated after today, nothing is submitted
+and the `400` message is "You cannot submit timesheets for future work periods. Save your entries and submit them
+once the relevant work period begins." The entries are listed with that reason. "Today" is taken in the zone furthest
+ahead (UTC+14), because the member's time zone is unknown and a day that has begun for them must stay submittable.
+
 ### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/approve`
 
 ```json
