@@ -6,9 +6,10 @@ import { MemberService } from "./member.service";
 /**
  * Publishes applicant status notification emails to the external email pipeline.
  *
- * This service consumes `SENDGRID_UNDER_REVIEW_TEMPLATE_ID` and
- * `SENDGRID_REJECTED_TEMPLATE_ID` to select the SendGrid template used for each
- * status notification.
+ * This service consumes `SENDGRID_UNDER_REVIEW_TEMPLATE_ID`,
+ * `SENDGRID_REJECTED_TEMPLATE_ID` and `SENDGRID_APPLICATION_REVOKED_TEMPLATE_ID` to select the
+ * SendGrid template used for each status notification. REVOKED is sent when an admin removes a
+ * selected assignment the member had not accepted yet, returning the application to SUBMITTED.
  */
 @Injectable()
 export class ApplicationStatusEmailService {
@@ -33,13 +34,14 @@ export class ApplicationStatusEmailService {
    */
   async sendApplicationStatusEmail(params: {
     memberId: string;
-    status: "UNDER_REVIEW" | "REJECTED";
+    status: "UNDER_REVIEW" | "REJECTED" | "REVOKED";
     engagementTitle?: string | null;
   }): Promise<void> {
-    const templateKey =
-      params.status === "UNDER_REVIEW"
-        ? "SENDGRID_UNDER_REVIEW_TEMPLATE_ID"
-        : "SENDGRID_REJECTED_TEMPLATE_ID";
+    const templateKey = {
+      UNDER_REVIEW: "SENDGRID_UNDER_REVIEW_TEMPLATE_ID",
+      REJECTED: "SENDGRID_REJECTED_TEMPLATE_ID",
+      REVOKED: "SENDGRID_APPLICATION_REVOKED_TEMPLATE_ID",
+    }[params.status];
     const templateId = this.configService.get<string>(templateKey);
 
     if (!templateId) {

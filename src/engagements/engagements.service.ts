@@ -30,6 +30,7 @@ import { ProjectService } from "../integrations/project.service";
 import { SkillsService } from "../integrations/skills.service";
 import { AssignmentOfferEmailService } from "../integrations/assignment-offer-email.service";
 import { AssignmentOfferResponseEmailService } from "../integrations/assignment-offer-response-email.service";
+import { ApplicationStatusEmailService } from "../integrations/application-status-email.service";
 import { EngagementMemberAssignedPayload } from "../integrations/types/event-bus.types";
 import {
   CreateEngagementDto,
@@ -321,6 +322,7 @@ export class EngagementsService {
     private readonly assignmentOfferResponseEmailService: AssignmentOfferResponseEmailService,
     private readonly managersService: EngagementManagersService,
     private readonly financeService: FinanceService,
+    private readonly applicationStatusEmailService: ApplicationStatusEmailService,
   ) {}
 
   async create(
@@ -2203,6 +2205,102 @@ export class EngagementsService {
   }
 
   /**
+   * Withdraws an offer the member has not answered yet: removes a SELECTED assignment entirely and
+   * returns the member's application to SUBMITTED, so it is back in the pool to be selected again.
+   *
+   * The assignment is deleted rather than terminated. A terminated assignment is history the member
+   * worked through and still lists under My Assignments; an offer they never accepted is not, and the
+   * engagement has to drop out of their assignments. The member is emailed that their application was
+   * revoked.
+   *
+   * @throws NotFoundException for a missing engagement or assignment, BadRequestException when the
+   * assignment belongs to another engagement, is no longer SELECTED, or already has timesheet entries.
+   */
+  async removeSelectedAssignment(
+    engagementId: string,
+    assignmentId: string,
+    updatedBy?: string,
+  ): Promise<void> {
+    this.logger.debug("Removing selected engagement assignment", {
+      engagementId,
+      assignmentId,
+    });
+
+    const removed = await this.db.$transaction(async (tx) => {
+      const engagement = await tx.engagement.findUnique({
+        where: { id: engagementId },
+        select: { id: true, title: true },
+      });
+
+      if (!engagement) {
+        throw new NotFoundException("Engagement not found.");
+      }
+
+      const assignment = await tx.engagementAssignment.findUnique({
+        where: { id: assignmentId },
+        include: { _count: { select: { timesheetEntries: true } } },
+      });
+
+      if (!assignment) {
+        throw new NotFoundException(ERROR_MESSAGES.AssignmentNotFound);
+      }
+
+      if (assignment.engagementId !== engagementId) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.AssignmentEngagementMismatch,
+        );
+      }
+
+      if (assignment.status !== AssignmentStatus.SELECTED) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.AssignmentRemoveNotSelected,
+        );
+      }
+
+      // Only an accepted assignment can log time, so this should never happen; refusing keeps a
+      // delete from ever taking timesheet history with it.
+      if (assignment._count.timesheetEntries > 0) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.AssignmentRemoveHasTimesheets,
+        );
+      }
+
+      await tx.engagementAssignment.delete({ where: { id: assignmentId } });
+
+      const { count: applicationsReset } =
+        await tx.engagementApplication.updateMany({
+          where: {
+            engagementId,
+            userId: assignment.memberId,
+            status: ApplicationStatus.SELECTED,
+          },
+          data: {
+            status: ApplicationStatus.SUBMITTED,
+            ...(updatedBy ? { updatedBy } : {}),
+          },
+        });
+
+      return {
+        memberId: assignment.memberId,
+        engagementTitle: engagement.title,
+        applicationsReset,
+      };
+    });
+
+    this.logger.log(
+      `Removed selected assignment ${assignmentId} from engagement ${engagementId}; ${removed.applicationsReset} application(s) returned to SUBMITTED.`,
+    );
+
+    // The removal has committed; a failed email is logged by the email service and not worth failing
+    // the request over.
+    await this.applicationStatusEmailService.sendApplicationStatusEmail({
+      memberId: removed.memberId,
+      status: "REVOKED",
+      engagementTitle: removed.engagementTitle,
+    });
+  }
+
+  /**
    * Updates assignment status while preserving its first recorded acceptance date.
    * @param engagementId Owning engagement ID.
    * @param assignmentId Assignment to update.
@@ -2377,8 +2475,7 @@ export class EngagementsService {
         where: { id: assignmentId },
         data: {
           status: nextStatus,
-          ...(nextStatus === AssignmentStatus.ASSIGNED &&
-          !assignment.acceptedAt
+          ...(nextStatus === AssignmentStatus.ASSIGNED && !assignment.acceptedAt
             ? { acceptedAt: new Date() }
             : {}),
         },
