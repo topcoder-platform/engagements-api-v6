@@ -181,6 +181,28 @@ describe("PendingSubmissionTimesheetsService", () => {
       );
     });
 
+    it("lists only engagements with a current manager when asked", async () => {
+      await service.findPendingSubmissions(
+        { ...period, managerAssigned: true, page: 1, perPage: 20 },
+        admin,
+      );
+
+      expect(db.engagementAssignment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            ...expectedPendingWhere,
+            engagement: { managers: { some: { removedAt: null } } },
+          },
+        }),
+      );
+      expect(db.engagementAssignment.count).toHaveBeenCalledWith({
+        where: {
+          ...expectedPendingWhere,
+          engagement: { managers: { some: { removedAt: null } } },
+        },
+      });
+    });
+
     it.each([
       [{ fromDate: "2026-11-13", toDate: "2026-11-09" }],
       [{ fromDate: "2026-10-01", toDate: "2026-11-01" }],
