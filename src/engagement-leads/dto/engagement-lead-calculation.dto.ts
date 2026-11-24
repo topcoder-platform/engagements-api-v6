@@ -116,8 +116,13 @@ export class EngagementLeadCalculationResponseDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty()
-  engagementLeadId: string;
+  @ApiPropertyOptional({
+    description:
+      "The lead the calculation is for; null for a general calculation.",
+    nullable: true,
+    type: String,
+  })
+  engagementLeadId: string | null;
 
   @ApiPropertyOptional()
   memberName: string | null;

@@ -347,11 +347,12 @@ enum LeadCalculationCommercialInput {
 }
 
 /// A saved Flexi Talent cost calculation for a lead. A lead can have several, e.g. one per resource.
+/// Without a lead it is a general calculation from the Leads page, private to the user who created it.
 /// Saving overwrites it, so only the latest values are kept. Only what the user entered is stored:
 /// every other value (booking cost, margin, cost transfer...) is recalculated from it.
 model EngagementLeadCalculation {
   id                   String                          @id @default(uuid())
-  engagementLeadId     String
+  engagementLeadId     String?
   memberName           String?
   accountName          String?
   smu                  String?
@@ -369,9 +370,10 @@ model EngagementLeadCalculation {
   createdBy            String?
   updatedAt            DateTime                        @updatedAt
   updatedBy            String?
-  lead                 EngagementLead                  @relation(fields: [engagementLeadId], references: [id], onDelete: Cascade)
+  lead                 EngagementLead?                 @relation(fields: [engagementLeadId], references: [id], onDelete: Cascade)
 
   @@index([engagementLeadId, createdAt])
+  @@index([createdBy, createdAt])
 }
 
 model EngagementTimesheetEntry {

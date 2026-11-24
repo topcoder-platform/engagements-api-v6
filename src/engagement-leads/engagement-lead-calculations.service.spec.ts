@@ -255,6 +255,70 @@ describe("EngagementLeadCalculationsService", () => {
       expect(db.engagementLeadCalculation.delete).not.toHaveBeenCalled();
     });
   });
+
+  describe("general calculations", () => {
+    it("lists only the user's calculations without a lead", async () => {
+      db.engagementLeadCalculation.findMany.mockResolvedValue([
+        storedCalculation({ engagementLeadId: null, createdBy: "tm-1" }),
+      ]);
+
+      const result = await service.findAllGeneral("tm-1");
+
+      expect(db.engagementLeadCalculation.findMany).toHaveBeenCalledWith({
+        where: { engagementLeadId: null, createdBy: "tm-1" },
+        orderBy: { createdAt: "asc" },
+      });
+      expect(result[0]).toMatchObject({
+        engagementLeadId: null,
+        smu: "Others",
+      });
+    });
+
+    it("saves a calculation without a lead, owned by the user", async () => {
+      await service.createGeneral({ smu: "EURP", durationWeeks: 12 }, "tm-1");
+
+      expect(db.engagementLead.findUnique).not.toHaveBeenCalled();
+      expect(db.engagementLeadCalculation.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          engagementLeadId: null,
+          smu: "EURP",
+          durationWeeks: 12,
+          createdBy: "tm-1",
+          updatedBy: "tm-1",
+        }),
+      });
+    });
+
+    it("updates and deletes only the user's own general calculation", async () => {
+      await service.updateGeneral("calc-1", { smu: "EURP" }, "tm-1");
+      await service.removeGeneral("calc-1", "tm-1");
+
+      expect(db.engagementLeadCalculation.findFirst).toHaveBeenCalledWith({
+        where: { id: "calc-1", engagementLeadId: null, createdBy: "tm-1" },
+        select: { id: true },
+      });
+      expect(db.engagementLeadCalculation.update).toHaveBeenCalledWith({
+        where: { id: "calc-1" },
+        data: expect.objectContaining({ smu: "EURP", updatedBy: "tm-1" }),
+      });
+      expect(db.engagementLeadCalculation.delete).toHaveBeenCalledWith({
+        where: { id: "calc-1" },
+      });
+    });
+
+    it("treats another user's calculation as not found", async () => {
+      db.engagementLeadCalculation.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateGeneral("calc-1", { smu: "EURP" }, "tm-2"),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(
+        service.removeGeneral("calc-1", "tm-2"),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(db.engagementLeadCalculation.update).not.toHaveBeenCalled();
+      expect(db.engagementLeadCalculation.delete).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe("SaveEngagementLeadCalculationDto", () => {
