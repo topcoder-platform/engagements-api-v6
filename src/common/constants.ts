@@ -81,6 +81,12 @@ export const ERROR_MESSAGES = {
   TimesheetManagerCannotDelete: "Managers cannot delete timesheet entries.",
   TimesheetDeleteRejected:
     "Only unpaid draft entries can be deleted, so nothing was deleted.",
+  AssignmentRemoveNotSelected:
+    "Only a selected assignment the member has not accepted yet can be removed. Terminate or complete an accepted assignment instead.",
+  AssignmentRemoveHasTimesheets:
+    "This assignment has timesheet entries, so it cannot be removed. Terminate it instead.",
+  TimesheetSubmitFutureWorkPeriod:
+    "You cannot submit timesheets for future work periods. Save your entries and submit them once the relevant work period begins.",
   TimesheetSubmitRejected:
     "Some entries cannot be submitted, so nothing was submitted.",
   TimesheetDuplicateWorkDate:

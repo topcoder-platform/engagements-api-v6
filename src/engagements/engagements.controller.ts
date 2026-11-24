@@ -189,8 +189,7 @@ export class EngagementsController {
       "appliedByMe=true was requested without an authenticated user id, or ON_HOLD was requested without permission.",
   })
   @ApiForbiddenResponse({
-    description:
-      "M2M tokens cannot use appliedByMe=true.",
+    description: "M2M tokens cannot use appliedByMe=true.",
   })
   async findAll(
     @Query() query: EngagementQueryDto,
@@ -690,6 +689,45 @@ export class EngagementsController {
   ): Promise<void> {
     this.assertAdminOrPm(req.authUser);
     await this.engagementsService.removeAssignment(id, assignmentId);
+  }
+
+  @Delete(":id/assignments/:assignmentId/offer")
+  @UseGuards(PermissionsGuard)
+  @ScopesDecorator(AppScopes.WriteEngagements, AppScopes.ManageEngagements)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Remove a selected assignment",
+    description:
+      "Withdraws an assignment offer the member has not accepted yet. Only SELECTED assignments can be removed: the assignment is deleted, so the engagement drops out of the member's assignments, and the member's application for the engagement returns to SUBMITTED. The member is emailed that their application was revoked (SENDGRID_APPLICATION_REVOKED_TEMPLATE_ID). Requires admin, PM, Task Manager, or Talent Manager role for user tokens, or write:engagements/manage:engagements scope for M2M clients.",
+  })
+  @ApiResponse({
+    status: 204,
+    description: "Selected assignment removed.",
+  })
+  @ApiBadRequestResponse({
+    description:
+      "The assignment belongs to another engagement, is not SELECTED, or has timesheet entries.",
+  })
+  @ApiUnauthorizedResponse({
+    description: "Missing or invalid authentication token.",
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Insufficient permissions. Requires admin/PM/Task Manager/Talent Manager role or write:engagements/manage:engagements scope.",
+  })
+  @ApiNotFoundResponse({ description: "Engagement assignment not found." })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeSelectedAssignment(
+    @Param("id") id: string,
+    @Param("assignmentId") assignmentId: string,
+    @Req() req: Request & { authUser?: Record<string, any> },
+  ): Promise<void> {
+    this.assertAdminOrPm(req.authUser);
+    await this.engagementsService.removeSelectedAssignment(
+      id,
+      assignmentId,
+      getUserIdentifier(req.authUser),
+    );
   }
 
   @Patch(":id/assignments/:assignmentId/status")

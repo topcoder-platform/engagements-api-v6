@@ -119,6 +119,7 @@ describe("EngagementsService", () => {
       assignmentOfferResponseEmailService as any,
       managersService as any,
       financeService as any,
+      { sendApplicationStatusEmail: jest.fn() } as any,
     );
 
   const createDto = {
@@ -277,52 +278,99 @@ describe("EngagementsService", () => {
     jest.useRealTimers();
   });
 
-  it.each([true, false])("records an acceptance date only when the member accepts (accept=%s)", async (accept) => {
-    const now = new Date("2026-10-19T12:00:00.000Z");
-    jest.useFakeTimers().setSystemTime(now);
-    const tx = {
-      engagement: { findUnique: jest.fn().mockResolvedValue({ id: "eng-1" }) },
-      engagementAssignment: {
-        findUnique: jest.fn().mockResolvedValue({ id: "assignment-1", engagementId: "eng-1", memberId: "123", status: AssignmentStatus.SELECTED, acceptedAt: null }),
-        update: jest.fn().mockResolvedValue({ id: "assignment-1" }),
-      },
-    };
-    db.$transaction.mockImplementation((callback: any) => callback(tx));
-    if (accept) {
-      await service.acceptAssignmentOffer("eng-1", "assignment-1", { userId: "123", roles: ["User"] });
-    } else {
-      await service.rejectAssignmentOffer("eng-1", "assignment-1", { userId: "123", roles: ["User"] });
-    }
-    expect(tx.engagementAssignment.update).toHaveBeenCalledWith({
-      where: { id: "assignment-1" },
-      data: accept ? { status: AssignmentStatus.ASSIGNED, acceptedAt: now } : { status: AssignmentStatus.OFFER_REJECTED },
-    });
-  });
+  it.each([true, false])(
+    "records an acceptance date only when the member accepts (accept=%s)",
+    async (accept) => {
+      const now = new Date("2026-10-19T12:00:00.000Z");
+      jest.useFakeTimers().setSystemTime(now);
+      const tx = {
+        engagement: {
+          findUnique: jest.fn().mockResolvedValue({ id: "eng-1" }),
+        },
+        engagementAssignment: {
+          findUnique: jest
+            .fn()
+            .mockResolvedValue({
+              id: "assignment-1",
+              engagementId: "eng-1",
+              memberId: "123",
+              status: AssignmentStatus.SELECTED,
+              acceptedAt: null,
+            }),
+          update: jest.fn().mockResolvedValue({ id: "assignment-1" }),
+        },
+      };
+      db.$transaction.mockImplementation((callback: any) => callback(tx));
+      if (accept) {
+        await service.acceptAssignmentOffer("eng-1", "assignment-1", {
+          userId: "123",
+          roles: ["User"],
+        });
+      } else {
+        await service.rejectAssignmentOffer("eng-1", "assignment-1", {
+          userId: "123",
+          roles: ["User"],
+        });
+      }
+      expect(tx.engagementAssignment.update).toHaveBeenCalledWith({
+        where: { id: "assignment-1" },
+        data: accept
+          ? { status: AssignmentStatus.ASSIGNED, acceptedAt: now }
+          : { status: AssignmentStatus.OFFER_REJECTED },
+      });
+    },
+  );
 
   it.each([
     [AssignmentStatus.SELECTED, AssignmentStatus.ASSIGNED, null, true],
     [AssignmentStatus.ASSIGNED, AssignmentStatus.ASSIGNED, null, false],
-    [AssignmentStatus.ASSIGNED, AssignmentStatus.COMPLETED, new Date("2026-09-01"), false],
-    [AssignmentStatus.COMPLETED, AssignmentStatus.ASSIGNED, new Date("2026-09-01"), false],
-  ])("preserves acceptance history on status change %s -> %s", async (previous, next, acceptedAt, recordsDate) => {
-    const now = new Date("2026-10-19T12:00:00.000Z");
-    jest.useFakeTimers().setSystemTime(now);
-    const tx = {
-      engagement: { findUnique: jest.fn().mockResolvedValue({ id: "eng-1" }) },
-      engagementAssignment: {
-        findUnique: jest.fn().mockResolvedValue({ id: "assignment-1", engagementId: "eng-1", status: previous, acceptedAt }),
-        update: jest.fn().mockResolvedValue({ id: "assignment-1" }),
-      },
-    };
-    db.$transaction.mockImplementation((callback: any) => callback(tx));
-    await service.updateAssignmentStatus("eng-1", "assignment-1", next as AssignmentStatus);
-    const data = tx.engagementAssignment.update.mock.calls[0][0].data;
-    if (recordsDate) {
-      expect(data.acceptedAt).toEqual(now);
-    } else {
-      expect(data).not.toHaveProperty("acceptedAt");
-    }
-  });
+    [
+      AssignmentStatus.ASSIGNED,
+      AssignmentStatus.COMPLETED,
+      new Date("2026-09-01"),
+      false,
+    ],
+    [
+      AssignmentStatus.COMPLETED,
+      AssignmentStatus.ASSIGNED,
+      new Date("2026-09-01"),
+      false,
+    ],
+  ])(
+    "preserves acceptance history on status change %s -> %s",
+    async (previous, next, acceptedAt, recordsDate) => {
+      const now = new Date("2026-10-19T12:00:00.000Z");
+      jest.useFakeTimers().setSystemTime(now);
+      const tx = {
+        engagement: {
+          findUnique: jest.fn().mockResolvedValue({ id: "eng-1" }),
+        },
+        engagementAssignment: {
+          findUnique: jest
+            .fn()
+            .mockResolvedValue({
+              id: "assignment-1",
+              engagementId: "eng-1",
+              status: previous,
+              acceptedAt,
+            }),
+          update: jest.fn().mockResolvedValue({ id: "assignment-1" }),
+        },
+      };
+      db.$transaction.mockImplementation((callback: any) => callback(tx));
+      await service.updateAssignmentStatus(
+        "eng-1",
+        "assignment-1",
+        next as AssignmentStatus,
+      );
+      const data = tx.engagementAssignment.update.mock.calls[0][0].data;
+      if (recordsDate) {
+        expect(data.acceptedAt).toEqual(now);
+      } else {
+        expect(data).not.toHaveProperty("acceptedAt");
+      }
+    },
+  );
 
   it("sets createdBy to system for M2M tokens", async () => {
     const engagement = { id: "eng-1" };
@@ -387,9 +435,7 @@ describe("EngagementsService", () => {
         "Brand New Skill",
         "SKILL-1",
       ]);
-      expect(skillsService.createSkill).toHaveBeenCalledWith(
-        "Brand New Skill",
-      );
+      expect(skillsService.createSkill).toHaveBeenCalledWith("Brand New Skill");
       const data = tx.engagement.create.mock.calls[0][0].data;
       expect(data.requiredSkills).toEqual([
         "skill-1",
@@ -417,9 +463,9 @@ describe("EngagementsService", () => {
         { isMachine: true },
       );
 
-      expect(
-        tx.engagement.create.mock.calls[0][0].data.requiredSkills,
-      ).toEqual(["skill-new"]);
+      expect(tx.engagement.create.mock.calls[0][0].data.requiredSkills).toEqual(
+        ["skill-new"],
+      );
     });
 
     it("looks a name up again when another request created it first", async () => {
@@ -442,9 +488,9 @@ describe("EngagementsService", () => {
         { isMachine: true },
       );
 
-      expect(
-        tx.engagement.create.mock.calls[0][0].data.requiredSkills,
-      ).toEqual(["skill-1", "skill-existing"]);
+      expect(tx.engagement.create.mock.calls[0][0].data.requiredSkills).toEqual(
+        ["skill-1", "skill-existing"],
+      );
     });
 
     it("does not create skills when a sent skill id is invalid", async () => {
@@ -1217,9 +1263,7 @@ describe("EngagementsService", () => {
     });
 
     expect(result).toHaveProperty("requiredSkills", ["skill-1"]);
-    expect(result).toHaveProperty("skills", [
-      { id: "skill-1", name: "React" },
-    ]);
+    expect(result).toHaveProperty("skills", [{ id: "skill-1", name: "React" }]);
     expect(result).not.toHaveProperty("assignments");
   });
 

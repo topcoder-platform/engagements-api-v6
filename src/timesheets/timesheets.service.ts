@@ -56,7 +56,7 @@ import {
   TimesheetEventsService,
   TimesheetEventPayload,
 } from "./timesheet-events.service";
-import { computeExpectedHours } from "./timesheet-dates.util";
+import { computeExpectedHours, isFutureWorkDate } from "./timesheet-dates.util";
 import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -420,6 +420,23 @@ export class TimesheetsService {
     }
 
     const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+
+    // Future days can be saved but not submitted: hours cannot be approved for work not done yet.
+    const futureEntries = entries.filter((entry) =>
+      isFutureWorkDate(entry.workDate),
+    );
+    if (futureEntries.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetSubmitFutureWorkPeriod,
+        entries: futureEntries.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          currentStatus: entry.status,
+          reason: ERROR_MESSAGES.TimesheetSubmitFutureWorkPeriod,
+        })),
+      });
+    }
+
     // Drafts may be saved without remarks, but a manager approving hours needs to know what they
     // were for, so remarks are required by the time an entry is submitted.
     const submitProblem = (entry: EngagementTimesheetEntry): string | null => {
