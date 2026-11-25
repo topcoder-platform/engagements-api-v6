@@ -97,6 +97,10 @@ export class PendingSubmissionTimesheetsService {
     if (testProjectIds.length) {
       engagementFilters.projectId = { notIn: testProjectIds };
     }
+    // Same managers as the Approver column: removed ones do not count.
+    if (query.managerAssigned) {
+      engagementFilters.managers = { some: { removedAt: null } };
+    }
 
     const where: Prisma.EngagementAssignmentWhereInput = {
       ...this.pendingInPeriod(period),

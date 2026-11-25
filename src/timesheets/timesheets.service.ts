@@ -28,6 +28,8 @@ import {
   LinkTimesheetPaymentDto,
   LinkedTimesheetPaymentDto,
   ReopenTimesheetEntriesDto,
+  ReturnTimesheetEntriesDto,
+  RevertTimesheetEntriesToDraftDto,
   SkippedTimesheetEntryDto,
   SubmitTimesheetEntriesDto,
   TimesheetEngagementListResponseDto,
@@ -54,6 +56,7 @@ import {
   TimesheetEventsService,
   TimesheetEventPayload,
 } from "./timesheet-events.service";
+import { computeExpectedHours, isFutureWorkDate } from "./timesheet-dates.util";
 import { TimesheetActorRole, TimesheetViewerRole } from "./timesheet-roles";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -417,6 +420,23 @@ export class TimesheetsService {
     }
 
     const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+
+    // Future days can be saved but not submitted: hours cannot be approved for work not done yet.
+    const futureEntries = entries.filter((entry) =>
+      isFutureWorkDate(entry.workDate),
+    );
+    if (futureEntries.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetSubmitFutureWorkPeriod,
+        entries: futureEntries.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          currentStatus: entry.status,
+          reason: ERROR_MESSAGES.TimesheetSubmitFutureWorkPeriod,
+        })),
+      });
+    }
+
     // Drafts may be saved without remarks, but a manager approving hours needs to know what they
     // were for, so remarks are required by the time an entry is submitted.
     const submitProblem = (entry: EngagementTimesheetEntry): string | null => {
@@ -464,6 +484,12 @@ export class TimesheetsService {
             status: TimesheetEntryStatus.SUBMITTED,
             submittedAt,
             submittedBy: context.actorUserId,
+            // Resubmitting is the answer to a return for corrections, so the entry stops showing as
+            // returned. The request stays on the RETURNED audit record.
+            returnedAt: null,
+            returnedBy: null,
+            returnedByHandle: null,
+            returnComment: null,
             updatedBy: context.actorUserId,
           },
         });
@@ -709,6 +735,116 @@ export class TimesheetsService {
   }
 
   /**
+   * Sends submitted entries back to the member for corrections, with what has to change.
+   *
+   * The entries return to DRAFT, so the member edits and resubmits them as they would any draft; the
+   * `returned*` fields are what show them as "Returned for Corrections" until then. Callable by whoever
+   * can approve: an assigned manager or a TM, or an administrator with an override reason.
+   *
+   * All or nothing, like reverting to draft: every entry has to still be submitted, and the update is
+   * guarded on that status, so an entry another manager approves meanwhile fails the whole call instead
+   * of having its approval undone.
+   */
+  async returnEntries(
+    engagementId: string,
+    assignmentId: string,
+    dto: ReturnTimesheetEntriesDto,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetViewResponseDto> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (context.viewerRole === TimesheetViewerRole.Member) {
+      throw new ForbiddenException(ERROR_MESSAGES.TimesheetMemberCannotReturn);
+    }
+
+    if (context.isAdministrator && !dto.overrideReason) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.TimesheetOverrideReasonRequired,
+      );
+    }
+
+    const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+    const notSubmitted = entries.filter(
+      (entry) => entry.status !== TimesheetEntryStatus.SUBMITTED,
+    );
+
+    if (notSubmitted.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetReturnNotSubmitted,
+        entries: notSubmitted.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          currentStatus: entry.status,
+          approvedByHandle: entry.approvedByHandle ?? null,
+        })),
+      });
+    }
+
+    const returnedAt = new Date();
+    await this.db.$transaction(async (tx) => {
+      const { count } = await tx.engagementTimesheetEntry.updateMany({
+        where: {
+          id: { in: entries.map((entry) => entry.id) },
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+        data: {
+          status: TimesheetEntryStatus.DRAFT,
+          submittedAt: null,
+          submittedBy: null,
+          returnedAt,
+          returnedBy: context.actorUserId,
+          returnedByHandle: context.actorHandle,
+          returnComment: dto.returnComment,
+          updatedBy: context.actorUserId,
+        },
+      });
+
+      if (count !== entries.length) {
+        // Throwing rolls the transaction back, so no entry is left half returned.
+        throw new ConflictException(ERROR_MESSAGES.TimesheetReturnConflict);
+      }
+
+      for (const entry of entries) {
+        await this.audit.record(tx, {
+          timesheetEntryId: entry.id,
+          action: TimesheetAuditAction.RETURNED,
+          previousValues: {
+            status: entry.status,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+          },
+          updatedValues: {
+            status: TimesheetEntryStatus.DRAFT,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+            returnedAt: returnedAt.toISOString(),
+          },
+          actorUserId: context.actorUserId,
+          actorHandle: context.actorHandle,
+          actorRole: this.toActorRole(context),
+          comment: context.isAdministrator
+            ? `${dto.returnComment} (override: ${dto.overrideReason})`
+            : dto.returnComment,
+        });
+      }
+    });
+
+    await this.emitEvents(context, [
+      {
+        topic: TimesheetEventTopics.ReturnedForCorrections,
+        entries,
+        comment: dto.returnComment,
+      },
+    ]);
+
+    return this.findTimesheet(engagementId, assignmentId, {}, authUser);
+  }
+
+  /**
    * Returns approved entries to draft so they can be corrected and resubmitted.
    *
    * A reopened entry goes back to DRAFT rather than gaining a fourth status: `reopenedAt` plus the
@@ -802,6 +938,103 @@ export class TimesheetsService {
   }
 
   /**
+   * Sends submitted entries back to draft, e.g. when a member submitted the wrong work period, so the
+   * member can correct and resubmit them. Administrators only, and a reason is always required; the
+   * member is emailed with it.
+   *
+   * All or nothing: every entry has to still be submitted. The update is guarded on that status, so an
+   * entry a manager approves in the meantime makes the whole call fail rather than silently undoing
+   * the approval.
+   */
+  async revertEntriesToDraft(
+    engagementId: string,
+    assignmentId: string,
+    dto: RevertTimesheetEntriesToDraftDto,
+    authUser?: Record<string, any>,
+  ): Promise<TimesheetViewResponseDto> {
+    const context = await this.resolveContext(
+      engagementId,
+      assignmentId,
+      authUser,
+    );
+
+    if (!context.isAdministrator) {
+      throw new ForbiddenException(
+        ERROR_MESSAGES.TimesheetRevertToDraftAdminOnly,
+      );
+    }
+
+    const entries = await this.loadEntriesForAction(assignmentId, dto.entryIds);
+    const notSubmitted = entries.filter(
+      (entry) => entry.status !== TimesheetEntryStatus.SUBMITTED,
+    );
+
+    if (notSubmitted.length) {
+      throw new BadRequestException({
+        message: ERROR_MESSAGES.TimesheetRevertToDraftNotSubmitted,
+        entries: notSubmitted.map((entry) => ({
+          id: entry.id,
+          workDate: toDateString(entry.workDate),
+          currentStatus: entry.status,
+        })),
+      });
+    }
+
+    await this.db.$transaction(async (tx) => {
+      const { count } = await tx.engagementTimesheetEntry.updateMany({
+        where: {
+          id: { in: entries.map((entry) => entry.id) },
+          status: TimesheetEntryStatus.SUBMITTED,
+        },
+        data: {
+          status: TimesheetEntryStatus.DRAFT,
+          submittedAt: null,
+          submittedBy: null,
+          updatedBy: context.actorUserId,
+        },
+      });
+
+      if (count !== entries.length) {
+        // Throwing rolls the transaction back, so no entry is left half reverted.
+        throw new ConflictException(
+          ERROR_MESSAGES.TimesheetRevertToDraftConflict,
+        );
+      }
+
+      for (const entry of entries) {
+        await this.audit.record(tx, {
+          timesheetEntryId: entry.id,
+          action: TimesheetAuditAction.UNSUBMITTED,
+          previousValues: {
+            status: entry.status,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+          },
+          updatedValues: {
+            status: TimesheetEntryStatus.DRAFT,
+            hoursWorked: entry.hoursWorked,
+            remarks: entry.remarks,
+          },
+          actorUserId: context.actorUserId,
+          actorHandle: context.actorHandle,
+          actorRole: TimesheetActorRole.Administrator,
+          comment: dto.reason,
+        });
+      }
+    });
+
+    await this.emitEvents(context, [
+      {
+        topic: TimesheetEventTopics.RevertedToDraft,
+        entries,
+        comment: dto.reason,
+      },
+    ]);
+
+    return this.findTimesheet(engagementId, assignmentId, {}, authUser);
+  }
+
+  /**
    * Approved, unpaid hours for a payment period.
    *
    * Only `APPROVED` entries count: pending and unsubmitted hours are not payable, and an entry a
@@ -876,55 +1109,8 @@ export class TimesheetsService {
       alreadyPaidEntryIds: alreadyPaid.map((entry) => entry.id),
       approvedHours: sumHours(approved),
       paidHours: sumHours(paid),
-      expectedHours: this.expectedHours(context.assignment, fromDate, toDate),
+      expectedHours: computeExpectedHours(context.assignment, fromDate, toDate),
     };
-  }
-
-  /**
-   * Standard hours per day times the weekdays (Monday to Friday) in the period, counting only days
-   * inside the assignment's start and end dates.
-   */
-  private expectedHours(
-    assignment: EngagementAssignment,
-    fromDate?: Date,
-    toDate?: Date,
-  ): string | null {
-    // Older assignments only carry the deprecated weekly figure; a working week is five days.
-    const hoursPerDay =
-      assignment.standardHoursPerDay ??
-      (assignment.standardHoursPerWeek
-        ? assignment.standardHoursPerWeek / 5
-        : null);
-
-    if (!fromDate || !toDate || !hoursPerDay || hoursPerDay <= 0) {
-      return null;
-    }
-
-    const assignmentStart = assignment.startDate
-      ? toWorkDate(toDateString(assignment.startDate))
-      : undefined;
-    const assignmentEnd = assignment.endDate
-      ? toWorkDate(toDateString(assignment.endDate))
-      : undefined;
-    const start = Math.max(fromDate.getTime(), assignmentStart?.getTime() ?? 0);
-    const end = Math.min(
-      toDate.getTime(),
-      assignmentEnd?.getTime() ?? Number.POSITIVE_INFINITY,
-    );
-
-    if (start > end) {
-      return null;
-    }
-
-    let weekdays = 0;
-    for (let day = start; day <= end; day += DAY_IN_MS) {
-      const dayOfWeek = new Date(day).getUTCDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        weekdays += 1;
-      }
-    }
-
-    return new Prisma.Decimal(hoursPerDay).times(weekdays).toFixed(2);
   }
 
   /**
@@ -1685,6 +1871,9 @@ export class TimesheetsService {
       approvalComment: entry.approvalComment ?? null,
       reopenedAt: entry.reopenedAt ?? null,
       reopenComment,
+      returnedAt: entry.returnedAt ?? null,
+      returnedByHandle: entry.returnedByHandle ?? null,
+      returnComment: entry.returnComment ?? null,
       outsideAssignmentWindow: this.isOutsideAssignmentWindow(
         assignment,
         entry.workDate,

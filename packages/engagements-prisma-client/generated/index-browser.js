@@ -295,6 +295,10 @@ exports.Prisma.EngagementTimesheetEntryScalarFieldEnum = {
   approvedByHandle: 'approvedByHandle',
   approvalComment: 'approvalComment',
   reopenedAt: 'reopenedAt',
+  returnedAt: 'returnedAt',
+  returnedBy: 'returnedBy',
+  returnedByHandle: 'returnedByHandle',
+  returnComment: 'returnComment',
   paidPaymentReference: 'paidPaymentReference',
   paidAt: 'paidAt',
   createdAt: 'createdAt',
@@ -447,7 +451,9 @@ exports.EngagementLeadStatus = exports.$Enums.EngagementLeadStatus = {
   QUALIFIED: 'QUALIFIED',
   CONVERTED: 'CONVERTED',
   REJECTED: 'REJECTED',
-  FULFILLED: 'FULFILLED'
+  FULFILLED: 'FULFILLED',
+  PARTIALLY_FULFILLED: 'PARTIALLY_FULFILLED',
+  ON_HOLD: 'ON_HOLD'
 };
 
 exports.LeadCalculationMemberInput = exports.$Enums.LeadCalculationMemberInput = {
@@ -477,6 +483,7 @@ exports.TimesheetAuditAction = exports.$Enums.TimesheetAuditAction = {
   UNSUBMITTED: 'UNSUBMITTED',
   APPROVED: 'APPROVED',
   REOPENED: 'REOPENED',
+  RETURNED: 'RETURNED',
   ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
   PAYMENT_LINKED: 'PAYMENT_LINKED',
   MANAGER_ASSIGNED: 'MANAGER_ASSIGNED',

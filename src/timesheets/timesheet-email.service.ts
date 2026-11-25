@@ -6,7 +6,10 @@ import {
   EngagementManagerSummary,
   TimesheetAccessService,
 } from "./timesheet-access.service";
-import { TimesheetEventTopics } from "./timesheet-constants";
+import {
+  TIMESHEET_SYSTEM_ACTOR,
+  TimesheetEventTopics,
+} from "./timesheet-constants";
 import type { TimesheetEventPayload } from "./timesheet-events.service";
 
 /** Who a lifecycle email goes to: the assignee, or every current manager of the engagement. */
@@ -19,11 +22,15 @@ interface TimesheetEmailRoute {
 }
 
 /**
- * One email per lifecycle topic (requirements §10). Reopened and overridden share a template: to the
- * member both mean "hours you had approved were changed by an administrator", and `changeType` lets
- * the template word the two cases differently.
+ * The emails each lifecycle topic sends (requirements §10), usually one. Reopened and overridden share a
+ * template: to the member both mean "hours you had approved were changed by an administrator", and
+ * `changeType` lets the template word the two cases differently. Auto-approval sends two, worded
+ * separately for the managers and the member.
  */
-const TIMESHEET_EMAIL_ROUTES: Record<string, TimesheetEmailRoute> = {
+const TIMESHEET_EMAIL_ROUTES: Record<
+  string,
+  TimesheetEmailRoute | TimesheetEmailRoute[]
+> = {
   [TimesheetEventTopics.Submitted]: {
     templateKey: "SENDGRID_TIMESHEET_SUBMITTED_TEMPLATE_ID",
     audience: "managers",
@@ -39,10 +46,32 @@ const TIMESHEET_EMAIL_ROUTES: Record<string, TimesheetEmailRoute> = {
     audience: "member",
     logLabel: "timesheet approved",
   },
+  [TimesheetEventTopics.AutoApproved]: [
+    {
+      templateKey: "SENDGRID_TIMESHEET_AUTO_APPROVED_MANAGER_TEMPLATE_ID",
+      audience: "managers",
+      logLabel: "timesheet auto-approved (managers)",
+    },
+    {
+      templateKey: "SENDGRID_TIMESHEET_AUTO_APPROVED_MEMBER_TEMPLATE_ID",
+      audience: "member",
+      logLabel: "timesheet auto-approved (member)",
+    },
+  ],
   [TimesheetEventTopics.Reopened]: {
     templateKey: "SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID",
     audience: "member",
     logLabel: "timesheet reopened",
+  },
+  [TimesheetEventTopics.ReturnedForCorrections]: {
+    templateKey: "SENDGRID_TIMESHEET_RETURNED_FOR_CORRECTIONS_TEMPLATE_ID",
+    audience: "member",
+    logLabel: "timesheet returned for corrections",
+  },
+  [TimesheetEventTopics.RevertedToDraft]: {
+    templateKey: "SENDGRID_TIMESHEET_REVERTED_TO_DRAFT_TEMPLATE_ID",
+    audience: "member",
+    logLabel: "timesheet reverted to draft",
   },
   [TimesheetEventTopics.AdminOverride]: {
     templateKey: "SENDGRID_TIMESHEET_ADMIN_CHANGED_TEMPLATE_ID",
@@ -133,11 +162,21 @@ export class TimesheetEmailService {
     topic: string,
     payload: TimesheetEventPayload,
   ): Promise<void> {
-    const route = TIMESHEET_EMAIL_ROUTES[topic];
-    if (!route) {
+    const routes = TIMESHEET_EMAIL_ROUTES[topic];
+    if (!routes) {
       return;
     }
 
+    for (const route of Array.isArray(routes) ? routes : [routes]) {
+      await this.sendRoute(topic, route, payload);
+    }
+  }
+
+  private async sendRoute(
+    topic: string,
+    route: TimesheetEmailRoute,
+    payload: TimesheetEventPayload,
+  ): Promise<void> {
     try {
       const templateId = this.resolveTemplateId(
         route.templateKey,
@@ -511,7 +550,12 @@ export class TimesheetEmailService {
       payload.memberId,
       payload.actorUserId,
       ...managers.map((manager) => manager.userId),
-    ].filter((userId) => userId && !managerNames.has(userId));
+    ].filter(
+      (userId) =>
+        userId &&
+        userId !== TIMESHEET_SYSTEM_ACTOR.userId &&
+        !managerNames.has(userId),
+    );
 
     let resolvedNames = new Map<string, string>();
     try {
@@ -548,6 +592,8 @@ export class TimesheetEmailService {
     people: TimesheetPeople,
   ): Record<string, unknown> {
     const workDates = [...payload.workDates].sort().map(formatWorkDate);
+    const fromDate = workDates[0] ?? "";
+    const toDate = workDates[workDates.length - 1] ?? "";
 
     return {
       engagementId: payload.engagementId,
@@ -559,8 +605,9 @@ export class TimesheetEmailService {
       entryCount: workDates.length,
       totalHours: payload.totalHours,
       workDates,
-      fromDate: workDates[0] ?? "",
-      toDate: workDates[workDates.length - 1] ?? "",
+      fromDate,
+      toDate,
+      workPeriod: fromDate === toDate ? fromDate : `${fromDate} - ${toDate}`,
       comment: payload.comment ?? "",
       ...(topic === TimesheetEventTopics.Reopened ||
       topic === TimesheetEventTopics.AdminOverride

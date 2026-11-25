@@ -66,9 +66,27 @@ export const ERROR_MESSAGES = {
     "Only an administrator can reopen approved timesheet entries.",
   TimesheetReopenNotApproved:
     "Only approved timesheet entries can be reopened.",
+  TimesheetRevertToDraftAdminOnly:
+    "Only an administrator can revert submitted timesheet entries to draft.",
+  TimesheetRevertToDraftNotSubmitted:
+    "Only submitted timesheet entries can be reverted to draft.",
+  TimesheetRevertToDraftConflict:
+    "One or more entries changed status while being reverted, so nothing was reverted. Reload and try again.",
+  TimesheetMemberCannotReturn:
+    "Only an assigned manager or an administrator can return timesheet entries for corrections.",
+  TimesheetReturnNotSubmitted:
+    "Only submitted timesheet entries can be returned for corrections.",
+  TimesheetReturnConflict:
+    "One or more entries changed status while being returned, so nothing was returned. Reload and try again.",
   TimesheetManagerCannotDelete: "Managers cannot delete timesheet entries.",
   TimesheetDeleteRejected:
     "Only unpaid draft entries can be deleted, so nothing was deleted.",
+  AssignmentRemoveNotSelected:
+    "Only a selected assignment the member has not accepted yet can be removed. Terminate or complete an accepted assignment instead.",
+  AssignmentRemoveHasTimesheets:
+    "This assignment has timesheet entries, so it cannot be removed. Terminate it instead.",
+  TimesheetSubmitFutureWorkPeriod:
+    "You cannot submit timesheets for future work periods. Save your entries and submit them once the relevant work period begins.",
   TimesheetSubmitRejected:
     "Some entries cannot be submitted, so nothing was submitted.",
   TimesheetDuplicateWorkDate:

@@ -82,6 +82,7 @@ enum TimesheetAuditAction {
   UNSUBMITTED
   APPROVED
   REOPENED
+  RETURNED
   ADMIN_OVERRIDE
   PAYMENT_LINKED
   MANAGER_ASSIGNED
@@ -105,6 +106,8 @@ enum EngagementLeadStatus {
   CONVERTED
   REJECTED
   FULFILLED
+  PARTIALLY_FULFILLED
+  ON_HOLD
 }
 
 enum EngagementModel {
@@ -344,11 +347,12 @@ enum LeadCalculationCommercialInput {
 }
 
 /// A saved Flexi Talent cost calculation for a lead. A lead can have several, e.g. one per resource.
+/// Without a lead it is a general calculation from the Leads page, private to the user who created it.
 /// Saving overwrites it, so only the latest values are kept. Only what the user entered is stored:
 /// every other value (booking cost, margin, cost transfer...) is recalculated from it.
 model EngagementLeadCalculation {
   id                   String                          @id @default(uuid())
-  engagementLeadId     String
+  engagementLeadId     String?
   memberName           String?
   accountName          String?
   smu                  String?
@@ -366,9 +370,10 @@ model EngagementLeadCalculation {
   createdBy            String?
   updatedAt            DateTime                        @updatedAt
   updatedBy            String?
-  lead                 EngagementLead                  @relation(fields: [engagementLeadId], references: [id], onDelete: Cascade)
+  lead                 EngagementLead?                 @relation(fields: [engagementLeadId], references: [id], onDelete: Cascade)
 
   @@index([engagementLeadId, createdAt])
+  @@index([createdBy, createdAt])
 }
 
 model EngagementTimesheetEntry {
@@ -393,6 +398,13 @@ model EngagementTimesheetEntry {
   /// Set when an administrator reopens an approved entry. The entry returns to DRAFT; this field is
   /// what lets the UI badge it "Reopened" without the state machine growing a fourth status.
   reopenedAt       DateTime?
+  /// Set when a manager returns a submitted entry for corrections. The entry goes back to DRAFT, so the
+  /// member can edit and resubmit it as usual; these fields are what lets every view show it as
+  /// "Returned for Corrections" with what to fix. Resubmitting clears them.
+  returnedAt       DateTime?
+  returnedBy       String?
+  returnedByHandle String?
+  returnComment    String?
 
   paidPaymentReference String?
   paidAt               DateTime?

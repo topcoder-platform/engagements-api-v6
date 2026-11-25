@@ -21,6 +21,9 @@ const OTHER_SMU = "others";
 /**
  * Saved Flexi Talent cost calculations. A lead can have several (e.g. one per resource); saving
  * one overwrites its previous values, so there is no version history.
+ *
+ * General calculations, made from the Leads page for no particular lead, have no lead and belong
+ * to the user who created them: each user sees and changes only their own.
  */
 @Injectable()
 export class EngagementLeadCalculationsService {
@@ -85,6 +88,59 @@ export class EngagementLeadCalculationsService {
     });
   }
 
+  async findAllGeneral(
+    userId: string,
+  ): Promise<EngagementLeadCalculationResponseDto[]> {
+    const calculations = await this.db.engagementLeadCalculation.findMany({
+      where: { engagementLeadId: null, createdBy: userId },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return calculations.map((calculation) => this.toResponse(calculation));
+  }
+
+  async createGeneral(
+    dto: SaveEngagementLeadCalculationDto,
+    userId: string,
+  ): Promise<EngagementLeadCalculationResponseDto> {
+    const created = await this.db.engagementLeadCalculation.create({
+      data: {
+        ...this.toData(dto),
+        engagementLeadId: null,
+        createdBy: userId,
+        updatedBy: userId,
+      },
+    });
+
+    return this.toResponse(created);
+  }
+
+  async updateGeneral(
+    calculationId: string,
+    dto: SaveEngagementLeadCalculationDto,
+    userId: string,
+  ): Promise<EngagementLeadCalculationResponseDto> {
+    await this.assertGeneralCalculationExists(calculationId, userId);
+
+    const updated = await this.db.engagementLeadCalculation.update({
+      where: { id: calculationId },
+      data: {
+        ...this.toData(dto),
+        updatedBy: userId,
+      },
+    });
+
+    return this.toResponse(updated);
+  }
+
+  async removeGeneral(calculationId: string, userId: string): Promise<void> {
+    await this.assertGeneralCalculationExists(calculationId, userId);
+
+    await this.db.engagementLeadCalculation.delete({
+      where: { id: calculationId },
+    });
+  }
+
   private async assertLeadExists(leadId: string): Promise<void> {
     const lead = await this.db.engagementLead.findUnique({
       where: { id: leadId },
@@ -103,6 +159,21 @@ export class EngagementLeadCalculationsService {
   ): Promise<void> {
     const calculation = await this.db.engagementLeadCalculation.findFirst({
       where: { id: calculationId, engagementLeadId: leadId },
+      select: { id: true },
+    });
+
+    if (!calculation) {
+      throw new NotFoundException("Cost calculation not found.");
+    }
+  }
+
+  // Someone else's general calculation, or a lead's, is reported as missing rather than forbidden.
+  private async assertGeneralCalculationExists(
+    calculationId: string,
+    userId: string,
+  ): Promise<void> {
+    const calculation = await this.db.engagementLeadCalculation.findFirst({
+      where: { id: calculationId, engagementLeadId: null, createdBy: userId },
       select: { id: true },
     });
 

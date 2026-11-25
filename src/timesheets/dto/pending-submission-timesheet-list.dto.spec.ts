@@ -12,6 +12,7 @@ describe("Pending submission DTO validation", () => {
       fromDate: " 2026-11-09 ",
       toDate: "2026-11-13",
       excludeTestProjects: "true",
+      managerAssigned: "false",
     });
 
     const errors = await validate(dto);
@@ -21,6 +22,7 @@ describe("Pending submission DTO validation", () => {
       fromDate: "2026-11-09",
       toDate: "2026-11-13",
       excludeTestProjects: true,
+      managerAssigned: false,
       page: 1,
     });
     expect(dto.perPage).toBeGreaterThan(0);

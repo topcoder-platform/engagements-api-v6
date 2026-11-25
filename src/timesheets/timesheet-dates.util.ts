@@ -1,4 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
+import { EngagementAssignment, Prisma } from "@prisma/client";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -38,4 +39,70 @@ export function toWorkDay(value: Date): Date {
   return new Date(
     Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()),
   );
+}
+
+/**
+ * Hours an assignee is expected to log over a period: standard hours per day times the weekdays
+ * (Monday to Friday) in the period, counting only days inside the assignment's start and end dates.
+ *
+ * Null when the period is open-ended, falls outside the assignment, or the assignment has no standard
+ * hours to compare against.
+ */
+export function computeExpectedHours(
+  assignment: Pick<
+    EngagementAssignment,
+    "standardHoursPerDay" | "standardHoursPerWeek" | "startDate" | "endDate"
+  >,
+  fromDate?: Date,
+  toDate?: Date,
+): string | null {
+  // Older assignments only carry the deprecated weekly figure; a working week is five days.
+  const hoursPerDay =
+    assignment.standardHoursPerDay ??
+    (assignment.standardHoursPerWeek
+      ? assignment.standardHoursPerWeek / 5
+      : null);
+
+  if (!fromDate || !toDate || !hoursPerDay || hoursPerDay <= 0) {
+    return null;
+  }
+
+  const assignmentStart = assignment.startDate
+    ? toWorkDay(assignment.startDate)
+    : undefined;
+  const assignmentEnd = assignment.endDate
+    ? toWorkDay(assignment.endDate)
+    : undefined;
+  const start = Math.max(fromDate.getTime(), assignmentStart?.getTime() ?? 0);
+  const end = Math.min(
+    toDate.getTime(),
+    assignmentEnd?.getTime() ?? Number.POSITIVE_INFINITY,
+  );
+
+  if (start > end) {
+    return null;
+  }
+
+  let weekdays = 0;
+  for (let day = start; day <= end; day += DAY_IN_MS) {
+    const dayOfWeek = new Date(day).getUTCDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      weekdays += 1;
+    }
+  }
+
+  return new Prisma.Decimal(hoursPerDay).times(weekdays).toFixed(2);
+}
+
+/**
+ * True when a work date has not started anywhere yet. Work dates are calendar days with no time zone,
+ * and the member's is unknown here, so "today" is taken in the zone furthest ahead (UTC+14): a member
+ * submitting just after midnight local time is never refused for a day that has already begun for them.
+ */
+export function isFutureWorkDate(
+  workDate: Date,
+  now: Date = new Date(),
+): boolean {
+  const latestToday = toWorkDay(new Date(now.getTime() + 14 * 60 * 60 * 1000));
+  return toWorkDay(workDate).getTime() > latestToday.getTime();
 }

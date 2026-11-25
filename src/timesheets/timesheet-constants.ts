@@ -36,6 +36,28 @@ export const TimesheetEventTopics = {
   Submitted: "engagement.timesheet.submitted",
   Unsubmitted: "engagement.timesheet.unsubmitted",
   Approved: "engagement.timesheet.approved",
+  AutoApproved: "engagement.timesheet.auto-approved",
   Reopened: "engagement.timesheet.reopened",
+  ReturnedForCorrections: "engagement.timesheet.returned-for-corrections",
+  RevertedToDraft: "engagement.timesheet.reverted-to-draft",
   AdminOverride: "engagement.timesheet.overridden",
 } as const;
+
+/**
+ * The system's identity on everything auto-approval writes: the approval fields, the audit trail and the
+ * lifecycle event. A fixed id that no Topcoder user can have keeps a system action from ever reading as
+ * a person's.
+ */
+export const TIMESHEET_SYSTEM_ACTOR = {
+  userId: "system",
+  handle: "System",
+} as const;
+
+/** The approval comment auto-approval stores on every entry it approves. */
+export const TIMESHEET_AUTO_APPROVAL_COMMENT = "Auto Approved by the system";
+
+/** Days a submission waits for a manager before the system may approve it. */
+export const TIMESHEET_AUTO_APPROVAL_DEFAULT_PENDING_DAYS = 7;
+
+/** Daily at 02:00 UTC. */
+export const TIMESHEET_AUTO_APPROVAL_DEFAULT_CRON = "0 2 * * *";

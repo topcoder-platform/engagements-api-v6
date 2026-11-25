@@ -158,6 +158,11 @@ Only `DRAFT` entries with valid hours become `SUBMITTED`, recording `submittedAt
 missing required data is reported per entry and **nothing partially submits** — the call is atomic. An
 administrator may submit on behalf of a member, with a reason. Audit: `SUBMITTED` per entry.
 
+Future work dates can be saved but not submitted: if any selected entry is dated after today, nothing is submitted
+and the `400` message is "You cannot submit timesheets for future work periods. Save your entries and submit them
+once the relevant work period begins." The entries are listed with that reason. "Today" is taken in the zone furthest
+ahead (UTC+14), because the member's time zone is unknown and a day that has begun for them must stay submittable.
+
 ### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/approve`
 
 ```json
@@ -191,6 +196,29 @@ Sets `status = DRAFT` and `reopenedAt`, clears `approvedAt`/`approvedBy`/`approv
 
 A reopened entry returns to `DRAFT` rather than gaining a fourth status; `reopenedAt` is what the UI badges
 `Reopened` from.
+
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/return`
+
+`{ "entryIds": ["..."], "returnComment": "required", "overrideReason": "administrators only" }`.
+
+Returns submitted entries to the member for corrections. Callable by an assigned manager or a TM; an administrator
+must also send `overrideReason`. Members get `403`. Sets `status = DRAFT`, clears `submittedAt`/`submittedBy` and
+sets `returnedAt`, `returnedBy`, `returnedByHandle` and `returnComment`; hours and remarks are kept. Every entry has to
+be `SUBMITTED` (`400` otherwise), and the update is guarded on that status, so if another manager approves one of them
+meanwhile nothing is returned (`409`). Audit `RETURNED` per entry, carrying the corrections. The member is emailed
+(`engagement.timesheet.returned-for-corrections`). Returns the refreshed timesheet.
+
+Submitting a returned entry again clears the `returned*` fields.
+
+### `POST /engagements/:engagementId/assignments/:assignmentId/timesheets/revert-to-draft`
+
+Administrators only. `{ "entryIds": ["..."], "reason": "required" }`.
+
+For submitted entries that should not have been, e.g. a wrong work period. Sets `status = DRAFT` and clears
+`submittedAt`/`submittedBy`; hours and remarks are kept. Every entry has to be `SUBMITTED` (`400` otherwise), and
+the update is guarded on that status, so if a manager approves one of them meanwhile nothing is reverted (`409`).
+Audit `UNSUBMITTED` per entry, carrying the reason. The member is emailed (`engagement.timesheet.reverted-to-draft`).
+Returns the refreshed timesheet.
 
 ### `GET /engagements/:engagementId/assignments/:assignmentId/timesheets/entries/:entryId/audit`
 

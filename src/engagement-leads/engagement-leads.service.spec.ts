@@ -191,6 +191,11 @@ describe("EngagementLeadsService", () => {
       [EngagementLeadStatusGroup.FULFILLED, EngagementLeadStatus.FULFILLED],
       [EngagementLeadStatusGroup.LOST, EngagementLeadStatus.REJECTED],
       [EngagementLeadStatusGroup.DECLINED, EngagementLeadStatus.REJECTED],
+      [
+        EngagementLeadStatusGroup.PARTIALLY_FULFILLED,
+        EngagementLeadStatus.PARTIALLY_FULFILLED,
+      ],
+      [EngagementLeadStatusGroup.ON_HOLD, EngagementLeadStatus.ON_HOLD],
     ])(
       "applies statusGroup %s filter to %s leads",
       async (statusGroup, status) => {
@@ -389,6 +394,26 @@ describe("EngagementLeadsService", () => {
       [EngagementLeadStatus.UNDER_REVIEW, EngagementLeadStatus.REJECTED],
       [EngagementLeadStatus.CONVERTED, EngagementLeadStatus.FULFILLED],
       [EngagementLeadStatus.FULFILLED, EngagementLeadStatus.UNDER_REVIEW],
+      [
+        EngagementLeadStatus.SUBMITTED,
+        EngagementLeadStatus.PARTIALLY_FULFILLED,
+      ],
+      [EngagementLeadStatus.SUBMITTED, EngagementLeadStatus.ON_HOLD],
+      [EngagementLeadStatus.UNDER_REVIEW, EngagementLeadStatus.ON_HOLD],
+      [EngagementLeadStatus.REJECTED, EngagementLeadStatus.PARTIALLY_FULFILLED],
+      [
+        EngagementLeadStatus.FULFILLED,
+        EngagementLeadStatus.PARTIALLY_FULFILLED,
+      ],
+      [EngagementLeadStatus.FULFILLED, EngagementLeadStatus.ON_HOLD],
+      [
+        EngagementLeadStatus.PARTIALLY_FULFILLED,
+        EngagementLeadStatus.FULFILLED,
+      ],
+      [EngagementLeadStatus.PARTIALLY_FULFILLED, EngagementLeadStatus.ON_HOLD],
+      [EngagementLeadStatus.ON_HOLD, EngagementLeadStatus.UNDER_REVIEW],
+      [EngagementLeadStatus.ON_HOLD, EngagementLeadStatus.PARTIALLY_FULFILLED],
+      [EngagementLeadStatus.ON_HOLD, EngagementLeadStatus.REJECTED],
     ])("moves a %s lead to %s", async (current, next) => {
       db.engagementLead.findUnique.mockResolvedValue({
         id: "lead-1",
@@ -420,6 +445,11 @@ describe("EngagementLeadsService", () => {
       [EngagementLeadStatus.FULFILLED, EngagementLeadStatus.REJECTED],
       [EngagementLeadStatus.FULFILLED, EngagementLeadStatus.FULFILLED],
       [EngagementLeadStatus.REJECTED, EngagementLeadStatus.REJECTED],
+      [
+        EngagementLeadStatus.PARTIALLY_FULFILLED,
+        EngagementLeadStatus.PARTIALLY_FULFILLED,
+      ],
+      [EngagementLeadStatus.ON_HOLD, EngagementLeadStatus.ON_HOLD],
     ])("does not move a %s lead to %s", async (current, next) => {
       db.engagementLead.findUnique.mockResolvedValue({
         id: "lead-1",
@@ -849,9 +879,12 @@ describe("UpdateEngagementLeadStatusDto validation", () => {
       metatype: UpdateEngagementLeadStatusDto,
     });
 
-  it.each(["UNDER_REVIEW", "FULFILLED"])("accepts %s", async (status) => {
-    await expect(validate({ status })).resolves.toMatchObject({ status });
-  });
+  it.each(["UNDER_REVIEW", "FULFILLED", "PARTIALLY_FULFILLED", "ON_HOLD"])(
+    "accepts %s",
+    async (status) => {
+      await expect(validate({ status })).resolves.toMatchObject({ status });
+    },
+  );
 
   it.each(["SUBMITTED", "QUALIFIED", "CONVERTED"])(
     "rejects the %s status",

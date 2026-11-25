@@ -77,6 +77,29 @@ export class TimesheetEntryResponseDto {
   })
   reopenComment: string | null;
 
+  @ApiPropertyOptional({
+    description:
+      "Set when a manager returned the entry for corrections. The entry is back in DRAFT until the " +
+      "member resubmits it; this is what lets the UI show it as 'Returned for Corrections'.",
+    nullable: true,
+  })
+  returnedAt: Date | null;
+
+  @ApiPropertyOptional({
+    description: "Handle of the manager who returned the entry for corrections",
+    example: "maryj",
+    nullable: true,
+  })
+  returnedByHandle: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      "The corrections the manager asked for when returning the entry",
+    example: "Split the hours between the two projects you worked on",
+    nullable: true,
+  })
+  returnComment: string | null;
+
   @ApiProperty({
     description:
       "True when the work date falls outside the assignment's start/end dates. Such entries are " +

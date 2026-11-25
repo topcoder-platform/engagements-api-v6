@@ -51,6 +51,7 @@ export type EngagementLeadNote = $Result.DefaultSelection<Prisma.$EngagementLead
 /**
  * Model EngagementLeadCalculation
  * A saved Flexi Talent cost calculation for a lead. A lead can have several, e.g. one per resource.
+ * Without a lead it is a general calculation from the Leads page, private to the user who created it.
  * Saving overwrites it, so only the latest values are kept. Only what the user entered is stored:
  * every other value (booking cost, margin, cost transfer...) is recalculated from it.
  */
@@ -174,6 +175,7 @@ export const TimesheetAuditAction: {
   UNSUBMITTED: 'UNSUBMITTED',
   APPROVED: 'APPROVED',
   REOPENED: 'REOPENED',
+  RETURNED: 'RETURNED',
   ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
   PAYMENT_LINKED: 'PAYMENT_LINKED',
   MANAGER_ASSIGNED: 'MANAGER_ASSIGNED',
@@ -199,7 +201,9 @@ export const EngagementLeadStatus: {
   QUALIFIED: 'QUALIFIED',
   CONVERTED: 'CONVERTED',
   REJECTED: 'REJECTED',
-  FULFILLED: 'FULFILLED'
+  FULFILLED: 'FULFILLED',
+  PARTIALLY_FULFILLED: 'PARTIALLY_FULFILLED',
+  ON_HOLD: 'ON_HOLD'
 };
 
 export type EngagementLeadStatus = (typeof EngagementLeadStatus)[keyof typeof EngagementLeadStatus]
@@ -11443,7 +11447,7 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationGroupByOutputType = {
     id: string
-    engagementLeadId: string
+    engagementLeadId: string | null
     memberName: string | null
     accountName: string | null
     smu: string | null
@@ -11498,7 +11502,7 @@ export namespace Prisma {
     createdBy?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }, ExtArgs["result"]["engagementLeadCalculation"]>
 
   export type EngagementLeadCalculationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -11519,7 +11523,7 @@ export namespace Prisma {
     createdBy?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }, ExtArgs["result"]["engagementLeadCalculation"]>
 
   export type EngagementLeadCalculationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -11540,7 +11544,7 @@ export namespace Prisma {
     createdBy?: boolean
     updatedAt?: boolean
     updatedBy?: boolean
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }, ExtArgs["result"]["engagementLeadCalculation"]>
 
   export type EngagementLeadCalculationSelectScalar = {
@@ -11565,23 +11569,23 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementLeadId" | "memberName" | "accountName" | "smu" | "costTransferPercent" | "durationWeeks" | "hoursPerDay" | "referral" | "memberInputField" | "memberInputValue" | "commercialInputField" | "commercialInputValue" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementLeadCalculation"]>
   export type EngagementLeadCalculationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }
   export type EngagementLeadCalculationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }
   export type EngagementLeadCalculationIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    lead?: boolean | EngagementLeadDefaultArgs<ExtArgs>
+    lead?: boolean | EngagementLeadCalculation$leadArgs<ExtArgs>
   }
 
   export type $EngagementLeadCalculationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EngagementLeadCalculation"
     objects: {
-      lead: Prisma.$EngagementLeadPayload<ExtArgs>
+      lead: Prisma.$EngagementLeadPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
-      engagementLeadId: string
+      engagementLeadId: string | null
       memberName: string | null
       accountName: string | null
       smu: string | null
@@ -11995,7 +11999,7 @@ export namespace Prisma {
    */
   export interface Prisma__EngagementLeadCalculationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    lead<T extends EngagementLeadDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EngagementLeadDefaultArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    lead<T extends EngagementLeadCalculation$leadArgs<ExtArgs> = {}>(args?: Subset<T, EngagementLeadCalculation$leadArgs<ExtArgs>>): Prisma__EngagementLeadClient<$Result.GetResult<Prisma.$EngagementLeadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -12443,6 +12447,25 @@ export namespace Prisma {
   }
 
   /**
+   * EngagementLeadCalculation.lead
+   */
+  export type EngagementLeadCalculation$leadArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EngagementLead
+     */
+    select?: EngagementLeadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EngagementLead
+     */
+    omit?: EngagementLeadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EngagementLeadInclude<ExtArgs> | null
+    where?: EngagementLeadWhereInput
+  }
+
+  /**
    * EngagementLeadCalculation without action
    */
   export type EngagementLeadCalculationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -12495,6 +12518,10 @@ export namespace Prisma {
     approvedByHandle: string | null
     approvalComment: string | null
     reopenedAt: Date | null
+    returnedAt: Date | null
+    returnedBy: string | null
+    returnedByHandle: string | null
+    returnComment: string | null
     paidPaymentReference: string | null
     paidAt: Date | null
     createdAt: Date | null
@@ -12517,6 +12544,10 @@ export namespace Prisma {
     approvedByHandle: string | null
     approvalComment: string | null
     reopenedAt: Date | null
+    returnedAt: Date | null
+    returnedBy: string | null
+    returnedByHandle: string | null
+    returnComment: string | null
     paidPaymentReference: string | null
     paidAt: Date | null
     createdAt: Date | null
@@ -12539,6 +12570,10 @@ export namespace Prisma {
     approvedByHandle: number
     approvalComment: number
     reopenedAt: number
+    returnedAt: number
+    returnedBy: number
+    returnedByHandle: number
+    returnComment: number
     paidPaymentReference: number
     paidAt: number
     createdAt: number
@@ -12571,6 +12606,10 @@ export namespace Prisma {
     approvedByHandle?: true
     approvalComment?: true
     reopenedAt?: true
+    returnedAt?: true
+    returnedBy?: true
+    returnedByHandle?: true
+    returnComment?: true
     paidPaymentReference?: true
     paidAt?: true
     createdAt?: true
@@ -12593,6 +12632,10 @@ export namespace Prisma {
     approvedByHandle?: true
     approvalComment?: true
     reopenedAt?: true
+    returnedAt?: true
+    returnedBy?: true
+    returnedByHandle?: true
+    returnComment?: true
     paidPaymentReference?: true
     paidAt?: true
     createdAt?: true
@@ -12615,6 +12658,10 @@ export namespace Prisma {
     approvedByHandle?: true
     approvalComment?: true
     reopenedAt?: true
+    returnedAt?: true
+    returnedBy?: true
+    returnedByHandle?: true
+    returnComment?: true
     paidPaymentReference?: true
     paidAt?: true
     createdAt?: true
@@ -12724,6 +12771,10 @@ export namespace Prisma {
     approvedByHandle: string | null
     approvalComment: string | null
     reopenedAt: Date | null
+    returnedAt: Date | null
+    returnedBy: string | null
+    returnedByHandle: string | null
+    returnComment: string | null
     paidPaymentReference: string | null
     paidAt: Date | null
     createdAt: Date
@@ -12765,6 +12816,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12790,6 +12845,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12813,6 +12872,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12836,6 +12899,10 @@ export namespace Prisma {
     approvedByHandle?: boolean
     approvalComment?: boolean
     reopenedAt?: boolean
+    returnedAt?: boolean
+    returnedBy?: boolean
+    returnedByHandle?: boolean
+    returnComment?: boolean
     paidPaymentReference?: boolean
     paidAt?: boolean
     createdAt?: boolean
@@ -12844,7 +12911,7 @@ export namespace Prisma {
     updatedBy?: boolean
   }
 
-  export type EngagementTimesheetEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementAssignmentId" | "workDate" | "hoursWorked" | "remarks" | "status" | "submittedAt" | "submittedBy" | "approvedAt" | "approvedBy" | "approvedByHandle" | "approvalComment" | "reopenedAt" | "paidPaymentReference" | "paidAt" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementTimesheetEntry"]>
+  export type EngagementTimesheetEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "engagementAssignmentId" | "workDate" | "hoursWorked" | "remarks" | "status" | "submittedAt" | "submittedBy" | "approvedAt" | "approvedBy" | "approvedByHandle" | "approvalComment" | "reopenedAt" | "returnedAt" | "returnedBy" | "returnedByHandle" | "returnComment" | "paidPaymentReference" | "paidAt" | "createdAt" | "createdBy" | "updatedAt" | "updatedBy", ExtArgs["result"]["engagementTimesheetEntry"]>
   export type EngagementTimesheetEntryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     assignment?: boolean | EngagementAssignmentDefaultArgs<ExtArgs>
     auditRecords?: boolean | EngagementTimesheetEntry$auditRecordsArgs<ExtArgs>
@@ -12890,6 +12957,15 @@ export namespace Prisma {
        * what lets the UI badge it "Reopened" without the state machine growing a fourth status.
        */
       reopenedAt: Date | null
+      /**
+       * Set when a manager returns a submitted entry for corrections. The entry goes back to DRAFT, so the
+       * member can edit and resubmit it as usual; these fields are what lets every view show it as
+       * "Returned for Corrections" with what to fix. Resubmitting clears them.
+       */
+      returnedAt: Date | null
+      returnedBy: string | null
+      returnedByHandle: string | null
+      returnComment: string | null
       paidPaymentReference: string | null
       paidAt: Date | null
       createdAt: Date
@@ -13334,6 +13410,10 @@ export namespace Prisma {
     readonly approvedByHandle: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly approvalComment: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly reopenedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly returnedAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
+    readonly returnedBy: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly returnedByHandle: FieldRef<"EngagementTimesheetEntry", 'String'>
+    readonly returnComment: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly paidPaymentReference: FieldRef<"EngagementTimesheetEntry", 'String'>
     readonly paidAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
     readonly createdAt: FieldRef<"EngagementTimesheetEntry", 'DateTime'>
@@ -16295,6 +16375,10 @@ export namespace Prisma {
     approvedByHandle: 'approvedByHandle',
     approvalComment: 'approvalComment',
     reopenedAt: 'reopenedAt',
+    returnedAt: 'returnedAt',
+    returnedBy: 'returnedBy',
+    returnedByHandle: 'returnedByHandle',
+    returnComment: 'returnComment',
     paidPaymentReference: 'paidPaymentReference',
     paidAt: 'paidAt',
     createdAt: 'createdAt',
@@ -17577,7 +17661,7 @@ export namespace Prisma {
     OR?: EngagementLeadCalculationWhereInput[]
     NOT?: EngagementLeadCalculationWhereInput | EngagementLeadCalculationWhereInput[]
     id?: StringFilter<"EngagementLeadCalculation"> | string
-    engagementLeadId?: StringFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
@@ -17593,12 +17677,12 @@ export namespace Prisma {
     createdBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     updatedAt?: DateTimeFilter<"EngagementLeadCalculation"> | Date | string
     updatedBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
-    lead?: XOR<EngagementLeadScalarRelationFilter, EngagementLeadWhereInput>
+    lead?: XOR<EngagementLeadNullableScalarRelationFilter, EngagementLeadWhereInput> | null
   }
 
   export type EngagementLeadCalculationOrderByWithRelationInput = {
     id?: SortOrder
-    engagementLeadId?: SortOrder
+    engagementLeadId?: SortOrderInput | SortOrder
     memberName?: SortOrderInput | SortOrder
     accountName?: SortOrderInput | SortOrder
     smu?: SortOrderInput | SortOrder
@@ -17622,7 +17706,7 @@ export namespace Prisma {
     AND?: EngagementLeadCalculationWhereInput | EngagementLeadCalculationWhereInput[]
     OR?: EngagementLeadCalculationWhereInput[]
     NOT?: EngagementLeadCalculationWhereInput | EngagementLeadCalculationWhereInput[]
-    engagementLeadId?: StringFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
@@ -17638,12 +17722,12 @@ export namespace Prisma {
     createdBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     updatedAt?: DateTimeFilter<"EngagementLeadCalculation"> | Date | string
     updatedBy?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
-    lead?: XOR<EngagementLeadScalarRelationFilter, EngagementLeadWhereInput>
+    lead?: XOR<EngagementLeadNullableScalarRelationFilter, EngagementLeadWhereInput> | null
   }, "id">
 
   export type EngagementLeadCalculationOrderByWithAggregationInput = {
     id?: SortOrder
-    engagementLeadId?: SortOrder
+    engagementLeadId?: SortOrderInput | SortOrder
     memberName?: SortOrderInput | SortOrder
     accountName?: SortOrderInput | SortOrder
     smu?: SortOrderInput | SortOrder
@@ -17671,7 +17755,7 @@ export namespace Prisma {
     OR?: EngagementLeadCalculationScalarWhereWithAggregatesInput[]
     NOT?: EngagementLeadCalculationScalarWhereWithAggregatesInput | EngagementLeadCalculationScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"EngagementLeadCalculation"> | string
-    engagementLeadId?: StringWithAggregatesFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableWithAggregatesFilter<"EngagementLeadCalculation"> | string | null
@@ -17706,6 +17790,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
@@ -17730,6 +17818,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrderInput | SortOrder
     approvalComment?: SortOrderInput | SortOrder
     reopenedAt?: SortOrderInput | SortOrder
+    returnedAt?: SortOrderInput | SortOrder
+    returnedBy?: SortOrderInput | SortOrder
+    returnedByHandle?: SortOrderInput | SortOrder
+    returnComment?: SortOrderInput | SortOrder
     paidPaymentReference?: SortOrderInput | SortOrder
     paidAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -17758,6 +17850,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
@@ -17782,6 +17878,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrderInput | SortOrder
     approvalComment?: SortOrderInput | SortOrder
     reopenedAt?: SortOrderInput | SortOrder
+    returnedAt?: SortOrderInput | SortOrder
+    returnedBy?: SortOrderInput | SortOrder
+    returnedByHandle?: SortOrderInput | SortOrder
+    returnComment?: SortOrderInput | SortOrder
     paidPaymentReference?: SortOrderInput | SortOrder
     paidAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -17812,6 +17912,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"EngagementTimesheetEntry"> | Date | string
@@ -19019,12 +19123,12 @@ export namespace Prisma {
     createdBy?: string | null
     updatedAt?: Date | string
     updatedBy?: string | null
-    lead: EngagementLeadCreateNestedOneWithoutCalculationsInput
+    lead?: EngagementLeadCreateNestedOneWithoutCalculationsInput
   }
 
   export type EngagementLeadCalculationUncheckedCreateInput = {
     id?: string
-    engagementLeadId: string
+    engagementLeadId?: string | null
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
@@ -19059,12 +19163,12 @@ export namespace Prisma {
     createdBy?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    lead?: EngagementLeadUpdateOneRequiredWithoutCalculationsNestedInput
+    lead?: EngagementLeadUpdateOneWithoutCalculationsNestedInput
   }
 
   export type EngagementLeadCalculationUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    engagementLeadId?: StringFieldUpdateOperationsInput | string
+    engagementLeadId?: NullableStringFieldUpdateOperationsInput | string | null
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19084,7 +19188,7 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationCreateManyInput = {
     id?: string
-    engagementLeadId: string
+    engagementLeadId?: string | null
     memberName?: string | null
     accountName?: string | null
     smu?: string | null
@@ -19123,7 +19227,7 @@ export namespace Prisma {
 
   export type EngagementLeadCalculationUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    engagementLeadId?: StringFieldUpdateOperationsInput | string
+    engagementLeadId?: NullableStringFieldUpdateOperationsInput | string | null
     memberName?: NullableStringFieldUpdateOperationsInput | string | null
     accountName?: NullableStringFieldUpdateOperationsInput | string | null
     smu?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19154,6 +19258,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -19178,6 +19286,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -19200,6 +19312,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19224,6 +19340,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19247,6 +19367,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -19268,6 +19392,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -19290,6 +19418,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20567,6 +20699,11 @@ export namespace Prisma {
     not?: NestedEnumLeadCalculationCommercialInputNullableFilter<$PrismaModel> | $Enums.LeadCalculationCommercialInput | null
   }
 
+  export type EngagementLeadNullableScalarRelationFilter = {
+    is?: EngagementLeadWhereInput | null
+    isNot?: EngagementLeadWhereInput | null
+  }
+
   export type EngagementLeadCalculationCountOrderByAggregateInput = {
     id?: SortOrder
     engagementLeadId?: SortOrder
@@ -20716,6 +20853,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrder
     approvalComment?: SortOrder
     reopenedAt?: SortOrder
+    returnedAt?: SortOrder
+    returnedBy?: SortOrder
+    returnedByHandle?: SortOrder
+    returnComment?: SortOrder
     paidPaymentReference?: SortOrder
     paidAt?: SortOrder
     createdAt?: SortOrder
@@ -20742,6 +20883,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrder
     approvalComment?: SortOrder
     reopenedAt?: SortOrder
+    returnedAt?: SortOrder
+    returnedBy?: SortOrder
+    returnedByHandle?: SortOrder
+    returnComment?: SortOrder
     paidPaymentReference?: SortOrder
     paidAt?: SortOrder
     createdAt?: SortOrder
@@ -20764,6 +20909,10 @@ export namespace Prisma {
     approvedByHandle?: SortOrder
     approvalComment?: SortOrder
     reopenedAt?: SortOrder
+    returnedAt?: SortOrder
+    returnedBy?: SortOrder
+    returnedByHandle?: SortOrder
+    returnComment?: SortOrder
     paidPaymentReference?: SortOrder
     paidAt?: SortOrder
     createdAt?: SortOrder
@@ -21580,10 +21729,12 @@ export namespace Prisma {
     set?: $Enums.LeadCalculationCommercialInput | null
   }
 
-  export type EngagementLeadUpdateOneRequiredWithoutCalculationsNestedInput = {
+  export type EngagementLeadUpdateOneWithoutCalculationsNestedInput = {
     create?: XOR<EngagementLeadCreateWithoutCalculationsInput, EngagementLeadUncheckedCreateWithoutCalculationsInput>
     connectOrCreate?: EngagementLeadCreateOrConnectWithoutCalculationsInput
     upsert?: EngagementLeadUpsertWithoutCalculationsInput
+    disconnect?: EngagementLeadWhereInput | boolean
+    delete?: EngagementLeadWhereInput | boolean
     connect?: EngagementLeadWhereUniqueInput
     update?: XOR<XOR<EngagementLeadUpdateToOneWithWhereWithoutCalculationsInput, EngagementLeadUpdateWithoutCalculationsInput>, EngagementLeadUncheckedUpdateWithoutCalculationsInput>
   }
@@ -22950,6 +23101,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -22972,6 +23127,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -23161,6 +23320,10 @@ export namespace Prisma {
     approvedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     approvalComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     reopenedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
+    returnedBy?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnedByHandle?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
+    returnComment?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidPaymentReference?: StringNullableFilter<"EngagementTimesheetEntry"> | string | null
     paidAt?: DateTimeNullableFilter<"EngagementTimesheetEntry"> | Date | string | null
     createdAt?: DateTimeFilter<"EngagementTimesheetEntry"> | Date | string
@@ -23537,7 +23700,7 @@ export namespace Prisma {
     OR?: EngagementLeadCalculationScalarWhereInput[]
     NOT?: EngagementLeadCalculationScalarWhereInput | EngagementLeadCalculationScalarWhereInput[]
     id?: StringFilter<"EngagementLeadCalculation"> | string
-    engagementLeadId?: StringFilter<"EngagementLeadCalculation"> | string
+    engagementLeadId?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     memberName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     accountName?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
     smu?: StringNullableFilter<"EngagementLeadCalculation"> | string | null
@@ -24048,6 +24211,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -24071,6 +24238,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -24179,6 +24350,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24202,6 +24377,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24754,6 +24933,10 @@ export namespace Prisma {
     approvedByHandle?: string | null
     approvalComment?: string | null
     reopenedAt?: Date | string | null
+    returnedAt?: Date | string | null
+    returnedBy?: string | null
+    returnedByHandle?: string | null
+    returnComment?: string | null
     paidPaymentReference?: string | null
     paidAt?: Date | string | null
     createdAt?: Date | string
@@ -24835,6 +25018,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24857,6 +25044,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24879,6 +25070,10 @@ export namespace Prisma {
     approvedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
     approvalComment?: NullableStringFieldUpdateOperationsInput | string | null
     reopenedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returnedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    returnedByHandle?: NullableStringFieldUpdateOperationsInput | string | null
+    returnComment?: NullableStringFieldUpdateOperationsInput | string | null
     paidPaymentReference?: NullableStringFieldUpdateOperationsInput | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
