@@ -21,6 +21,7 @@ import {
   TIMESHEET_AUTO_APPROVAL_COMMENT,
   TIMESHEET_AUTO_APPROVAL_DEFAULT_CRON,
   TIMESHEET_AUTO_APPROVAL_DEFAULT_PENDING_DAYS,
+  TIMESHEET_AUTO_APPROVAL_DEFAULT_START_DATE,
   TIMESHEET_SYSTEM_ACTOR,
   TimesheetEventTopics,
 } from "./timesheet-constants";
@@ -69,7 +70,9 @@ export interface AutoApprovalRunResult {
  *    (standard hours per weekday, inside the assignment dates);
  * 2. the engagement has at least one current manager;
  * 3. it has been pending approval for at least 7 days (`TIMESHEET_AUTO_APPROVAL_PENDING_DAYS`);
- * 4. none of its work dates is in the future.
+ * 4. none of its work dates is in the future;
+ * 5. it was submitted on or after the start date (`TIMESHEET_AUTO_APPROVAL_START_DATE`, UTC, default
+ *    2026-11-24), so timesheets submitted before auto-approval went live stay with the managers.
  *
  * Anything else is left for a manager. Entries a manager already approved or returned, or that the
  * member edited back to draft, are simply no longer part of the submission.
@@ -121,7 +124,8 @@ export class TimesheetAutoApprovalService implements OnModuleInit {
     this.schedulerRegistry.addCronJob(CRON_JOB_NAME, job);
     job.start();
     this.logger.log(
-      `Timesheet auto-approval scheduled on "${cronTime}" (UTC).`,
+      `Timesheet auto-approval scheduled on "${cronTime}" (UTC), for submissions since ` +
+        `${toWorkDateString(this.startDate())}.`,
     );
   }
 
@@ -152,7 +156,7 @@ export class TimesheetAutoApprovalService implements OnModuleInit {
       await this.db.engagementTimesheetEntry.findMany({
         where: {
           status: TimesheetEntryStatus.SUBMITTED,
-          submittedAt: { lte: pendingSince },
+          submittedAt: { gte: this.startDate(), lte: pendingSince },
         },
         include: {
           assignment: {
@@ -353,6 +357,40 @@ export class TimesheetAutoApprovalService implements OnModuleInit {
     return Number.isFinite(configured) && configured > 0
       ? configured
       : TIMESHEET_AUTO_APPROVAL_DEFAULT_PENDING_DAYS;
+  }
+
+  /**
+   * Midnight UTC on `TIMESHEET_AUTO_APPROVAL_START_DATE` (YYYY-MM-DD). A missing or unreadable value
+   * falls back to the default rather than to no start date, so a typo can never open auto-approval
+   * up to every old submission.
+   */
+  private startDate(): Date {
+    const configured = this.configService
+      .get<string>("TIMESHEET_AUTO_APPROVAL_START_DATE")
+      ?.trim();
+
+    if (configured) {
+      const parsed = /^\d{4}-\d{2}-\d{2}$/.test(configured)
+        ? new Date(`${configured}T00:00:00.000Z`)
+        : undefined;
+
+      if (
+        parsed &&
+        !Number.isNaN(parsed.getTime()) &&
+        toWorkDateString(parsed) === configured
+      ) {
+        return parsed;
+      }
+
+      this.logger.warn(
+        `TIMESHEET_AUTO_APPROVAL_START_DATE "${configured}" is not a YYYY-MM-DD date; using ` +
+          `${TIMESHEET_AUTO_APPROVAL_DEFAULT_START_DATE}.`,
+      );
+    }
+
+    return new Date(
+      `${TIMESHEET_AUTO_APPROVAL_DEFAULT_START_DATE}T00:00:00.000Z`,
+    );
   }
 
   private logRun(result: AutoApprovalRunResult): void {

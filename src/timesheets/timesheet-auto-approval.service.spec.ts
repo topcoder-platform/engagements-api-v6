@@ -92,18 +92,46 @@ describe("TimesheetAutoApprovalService", () => {
     );
   });
 
-  it("only looks at entries submitted at least 7 days ago", async () => {
+  it("only looks at entries submitted at least 7 days ago, since 24 November 2026", async () => {
     await service.run(NOW);
 
     expect(db.engagementTimesheetEntry.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           status: TimesheetEntryStatus.SUBMITTED,
-          submittedAt: { lte: new Date("2026-09-09T10:00:00.000Z") },
+          submittedAt: {
+            gte: new Date("2026-11-24T00:00:00.000Z"),
+            lte: new Date("2026-09-09T10:00:00.000Z"),
+          },
         },
       }),
     );
   });
+
+  it("honours a configured start date", async () => {
+    config.TIMESHEET_AUTO_APPROVAL_START_DATE = " 2026-09-01 ";
+
+    await service.run(NOW);
+
+    expect(
+      db.engagementTimesheetEntry.findMany.mock.calls[0][0].where.submittedAt
+        .gte,
+    ).toEqual(new Date("2026-09-01T00:00:00.000Z"));
+  });
+
+  it.each(["24/11/2026", "2026-02-30", "soon"])(
+    "falls back to 24 November 2026 for the unreadable start date %p",
+    async (startDate) => {
+      config.TIMESHEET_AUTO_APPROVAL_START_DATE = startDate;
+
+      await service.run(NOW);
+
+      expect(
+        db.engagementTimesheetEntry.findMany.mock.calls[0][0].where.submittedAt
+          .gte,
+      ).toEqual(new Date("2026-11-24T00:00:00.000Z"));
+    },
+  );
 
   it("honours a configured pending period", async () => {
     config.TIMESHEET_AUTO_APPROVAL_PENDING_DAYS = "1";
@@ -112,7 +140,10 @@ describe("TimesheetAutoApprovalService", () => {
 
     expect(
       db.engagementTimesheetEntry.findMany.mock.calls[0][0].where.submittedAt,
-    ).toEqual({ lte: new Date("2026-09-15T10:00:00.000Z") });
+    ).toEqual({
+      gte: new Date("2026-11-24T00:00:00.000Z"),
+      lte: new Date("2026-09-15T10:00:00.000Z"),
+    });
   });
 
   it("approves a submission within its expected hours as the system, audits it and emails", async () => {
