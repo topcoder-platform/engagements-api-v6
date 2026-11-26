@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { AssignmentStatus, Prisma, TimesheetEntryStatus } from "@prisma/client";
-import * as request from "supertest";
+import request from "supertest";
 import { AppModule } from "../app.module";
 import { UserRoles } from "../app-constants";
 import { DbService } from "../db/db.service";

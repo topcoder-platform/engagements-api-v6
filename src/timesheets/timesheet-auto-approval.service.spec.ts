@@ -92,7 +92,7 @@ describe("TimesheetAutoApprovalService", () => {
     );
   });
 
-  it("only looks at entries submitted at least 7 days ago, since 24 November 2026", async () => {
+  it("only looks at entries submitted at least 7 days ago, since 1 December 2026", async () => {
     await service.run(NOW);
 
     expect(db.engagementTimesheetEntry.findMany).toHaveBeenCalledWith(
@@ -100,7 +100,7 @@ describe("TimesheetAutoApprovalService", () => {
         where: {
           status: TimesheetEntryStatus.SUBMITTED,
           submittedAt: {
-            gte: new Date("2026-11-24T00:00:00.000Z"),
+            gte: new Date("2026-12-01T00:00:00.000Z"),
             lte: new Date("2026-09-09T10:00:00.000Z"),
           },
         },
@@ -120,7 +120,7 @@ describe("TimesheetAutoApprovalService", () => {
   });
 
   it.each(["24/11/2026", "2026-02-30", "soon"])(
-    "falls back to 24 November 2026 for the unreadable start date %p",
+    "falls back to 1 December 2026 for the unreadable start date %p",
     async (startDate) => {
       config.TIMESHEET_AUTO_APPROVAL_START_DATE = startDate;
 
@@ -129,7 +129,7 @@ describe("TimesheetAutoApprovalService", () => {
       expect(
         db.engagementTimesheetEntry.findMany.mock.calls[0][0].where.submittedAt
           .gte,
-      ).toEqual(new Date("2026-11-24T00:00:00.000Z"));
+      ).toEqual(new Date("2026-12-01T00:00:00.000Z"));
     },
   );
 
@@ -141,7 +141,7 @@ describe("TimesheetAutoApprovalService", () => {
     expect(
       db.engagementTimesheetEntry.findMany.mock.calls[0][0].where.submittedAt,
     ).toEqual({
-      gte: new Date("2026-11-24T00:00:00.000Z"),
+      gte: new Date("2026-12-01T00:00:00.000Z"),
       lte: new Date("2026-09-15T10:00:00.000Z"),
     });
   });
