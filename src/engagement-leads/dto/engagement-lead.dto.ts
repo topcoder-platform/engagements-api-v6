@@ -18,7 +18,7 @@ import {
   LeadPriority,
 } from "@prisma/client";
 import { PaginationDto } from "../../engagements/dto";
-import { IsNotWhitespace, transformArray } from "src/common/validation.util";
+import { IsNotWhitespace, transformArray } from "../../common/validation.util";
 
 export enum EngagementLeadStatusGroup {
   NEW = "NEW",

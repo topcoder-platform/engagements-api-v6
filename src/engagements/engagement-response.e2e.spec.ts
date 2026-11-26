@@ -7,7 +7,7 @@ import {
   Role,
   Workload,
 } from "@prisma/client";
-import * as request from "supertest";
+import request from "supertest";
 import { AppModule } from "../app.module";
 import { DbService } from "../db/db.service";
 

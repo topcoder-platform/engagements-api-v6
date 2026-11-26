@@ -51,7 +51,14 @@ overrides:
 
 allowBuilds:
   '@nestjs/core@11.1.28': false
-  '@prisma/engines@7.8.0': true
+  '@parcel/watcher': false
+  '@prisma/engines@7.10.1': true
   '@scarf/scarf@1.4.0': false
   'dtrace-provider@0.8.8': false
-  'prisma@7.8.0': true
+  'prisma@7.10.1': true
+
+minimumReleaseAgeExclude:
+  - '@nestjs/common@12.6.3'
+  - '@nestjs/core@12.6.3'
+  - '@nestjs/platform-express@12.6.3'
+  - '@nestjs/testing@12.6.3'

@@ -1,6 +1,6 @@
 import { INestApplication, UnauthorizedException, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import * as request from "supertest";
+import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { EngagementsService } from "../src/engagements/engagements.service";
 import { ApplicationsService } from "../src/applications/applications.service";
