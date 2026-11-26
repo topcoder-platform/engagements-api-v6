@@ -126,7 +126,9 @@ managers. A submission is approved as a whole only when all of these hold:
 2. the engagement has at least one current manager;
 3. it has been pending approval for at least 7 days since it was submitted (`TIMESHEET_AUTO_APPROVAL_PENDING_DAYS`).
    Working days are not stored per assignment, so these are calendar days;
-4. none of its work dates is in the future (a period ending today counts as past).
+4. none of its work dates is in the future (a period ending today counts as past);
+5. it was submitted on or after the start date, `TIMESHEET_AUTO_APPROVAL_START_DATE` (`YYYY-MM-DD`, UTC, default
+   `2026-11-24`, the day auto-approval went live). Timesheets submitted earlier stay with the managers.
 
 Anything else waits for a manager as before. Entries a manager already approved or returned, or that the member edited
 back to draft, are no longer part of the submission. Approved entries carry `approvedByHandle: "System"`,

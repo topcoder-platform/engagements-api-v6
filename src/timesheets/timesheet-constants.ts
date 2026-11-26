@@ -59,5 +59,12 @@ export const TIMESHEET_AUTO_APPROVAL_COMMENT = "Auto Approved by the system";
 /** Days a submission waits for a manager before the system may approve it. */
 export const TIMESHEET_AUTO_APPROVAL_DEFAULT_PENDING_DAYS = 7;
 
+/**
+ * Only submissions made on or after this day (UTC) are auto-approved; older ones stay with the managers.
+ * Auto-approval went live on this day, and timesheets submitted before it were submitted on the
+ * understanding that a manager would review them.
+ */
+export const TIMESHEET_AUTO_APPROVAL_DEFAULT_START_DATE = "2026-11-24";
+
 /** Daily at 02:00 UTC. */
 export const TIMESHEET_AUTO_APPROVAL_DEFAULT_CRON = "0 2 * * *";
