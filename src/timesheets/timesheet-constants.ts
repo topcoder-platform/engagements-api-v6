@@ -64,7 +64,7 @@ export const TIMESHEET_AUTO_APPROVAL_DEFAULT_PENDING_DAYS = 7;
  * Auto-approval went live on this day, and timesheets submitted before it were submitted on the
  * understanding that a manager would review them.
  */
-export const TIMESHEET_AUTO_APPROVAL_DEFAULT_START_DATE = "2026-11-24";
+export const TIMESHEET_AUTO_APPROVAL_DEFAULT_START_DATE = "2026-12-01";
 
-/** Daily at 02:00 UTC. */
-export const TIMESHEET_AUTO_APPROVAL_DEFAULT_CRON = "0 2 * * *";
+/** Daily at 02:00, 14:00 UTC. */
+export const TIMESHEET_AUTO_APPROVAL_DEFAULT_CRON = "0 2,14 * * *";
